@@ -124,6 +124,15 @@ export function listTournamentMatches(tournamentId: string) {
   });
 }
 
+/** Noms des poules d'un tournoi (stages de phase de groupes). */
+export function listGroups(tournamentId: string) {
+  return db.group.findMany({
+    where: { tournamentId },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+}
+
 // ---- Maps ----
 
 export function addMatchMap(matchId: string, data: MatchMapInput) {

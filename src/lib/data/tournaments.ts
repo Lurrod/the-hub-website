@@ -24,6 +24,25 @@ export function getTournament(id: string) {
   });
 }
 
+/** Équipes inscrites avec leur roster actif (pour les cartes participantes). */
+export function getTournamentTeamsWithPlayers(tournamentId: string) {
+  return db.tournamentParticipant.findMany({
+    where: { tournamentId },
+    orderBy: [{ seed: "asc" }],
+    include: {
+      team: {
+        include: {
+          memberships: {
+            where: { leaveDate: null },
+            orderBy: { role: "asc" },
+            include: { player: true },
+          },
+        },
+      },
+    },
+  });
+}
+
 export function createTournament(data: TournamentInput, createdById: string) {
   return db.tournament.create({
     data: {
