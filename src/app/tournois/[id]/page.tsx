@@ -70,6 +70,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             scoreA: m.scoreA,
             scoreB: m.scoreB,
             winnerId: m.winnerId,
+            position: m.bracketPosition,
             teamA: m.teamA ? { tag: m.teamA.tag } : null,
             teamB: m.teamB ? { tag: m.teamB.tag } : null,
           }))}

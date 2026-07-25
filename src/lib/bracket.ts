@@ -6,6 +6,7 @@ export type BracketMatchData = {
   scoreA: number;
   scoreB: number;
   winnerId: string | null;
+  position?: number | null;
   teamA: { tag: string } | null;
   teamB: { tag: string } | null;
 };
@@ -104,7 +105,12 @@ export function orderBracketSections(matches: BracketMatchData[]): BracketSectio
       title: SECTION_TITLE[key] ?? "",
       rounds: [...rounds.entries()]
         .map(([name, ms]) => ({ name, matches: [...ms].sort((a, b) => a.id.localeCompare(b.id)) }))
-        // Plus de matchs = round plus précoce ; à égalité, l'ordre connu des rounds.
-        .sort((a, b) => b.matches.length - a.matches.length || roundRank(a.name) - roundRank(b.name)),
+        // Ordre des rounds : par bracketPosition (fiable pour le lower bracket),
+        // puis nombre de matchs, puis l'ordre connu des rounds.
+        .sort((a, b) => {
+          const pa = Math.min(...a.matches.map((m) => m.position ?? 9999));
+          const pb = Math.min(...b.matches.map((m) => m.position ?? 9999));
+          return pa - pb || b.matches.length - a.matches.length || roundRank(a.name) - roundRank(b.name);
+        }),
     }));
 }

@@ -48,12 +48,16 @@ const GROUP_MATCHES: [string, string, number, number, number][] = [
 ];
 
 // Playoffs : [teamA, teamB, scoreA, scoreB, round, position, jour de mai, terminé?]
+// Vrai bracket double-élimination à 4 équipes (qualifiés : 2 premiers de chaque
+// poule). Perdants des demis UB → LB Round 1, puis LB Finale contre le perdant
+// de la finale UB, puis Grande Finale.
 const BRACKET_MATCHES: [string, string, number, number, string, number, number, boolean][] = [
-  ["vlr-fnc", "vlr-tl", 2, 1, "UB Demi-finale", 1, 7, true],
-  ["vlr-vit", "vlr-fut", 2, 0, "UB Demi-finale", 2, 8, true],
-  ["vlr-fnc", "vlr-vit", 0, 0, "UB Finale", 3, 10, false],
-  ["vlr-tl", "vlr-fut", 0, 0, "LB Finale", 4, 11, false],
-  ["vlr-fnc", "vlr-tl", 0, 0, "Grande Finale", 5, 17, false],
+  ["vlr-fnc", "vlr-fut", 2, 0, "UB Demi-finale", 1, 7, true], // fut → LB
+  ["vlr-vit", "vlr-tl", 2, 1, "UB Demi-finale", 2, 8, true], // tl → LB
+  ["vlr-fut", "vlr-tl", 0, 0, "LB Round 1", 3, 9, false], // perdants des demis UB
+  ["vlr-fnc", "vlr-vit", 0, 0, "UB Finale", 4, 12, false], // perdant → LB Finale
+  ["vlr-tl", "vlr-vit", 0, 0, "LB Finale", 5, 14, false], // vainqueur LB R1 vs perdant UB Finale
+  ["vlr-fnc", "vlr-vit", 0, 0, "Grande Finale", 6, 17, false],
 ];
 
 const groupOf = (t: TeamSeed) => (t.group === "alpha" ? GRP_ALPHA : GRP_OMEGA);

@@ -17,7 +17,7 @@ export default function TournamentTabs({
   return (
     <div>
       {/* Bandeau + barre d'onglets accrochée à son bas, dans un même bloc. */}
-      <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-card)]">
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-card)]">
         {header}
         <div className="flex flex-wrap gap-1 border-t border-[var(--border)] px-2">
           {tabs.map((t) => {
