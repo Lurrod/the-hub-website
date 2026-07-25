@@ -146,6 +146,7 @@ model TeamMembership {
 enum TournamentFormat {
   GROUPS
   SINGLE_ELIM
+  DOUBLE_ELIM
   GROUPS_THEN_ELIM
 }
 

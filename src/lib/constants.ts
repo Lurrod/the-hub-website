@@ -46,11 +46,17 @@ export const ALLOWED_IMAGE_TYPES: Record<string, "png" | "jpg" | "webp"> = {
   "image/webp": "webp",
 };
 
-export const TOURNAMENT_FORMATS = ["GROUPS", "SINGLE_ELIM", "GROUPS_THEN_ELIM"] as const;
+export const TOURNAMENT_FORMATS = [
+  "GROUPS",
+  "SINGLE_ELIM",
+  "DOUBLE_ELIM",
+  "GROUPS_THEN_ELIM",
+] as const;
 export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number];
 export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
   GROUPS: "Poules",
   SINGLE_ELIM: "Élimination directe",
+  DOUBLE_ELIM: "Double élimination",
   GROUPS_THEN_ELIM: "Poules puis élimination",
 };
 
@@ -98,6 +104,7 @@ export const VALORANT_MAPS = [
 export const STAGES_BY_FORMAT: Record<TournamentFormat, readonly MatchStage[]> = {
   GROUPS: ["GROUP"],
   SINGLE_ELIM: ["BRACKET"],
+  DOUBLE_ELIM: ["BRACKET"],
   GROUPS_THEN_ELIM: ["GROUP", "BRACKET"],
 };
 
