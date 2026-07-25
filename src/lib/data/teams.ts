@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { TeamInput } from "@/lib/validation/team";
 import { INVITE_TTL_DAYS } from "@/lib/invite";
@@ -63,6 +64,23 @@ export function addTeamManager(teamId: string, userId: string) {
 
 export function removeTeamManager(teamId: string, userId: string) {
   return db.teamManager.deleteMany({ where: { teamId, userId } });
+}
+
+/**
+ * Retire un manager UNIQUEMENT s'il n'est pas le dernier de l'équipe.
+ * Comptage + suppression dans une transaction Serializable → pas de course
+ * possible menant à une équipe orpheline. Retourne false si c'était le dernier.
+ */
+export function removeTeamManagerIfNotLast(teamId: string, userId: string): Promise<boolean> {
+  return db.$transaction(
+    async (tx) => {
+      const count = await tx.teamManager.count({ where: { teamId } });
+      if (count <= 1) return false;
+      await tx.teamManager.deleteMany({ where: { teamId, userId } });
+      return true;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
 }
 
 /** Génère (ou régénère) le lien d'invitation de l'équipe : nouveau token + expiration TTL. */

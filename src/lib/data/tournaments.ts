@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { TournamentFormat, TournamentStatus } from "@/lib/constants";
 import type { TournamentInput } from "@/lib/validation/tournament";
@@ -98,4 +99,24 @@ export function addTournamentManager(tournamentId: string, userId: string) {
 
 export function removeTournamentManager(tournamentId: string, userId: string) {
   return db.tournamentManager.deleteMany({ where: { tournamentId, userId } });
+}
+
+/**
+ * Retire un manager UNIQUEMENT s'il n'est pas le dernier du tournoi.
+ * Comptage + suppression dans une transaction Serializable → pas de course
+ * possible menant à un tournoi orphelin. Retourne false si c'était le dernier.
+ */
+export function removeTournamentManagerIfNotLast(
+  tournamentId: string,
+  userId: string
+): Promise<boolean> {
+  return db.$transaction(
+    async (tx) => {
+      const count = await tx.tournamentManager.count({ where: { tournamentId } });
+      if (count <= 1) return false;
+      await tx.tournamentManager.deleteMany({ where: { tournamentId, userId } });
+      return true;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
 }

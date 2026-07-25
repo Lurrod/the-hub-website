@@ -14,7 +14,7 @@ import {
   addParticipant,
   removeParticipant,
   addTournamentManager,
-  removeTournamentManager,
+  removeTournamentManagerIfNotLast,
 } from "@/lib/data/tournaments";
 import { validateImageUpload, processAndStoreImage } from "@/lib/images";
 
@@ -131,8 +131,7 @@ export async function addTournamentManagerAction(tournamentId: string, formData:
 export async function removeTournamentManagerAction(tournamentId: string, userId: string) {
   await assertCanManageTournament(tournamentId);
   const base = `/tournois/${tournamentId}/gestion/managers`;
-  const count = await db.tournamentManager.count({ where: { tournamentId } });
-  if (count <= 1) redirect(`${base}?error=lastmanager`);
-  await removeTournamentManager(tournamentId, userId);
+  const removed = await removeTournamentManagerIfNotLast(tournamentId, userId);
+  if (!removed) redirect(`${base}?error=lastmanager`);
   revalidatePath(base);
 }

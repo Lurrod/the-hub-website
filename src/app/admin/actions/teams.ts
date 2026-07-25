@@ -11,7 +11,7 @@ import {
   deleteTeam,
   setTeamLogo,
   addTeamManager,
-  removeTeamManager,
+  removeTeamManagerIfNotLast,
 } from "@/lib/data/teams";
 import { validateImageUpload, processAndStoreImage } from "@/lib/images";
 
@@ -84,8 +84,7 @@ export async function addManagerAction(teamId: string, formData: FormData) {
 export async function removeManagerAction(teamId: string, userId: string) {
   await assertCanManageTeam(teamId);
   const base = `/equipes/${teamId}/gestion/managers`;
-  const count = await db.teamManager.count({ where: { teamId } });
-  if (count <= 1) redirect(`${base}?error=lastmanager`);
-  await removeTeamManager(teamId, userId);
+  const removed = await removeTeamManagerIfNotLast(teamId, userId);
+  if (!removed) redirect(`${base}?error=lastmanager`);
   revalidatePath(base);
 }
