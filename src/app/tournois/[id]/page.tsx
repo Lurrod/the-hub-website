@@ -91,7 +91,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const apercu = (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
       <section className="self-start">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
           Matchs à venir
         </h2>
         <UpcomingMatchList
@@ -107,7 +107,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       <div className="space-y-8">
         {stageDefs.length > 0 && (
           <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
               Étapes
             </h2>
             <StageMenu stages={stageDefs} />
@@ -115,7 +115,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         )}
 
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
             Équipes participantes
           </h2>
           {participants.length === 0 ? (
@@ -129,7 +129,10 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                     teamId: p.teamId,
                     name: p.team.name,
                     logo: p.team.logo,
-                    players: p.team.memberships.map((m) => m.player.pseudo),
+                    players: p.team.memberships
+                      .filter((m) => m.role === "JOUEUR")
+                      .slice(0, 5)
+                      .map((m) => ({ id: m.player.id, pseudo: m.player.pseudo })),
                   }}
                 />
               ))}
@@ -149,8 +152,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         scoreA: m.scoreA,
         scoreB: m.scoreB,
         stageLabel: stageLabel(m),
-        teamA: m.teamA ? { name: m.teamA.name } : null,
-        teamB: m.teamB ? { name: m.teamB.name } : null,
+        teamA: m.teamA ? { name: m.teamA.name, logo: m.teamA.logo } : null,
+        teamB: m.teamB ? { name: m.teamB.name, logo: m.teamB.logo } : null,
       }))}
     />
   );

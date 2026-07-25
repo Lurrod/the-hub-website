@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { dayKey, dayLabel, timeLabel } from "@/lib/dates";
 
+type Team = { name: string; logo: string | null } | null;
 type M = {
   id: string;
   date: Date | null;
@@ -8,9 +9,25 @@ type M = {
   scoreA: number;
   scoreB: number;
   stageLabel: string;
-  teamA: { name: string } | null;
-  teamB: { name: string } | null;
+  teamA: Team;
+  teamB: Team;
 };
+
+function TeamRow({ team }: { team: Team }) {
+  return (
+    <div className="flex items-center gap-2">
+      {team?.logo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={team.logo} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
+      ) : (
+        <div className="grid h-5 w-5 shrink-0 place-items-center rounded bg-[var(--surface)] text-[8px] text-[var(--text-muted)]">
+          {team?.name?.slice(0, 2).toUpperCase() ?? "?"}
+        </div>
+      )}
+      <span className="truncate text-sm text-white">{team?.name ?? "—"}</span>
+    </div>
+  );
+}
 
 /** Liste des matchs groupée par jour (séparateur à chaque changement de jour). */
 export default function TournamentMatchList({ matches }: { matches: M[] }) {
@@ -45,11 +62,11 @@ export default function TournamentMatchList({ matches }: { matches: M[] }) {
                     <div className="stat w-12 shrink-0 text-center text-sm text-white">
                       {timeLabel(m.date)}
                     </div>
-                    <div className="min-w-0 max-w-[55%] space-y-0.5">
-                      <div className="truncate text-sm text-white">{m.teamA?.name ?? "—"}</div>
-                      <div className="truncate text-sm text-white">{m.teamB?.name ?? "—"}</div>
+                    <div className="min-w-0 max-w-[55%] space-y-1">
+                      <TeamRow team={m.teamA} />
+                      <TeamRow team={m.teamB} />
                     </div>
-                    <div className="w-8 shrink-0 space-y-0.5 text-center">
+                    <div className="w-8 shrink-0 space-y-1 text-center">
                       <div className="stat text-sm text-white">{played ? m.scoreA : "–"}</div>
                       <div className="stat text-sm text-white">{played ? m.scoreB : "–"}</div>
                     </div>
