@@ -124,32 +124,14 @@ body {
       border-color var(--hover-fast) var(--ease);
   }
 
-  /* Hover rft.gg : remplissage neutre subtil + trait accent (couleur du logo)
-     qui apparaît en dessous. Pas de lift, pas de glow. */
+  /* Hover : remplissage neutre subtil au survol. Pas de barre, pas de lift, pas de glow. */
   .card-interactive {
     position: relative;
     cursor: pointer;
   }
-  .card-interactive::after {
-    content: "";
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 0;
-    height: 2px;
-    border-radius: 2px 2px 0 0;
-    background: var(--accent);
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 170ms var(--ease);
-    pointer-events: none;
-  }
   .card-interactive:hover {
     background-color: var(--table-row-hover);
     border-color: var(--border-strong);
-  }
-  .card-interactive:hover::after {
-    transform: scaleX(1);
   }
 
   /* Lien de navigation : couleur du logo au survol + trait accent en dessous */
@@ -379,7 +361,6 @@ a.bg-\[var\(--card\)\]:active {
   .card {
     transition: none;
   }
-  .card-interactive::after,
   .nav-link::after {
     transition: none;
   }
