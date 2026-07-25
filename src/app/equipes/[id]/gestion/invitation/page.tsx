@@ -5,6 +5,7 @@ import { canManageTeam } from "@/lib/permissions";
 import { getTeam } from "@/lib/data/teams";
 import { isInviteValid } from "@/lib/invite";
 import { generateInviteAction, revokeInviteAction } from "@/app/equipes/actions";
+import InviteLink from "@/components/invite-link";
 
 export default async function InvitationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,9 +39,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ id:
           <p className="mb-2 text-sm text-[var(--text-muted)]">
             Lien actif (expire le {new Date(team.inviteExpiresAt!).toLocaleDateString("fr-FR")}) :
           </p>
-          <code className="block break-all rounded bg-[var(--surface)] px-3 py-2 text-sm text-white">
-            {link}
-          </code>
+          <InviteLink link={link} />
           <div className="mt-4 flex gap-2">
             <form action={generateWithId}>
               <button className="rounded bg-[var(--card)] px-3 py-1.5 text-sm text-white">
