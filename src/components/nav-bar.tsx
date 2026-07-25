@@ -12,7 +12,7 @@ export default async function NavBar() {
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_var(--accent-glow)]" />
           The Hub
         </Link>
-        <NavLinks isAdmin={isAdmin} />
+        <NavLinks isAdmin={isAdmin} isLoggedIn={!!session?.user} />
         <form
           action="/recherche"
           method="get"
