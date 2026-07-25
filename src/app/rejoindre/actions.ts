@@ -1,29 +1,35 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/server-auth";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth";
 import { getTeamByInviteToken } from "@/lib/data/teams";
-import { getPlayerByUserId, getActiveMembership, addPlayerToTeam } from "@/lib/data/players";
-import { isInviteValid } from "@/lib/invite";
+import { ensurePlayerForUser, joinTeamIfFree } from "@/lib/data/players";
+import { isInviteValid, isInviteTokenFormat } from "@/lib/invite";
 
 export async function joinTeamViaInviteAction(token: string) {
-  const user = await getSessionUser();
-  if (!user) throw new Error("UNAUTHENTICATED");
+  if (!isInviteTokenFormat(token)) throw new Error("INVALID_INVITE");
+
+  const session = await auth();
+  if (!session?.user) throw new Error("UNAUTHENTICATED");
 
   const team = await getTeamByInviteToken(token);
   if (!isInviteValid(team, new Date())) throw new Error("INVALID_INVITE");
 
-  const player = await getPlayerByUserId(user.id);
-  if (!player) throw new Error("NO_PLAYER");
+  // La fiche joueur n'est créée qu'au moment du join (pas à la simple vue du lien).
+  const player = await ensurePlayerForUser(session.user.id, {
+    pseudo: session.user.name,
+    photo: session.user.image,
+  });
 
-  const active = await getActiveMembership(player.id);
-  if (active) {
-    // Déjà dans cette équipe → on renvoie simplement vers la page équipe.
-    if (active.teamId === team!.id) redirect(`/equipes/${team!.id}`);
-    // Déjà dans une autre équipe → refus (l'UI doit avoir bloqué en amont).
+  // Join atomique : protège l'invariant « une seule équipe active ».
+  const result = await joinTeamIfFree(team.id, player.id, "JOUEUR");
+  if (!result.ok) {
+    // Déjà dans cette équipe → simple redirection ; autre équipe → refus.
+    if (result.activeTeamId === team.id) redirect(`/equipes/${team.id}`);
     throw new Error("ALREADY_IN_TEAM");
   }
 
-  await addPlayerToTeam(team!.id, player.id, "JOUEUR");
-  redirect(`/equipes/${team!.id}`);
+  revalidatePath(`/equipes/${team.id}`);
+  redirect(`/equipes/${team.id}`);
 }
