@@ -87,6 +87,14 @@ body {
     font-family: var(--font-display), var(--font-jakarta), sans-serif;
     letter-spacing: -0.02em;
   }
+
+  /* Tout élément cliquable montre le curseur main (les <button> natifs ne l'ont
+     pas par défaut ; les <a href> l'ont déjà). */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
 }
 
 /* --- Système de composants --- */
