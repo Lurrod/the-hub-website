@@ -5,6 +5,7 @@ import { listTournamentMatches, listGroups } from "@/lib/data/matches";
 import TournamentTabs from "@/components/tournament-tabs";
 import UpcomingMatchList from "@/components/upcoming-match-list";
 import TournamentMatchList from "@/components/tournament-match-list";
+import StageMenu from "@/components/stage-menu";
 import ParticipantCard from "@/components/participant-card";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
@@ -33,8 +34,31 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     ),
   ];
   const hasBracket = allMatches.some((m) => m.stage === "BRACKET");
-  const stages = [...groups.map((g) => g.name), ...bracketRounds];
-  if (hasBracket && bracketRounds.length === 0) stages.push("Playoffs");
+
+  // Étapes = poules puis rounds de bracket (ou « Playoffs »), avec leurs matchs.
+  const stageDefs: { key: string; label: string; matches: typeof allMatches }[] = [];
+  for (const g of groups) {
+    stageDefs.push({
+      key: `g-${g.id}`,
+      label: g.name,
+      matches: allMatches.filter((m) => m.groupId === g.id),
+    });
+  }
+  if (bracketRounds.length > 0) {
+    for (const r of bracketRounds) {
+      stageDefs.push({
+        key: `r-${r}`,
+        label: r,
+        matches: allMatches.filter((m) => m.stage === "BRACKET" && m.round === r),
+      });
+    }
+  } else if (hasBracket) {
+    stageDefs.push({
+      key: "playoffs",
+      label: "Playoffs",
+      matches: allMatches.filter((m) => m.stage === "BRACKET"),
+    });
+  }
 
   const upcoming = allMatches.filter((m) => m.status === "SCHEDULED" || m.status === "LIVE");
   const stageLabel = (m: (typeof allMatches)[number]) =>
@@ -47,25 +71,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     "Dates à définir";
 
   const apercu = (
-    <div>
-      {/* Étapes en sous-menu */}
-      {stages.length > 0 && (
-        <div className="mb-6 flex gap-1 overflow-x-auto border-b border-[var(--border)]">
-          {stages.map((s, i) => (
-            <span
-              key={s}
-              className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium ${
-                i === 0
-                  ? "border-[var(--accent)] text-white"
-                  : "border-transparent text-[var(--text-muted)]"
-              }`}
-            >
-              {s}
-            </span>
-          ))}
-        </div>
-      )}
-
+    <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
         <section className="self-start">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
@@ -104,6 +110,34 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           )}
         </section>
       </div>
+
+      {stageDefs.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+            Étapes
+          </h2>
+          <StageMenu
+            stages={stageDefs.map((s) => ({
+              key: s.key,
+              label: s.label,
+              content: (
+                <TournamentMatchList
+                  matches={s.matches.map((m) => ({
+                    id: m.id,
+                    date: m.date,
+                    status: m.status,
+                    scoreA: m.scoreA,
+                    scoreB: m.scoreB,
+                    stageLabel: s.label,
+                    teamA: m.teamA ? { name: m.teamA.name } : null,
+                    teamB: m.teamB ? { name: m.teamB.name } : null,
+                  }))}
+                />
+              ),
+            }))}
+          />
+        </section>
+      )}
     </div>
   );
 
@@ -152,13 +186,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             </div>
 
             <div className="flex items-center gap-8 sm:ml-auto">
-              <div className="text-right">
+              <div className="text-left">
                 <div className="stat text-xl text-white">{teamCount}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   équipes
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left">
                 <div className="stat text-xl text-white">{tournament.prizePool ?? "—"}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   cash prize
