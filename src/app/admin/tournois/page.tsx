@@ -30,13 +30,13 @@ export default async function AdminTournamentsPage() {
               </span>
             </span>
             <span className="flex gap-3 text-sm">
-              <Link href={`/admin/tournois/${t.id}`} className="text-[var(--accent)]">
+              <Link href={`/tournois/${t.id}/gestion`} className="text-[var(--accent)]">
                 Éditer
               </Link>
-              <Link href={`/admin/tournois/${t.id}/inscrits`} className="text-[var(--accent-2)]">
+              <Link href={`/tournois/${t.id}/gestion/inscrits`} className="text-[var(--accent-2)]">
                 Inscrits
               </Link>
-              <Link href={`/admin/tournois/${t.id}/managers`} className="text-[var(--accent-2)]">
+              <Link href={`/tournois/${t.id}/gestion/managers`} className="text-[var(--accent-2)]">
                 Managers
               </Link>
             </span>

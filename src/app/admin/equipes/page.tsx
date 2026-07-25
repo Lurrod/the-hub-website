@@ -23,8 +23,8 @@ export default async function AdminTeamsPage() {
               {t.name} <span className="text-[var(--text-muted)]">[{t.tag}]</span>
             </span>
             <span className="flex gap-3 text-sm">
-              <Link href={`/admin/equipes/${t.id}`} className="text-[var(--accent)]">Éditer</Link>
-              <Link href={`/admin/equipes/${t.id}/managers`} className="text-[var(--accent-2)]">Managers</Link>
+              <Link href={`/equipes/${t.id}/gestion`} className="text-[var(--accent)]">Éditer</Link>
+              <Link href={`/equipes/${t.id}/gestion/managers`} className="text-[var(--accent-2)]">Managers</Link>
             </span>
           </li>
         ))}
