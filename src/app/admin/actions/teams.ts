@@ -48,7 +48,7 @@ export async function createTeamAction(formData: FormData) {
   await maybeStoreLogo(formData, team.id);
   revalidatePath("/equipes");
   revalidatePath("/admin/equipes");
-  redirect(`/admin/equipes/${team.id}`);
+  redirect(`/equipes/${team.id}/gestion`);
 }
 
 export async function updateTeamAction(teamId: string, formData: FormData) {
@@ -58,20 +58,20 @@ export async function updateTeamAction(teamId: string, formData: FormData) {
   await maybeStoreLogo(formData, teamId);
   revalidatePath("/equipes");
   revalidatePath(`/equipes/${teamId}`);
-  revalidatePath(`/admin/equipes/${teamId}`);
+  revalidatePath(`/equipes/${teamId}/gestion`);
 }
 
 export async function deleteTeamAction(teamId: string) {
-  await requireAdmin();
+  await assertCanManageTeam(teamId);
   await deleteTeam(teamId);
   revalidatePath("/equipes");
   revalidatePath("/admin/equipes");
-  redirect("/admin/equipes");
+  redirect("/equipes");
 }
 
 export async function addManagerAction(teamId: string, formData: FormData) {
-  await requireAdmin();
-  const base = `/admin/equipes/${teamId}/managers`;
+  await assertCanManageTeam(teamId);
+  const base = `/equipes/${teamId}/gestion/managers`;
   const discordId = String(formData.get("discordId") ?? "").trim();
   if (!discordId) redirect(`${base}?error=empty`);
   const user = await db.user.findUnique({ where: { discordId }, select: { id: true } });
@@ -82,7 +82,10 @@ export async function addManagerAction(teamId: string, formData: FormData) {
 }
 
 export async function removeManagerAction(teamId: string, userId: string) {
-  await requireAdmin();
+  await assertCanManageTeam(teamId);
+  const base = `/equipes/${teamId}/gestion/managers`;
+  const count = await db.teamManager.count({ where: { teamId } });
+  if (count <= 1) redirect(`${base}?error=lastmanager`);
   await removeTeamManager(teamId, userId);
-  revalidatePath(`/admin/equipes/${teamId}/managers`);
+  revalidatePath(base);
 }

@@ -69,7 +69,7 @@ export async function addRosterMemberAction(teamId: string, formData: FormData) 
     role: formData.get("role") || "JOUEUR",
   });
   await createPlayerAndAddToRoster(teamId, data.pseudo, data.nationality, data.role);
-  revalidatePath(`/admin/equipes/${teamId}/roster`);
+  revalidatePath(`/equipes/${teamId}/gestion/roster`);
   revalidatePath(`/equipes/${teamId}`);
 }
 
@@ -81,20 +81,20 @@ export async function setMemberRoleAction(
   await assertMembershipInTeam(teamId, membershipId);
   const role = String(formData.get("role") ?? "JOUEUR") as MembershipRole;
   await setMembershipRole(membershipId, role);
-  revalidatePath(`/admin/equipes/${teamId}/roster`);
+  revalidatePath(`/equipes/${teamId}/gestion/roster`);
   revalidatePath(`/equipes/${teamId}`);
 }
 
 export async function endMemberAction(teamId: string, membershipId: string) {
   await assertMembershipInTeam(teamId, membershipId);
   await endMembership(membershipId, new Date());
-  revalidatePath(`/admin/equipes/${teamId}/roster`);
+  revalidatePath(`/equipes/${teamId}/gestion/roster`);
   revalidatePath(`/equipes/${teamId}`);
 }
 
 export async function removeMemberAction(teamId: string, membershipId: string) {
   await assertMembershipInTeam(teamId, membershipId);
   await deleteMembership(membershipId);
-  revalidatePath(`/admin/equipes/${teamId}/roster`);
+  revalidatePath(`/equipes/${teamId}/gestion/roster`);
   revalidatePath(`/equipes/${teamId}`);
 }

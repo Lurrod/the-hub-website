@@ -65,7 +65,7 @@ export async function createTournamentAction(formData: FormData) {
   await maybeStoreImage(formData, "banner", t.id);
   revalidatePath("/tournois");
   revalidatePath("/admin/tournois");
-  redirect(`/admin/tournois/${t.id}`);
+  redirect(`/tournois/${t.id}/gestion`);
 }
 
 export async function updateTournamentAction(tournamentId: string, formData: FormData) {
@@ -76,20 +76,20 @@ export async function updateTournamentAction(tournamentId: string, formData: For
   await maybeStoreImage(formData, "banner", tournamentId);
   revalidatePath("/tournois");
   revalidatePath(`/tournois/${tournamentId}`);
-  revalidatePath(`/admin/tournois/${tournamentId}`);
+  revalidatePath(`/tournois/${tournamentId}/gestion`);
 }
 
 export async function deleteTournamentAction(tournamentId: string) {
-  await requireAdmin();
+  await assertCanManageTournament(tournamentId);
   await deleteTournament(tournamentId);
   revalidatePath("/tournois");
   revalidatePath("/admin/tournois");
-  redirect("/admin/tournois");
+  redirect("/tournois");
 }
 
 export async function addParticipantAction(tournamentId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
-  const base = `/admin/tournois/${tournamentId}/inscrits`;
+  const base = `/tournois/${tournamentId}/gestion/inscrits`;
   const parsed = participantAddSchema.safeParse({
     teamId: formData.get("teamId"),
     seed: formData.get("seed") || undefined,
@@ -112,13 +112,13 @@ export async function addParticipantAction(tournamentId: string, formData: FormD
 export async function removeParticipantAction(tournamentId: string, teamId: string) {
   await assertCanManageTournament(tournamentId);
   await removeParticipant(tournamentId, teamId);
-  revalidatePath(`/admin/tournois/${tournamentId}/inscrits`);
+  revalidatePath(`/tournois/${tournamentId}/gestion/inscrits`);
   revalidatePath(`/tournois/${tournamentId}`);
 }
 
 export async function addTournamentManagerAction(tournamentId: string, formData: FormData) {
-  await requireAdmin();
-  const base = `/admin/tournois/${tournamentId}/managers`;
+  await assertCanManageTournament(tournamentId);
+  const base = `/tournois/${tournamentId}/gestion/managers`;
   const discordId = String(formData.get("discordId") ?? "").trim();
   if (!discordId) redirect(`${base}?error=empty`);
   const user = await db.user.findUnique({ where: { discordId }, select: { id: true } });
@@ -129,7 +129,10 @@ export async function addTournamentManagerAction(tournamentId: string, formData:
 }
 
 export async function removeTournamentManagerAction(tournamentId: string, userId: string) {
-  await requireAdmin();
+  await assertCanManageTournament(tournamentId);
+  const base = `/tournois/${tournamentId}/gestion/managers`;
+  const count = await db.tournamentManager.count({ where: { tournamentId } });
+  if (count <= 1) redirect(`${base}?error=lastmanager`);
   await removeTournamentManager(tournamentId, userId);
-  revalidatePath(`/admin/tournois/${tournamentId}/managers`);
+  revalidatePath(base);
 }

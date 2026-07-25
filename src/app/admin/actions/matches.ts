@@ -47,13 +47,13 @@ function parseMatchForm(formData: FormData) {
 }
 
 function revalidateCompetition(tournamentId: string) {
-  revalidatePath(`/admin/tournois/${tournamentId}/competition`);
+  revalidatePath(`/tournois/${tournamentId}/gestion/competition`);
   revalidatePath(`/tournois/${tournamentId}`);
 }
 
 export async function createGroupAction(tournamentId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
-  const base = `/admin/tournois/${tournamentId}/competition`;
+  const base = `/tournois/${tournamentId}/gestion/competition`;
   const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
   if (t && !formatAllowsGroups(t.format)) redirect(`${base}?error=nogroups`);
   const name = String(formData.get("name") ?? "").trim();
@@ -77,7 +77,7 @@ export async function assignParticipantGroupAction(tournamentId: string, teamId:
 
 export async function createMatchAction(tournamentId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
-  const base = `/admin/tournois/${tournamentId}/competition`;
+  const base = `/tournois/${tournamentId}/gestion/competition`;
   let data: ReturnType<typeof parseMatchForm>;
   try {
     data = parseMatchForm(formData);
@@ -95,7 +95,7 @@ export async function createMatchAction(tournamentId: string, formData: FormData
 export async function updateMatchAction(tournamentId: string, matchId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
   await assertMatchInTournament(matchId, tournamentId);
-  const editBase = `/admin/tournois/${tournamentId}/matchs/${matchId}`;
+  const editBase = `/tournois/${tournamentId}/gestion/matchs/${matchId}`;
   let data: ReturnType<typeof parseMatchForm>;
   try {
     data = parseMatchForm(formData);
@@ -128,7 +128,7 @@ export async function addMatchMapAction(tournamentId: string, matchId: string, f
   });
   await addMatchMap(matchId, data);
   revalidatePath(`/matchs/${matchId}`);
-  revalidatePath(`/admin/tournois/${tournamentId}/matchs/${matchId}`);
+  revalidatePath(`/tournois/${tournamentId}/gestion/matchs/${matchId}`);
 }
 
 export async function removeMatchMapAction(tournamentId: string, matchId: string, mapId: string) {
@@ -136,5 +136,5 @@ export async function removeMatchMapAction(tournamentId: string, matchId: string
   await assertMatchInTournament(matchId, tournamentId);
   await removeMatchMap(mapId, matchId);
   revalidatePath(`/matchs/${matchId}`);
-  revalidatePath(`/admin/tournois/${tournamentId}/matchs/${matchId}`);
+  revalidatePath(`/tournois/${tournamentId}/gestion/matchs/${matchId}`);
 }
