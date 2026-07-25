@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/server-auth";
-import { isAdmin } from "@/lib/permissions";
+import { getSessionUser, getTeamManagerIds } from "@/lib/server-auth";
+import { canManageTeam } from "@/lib/permissions";
 import { getTeam } from "@/lib/data/teams";
 import { addManagerAction, removeManagerAction } from "@/app/admin/actions/teams";
 
@@ -14,7 +14,8 @@ export default async function TeamManagersPage({
   const { id } = await params;
   const { error } = await searchParams;
   const user = await getSessionUser();
-  if (!isAdmin(user)) redirect("/");
+  const managerIds = await getTeamManagerIds(id);
+  if (!canManageTeam(user, managerIds)) redirect("/");
   const team = await getTeam(id);
   if (!team) notFound();
 
@@ -46,7 +47,9 @@ export default async function TeamManagersPage({
         <p className="mb-4 rounded border border-[var(--destructive)] bg-[var(--destructive-soft)] px-3 py-2 text-sm text-[var(--destructive)]">
           {error === "notfound"
             ? "Aucun utilisateur avec cet ID Discord. Il doit s'être connecté au moins une fois via Discord pour exister en base."
-            : "Renseigne l'ID Discord de l'utilisateur."}
+            : error === "lastmanager"
+              ? "Impossible de retirer le dernier manager de l'équipe."
+              : "Renseigne l'ID Discord de l'utilisateur."}
         </p>
       )}
 
