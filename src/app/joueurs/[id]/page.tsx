@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SocialLinks from "@/components/social-links";
 import { notFound } from "next/navigation";
 import { getPlayer } from "@/lib/data/players";
 import SectionHeader from "@/components/section-header";
@@ -21,12 +22,6 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
   const current = player.memberships.find((m) => m.leaveDate === null);
   const socials = (player.socials ?? {}) as Record<string, string | undefined>;
-  const socialLinks = (
-    [
-      ["Twitter", socials.twitter],
-      ["Twitch", socials.twitch],
-    ] as [string, string | undefined][]
-  ).filter((entry): entry is [string, string] => !!entry[1]);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
@@ -85,15 +80,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
         </Link>
       )}
 
-      {socialLinks.length > 0 && (
-        <div className="mt-4 flex gap-4 text-sm">
-          {socialLinks.map(([label, href]) => (
-            <a key={label} href={href} className="text-[var(--accent)]" target="_blank" rel="noreferrer">
-              {label}
-            </a>
-          ))}
-        </div>
-      )}
+      <SocialLinks socials={socials} className="mt-4" />
 
       {/* Parcours */}
       <section className="mt-10">

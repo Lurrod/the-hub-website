@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SocialLinks from "@/components/social-links";
 import { notFound } from "next/navigation";
 import { getTeam } from "@/lib/data/teams";
 import { getTeamRoster, getTeamAlumni } from "@/lib/data/players";
@@ -57,13 +58,6 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "…");
 
   const socials = (team.socials ?? {}) as Record<string, string | undefined>;
-  const socialLinks = (
-    [
-      ["Twitter", socials.twitter],
-      ["Twitch", socials.twitch],
-      ["Site", socials.website],
-    ] as [string, string | undefined][]
-  ).filter((entry): entry is [string, string] => !!entry[1]);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
@@ -124,15 +118,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
         <p className="mt-6 whitespace-pre-line text-[var(--text)]">{team.description}</p>
       )}
 
-      {socialLinks.length > 0 && (
-        <div className="mt-4 flex gap-4 text-sm">
-          {socialLinks.map(([label, href]) => (
-            <a key={label} href={href} className="text-[var(--accent)]" target="_blank" rel="noreferrer">
-              {label}
-            </a>
-          ))}
-        </div>
-      )}
+      <SocialLinks socials={socials} className="mt-4" />
 
       {/* Roster en cartes joueur */}
       <section className="mt-10">
