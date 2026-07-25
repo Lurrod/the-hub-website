@@ -29,7 +29,7 @@ export default function TournamentTabs({
                 onClick={() => setActive(t.key)}
                 aria-selected={on}
                 role="tab"
-                className={`-mb-px shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                   on
                     ? "border-[var(--accent)] text-white"
                     : "border-transparent text-[var(--text-muted)] hover:text-white"
