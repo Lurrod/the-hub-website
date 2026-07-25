@@ -47,17 +47,17 @@ export default function TournamentMatchList({ matches }: { matches: M[] }) {
     <div className="space-y-6">
       {groups.map((g) => (
         <section key={g.key}>
-          <h3 className="mb-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+          <div className="mb-2 rounded-lg bg-[#242832] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
             {g.label}
-          </h3>
-          <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
+          </div>
+          <ul className="divide-y divide-[var(--border)]">
             {g.items.map((m) => {
               const played = m.status === "FINISHED" || m.status === "LIVE";
               return (
                 <li key={m.id}>
                   <Link
                     href={`/matchs/${m.id}`}
-                    className="flex items-center gap-3 bg-[var(--card)] px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
+                    className="flex items-center gap-3 rounded px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
                   >
                     <div className="stat w-12 shrink-0 text-center text-sm text-white">
                       {timeLabel(m.date)}
