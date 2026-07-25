@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth, signIn } from "@/lib/auth";
 import { ensurePlayerForUser, getActiveMembership } from "@/lib/data/players";
 import { updateMyProfileAction, leaveMyTeamAction } from "@/app/profil/actions";
+import { COUNTRIES } from "@/lib/constants";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -32,6 +33,8 @@ export default async function ProfilePage() {
   });
   const membership = await getActiveMembership(player.id);
   const socials = (player.socials ?? {}) as { twitter?: string; twitch?: string };
+  const nationality = player.nationality ?? "";
+  const nationalityKnown = (COUNTRIES as readonly string[]).includes(nationality);
   const input =
     "rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
 
@@ -75,8 +78,18 @@ export default async function ProfilePage() {
             <input name="pseudo" defaultValue={player.pseudo} required maxLength={40} className={input} />
           </label>
           <label className="grid gap-1 text-sm text-[var(--text-muted)]">
-            Nationalité
-            <input name="nationality" defaultValue={player.nationality ?? ""} maxLength={40} className={input} />
+            Pays
+            <select name="nationality" defaultValue={nationality} className={input}>
+              <option value="">—</option>
+              {nationality && !nationalityKnown && (
+                <option value={nationality}>{nationality}</option>
+              )}
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="grid gap-1 text-sm text-[var(--text-muted)]">
             Twitter (URL)

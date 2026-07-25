@@ -23,7 +23,6 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
         submitLabel="Enregistrer"
         values={{
           pseudo: player.pseudo,
-          realName: player.realName ?? undefined,
           nationality: player.nationality ?? undefined,
           socials: (player.socials ?? {}) as { twitter?: string; twitch?: string },
         }}

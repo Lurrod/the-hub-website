@@ -20,7 +20,6 @@ import type { MembershipRole } from "@prisma/client";
 function parsePlayerForm(formData: FormData) {
   return playerInputSchema.parse({
     pseudo: formData.get("pseudo"),
-    realName: formData.get("realName") || undefined,
     nationality: formData.get("nationality") || undefined,
     socials: {
       twitter: formData.get("twitter") || undefined,
