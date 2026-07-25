@@ -45,7 +45,7 @@ export default function TournamentMatchList({ matches }: { matches: M[] }) {
                     <div className="stat w-12 shrink-0 text-center text-sm text-white">
                       {timeLabel(m.date)}
                     </div>
-                    <div className="min-w-0 flex-1 space-y-0.5">
+                    <div className="min-w-0 max-w-[55%] space-y-0.5">
                       <div className="truncate text-sm text-white">{m.teamA?.name ?? "—"}</div>
                       <div className="truncate text-sm text-white">{m.teamB?.name ?? "—"}</div>
                     </div>
@@ -53,7 +53,7 @@ export default function TournamentMatchList({ matches }: { matches: M[] }) {
                       <div className="stat text-sm text-white">{played ? m.scoreA : "–"}</div>
                       <div className="stat text-sm text-white">{played ? m.scoreB : "–"}</div>
                     </div>
-                    <div className="hidden w-28 shrink-0 text-right text-xs text-[var(--text-muted)] sm:block">
+                    <div className="ml-auto hidden shrink-0 pl-3 text-right text-xs text-[var(--text-muted)] sm:block">
                       {m.stageLabel}
                     </div>
                   </Link>

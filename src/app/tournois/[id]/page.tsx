@@ -49,40 +49,42 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     "Dates à définir";
 
   const apercu = (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-          Matchs à venir
-        </h2>
-        <UpcomingMatchList
-          matches={upcoming.map((m) => ({
-            id: m.id,
-            date: m.date,
-            teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
-            teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
-          }))}
-        />
-      </section>
+    <div>
+      {/* Étapes en sous-menu */}
+      {stages.length > 0 && (
+        <div className="mb-6 flex gap-1 overflow-x-auto border-b border-[var(--border)]">
+          {stages.map((s, i) => (
+            <span
+              key={s}
+              className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium ${
+                i === 0
+                  ? "border-[var(--accent)] text-white"
+                  : "border-transparent text-[var(--text-muted)]"
+              }`}
+            >
+              {s}
+            </span>
+          ))}
+        </div>
+      )}
 
-      <div className="space-y-8">
-        <section>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+        <section className="relative isolate self-start rounded-lg p-3">
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 rounded-lg bg-[radial-gradient(70%_55%_at_50%_0%,var(--accent-glow),transparent)]"
+          />
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-            Étapes
+            Matchs à venir
           </h2>
-          {stages.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {stages.map((s) => (
-                <span
-                  key={s}
-                  className="rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs text-white"
-                >
-                  {s}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-[var(--text-muted)]">Structure à venir.</p>
-          )}
+          <UpcomingMatchList
+            matches={upcoming.map((m) => ({
+              id: m.id,
+              date: m.date,
+              teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
+              teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
+            }))}
+          />
         </section>
 
         <section>
@@ -161,28 +163,28 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
               <p className="mt-0.5 text-sm text-[var(--text-muted)]">{dateRange}</p>
             </div>
 
-            <div className="flex items-center gap-8 sm:ml-auto">
-              <div className="text-right">
+            <div className="flex items-center gap-8">
+              <div className="text-left">
                 <div className="stat text-xl text-white">{teamCount}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   équipes
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-left">
                 <div className="stat text-xl text-white">{tournament.prizePool ?? "—"}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   cash prize
                 </div>
               </div>
-              {canManage && (
-                <Link
-                  href={`/tournois/${id}/gestion`}
-                  className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
-                >
-                  Gérer
-                </Link>
-              )}
             </div>
+            {canManage && (
+              <Link
+                href={`/tournois/${id}/gestion`}
+                className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white sm:ml-auto"
+              >
+                Gérer
+              </Link>
+            )}
           </div>
         }
         tabs={[
