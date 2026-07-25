@@ -19,9 +19,9 @@ export default async function NavBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-strong)] bg-[var(--bg)]/80 backdrop-blur-md">
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <Link href="/" className="wordmark flex items-center gap-2 text-base text-white">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_var(--accent-glow)]" />
-          The Hub
+        <Link href="/" aria-label="The Hub — accueil" className="flex shrink-0 items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="The Hub" className="h-8 w-auto object-contain" />
         </Link>
         <NavLinks isAdmin={isAdmin} />
         <form
