@@ -9,19 +9,9 @@ const LINKS = [
   { href: "/equipes", label: "Équipes" },
 ];
 
-export default function NavLinks({
-  isAdmin = false,
-  isLoggedIn = false,
-}: {
-  isAdmin?: boolean;
-  isLoggedIn?: boolean;
-}) {
+export default function NavLinks({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
-  const links = [
-    ...LINKS,
-    ...(isLoggedIn ? [{ href: "/profil", label: "Profil" }] : []),
-    ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
-  ];
+  const links = [...LINKS, ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : [])];
   return (
     <div className="flex items-center gap-1 text-sm">
       {links.map((l) => {
