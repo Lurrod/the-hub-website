@@ -25,7 +25,10 @@ export default async function InvitationPage({ params }: { params: Promise<{ id:
     <main className="mx-auto max-w-2xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Lien d&apos;invitation · {team.name}</h1>
-        <Link href={`/equipes/${id}/gestion`} className="text-sm text-[var(--text-muted)]">
+        <Link
+          href={`/equipes/${id}/gestion`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
+        >
           ← Retour
         </Link>
       </div>

@@ -19,7 +19,6 @@ export async function updateMyProfileAction(formData: FormData) {
 
   const data = playerInputSchema.parse({
     pseudo: formData.get("pseudo"),
-    realName: formData.get("realName") || undefined,
     nationality: formData.get("nationality") || undefined,
     socials: {
       twitter: formData.get("twitter") || undefined,

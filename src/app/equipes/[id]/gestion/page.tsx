@@ -32,7 +32,10 @@ export default async function TeamGestionPage({
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Gérer · {team.name}</h1>
-        <Link href={`/equipes/${id}`} className="text-sm text-[var(--text-muted)]">
+        <Link
+          href={`/equipes/${id}`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
+        >
           ← Voir la page publique
         </Link>
       </div>

@@ -36,7 +36,10 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="mb-1 text-2xl font-bold text-white">Roster · {team.name}</h1>
-      <Link href={`/equipes/${id}/gestion`} className="text-sm text-[var(--text-muted)]">
+      <Link
+        href={`/equipes/${id}/gestion`}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
+      >
         ← Retour à la gestion
       </Link>
 

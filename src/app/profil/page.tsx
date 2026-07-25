@@ -39,7 +39,10 @@ export default async function ProfilePage() {
     <main className="mx-auto max-w-2xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Mon profil</h1>
-        <Link href={`/joueurs/${player.id}`} className="text-sm text-[var(--accent-2)]">
+        <Link
+          href={`/joueurs/${player.id}`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
+        >
           Voir ma fiche publique →
         </Link>
       </div>
@@ -70,10 +73,6 @@ export default async function ProfilePage() {
           <label className="grid gap-1 text-sm text-[var(--text-muted)]">
             Pseudo
             <input name="pseudo" defaultValue={player.pseudo} required maxLength={40} className={input} />
-          </label>
-          <label className="grid gap-1 text-sm text-[var(--text-muted)]">
-            Vrai nom
-            <input name="realName" defaultValue={player.realName ?? ""} maxLength={80} className={input} />
           </label>
           <label className="grid gap-1 text-sm text-[var(--text-muted)]">
             Nationalité

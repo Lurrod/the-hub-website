@@ -18,7 +18,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <Link href={`/tournois/${match.tournamentId}`} className="text-sm text-[var(--accent-2)]">
+      <Link
+        href={`/tournois/${match.tournamentId}`}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
+      >
         ← {match.tournament.name}
       </Link>
 

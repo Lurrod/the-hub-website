@@ -59,7 +59,10 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
     return (
       <Shell>
         <h1 className="mb-3 text-2xl font-bold text-white">Tu es déjà dans {team.name}</h1>
-        <Link href={`/equipes/${team.id}`} className="text-sm text-[var(--accent-2)]">
+        <Link
+          href={`/equipes/${team.id}`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
+        >
           Voir l&apos;équipe →
         </Link>
       </Shell>
