@@ -1,0 +1,140 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
+import { assertCanManageTournament } from "@/lib/server-auth";
+import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
+import { matchInputSchema, matchMapSchema } from "@/lib/validation/match";
+import {
+  createGroup,
+  deleteGroup,
+  assignParticipantGroup,
+  createMatch,
+  updateMatch,
+  deleteMatch,
+  addMatchMap,
+  removeMatchMap,
+  getMatch,
+} from "@/lib/data/matches";
+
+async function assertMatchInTournament(matchId: string, tournamentId: string) {
+  const match = await getMatch(matchId);
+  if (!match || match.tournamentId !== tournamentId) throw new Error("NOT_FOUND");
+  return match;
+}
+
+async function assertGroupInTournament(groupId: string, tournamentId: string) {
+  const group = await db.group.findUnique({ where: { id: groupId } });
+  if (!group || group.tournamentId !== tournamentId) throw new Error("INVALID_GROUP");
+}
+
+function parseMatchForm(formData: FormData) {
+  return matchInputSchema.parse({
+    teamAId: formData.get("teamAId"),
+    teamBId: formData.get("teamBId"),
+    scoreA: formData.get("scoreA") || 0,
+    scoreB: formData.get("scoreB") || 0,
+    stage: formData.get("stage") || "GROUP",
+    status: formData.get("status") || "SCHEDULED",
+    bestOf: formData.get("bestOf") || 1,
+    groupId: formData.get("groupId") || undefined,
+    round: formData.get("round") || undefined,
+    bracketPosition: formData.get("bracketPosition") || undefined,
+    date: formData.get("date") || undefined,
+    vodUrl: formData.get("vodUrl") || undefined,
+  });
+}
+
+function revalidateCompetition(tournamentId: string) {
+  revalidatePath(`/admin/tournois/${tournamentId}/competition`);
+  revalidatePath(`/tournois/${tournamentId}`);
+}
+
+export async function createGroupAction(tournamentId: string, formData: FormData) {
+  await assertCanManageTournament(tournamentId);
+  const base = `/admin/tournois/${tournamentId}/competition`;
+  const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+  if (t && !formatAllowsGroups(t.format)) redirect(`${base}?error=nogroups`);
+  const name = String(formData.get("name") ?? "").trim();
+  if (name) await createGroup(tournamentId, name);
+  revalidateCompetition(tournamentId);
+  redirect(base);
+}
+
+export async function deleteGroupAction(tournamentId: string, groupId: string) {
+  await assertCanManageTournament(tournamentId);
+  await deleteGroup(groupId, tournamentId);
+  revalidateCompetition(tournamentId);
+}
+
+export async function assignParticipantGroupAction(tournamentId: string, teamId: string, formData: FormData) {
+  await assertCanManageTournament(tournamentId);
+  const raw = String(formData.get("groupId") ?? "").trim();
+  await assignParticipantGroup(tournamentId, teamId, raw === "" ? null : raw);
+  revalidateCompetition(tournamentId);
+}
+
+export async function createMatchAction(tournamentId: string, formData: FormData) {
+  await assertCanManageTournament(tournamentId);
+  const base = `/admin/tournois/${tournamentId}/competition`;
+  let data: ReturnType<typeof parseMatchForm>;
+  try {
+    data = parseMatchForm(formData);
+  } catch {
+    redirect(`${base}?error=invalid`);
+  }
+  const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+  if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
+  if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
+  await createMatch(tournamentId, data);
+  revalidateCompetition(tournamentId);
+  redirect(base);
+}
+
+export async function updateMatchAction(tournamentId: string, matchId: string, formData: FormData) {
+  await assertCanManageTournament(tournamentId);
+  await assertMatchInTournament(matchId, tournamentId);
+  const editBase = `/admin/tournois/${tournamentId}/matchs/${matchId}`;
+  let data: ReturnType<typeof parseMatchForm>;
+  try {
+    data = parseMatchForm(formData);
+  } catch {
+    redirect(`${editBase}?error=invalid`);
+  }
+  const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+  if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
+  if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
+  await updateMatch(matchId, tournamentId, data);
+  revalidateCompetition(tournamentId);
+  revalidatePath(`/matchs/${matchId}`);
+  revalidatePath(editBase);
+}
+
+export async function deleteMatchAction(tournamentId: string, matchId: string) {
+  await assertCanManageTournament(tournamentId);
+  await deleteMatch(matchId, tournamentId);
+  revalidateCompetition(tournamentId);
+}
+
+export async function addMatchMapAction(tournamentId: string, matchId: string, formData: FormData) {
+  await assertCanManageTournament(tournamentId);
+  await assertMatchInTournament(matchId, tournamentId);
+  const data = matchMapSchema.parse({
+    mapName: formData.get("mapName"),
+    scoreA: formData.get("scoreA") || 0,
+    scoreB: formData.get("scoreB") || 0,
+    order: formData.get("order") || 0,
+  });
+  await addMatchMap(matchId, data);
+  revalidatePath(`/matchs/${matchId}`);
+  revalidatePath(`/admin/tournois/${tournamentId}/matchs/${matchId}`);
+}
+
+export async function removeMatchMapAction(tournamentId: string, matchId: string, mapId: string) {
+  await assertCanManageTournament(tournamentId);
+  await assertMatchInTournament(matchId, tournamentId);
+  await removeMatchMap(mapId, matchId);
+  revalidatePath(`/matchs/${matchId}`);
+  revalidatePath(`/admin/tournois/${tournamentId}/matchs/${matchId}`);
+}

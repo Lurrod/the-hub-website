@@ -1,0 +1,68 @@
+import path from "node:path";
+import { promises as fs } from "node:fs";
+import sharp from "sharp";
+import { ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES } from "@/lib/constants";
+
+const UPLOADS_ROOT = path.join(process.cwd(), "uploads");
+const ALLOWED_CATEGORIES = new Set(["teams", "players", "tournaments"]);
+
+export type ImageCategory = "teams" | "players" | "tournaments";
+export type ImageVariant = "banner";
+
+export type ValidateResult = { ok: true } | { ok: false; error: string };
+
+export function validateImageUpload(file: { type: string; size: number }): ValidateResult {
+  if (!(file.type in ALLOWED_IMAGE_TYPES)) {
+    return { ok: false, error: "Type d'image non autorisé (png, jpg, webp)." };
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return { ok: false, error: "Image trop lourde (max 5 Mo)." };
+  }
+  return { ok: true };
+}
+
+export function imageKeyFor(category: ImageCategory, id: string, variant?: ImageVariant): string {
+  const suffix = variant === "banner" ? "-banner" : "";
+  return `/api/images/${category}/${id}${suffix}.webp`;
+}
+
+/** Résout un chemin disque sûr sous uploads/ ; lève si traversée ou catégorie inconnue. */
+export function resolveUploadPath(segments: string[]): string {
+  const [category, file, ...rest] = segments;
+  if (rest.length > 0) throw new Error("Chemin invalide");
+  if (!category || !ALLOWED_CATEGORIES.has(category)) throw new Error("Catégorie invalide");
+  if (!file || file.includes("/") || file.includes("\\") || file.includes("..")) {
+    throw new Error("Nom de fichier invalide");
+  }
+  const resolved = path.join(UPLOADS_ROOT, category, file);
+  if (!resolved.startsWith(path.join(UPLOADS_ROOT, category) + path.sep)) {
+    throw new Error("Traversée de répertoire refusée");
+  }
+  return resolved;
+}
+
+/**
+ * Redimensionne en webp et écrit uploads/<cat>/<id>[-banner].webp.
+ * - logo (défaut) : 512×512 max, sans agrandissement
+ * - bannière : 1280×360, recadrage cover
+ * Retourne la clé publique.
+ */
+export async function processAndStoreImage(
+  buffer: Buffer,
+  category: ImageCategory,
+  id: string,
+  variant?: ImageVariant
+): Promise<string> {
+  const dir = path.join(UPLOADS_ROOT, category);
+  await fs.mkdir(dir, { recursive: true });
+  const suffix = variant === "banner" ? "-banner" : "";
+  const out = path.join(dir, `${id}${suffix}.webp`);
+  const pipeline = sharp(buffer);
+  if (variant === "banner") {
+    pipeline.resize(1280, 360, { fit: "cover" });
+  } else {
+    pipeline.resize(512, 512, { fit: "inside", withoutEnlargement: true });
+  }
+  await pipeline.webp({ quality: 82 }).toFile(out);
+  return imageKeyFor(category, id, variant);
+}

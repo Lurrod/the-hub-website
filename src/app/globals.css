@@ -1,26 +1,272 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Fond & élévation (palette rft.gg) */
+  --bg: #131619;
+  --surface: #191c22;
+  --card: #191c22;
+  --card-hover: #242832;
+  --border: #303133;
+  --border-strong: #404040;
+
+  /* Bandeau de catégorie (en-tête de tournoi) — un ton distinct des lignes de match */
+  --category: #1f232b;
+
+  /* Texte */
+  --text: #fafafa;
+  --text-muted: #9b9c9e;
+  --text-subtle: #6f7178;
+
+  /* Accent (orange de marque — remplace le periwinkle rft.gg) */
+  --accent: #ED5E29;
+  --accent-hover: #D14E1F;
+  --accent-2: #F2925E;
+  --accent-foreground: #131619;
+  --accent-soft: rgba(237, 94, 41, 0.12);
+  --accent-glow: rgba(237, 94, 41, 0.30);
+
+  /* Couleurs sémantiques (rft.gg) */
+  --success: #4ac97e;
+  --destructive: #f7665e;
+  --destructive-soft: rgba(247, 102, 94, 0.12);
+  --legendary: #ffd47d;
+
+  /* Rayons (base rft.gg .625rem = 10px) */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 14px;
+
+  /* Ombres (rft.gg : subtiles) */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-elev: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 1px var(--accent), 0 6px 22px var(--accent-glow);
+
+  /* Interactions (rft.gg : remplissage neutre subtil) */
+  --table-row-hover: var(--card-hover);
+  --hover-fast: 130ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-destructive: var(--destructive);
+  --color-legendary: var(--legendary);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-bricolage);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Voile d'accent très discret en haut de page — donne de la profondeur
+     sans virer à l'"atmosphérique". */
+  background:
+    radial-gradient(115% 55% at 50% -8%, rgba(237, 94, 41, 0.05), transparent 62%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+@layer base {
+  h1 {
+    font-family: var(--font-display), var(--font-jakarta), sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* --- Système de composants --- */
+@layer components {
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+  }
+
+  .card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%), var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+    transition: background-color var(--hover-fast) var(--ease),
+      border-color var(--hover-fast) var(--ease);
+  }
+
+  /* Hover rft.gg : remplissage neutre subtil + trait accent (couleur du logo)
+     qui apparaît en dessous. Pas de lift, pas de glow. */
+  .card-interactive {
+    position: relative;
+    cursor: pointer;
+  }
+  .card-interactive::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 170ms var(--ease);
+    pointer-events: none;
+  }
+  .card-interactive:hover {
+    background-color: var(--table-row-hover);
+    border-color: var(--border-strong);
+  }
+  .card-interactive:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* Lien de navigation : couleur du logo au survol + trait accent en dessous */
+  .nav-link {
+    position: relative;
+    color: var(--text-muted);
+    transition: color var(--hover-fast) var(--ease);
+  }
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 170ms var(--ease);
+    pointer-events: none;
+  }
+  .nav-link:hover {
+    color: var(--text);
+  }
+  .nav-link[data-active="true"] {
+    color: var(--accent);
+  }
+  .nav-link:hover::after,
+  .nav-link[data-active="true"]::after {
+    transform: scaleX(1);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+  .eyebrow::before {
+    content: "";
+    width: 14px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+  }
+
+  /* Chiffres & stats : mono tabulaire (scores, dates, seeds, cashprize) */
+  .stat {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* Logo de marque */
+  .wordmark {
+    font-family: var(--font-display), sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Filtre en pilule — accent sobre à l'état actif (pas de aplat criard) */
+  .chip {
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition:
+      color var(--hover-fast) var(--ease),
+      border-color var(--hover-fast) var(--ease),
+      background-color var(--hover-fast) var(--ease);
+  }
+  .chip:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .chip[data-active="true"] {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  /* Monogramme (placeholder de logo équipe/tournoi) */
+  .monogram {
+    background: linear-gradient(180deg, var(--card-hover), var(--surface));
+    border: 1px solid var(--border);
+    color: var(--text-subtle);
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .live-dot {
+    position: relative;
+    display: inline-block;
+    height: 7px;
+    width: 7px;
+    border-radius: 9999px;
+    background: var(--accent);
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    animation: live-pulse 1.6s ease-out infinite;
+  }
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(237, 94, 41, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(237, 94, 41, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+  .card-interactive::after,
+  .nav-link::after {
+    transition: none;
+  }
+  .live-dot::after {
+    animation: none;
+  }
 }
