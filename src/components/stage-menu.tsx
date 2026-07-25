@@ -11,7 +11,7 @@ export default function StageMenu({ stages }: { stages: Stage[] }) {
 
   return (
     <div>
-      <div className="mb-4 flex gap-1 overflow-x-auto border-b border-[var(--border)]">
+      <div className="mb-4 flex flex-wrap gap-1 border-b border-[var(--border)]">
         {stages.map((s) => {
           const on = s.key === active;
           return (
