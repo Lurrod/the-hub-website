@@ -63,6 +63,12 @@ export async function updateTeamAction(teamId: string, formData: FormData) {
 
 export async function deleteTeamAction(teamId: string) {
   await assertCanManageTeam(teamId);
+  // Garde anti-cascade : supprimer une équipe efface en cascade ses matchs dans
+  // TOUS les tournois. On bloque tant qu'elle a des participations pour ne pas
+  // détruire l'historique de tournois gérés par d'autres (seul un admin peut
+  // d'abord la désinscrire).
+  const participations = await db.tournamentParticipant.count({ where: { teamId } });
+  if (participations > 0) redirect(`/equipes/${teamId}/gestion?error=hasparticipations`);
   await deleteTeam(teamId);
   revalidatePath("/equipes");
   revalidatePath("/admin/equipes");

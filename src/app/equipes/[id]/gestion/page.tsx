@@ -6,8 +6,15 @@ import { getTeam } from "@/lib/data/teams";
 import TeamForm from "@/components/team-form";
 import { updateTeamAction, deleteTeamAction } from "@/app/admin/actions/teams";
 
-export default async function TeamGestionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TeamGestionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { id } = await params;
+  const { error } = await searchParams;
   const team = await getTeam(id);
   if (!team) notFound();
 
@@ -52,6 +59,13 @@ export default async function TeamGestionPage({ params }: { params: Promise<{ id
         <p className="mb-3 text-sm text-[var(--text-muted)]">
           La suppression de l&apos;équipe est définitive (roster, historiques et participations liées).
         </p>
+        {error === "hasparticipations" && (
+          <p className="mb-3 rounded border border-[var(--destructive)] bg-[var(--destructive-soft)] px-3 py-2 text-sm text-[var(--destructive)]">
+            Impossible de supprimer : cette équipe est inscrite à un ou plusieurs tournois. Un admin
+            doit d&apos;abord la désinscrire (sinon l&apos;historique de matchs d&apos;autres tournois
+            serait détruit).
+          </p>
+        )}
         <form action={deleteWithId}>
           <button className="rounded border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)]">
             Supprimer l&apos;équipe

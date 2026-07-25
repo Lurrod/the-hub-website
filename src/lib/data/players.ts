@@ -3,10 +3,7 @@ import type { PlayerInput } from "@/lib/validation/player";
 import type { MembershipRole } from "@prisma/client";
 
 export function listPlayers() {
-  return db.player.findMany({
-    where: { memberships: { some: {} } },
-    orderBy: { pseudo: "asc" },
-  });
+  return db.player.findMany({ orderBy: { pseudo: "asc" } });
 }
 
 export function getPlayer(id: string) {
