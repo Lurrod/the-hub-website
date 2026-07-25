@@ -1,5 +1,7 @@
+import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import type { TeamInput } from "@/lib/validation/team";
+import { INVITE_TTL_DAYS } from "@/lib/invite";
 
 export function listTeams(filters?: { region?: string }) {
   return db.team.findMany({
@@ -61,4 +63,24 @@ export function addTeamManager(teamId: string, userId: string) {
 
 export function removeTeamManager(teamId: string, userId: string) {
   return db.teamManager.deleteMany({ where: { teamId, userId } });
+}
+
+/** Génère (ou régénère) le lien d'invitation de l'équipe : nouveau token + expiration TTL. */
+export function generateTeamInvite(teamId: string) {
+  const token = randomBytes(24).toString("base64url");
+  const inviteExpiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+  return db.team.update({ where: { id: teamId }, data: { inviteToken: token, inviteExpiresAt } });
+}
+
+/** Révoque le lien d'invitation (token + expiration à null). */
+export function revokeTeamInvite(teamId: string) {
+  return db.team.update({
+    where: { id: teamId },
+    data: { inviteToken: null, inviteExpiresAt: null },
+  });
+}
+
+/** Équipe correspondant à un token d'invitation (ou null). */
+export function getTeamByInviteToken(token: string) {
+  return db.team.findUnique({ where: { inviteToken: token } });
 }

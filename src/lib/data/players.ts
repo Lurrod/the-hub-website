@@ -126,3 +126,12 @@ export function getActiveMembership(playerId: string) {
     include: { team: true },
   });
 }
+
+/** Ajoute un joueur au roster d'une équipe (rôle JOUEUR par défaut). */
+export function addPlayerToTeam(
+  teamId: string,
+  playerId: string,
+  role: MembershipRole = "JOUEUR"
+) {
+  return db.teamMembership.create({ data: { teamId, playerId, role } });
+}
