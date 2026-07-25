@@ -369,3 +369,16 @@ a.bg-\[var\(--card\)\]:active {
     transform: none;
   }
 }
+
+/* Typographie unifiée sur tout le site : Plus Jakarta Sans partout, 16px pour
+   les titres (h1–h6), 12px pour tout le reste. Règles non-layered → priorité
+   sur les utilitaires Tailwind. On ne touche pas <html> pour préserver la
+   base rem (espacements). */
+body,
+body * {
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+}
+body :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 16px;
+}
