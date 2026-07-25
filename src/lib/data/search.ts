@@ -37,9 +37,14 @@ export async function searchAll(query: string): Promise<SearchResults> {
     }),
     db.player.findMany({
       where: {
-        OR: [
-          { pseudo: { contains: q, mode: "insensitive" } },
-          { realName: { contains: q, mode: "insensitive" } },
+        AND: [
+          { memberships: { some: {} } },
+          {
+            OR: [
+              { pseudo: { contains: q, mode: "insensitive" } },
+              { realName: { contains: q, mode: "insensitive" } },
+            ],
+          },
         ],
       },
       orderBy: { pseudo: "asc" },
