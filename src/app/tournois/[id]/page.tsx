@@ -110,7 +110,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
               Étapes
             </h2>
-            <StageMenu stages={stageDefs} />
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+              <StageMenu stages={stageDefs} />
+            </div>
           </section>
         )}
 
@@ -121,7 +123,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           {participants.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">Aucune équipe inscrite.</p>
           ) : (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
               {participants.map((p) => (
                 <ParticipantCard
                   key={p.id}
