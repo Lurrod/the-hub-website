@@ -94,3 +94,35 @@ export function endMembership(id: string, when: Date) {
 export function deleteMembership(id: string) {
   return db.teamMembership.delete({ where: { id } });
 }
+
+/** Fiche Player liée à un compte user (ou null). */
+export function getPlayerByUserId(userId: string) {
+  return db.player.findUnique({ where: { userId } });
+}
+
+/**
+ * Garantit une fiche Player pour ce user : la crée si absente.
+ * pseudo par défaut = nom Discord (ou "Joueur"), photo = avatar Discord.
+ */
+export async function ensurePlayerForUser(
+  userId: string,
+  fallback: { pseudo?: string | null; photo?: string | null }
+) {
+  const existing = await db.player.findUnique({ where: { userId } });
+  if (existing) return existing;
+  return db.player.create({
+    data: {
+      userId,
+      pseudo: fallback.pseudo?.trim() || "Joueur",
+      photo: fallback.photo ?? undefined,
+    },
+  });
+}
+
+/** Adhésion active (leaveDate null) d'un joueur, avec l'équipe. */
+export function getActiveMembership(playerId: string) {
+  return db.teamMembership.findFirst({
+    where: { playerId, leaveDate: null },
+    include: { team: true },
+  });
+}
