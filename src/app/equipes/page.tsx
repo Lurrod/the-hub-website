@@ -26,7 +26,7 @@ export default async function TeamsPage({
       {teams.length === 0 ? (
         <p className="text-[var(--text-muted)]">Aucune équipe pour ce filtre.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {teams.map((t) => (
             <TeamCard key={t.id} team={t} />
           ))}

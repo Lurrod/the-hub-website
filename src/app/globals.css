@@ -266,6 +266,58 @@ body {
   }
 }
 
+/* --- Animations modernes : entrée de page, apparition en cascade, squelettes --- */
+@keyframes t-fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Entrée de page (montée en fondu), rejouée à chaque navigation via template.tsx. */
+.animate-in {
+  animation: t-fade-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Apparition en cascade des enfants directs (grilles / listes). */
+.stagger-in > * {
+  animation: t-fade-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger-in > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.07s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.11s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.19s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.23s; }
+.stagger-in > *:nth-child(7) { animation-delay: 0.27s; }
+.stagger-in > *:nth-child(8) { animation-delay: 0.31s; }
+.stagger-in > *:nth-child(n + 9) { animation-delay: 0.35s; }
+
+/* Squelettes de chargement (balayage shimmer). */
+@keyframes t-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--card);
+  border-radius: var(--r-md);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: t-shimmer 1.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;
@@ -275,6 +327,13 @@ body {
     transition: none;
   }
   .live-dot::after {
+    animation: none;
+  }
+  .animate-in,
+  .stagger-in > * {
+    animation: none;
+  }
+  .skeleton::after {
     animation: none;
   }
 }

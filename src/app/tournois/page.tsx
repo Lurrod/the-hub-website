@@ -26,7 +26,7 @@ export default async function TournamentsPage({
       {tournaments.length === 0 ? (
         <p className="text-[var(--text-muted)]">Aucun tournoi pour ce filtre.</p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stagger-in grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tournaments.map((t) => (
             <TournamentCard key={t.id} tournament={t} />
           ))}
