@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Discord from "next-auth/providers/discord";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
+import { ensurePlayerForUser } from "@/lib/data/players";
 
 const adminIds = (process.env.ADMIN_DISCORD_IDS ?? "")
   .split(",")
@@ -37,6 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ...(isAdmin ? { globalRole: "ADMIN" as const } : {}),
         },
       });
+      await ensurePlayerForUser(user.id!, { pseudo: user.name, photo: user.image });
     },
   },
 });
