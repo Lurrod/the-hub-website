@@ -1,11 +1,4 @@
-export const REGIONS = [
-  "France",
-  "Benelux",
-  "DACH",
-  "Iberia",
-  "EU",
-  "Autre",
-] as const;
+export const REGIONS = ["France", "Autre"] as const;
 export type Region = (typeof REGIONS)[number];
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 Mo
