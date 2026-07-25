@@ -88,12 +88,22 @@ body {
     letter-spacing: -0.02em;
   }
 
-  /* Tout élément cliquable montre le curseur main (les <button> natifs ne l'ont
-     pas par défaut ; les <a href> l'ont déjà). */
+  /* Tout élément cliquable : curseur main + transitions douces + enfoncement au
+     clic (les <button> natifs n'ont ni curseur ni transition par défaut). */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   summary {
     cursor: pointer;
+    transition:
+      background-color var(--hover-fast) var(--ease),
+      border-color var(--hover-fast) var(--ease),
+      color var(--hover-fast) var(--ease),
+      box-shadow var(--hover-fast) var(--ease),
+      transform 120ms var(--ease);
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.96);
   }
 }
 
@@ -318,6 +328,37 @@ body {
   animation: t-shimmer 1.4s ease-in-out infinite;
 }
 
+/* --- Survol moderne des boutons (cible les classes Tailwind, DRY app-wide) --- */
+/* Boutons/liens accent : assombrissement + ombre portée douce au survol. */
+button:not(:disabled).bg-\[var\(--accent\)\]:hover,
+a.bg-\[var\(--accent\)\]:hover {
+  background-color: var(--accent-hover);
+  box-shadow: 0 6px 18px var(--accent-glow);
+}
+/* Boutons/liens secondaires (surface card) : remplissage au survol. */
+button:not(:disabled).bg-\[var\(--card\)\]:hover,
+a.bg-\[var\(--card\)\]:hover {
+  background-color: var(--card-hover);
+}
+/* Liens stylés en bouton : mêmes transitions + enfoncement au clic que <button>. */
+a.bg-\[var\(--accent\)\],
+a.bg-\[var\(--card\)\] {
+  transition:
+    background-color var(--hover-fast) var(--ease),
+    border-color var(--hover-fast) var(--ease),
+    color var(--hover-fast) var(--ease),
+    box-shadow var(--hover-fast) var(--ease),
+    transform 120ms var(--ease);
+}
+a.bg-\[var\(--accent\)\]:hover,
+a.bg-\[var\(--card\)\]:hover {
+  transform: translateY(-1px);
+}
+a.bg-\[var\(--accent\)\]:active,
+a.bg-\[var\(--card\)\]:active {
+  transform: translateY(0) scale(0.96);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;
@@ -335,5 +376,13 @@ body {
   }
   .skeleton::after {
     animation: none;
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  a.bg-\[var\(--accent\)\]:hover,
+  a.bg-\[var\(--card\)\]:hover,
+  a.bg-\[var\(--accent\)\]:active,
+  a.bg-\[var\(--card\)\]:active {
+    transform: none;
   }
 }

@@ -57,7 +57,7 @@ export default function SocialLinks({
           rel="noreferrer"
           aria-label={LABELS[k]}
           title={LABELS[k]}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--text-muted)] transition-colors duration-[130ms] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--text-muted)] transition-all duration-150 ease-out hover:-translate-y-0.5 hover:scale-105 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:translate-y-0 active:scale-95"
         >
           {ICONS[k]}
         </a>
