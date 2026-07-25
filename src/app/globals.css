@@ -3,6 +3,7 @@
 :root {
   /* Fond & élévation (palette rft.gg) */
   --bg: #131619;
+  --shell: #0d0f10;
   --surface: #191c22;
   --card: #191c22;
   --card-hover: #242832;
@@ -134,35 +135,19 @@ body {
     border-color: var(--border-strong);
   }
 
-  /* Lien de navigation : couleur du logo au survol + trait accent en dessous */
+  /* Lien de navigation : texte orange au survol ; onglet actif souligné accent
+     (même effet que le sous-menu actif d'une page tournoi). */
   .nav-link {
-    position: relative;
     color: var(--text-muted);
+    border-bottom: 2px solid transparent;
     transition: color var(--hover-fast) var(--ease);
   }
-  .nav-link::after {
-    content: "";
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: 0;
-    height: 2px;
-    border-radius: 2px 2px 0 0;
-    background: var(--accent);
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 170ms var(--ease);
-    pointer-events: none;
-  }
   .nav-link:hover {
-    color: var(--text);
-  }
-  .nav-link[data-active="true"] {
     color: var(--accent);
   }
-  .nav-link:hover::after,
-  .nav-link[data-active="true"]::after {
-    transform: scaleX(1);
+  .nav-link[data-active="true"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
   }
 
   .eyebrow {

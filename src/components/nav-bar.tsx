@@ -17,7 +17,7 @@ export default async function NavBar() {
     await signOut();
   }
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--border-strong)] bg-[var(--bg)]/80 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-[var(--border-strong)] bg-[var(--shell)]/90 backdrop-blur-md">
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
         <Link href="/" aria-label="The Hub — accueil" className="flex shrink-0 items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}

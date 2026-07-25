@@ -33,9 +33,7 @@ export default function StandingsTable({ rows }: { rows: StandingDisplayRow[] })
             <td className="stat py-2.5 pl-3 pr-2">
               <span className={i < 2 ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"}>{i + 1}</span>
             </td>
-            <td className="py-2.5 pr-2 font-medium text-white">
-              {r.teamName} <span className="text-xs text-[var(--text-muted)]">[{r.teamTag}]</span>
-            </td>
+            <td className="py-2.5 pr-2 font-medium text-white">{r.teamName}</td>
             <td className="stat py-2.5 pr-3 text-center text-[var(--text-muted)]">{r.played}</td>
             <td className="stat py-2.5 pr-3 text-center text-white">{r.wins}</td>
             <td className="stat py-2.5 pr-3 text-center text-[var(--text-muted)]">{r.losses}</td>
