@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTournament, getTournamentTeamsWithPlayers } from "@/lib/data/tournaments";
-import { listTournamentMatches, listGroups } from "@/lib/data/matches";
+import { listTournamentMatches, getGroupsWithMatches, listBracketMatches } from "@/lib/data/matches";
 import TournamentTabs from "@/components/tournament-tabs";
 import UpcomingMatchList from "@/components/upcoming-match-list";
 import TournamentMatchList from "@/components/tournament-match-list";
@@ -9,6 +9,10 @@ import StageMenu from "@/components/stage-menu";
 import ParticipantCard from "@/components/participant-card";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
+import StandingsTable from "@/components/standings-table";
+import Bracket from "@/components/bracket";
+import { computeStandings } from "@/lib/standings";
+import type { ReactNode } from "react";
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,45 +22,59 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const sessionUser = await getSessionUser();
   const canManage = canManageTournament(sessionUser, await getTournamentManagerIds(id));
 
-  const [participants, allMatches, groups] = await Promise.all([
+  const [participants, allMatches, groups, bracket] = await Promise.all([
     getTournamentTeamsWithPlayers(id),
     listTournamentMatches(id),
-    listGroups(id),
+    getGroupsWithMatches(id),
+    listBracketMatches(id),
   ]);
 
-  // Étapes/stages : noms de poules + rounds de bracket (ou « Playoffs »).
-  const bracketRounds = [
-    ...new Set(
-      allMatches
-        .filter((m) => m.stage === "BRACKET")
-        .map((m) => m.round)
-        .filter((r): r is string => !!r)
-    ),
-  ];
-  const hasBracket = allMatches.some((m) => m.stage === "BRACKET");
-
-  // Étapes = poules puis rounds de bracket (ou « Playoffs »), avec leurs matchs.
-  const stageDefs: { key: string; label: string; matches: typeof allMatches }[] = [];
+  // Étapes : chaque poule → son classement ; les playoffs → l'arbre du bracket.
+  const stageDefs: { key: string; label: string; content: ReactNode }[] = [];
   for (const g of groups) {
-    stageDefs.push({
-      key: `g-${g.id}`,
-      label: g.name,
-      matches: allMatches.filter((m) => m.groupId === g.id),
+    const teamById = new Map(g.participants.map((p) => [p.teamId, p.team]));
+    const standings = computeStandings(
+      g.participants.map((p) => p.teamId),
+      g.matches.map((m) => ({
+        teamAId: m.teamAId,
+        teamBId: m.teamBId,
+        scoreA: m.scoreA,
+        scoreB: m.scoreB,
+      }))
+    );
+    const rows = standings.map((s) => {
+      const team = teamById.get(s.teamId);
+      return {
+        teamId: s.teamId,
+        teamName: team?.name ?? s.teamId,
+        teamTag: team?.tag ?? "?",
+        played: s.played,
+        wins: s.wins,
+        losses: s.losses,
+        mapDiff: s.mapDiff,
+      };
     });
+    stageDefs.push({ key: `g-${g.id}`, label: g.name, content: <StandingsTable rows={rows} /> });
   }
-  if (bracketRounds.length > 0) {
-    for (const r of bracketRounds) {
-      stageDefs.push({
-        key: `r-${r}`,
-        label: r,
-        matches: allMatches.filter((m) => m.stage === "BRACKET" && m.round === r),
-      });
-    }
-  } else if (hasBracket) {
+  if (bracket.length > 0) {
     stageDefs.push({
       key: "playoffs",
       label: "Playoffs",
-      matches: allMatches.filter((m) => m.stage === "BRACKET"),
+      content: (
+        <Bracket
+          matches={bracket.map((m) => ({
+            id: m.id,
+            round: m.round,
+            teamAId: m.teamAId,
+            teamBId: m.teamBId,
+            scoreA: m.scoreA,
+            scoreB: m.scoreB,
+            winnerId: m.winnerId,
+            teamA: m.teamA ? { tag: m.teamA.tag } : null,
+            teamB: m.teamB ? { tag: m.teamB.tag } : null,
+          }))}
+        />
+      ),
     });
   }
 
@@ -71,21 +89,30 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     "Dates à définir";
 
   const apercu = (
-    <div className="space-y-8">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
-        <section className="self-start">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-            Matchs à venir
-          </h2>
-          <UpcomingMatchList
-            matches={upcoming.map((m) => ({
-              id: m.id,
-              date: m.date,
-              teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
-              teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
-            }))}
-          />
-        </section>
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+      <section className="self-start">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+          Matchs à venir
+        </h2>
+        <UpcomingMatchList
+          matches={upcoming.map((m) => ({
+            id: m.id,
+            date: m.date,
+            teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
+            teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
+          }))}
+        />
+      </section>
+
+      <div className="space-y-8">
+        {stageDefs.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              Étapes
+            </h2>
+            <StageMenu stages={stageDefs} />
+          </section>
+        )}
 
         <section>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
@@ -110,34 +137,6 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           )}
         </section>
       </div>
-
-      {stageDefs.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-            Étapes
-          </h2>
-          <StageMenu
-            stages={stageDefs.map((s) => ({
-              key: s.key,
-              label: s.label,
-              content: (
-                <TournamentMatchList
-                  matches={s.matches.map((m) => ({
-                    id: m.id,
-                    date: m.date,
-                    status: m.status,
-                    scoreA: m.scoreA,
-                    scoreB: m.scoreB,
-                    stageLabel: s.label,
-                    teamA: m.teamA ? { name: m.teamA.name } : null,
-                    teamB: m.teamB ? { name: m.teamB.name } : null,
-                  }))}
-                />
-              ),
-            }))}
-          />
-        </section>
-      )}
     </div>
   );
 
