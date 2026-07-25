@@ -2,14 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTournament, getTournamentTeamsWithPlayers } from "@/lib/data/tournaments";
 import { listTournamentMatches, listGroups } from "@/lib/data/matches";
-import StatusBadge from "@/components/status-badge";
 import TournamentTabs from "@/components/tournament-tabs";
 import UpcomingMatchList from "@/components/upcoming-match-list";
 import TournamentMatchList from "@/components/tournament-match-list";
 import ParticipantCard from "@/components/participant-card";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
-import { TOURNAMENT_STATUS_LABELS, type TournamentStatus } from "@/lib/constants";
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -153,13 +151,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             )}
 
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
-                <StatusBadge
-                  label={TOURNAMENT_STATUS_LABELS[tournament.status as TournamentStatus]}
-                  status={tournament.status}
-                />
-              </div>
+              <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
               <p className="mt-0.5 text-sm text-[var(--text-muted)]">{dateRange}</p>
             </div>
 
