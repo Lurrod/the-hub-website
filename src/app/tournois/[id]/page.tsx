@@ -58,8 +58,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           matches={upcoming.map((m) => ({
             id: m.id,
             date: m.date,
-            teamA: m.teamA ? { name: m.teamA.name } : null,
-            teamB: m.teamB ? { name: m.teamB.name } : null,
+            teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
+            teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
           }))}
         />
       </section>
@@ -134,65 +134,63 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      {/* Bandeau */}
-      <div className="card flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-        {tournament.logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={tournament.logo}
-            alt=""
-            className="h-16 w-16 shrink-0 rounded-lg object-cover"
-          />
-        ) : (
-          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-[var(--text-muted)]">
-            {tournament.name.slice(0, 2).toUpperCase()}
-          </div>
-        )}
+      <TournamentTabs
+        header={
+          <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+            {tournament.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={tournament.logo}
+                alt=""
+                className="h-16 w-16 shrink-0 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-[var(--text-muted)]">
+                {tournament.name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
 
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
-            <StatusBadge
-              label={TOURNAMENT_STATUS_LABELS[tournament.status as TournamentStatus]}
-              status={tournament.status}
-            />
-          </div>
-          <p className="mt-0.5 text-sm text-[var(--text-muted)]">{dateRange}</p>
-        </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
+                <StatusBadge
+                  label={TOURNAMENT_STATUS_LABELS[tournament.status as TournamentStatus]}
+                  status={tournament.status}
+                />
+              </div>
+              <p className="mt-0.5 text-sm text-[var(--text-muted)]">{dateRange}</p>
+            </div>
 
-        <div className="flex items-center gap-8 sm:ml-auto">
-          <div className="text-right">
-            <div className="stat text-xl text-white">{teamCount}</div>
-            <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
-              équipes
+            <div className="flex items-center gap-8 sm:ml-auto">
+              <div className="text-right">
+                <div className="stat text-xl text-white">{teamCount}</div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+                  équipes
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="stat text-xl text-white">{tournament.prizePool ?? "—"}</div>
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+                  cash prize
+                </div>
+              </div>
+              {canManage && (
+                <Link
+                  href={`/tournois/${id}/gestion`}
+                  className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+                >
+                  Gérer
+                </Link>
+              )}
             </div>
           </div>
-          <div className="text-right">
-            <div className="stat text-xl text-white">{tournament.prizePool ?? "—"}</div>
-            <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
-              cash prize
-            </div>
-          </div>
-          {canManage && (
-            <Link
-              href={`/tournois/${id}/gestion`}
-              className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
-            >
-              Gérer
-            </Link>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <TournamentTabs
-          tabs={[
-            { key: "apercu", label: "Aperçu", content: apercu },
-            { key: "matches", label: "Matches", content: matchesTab },
-            { key: "equipes", label: "Équipes", content: equipesTab },
-          ]}
-        />
-      </div>
+        }
+        tabs={[
+          { key: "apercu", label: "Aperçu", content: apercu },
+          { key: "matches", label: "Matches", content: matchesTab },
+          { key: "equipes", label: "Équipes", content: equipesTab },
+        ]}
+      />
     </main>
   );
 }
