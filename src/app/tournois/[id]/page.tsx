@@ -146,8 +146,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   );
 
   const matchesTab = (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-      <TournamentMatchList
+    <div>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Matches
+      </h2>
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <TournamentMatchList
       matches={allMatches.map((m) => ({
         id: m.id,
         date: m.date,
@@ -158,7 +162,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         teamA: m.teamA ? { name: m.teamA.name, logo: m.teamA.logo } : null,
         teamB: m.teamB ? { name: m.teamB.name, logo: m.teamB.logo } : null,
       }))}
-      />
+        />
+      </div>
     </div>
   );
 
