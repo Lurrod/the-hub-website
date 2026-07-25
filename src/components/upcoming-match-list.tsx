@@ -15,7 +15,7 @@ function TeamLine({ team }: { team: Team }) {
           {team?.tag?.slice(0, 3).toUpperCase() ?? "?"}
         </div>
       )}
-      <span className="stat truncate text-sm text-white">{team?.tag ?? "—"}</span>
+      <span className="truncate text-xs text-white">{team?.tag ?? "—"}</span>
     </div>
   );
 }
@@ -38,8 +38,8 @@ export default function UpcomingMatchList({ matches }: { matches: M[] }) {
               aria-hidden
               className="absolute inset-0 -z-10 bg-[radial-gradient(100%_120%_at_0%_50%,var(--accent-glow),transparent_65%)]"
             />
-            <div className="mb-1.5 flex items-center gap-2 text-xs">
-              <span className="stat text-white">{timeLabel(m.date)}</span>
+            <div className="mb-1.5 flex items-center gap-2 text-[10px]">
+              <span className="text-white">{timeLabel(m.date)}</span>
               <span className="text-[var(--text-muted)]">{shortDate(m.date)}</span>
             </div>
             <div className="space-y-1">

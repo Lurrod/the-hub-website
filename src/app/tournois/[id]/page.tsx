@@ -181,18 +181,18 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             <div className="min-w-0">
               <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
-              <p className="mt-0.5 text-sm text-[var(--text-muted)]">{dateRange}</p>
+              <p className="mt-0.5 text-xs text-[var(--text-muted)]">{dateRange}</p>
             </div>
 
             <div className="flex items-center gap-8 sm:ml-auto">
               <div className="text-left">
-                <div className="stat text-xl text-white">{teamCount}</div>
+                <div className="text-xs font-semibold text-white">{teamCount}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   équipes
                 </div>
               </div>
               <div className="text-left">
-                <div className="stat text-xl text-white">{tournament.prizePool ?? "—"}</div>
+                <div className="text-xs font-semibold text-white">{tournament.prizePool ?? "—"}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   cash prize
                 </div>
