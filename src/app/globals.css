@@ -328,6 +328,22 @@ body {
   animation: t-shimmer 1.4s ease-in-out infinite;
 }
 
+/* Ouverture du menu utilisateur (fondu + léger zoom depuis le coin haut-droit). */
+@keyframes t-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.t-menu-in {
+  transform-origin: top right;
+  animation: t-menu-in 0.16s var(--ease) both;
+}
+
 /* --- Survol moderne des boutons (cible les classes Tailwind, DRY app-wide) --- */
 /* Boutons/liens accent : assombrissement + ombre portée douce au survol. */
 button:not(:disabled).bg-\[var\(--accent\)\]:hover,
@@ -371,7 +387,8 @@ a.bg-\[var\(--card\)\]:active {
     animation: none;
   }
   .animate-in,
-  .stagger-in > * {
+  .stagger-in > *,
+  .t-menu-in {
     animation: none;
   }
   .skeleton::after {
