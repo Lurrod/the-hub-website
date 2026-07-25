@@ -43,7 +43,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const teamCount = tournament.participants.length;
   const fmt = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : null);
   const dateRange =
-    [fmt(tournament.startDate), fmt(tournament.endDate)].filter(Boolean).join(" → ") ||
+    [fmt(tournament.startDate), fmt(tournament.endDate)].filter(Boolean).join(" – ") ||
     "Dates à définir";
 
   const apercu = (
@@ -67,11 +67,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
-        <section className="relative isolate self-start rounded-lg p-3">
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 rounded-lg bg-[radial-gradient(70%_55%_at_50%_0%,var(--accent-glow),transparent)]"
-          />
+        <section className="self-start">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
             Matchs à venir
           </h2>
@@ -155,28 +151,28 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
               <p className="mt-0.5 text-sm text-[var(--text-muted)]">{dateRange}</p>
             </div>
 
-            <div className="flex items-center gap-8">
-              <div className="text-left">
+            <div className="flex items-center gap-8 sm:ml-auto">
+              <div className="text-right">
                 <div className="stat text-xl text-white">{teamCount}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   équipes
                 </div>
               </div>
-              <div className="text-left">
+              <div className="text-right">
                 <div className="stat text-xl text-white">{tournament.prizePool ?? "—"}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   cash prize
                 </div>
               </div>
+              {canManage && (
+                <Link
+                  href={`/tournois/${id}/gestion`}
+                  className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+                >
+                  Gérer
+                </Link>
+              )}
             </div>
-            {canManage && (
-              <Link
-                href={`/tournois/${id}/gestion`}
-                className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white sm:ml-auto"
-              >
-                Gérer
-              </Link>
-            )}
           </div>
         }
         tabs={[

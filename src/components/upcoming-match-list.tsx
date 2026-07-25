@@ -20,24 +20,29 @@ function TeamLine({ team }: { team: Team }) {
   );
 }
 
-/** Liste verticale des matchs à venir : date/heure au-dessus, puis logo + tag. */
+/** Colonne continue des matchs à venir : date/heure au-dessus, logo + tag,
+    avec une lueur orange en fond de chaque match. */
 export default function UpcomingMatchList({ matches }: { matches: M[] }) {
   if (matches.length === 0) {
     return <p className="text-sm text-[var(--text-muted)]">Aucun match à venir.</p>;
   }
   return (
-    <ul className="space-y-2">
+    <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
       {matches.map((m) => (
         <li key={m.id}>
           <Link
             href={`/matchs/${m.id}`}
-            className="card block p-3 transition-colors hover:border-[var(--border-strong)]"
+            className="relative isolate block px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
           >
-            <div className="mb-2 flex items-center justify-center gap-2 border-b border-[var(--border)] pb-2 text-center">
-              <span className="stat text-sm text-white">{timeLabel(m.date)}</span>
-              <span className="text-xs text-[var(--text-muted)]">{shortDate(m.date)}</span>
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 bg-[radial-gradient(100%_120%_at_0%_50%,var(--accent-glow),transparent_65%)]"
+            />
+            <div className="mb-1.5 flex items-center gap-2 text-xs">
+              <span className="stat text-white">{timeLabel(m.date)}</span>
+              <span className="text-[var(--text-muted)]">{shortDate(m.date)}</span>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <TeamLine team={m.teamA} />
               <TeamLine team={m.teamB} />
             </div>
