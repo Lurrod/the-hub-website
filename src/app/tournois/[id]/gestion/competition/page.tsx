@@ -131,7 +131,7 @@ export default async function CompetitionPage({
                   </span>
                 </span>
                 <span className="flex shrink-0 gap-3">
-                  <Link href={`/admin/tournois/${id}/matchs/${m.id}`} className="text-[var(--accent)]">
+                  <Link href={`/tournois/${id}/gestion/matchs/${m.id}`} className="text-[var(--accent)]">
                     Éditer
                   </Link>
                   <form action={deleteMatchWith}>

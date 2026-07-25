@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/server-auth";
-import { isAdmin } from "@/lib/permissions";
+import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
+import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
 import {
   addTournamentManagerAction,
@@ -17,7 +17,8 @@ export default async function TournamentManagersPage({
   const { id } = await params;
   const { error } = await searchParams;
   const user = await getSessionUser();
-  if (!isAdmin(user)) redirect("/");
+  const managerIds = await getTournamentManagerIds(id);
+  if (!canManageTournament(user, managerIds)) redirect("/");
   const tournament = await getTournament(id);
   if (!tournament) notFound();
 
@@ -50,7 +51,9 @@ export default async function TournamentManagersPage({
         <p className="mb-4 rounded border border-[var(--destructive)] bg-[var(--destructive-soft)] px-3 py-2 text-sm text-[var(--destructive)]">
           {error === "notfound"
             ? "Aucun utilisateur avec cet ID Discord. Il doit s'être connecté au moins une fois via Discord pour exister en base."
-            : "Renseigne l'ID Discord de l'utilisateur."}
+            : error === "lastmanager"
+              ? "Impossible de retirer le dernier manager du tournoi."
+              : "Renseigne l'ID Discord de l'utilisateur."}
         </p>
       )}
 

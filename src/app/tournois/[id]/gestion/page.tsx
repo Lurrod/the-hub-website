@@ -10,7 +10,7 @@ function toDateInput(d: Date | null): string {
   return d ? new Date(d).toISOString().slice(0, 10) : "";
 }
 
-export default async function EditTournamentPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TournamentGestionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const tournament = await getTournament(id);
   if (!tournament) notFound();
@@ -19,18 +19,25 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
   const managerIds = await getTournamentManagerIds(id);
   if (!canManageTournament(user, managerIds)) redirect("/");
 
-  const isAdminUser = user?.globalRole === "ADMIN";
   const updateWithId = updateTournamentAction.bind(null, id);
   const deleteWithId = deleteTournamentAction.bind(null, id);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-white">Éditer {tournament.name}</h1>
-      <nav className="mb-4 flex flex-wrap gap-4 text-sm text-[var(--accent-2)]">
-        <Link href={`/admin/tournois/${id}/inscrits`}>Gérer les inscrits →</Link>
-        <Link href={`/admin/tournois/${id}/competition`}>Poules &amp; matchs →</Link>
-        <Link href={`/admin/tournois/${id}/managers`}>Managers →</Link>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">Gérer · {tournament.name}</h1>
+        <Link href={`/tournois/${id}`} className="text-sm text-[var(--text-muted)]">
+          ← Voir la page publique
+        </Link>
+      </div>
+
+      <nav className="mb-8 flex flex-wrap gap-4 text-sm text-[var(--accent-2)]">
+        <Link href={`/tournois/${id}/gestion/inscrits`}>Inscrits →</Link>
+        <Link href={`/tournois/${id}/gestion/competition`}>Poules &amp; matchs →</Link>
+        <Link href={`/tournois/${id}/gestion/managers`}>Managers →</Link>
       </nav>
+
+      <h2 className="mb-3 text-lg font-semibold text-white">Identité</h2>
       <TournamentForm
         action={updateWithId}
         submitLabel="Enregistrer"
@@ -46,13 +53,18 @@ export default async function EditTournamentPage({ params }: { params: Promise<{
           description: tournament.description ?? undefined,
         }}
       />
-      {isAdminUser && (
-        <form action={deleteWithId} className="mt-8">
+
+      <section className="mt-10 rounded-lg border border-[var(--destructive)] p-4">
+        <h2 className="mb-2 text-lg font-semibold text-[var(--destructive)]">Zone danger</h2>
+        <p className="mb-3 text-sm text-[var(--text-muted)]">
+          La suppression du tournoi est définitive (poules, matchs et inscriptions liés).
+        </p>
+        <form action={deleteWithId}>
           <button className="rounded border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)]">
             Supprimer le tournoi
           </button>
         </form>
-      )}
+      </section>
     </main>
   );
 }
