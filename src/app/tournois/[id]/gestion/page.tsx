@@ -10,6 +10,9 @@ function toDateInput(d: Date | null): string {
   return d ? new Date(d).toISOString().slice(0, 10) : "";
 }
 
+const TAB_LINK =
+  "rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]";
+
 export default async function TournamentGestionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const tournament = await getTournament(id);
@@ -31,10 +34,16 @@ export default async function TournamentGestionPage({ params }: { params: Promis
         </Link>
       </div>
 
-      <nav className="mb-8 flex flex-wrap gap-4 text-sm text-[var(--accent-2)]">
-        <Link href={`/tournois/${id}/gestion/inscrits`}>Inscrits →</Link>
-        <Link href={`/tournois/${id}/gestion/competition`}>Poules &amp; matchs →</Link>
-        <Link href={`/tournois/${id}/gestion/managers`}>Managers →</Link>
+      <nav className="mb-8 flex flex-wrap gap-3">
+        <Link href={`/tournois/${id}/gestion/inscrits`} className={TAB_LINK}>
+          Inscrits
+        </Link>
+        <Link href={`/tournois/${id}/gestion/competition`} className={TAB_LINK}>
+          Poules &amp; matchs
+        </Link>
+        <Link href={`/tournois/${id}/gestion/managers`} className={TAB_LINK}>
+          Managers
+        </Link>
       </nav>
 
       <h2 className="mb-3 text-lg font-semibold text-white">Identité</h2>

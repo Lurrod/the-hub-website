@@ -6,6 +6,9 @@ import { getTeam } from "@/lib/data/teams";
 import TeamForm from "@/components/team-form";
 import { updateTeamAction, deleteTeamAction } from "@/app/admin/actions/teams";
 
+const TAB_LINK =
+  "rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]";
+
 export default async function TeamGestionPage({
   params,
   searchParams,
@@ -34,10 +37,16 @@ export default async function TeamGestionPage({
         </Link>
       </div>
 
-      <nav className="mb-8 flex flex-wrap gap-4 text-sm text-[var(--accent-2)]">
-        <Link href={`/equipes/${id}/gestion/roster`}>Roster →</Link>
-        <Link href={`/equipes/${id}/gestion/invitation`}>Lien d&apos;invitation →</Link>
-        <Link href={`/equipes/${id}/gestion/managers`}>Managers →</Link>
+      <nav className="mb-8 flex flex-wrap gap-3">
+        <Link href={`/equipes/${id}/gestion/roster`} className={TAB_LINK}>
+          Roster
+        </Link>
+        <Link href={`/equipes/${id}/gestion/invitation`} className={TAB_LINK}>
+          Lien d&apos;invitation
+        </Link>
+        <Link href={`/equipes/${id}/gestion/managers`} className={TAB_LINK}>
+          Managers
+        </Link>
       </nav>
 
       <h2 className="mb-3 text-lg font-semibold text-white">Identité</h2>
