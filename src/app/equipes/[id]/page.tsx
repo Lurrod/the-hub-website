@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getTeam } from "@/lib/data/teams";
 import { getTeamRoster, getTeamAlumni } from "@/lib/data/players";
 import { getTeamRecentMatches, getTeamRecord } from "@/lib/data/matches";
+import { getSessionUser, getTeamManagerIds } from "@/lib/server-auth";
+import { canManageTeam } from "@/lib/permissions";
 import MatchRow from "@/components/match-row";
 import SectionHeader from "@/components/section-header";
 
@@ -42,6 +44,9 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const team = await getTeam(id);
   if (!team) notFound();
+
+  const sessionUser = await getSessionUser();
+  const canManage = canManageTeam(sessionUser, await getTeamManagerIds(team.id));
 
   const [roster, recent, alumni, record] = await Promise.all([
     getTeamRoster(team.id),
@@ -91,6 +96,14 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
             )}
           </div>
         </div>
+        {canManage && (
+          <Link
+            href={`/equipes/${team.id}/gestion`}
+            className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white sm:ml-auto"
+          >
+            Gérer l&apos;équipe
+          </Link>
+        )}
       </div>
 
       {/* Bilan chiffré */}

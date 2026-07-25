@@ -6,6 +6,8 @@ import { computeStandings } from "@/lib/standings";
 import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import StatusBadge from "@/components/status-badge";
+import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
+import { canManageTournament } from "@/lib/permissions";
 import {
   TOURNAMENT_FORMAT_LABELS,
   TOURNAMENT_STATUS_LABELS,
@@ -17,6 +19,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const tournament = await getTournament(id);
   if (!tournament) notFound();
+
+  const sessionUser = await getSessionUser();
+  const canManage = canManageTournament(sessionUser, await getTournamentManagerIds(id));
 
   const [groups, bracket] = await Promise.all([
     getGroupsWithMatches(id),
@@ -57,6 +62,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             {TOURNAMENT_FORMAT_LABELS[tournament.format as TournamentFormat]}
           </p>
         </div>
+        {canManage && (
+          <Link
+            href={`/tournois/${id}/gestion`}
+            className="ml-auto rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+          >
+            Gérer le tournoi
+          </Link>
+        )}
       </div>
 
       {tournament.description && (
