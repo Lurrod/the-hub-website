@@ -138,6 +138,9 @@ model TeamMembership {
 
   @@index([teamId])
   @@index([playerId])
+  // Invariant §1.4 : un joueur = une seule adhésion active (leaveDate IS NULL).
+  // Index unique PARTIEL non exprimable ici → défini en SQL brut dans la
+  // migration 20260725201000_active_membership_unique.
 }
 
 enum TournamentFormat {

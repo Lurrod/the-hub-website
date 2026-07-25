@@ -135,3 +135,25 @@ export function addPlayerToTeam(
 ) {
   return db.teamMembership.create({ data: { teamId, playerId, role } });
 }
+
+/**
+ * Rejoint une équipe de façon atomique : dans une transaction, vérifie
+ * l'absence d'adhésion active puis crée l'adhésion. Protège l'invariant
+ * « une seule équipe active » (§1.4) contre les courses (double-clic, onglets).
+ * Retourne `{ ok: false, activeTeamId }` si le joueur a déjà une équipe active.
+ */
+export function joinTeamIfFree(
+  teamId: string,
+  playerId: string,
+  role: MembershipRole = "JOUEUR"
+): Promise<{ ok: true } | { ok: false; activeTeamId: string }> {
+  return db.$transaction(async (tx) => {
+    const active = await tx.teamMembership.findFirst({
+      where: { playerId, leaveDate: null },
+      select: { teamId: true },
+    });
+    if (active) return { ok: false as const, activeTeamId: active.teamId };
+    await tx.teamMembership.create({ data: { teamId, playerId, role } });
+    return { ok: true as const };
+  });
+}
