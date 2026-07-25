@@ -8,14 +8,13 @@ import {
   createPlayer,
   updatePlayer,
   deletePlayer,
-  setPlayerPhoto,
   getMembership,
   createPlayerAndAddToRoster,
   setMembershipRole,
   endMembership,
   deleteMembership,
 } from "@/lib/data/players";
-import { validateImageUpload, processAndStoreImage } from "@/lib/images";
+import { storePlayerPhotoFromForm } from "@/lib/player-photo";
 import type { MembershipRole } from "@prisma/client";
 
 function parsePlayerForm(formData: FormData) {
@@ -30,22 +29,12 @@ function parsePlayerForm(formData: FormData) {
   });
 }
 
-async function maybeStorePhoto(formData: FormData, playerId: string) {
-  const file = formData.get("photo");
-  if (!(file instanceof File) || file.size === 0) return;
-  const check = validateImageUpload({ type: file.type, size: file.size });
-  if (!check.ok) throw new Error(check.error);
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const key = await processAndStoreImage(buffer, "players", playerId);
-  await setPlayerPhoto(playerId, key);
-}
-
 // --- Joueurs (admin) ---
 export async function createPlayerAction(formData: FormData) {
   await requireAdmin();
   const data = parsePlayerForm(formData);
   const player = await createPlayer(data);
-  await maybeStorePhoto(formData, player.id);
+  await storePlayerPhotoFromForm(formData, player.id);
   redirect(`/admin/joueurs/${player.id}`);
 }
 
@@ -53,7 +42,7 @@ export async function updatePlayerAction(playerId: string, formData: FormData) {
   await requireAdmin();
   const data = parsePlayerForm(formData);
   await updatePlayer(playerId, data);
-  await maybeStorePhoto(formData, playerId);
+  await storePlayerPhotoFromForm(formData, playerId);
   revalidatePath(`/joueurs/${playerId}`);
 }
 
