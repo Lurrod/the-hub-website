@@ -47,7 +47,7 @@ export default function TournamentMatchList({ matches }: { matches: M[] }) {
     <div className="space-y-6">
       {groups.map((g) => (
         <section key={g.key}>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+          <h3 className="mb-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
             {g.label}
           </h3>
           <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
