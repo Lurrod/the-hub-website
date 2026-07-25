@@ -130,7 +130,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                     name: p.team.name,
                     logo: p.team.logo,
                     players: p.team.memberships
-                      .filter((m) => m.role === "JOUEUR")
+                      .filter((m) => m.role !== "COACH" && m.role !== "MANAGER")
                       .slice(0, 5)
                       .map((m) => ({ id: m.player.id, pseudo: m.player.pseudo })),
                   }}
