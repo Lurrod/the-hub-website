@@ -72,7 +72,7 @@ function TrackRow({
               key={i}
               title={`Round ${i + 1} — ${won ? `${label} · ${OUTCOME_LABEL[r.o] ?? r.o}` : "perdu"}`}
               className={`grid h-6 w-6 shrink-0 place-items-center rounded ${
-                won ? "bg-[#289a87]" : "bg-[#c05655]"
+                won ? "bg-[#289a87]" : "bg-[#131619]"
               }`}
             >
               {won ? <OutcomeIcon o={r.o} /> : null}
@@ -126,8 +126,8 @@ function RoundTimeline({
   );
 }
 
-const HEAD = "px-1.5 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
-const CELL = "stat px-1.5 py-1.5 text-right text-sm text-white";
+const HEAD = "px-1.5 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
+const CELL = "stat px-1.5 py-1.5 text-center text-sm text-white";
 
 function Diff({ value }: { value: number }) {
   const cls = value > 0 ? "text-[#289a87]" : value < 0 ? "text-[#c05655]" : "text-[var(--text-muted)]";
@@ -170,7 +170,7 @@ function TeamBlock({ label, rounds, rows }: { label: string; rounds: number; row
               <td className="w-7 py-1.5 pl-2">
                 <AgentIcon agent={r.agent} />
               </td>
-              <td className="max-w-[130px] truncate py-1.5 pr-2 text-left text-sm">
+              <td className="max-w-[130px] truncate py-1.5 pl-2 pr-2 text-left text-sm">
                 {r.playerId ? (
                   <Link href={`/joueurs/${r.playerId}`} className="text-white hover:text-[var(--accent)]">
                     {r.pseudo ?? r.riotName}
