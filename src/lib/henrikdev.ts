@@ -45,3 +45,107 @@ export async function verifyRiotId(name: string, tag: string): Promise<RiotAccou
     tag: data.tag ?? tag,
   };
 }
+
+export type CustomMatchPlayer = {
+  puuid: string;
+  name: string;
+  tag: string | null;
+  teamId: string; // "Red" | "Blue" (brut Riot)
+  agent: string | null;
+  kills: number;
+  deaths: number;
+  assists: number;
+  score: number;
+  headshots: number;
+  bodyshots: number;
+  legshots: number;
+  damageMade: number;
+  firstKills: number;
+};
+
+export type CustomMatch = {
+  matchId: string;
+  map: string;
+  startedAt: string | null;
+  teamRounds: Record<string, number>; // team_id -> rounds gagnés
+  players: CustomMatchPlayer[];
+};
+
+const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
+/**
+ * Historique des parties CUSTOM d'un joueur, mappé vers CustomMatch normalisé.
+ * NOTE: les noms de champs de l'API v4 sont mappés ici de façon tolérante ;
+ * ajuster UNIQUEMENT cette fonction si l'API réelle diffère.
+ */
+export async function getPlayerCustomMatches(
+  region: string,
+  name: string,
+  tag: string
+): Promise<CustomMatch[]> {
+  const key = process.env.HENRIKDEV_API_KEY;
+  if (!key) throw new RiotIdError("API_ERROR");
+
+  const url =
+    `${BASE}/valorant/v4/matches/${encodeURIComponent(region)}/pc/` +
+    `${encodeURIComponent(name)}/${encodeURIComponent(tag)}?mode=custom&size=10`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { Authorization: key }, signal: controller.signal });
+  } catch {
+    throw new RiotIdError("API_ERROR");
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
+  if (!res.ok) throw new RiotIdError("API_ERROR");
+
+  const json = (await res.json().catch(() => null)) as { data?: unknown[] } | null;
+  const list = Array.isArray(json?.data) ? json!.data : [];
+  return list.map(mapRawCustomMatch);
+}
+
+function mapRawCustomMatch(raw: unknown): CustomMatch {
+  const m = raw as {
+    metadata?: { match_id?: string; map?: { name?: string }; started_at?: string };
+    teams?: { team_id?: string; rounds?: { won?: number } }[];
+    players?: {
+      puuid?: string; name?: string; tag?: string; team_id?: string;
+      agent?: { name?: string };
+      stats?: {
+        kills?: number; deaths?: number; assists?: number; score?: number;
+        headshots?: number; bodyshots?: number; legshots?: number;
+        damage?: { dealt?: number };
+      };
+    }[];
+  };
+  const teamRounds: Record<string, number> = {};
+  for (const t of m.teams ?? []) {
+    if (t.team_id) teamRounds[t.team_id] = num(t.rounds?.won);
+  }
+  const players: CustomMatchPlayer[] = (m.players ?? []).map((p) => ({
+    puuid: p.puuid ?? "",
+    name: p.name ?? "",
+    tag: p.tag ?? null,
+    teamId: p.team_id ?? "",
+    agent: p.agent?.name ?? null,
+    kills: num(p.stats?.kills),
+    deaths: num(p.stats?.deaths),
+    assists: num(p.stats?.assists),
+    score: num(p.stats?.score),
+    headshots: num(p.stats?.headshots),
+    bodyshots: num(p.stats?.bodyshots),
+    legshots: num(p.stats?.legshots),
+    damageMade: num(p.stats?.damage?.dealt),
+    firstKills: 0,
+  }));
+  return {
+    matchId: m.metadata?.match_id ?? "",
+    map: m.metadata?.map?.name ?? "",
+    startedAt: m.metadata?.started_at ?? null,
+    teamRounds,
+    players,
+  };
+}
