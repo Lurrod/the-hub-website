@@ -72,24 +72,78 @@ function OutcomeIcon({ o }: { o: string }) {
   );
 }
 
-function RoundTimeline({ rounds }: { rounds: RoundEntry[] }) {
+function TrackRow({
+  rounds,
+  side,
+  label,
+}: {
+  rounds: RoundEntry[];
+  side: "A" | "B";
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-16 shrink-0 truncate text-right text-[11px] font-medium text-[var(--text-muted)]">
+        {label}
+      </span>
+      <div className="flex gap-1">
+        {rounds.map((r, i) => {
+          const won = r.w === side;
+          return (
+            <span
+              key={i}
+              title={`Round ${i + 1} — ${won ? label : ""} ${won ? `· ${OUTCOME_LABEL[r.o] ?? r.o}` : ""}`.trim()}
+              className={`grid h-6 w-6 shrink-0 place-items-center rounded ${
+                won
+                  ? `text-white ${side === "A" ? "bg-[var(--accent)]" : "bg-[#43506b]"}`
+                  : "border border-[var(--border)] bg-[var(--bg)]"
+              }`}
+            >
+              {won ? <OutcomeIcon o={r.o} /> : null}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RoundTimeline({
+  rounds,
+  teamAName,
+  teamBName,
+  scoreA,
+  scoreB,
+}: {
+  rounds: RoundEntry[];
+  teamAName: string;
+  teamBName: string;
+  scoreA: number;
+  scoreB: number;
+}) {
   if (rounds.length === 0) return null;
   return (
-    <div className="mb-3">
-      <div className="flex gap-1 overflow-x-auto pb-1">
-        {rounds.map((r, i) => (
-          <span
-            key={i}
-            title={`Round ${i + 1} — ${r.w === "A" ? "Équipe A" : "Équipe B"} · ${OUTCOME_LABEL[r.o] ?? r.o}`}
-            className={`grid h-6 w-6 shrink-0 place-items-center rounded text-white ${
-              r.w === "A" ? "bg-[var(--accent)]" : "bg-[#43506b]"
-            }`}
-          >
-            <OutcomeIcon o={r.o} />
-          </span>
-        ))}
+    <div className="mb-4">
+      {/* Score des équipes, au-dessus de la timeline */}
+      <div className="mb-2 flex items-center justify-center gap-3 text-sm">
+        <span className="max-w-[40%] truncate text-right text-white">{teamAName}</span>
+        <span className="stat shrink-0 text-lg font-semibold text-white">
+          <span className={scoreA > scoreB ? "text-[var(--accent)]" : ""}>{scoreA}</span>
+          <span className="mx-1.5 text-[var(--text-subtle)]">–</span>
+          <span className={scoreB > scoreA ? "text-[var(--accent)]" : ""}>{scoreB}</span>
+        </span>
+        <span className="max-w-[40%] truncate text-left text-white">{teamBName}</span>
       </div>
-      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-[var(--text-muted)]">
+
+      {/* Timeline en deux pistes, une par équipe */}
+      <div className="overflow-x-auto">
+        <div className="w-max space-y-1">
+          <TrackRow rounds={rounds} side="A" label={teamAName} />
+          <TrackRow rounds={rounds} side="B" label={teamBName} />
+        </div>
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 pl-16 text-[10px] text-[var(--text-muted)]">
         <span className="inline-flex items-center gap-1"><OutcomeIcon o="elim" /> Élim.</span>
         <span className="inline-flex items-center gap-1"><OutcomeIcon o="detonate" /> Spike explosé</span>
         <span className="inline-flex items-center gap-1"><OutcomeIcon o="defuse" /> Désamorcé</span>
@@ -189,7 +243,7 @@ export default function MatchScoreboard({
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
       {maps.length > 1 && (
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mb-3 flex flex-wrap justify-center gap-2">
           {maps.map((m, i) => (
             <button
               key={m.id}
@@ -208,7 +262,13 @@ export default function MatchScoreboard({
         </div>
       )}
 
-      <RoundTimeline rounds={map.rounds} />
+      <RoundTimeline
+        rounds={map.rounds}
+        teamAName={teamAName}
+        teamBName={teamBName}
+        scoreA={map.scoreA}
+        scoreB={map.scoreB}
+      />
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2">
         <TeamBlock label={teamAName} rounds={map.scoreA} rows={map.stats.filter((s) => s.teamSide === "A")} />
