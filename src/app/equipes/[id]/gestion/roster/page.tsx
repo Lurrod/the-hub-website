@@ -5,6 +5,7 @@ import { canManageTeam } from "@/lib/permissions";
 import { getTeam } from "@/lib/data/teams";
 import { getTeamRoster } from "@/lib/data/players";
 import { MEMBERSHIP_ROLES } from "@/lib/validation/player";
+import CountrySelect from "@/components/country-select";
 import {
   addRosterMemberAction,
   setMemberRoleAction,
@@ -40,7 +41,7 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
         href={`/equipes/${id}/gestion`}
         className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
       >
-        ← Retour à la gestion
+        Retour à la gestion
       </Link>
 
       <ul className="mt-6 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
@@ -82,7 +83,8 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
         <h2 className="mb-3 text-lg font-semibold text-white">Ajouter un joueur</h2>
         <form action={addWithId} className="grid max-w-md gap-3">
           <input name="pseudo" placeholder="Pseudo" required maxLength={40} className={input} />
-          <input name="nationality" placeholder="Nationalité (optionnel)" className={input} />
+          <input name="riotId" placeholder="Riot ID (optionnel, Nom#Tag)" className={input} />
+          <CountrySelect name="nationality" placeholder="Nationalité (optionnel)" />
           <select name="role" defaultValue="JOUEUR" className={input}>
             {MEMBERSHIP_ROLES.map((r) => (
               <option key={r} value={r}>

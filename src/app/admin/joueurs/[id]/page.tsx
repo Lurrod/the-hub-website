@@ -24,6 +24,7 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
         values={{
           pseudo: player.pseudo,
           nationality: player.nationality ?? undefined,
+          riotId: player.riotName ? `${player.riotName}#${player.riotTag}` : undefined,
           socials: (player.socials ?? {}) as { twitter?: string; twitch?: string },
         }}
       />

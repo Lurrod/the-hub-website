@@ -1,8 +1,9 @@
-import { COUNTRIES } from "@/lib/constants";
+import CountrySelect from "@/components/country-select";
 
 type PlayerFormValues = {
   pseudo?: string;
   nationality?: string;
+  riotId?: string;
   socials?: { twitter?: string | null; twitch?: string | null } | null;
 };
 
@@ -17,7 +18,6 @@ export default function PlayerForm({
 }) {
   const s = values?.socials ?? {};
   const nationality = values?.nationality ?? "";
-  const nationalityKnown = (COUNTRIES as readonly string[]).includes(nationality);
   const input =
     "w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
   return (
@@ -26,17 +26,13 @@ export default function PlayerForm({
         Pseudo
         <input name="pseudo" defaultValue={values?.pseudo ?? ""} required maxLength={40} className={input} />
       </label>
-      <label className="grid gap-1 text-sm text-[var(--text-muted)]">
+      <div className="grid gap-1 text-sm text-[var(--text-muted)]">
         Pays (optionnel)
-        <select name="nationality" defaultValue={nationality} className={input}>
-          <option value="">—</option>
-          {nationality && !nationalityKnown && <option value={nationality}>{nationality}</option>}
-          {COUNTRIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+        <CountrySelect name="nationality" defaultValue={nationality} />
+      </div>
+      <label className="grid gap-1 text-sm text-[var(--text-muted)]">
+        Riot ID (optionnel, Nom#Tag)
+        <input name="riotId" defaultValue={values?.riotId ?? ""} placeholder="Nom#Tag" className={input} />
       </label>
       <label className="grid gap-1 text-sm text-[var(--text-muted)]">
         Photo (png/jpg/webp, max 5 Mo)
