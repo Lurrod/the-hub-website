@@ -72,7 +72,7 @@ function TrackRow({
               key={i}
               title={`Round ${i + 1} — ${won ? `${label} · ${OUTCOME_LABEL[r.o] ?? r.o}` : "perdu"}`}
               className={`grid h-6 w-6 shrink-0 place-items-center rounded ${
-                won ? "bg-[var(--success)]" : "bg-[var(--destructive)]"
+                won ? "bg-[#289a87]" : "bg-[#c05655]"
               }`}
             >
               {won ? <OutcomeIcon o={r.o} /> : null}
@@ -88,12 +88,16 @@ function RoundTimeline({
   rounds,
   teamAName,
   teamBName,
+  teamATag,
+  teamBTag,
   scoreA,
   scoreB,
 }: {
   rounds: RoundEntry[];
   teamAName: string;
   teamBName: string;
+  teamATag: string;
+  teamBTag: string;
   scoreA: number;
   scoreB: number;
 }) {
@@ -114,8 +118,8 @@ function RoundTimeline({
       {/* Timeline en deux pistes, une par équipe */}
       <div className="overflow-x-auto">
         <div className="w-max space-y-1">
-          <TrackRow rounds={rounds} side="A" label={teamAName} />
-          <TrackRow rounds={rounds} side="B" label={teamBName} />
+          <TrackRow rounds={rounds} side="A" label={teamATag} />
+          <TrackRow rounds={rounds} side="B" label={teamBTag} />
         </div>
       </div>
     </div>
@@ -126,7 +130,7 @@ const HEAD = "px-1.5 py-1.5 text-right text-[10px] font-semibold uppercase track
 const CELL = "stat px-1.5 py-1.5 text-right text-sm text-white";
 
 function Diff({ value }: { value: number }) {
-  const cls = value > 0 ? "text-[var(--success)]" : value < 0 ? "text-[var(--destructive)]" : "text-[var(--text-muted)]";
+  const cls = value > 0 ? "text-[#289a87]" : value < 0 ? "text-[#c05655]" : "text-[var(--text-muted)]";
   return <span className={cls}>{value > 0 ? `+${value}` : value}</span>;
 }
 
@@ -200,10 +204,14 @@ export default function MatchScoreboard({
   maps,
   teamAName,
   teamBName,
+  teamATag,
+  teamBTag,
 }: {
   maps: ScoreboardMap[];
   teamAName: string;
   teamBName: string;
+  teamATag: string;
+  teamBTag: string;
 }) {
   const [active, setActive] = useState(0);
   if (maps.length === 0) return null;
@@ -235,14 +243,16 @@ export default function MatchScoreboard({
         rounds={map.rounds}
         teamAName={teamAName}
         teamBName={teamBName}
+        teamATag={teamATag}
+        teamBTag={teamBTag}
         scoreA={map.scoreA}
         scoreB={map.scoreB}
       />
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2">
-        <TeamBlock label={teamAName} rounds={map.scoreA} rows={map.stats.filter((s) => s.teamSide === "A")} />
+        <TeamBlock label={teamATag} rounds={map.scoreA} rows={map.stats.filter((s) => s.teamSide === "A")} />
         <div className="my-2 h-px bg-[var(--border)]" />
-        <TeamBlock label={teamBName} rounds={map.scoreB} rows={map.stats.filter((s) => s.teamSide === "B")} />
+        <TeamBlock label={teamBTag} rounds={map.scoreB} rows={map.stats.filter((s) => s.teamSide === "B")} />
       </div>
     </div>
   );

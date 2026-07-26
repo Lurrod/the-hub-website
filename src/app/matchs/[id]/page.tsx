@@ -53,11 +53,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       </Link>
 
       <div className="mx-auto mt-6 max-w-2xl rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
-        <div className="flex justify-center">
-          <span className="eyebrow">Match</span>
-        </div>
-
-      <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8">
         {/* Équipe A */}
         <Link
           href={`/equipes/${match.teamAId}`}
@@ -137,6 +133,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             maps={scoreboardMaps}
             teamAName={match.teamA.name}
             teamBName={match.teamB.name}
+            teamATag={match.teamA.tag}
+            teamBTag={match.teamB.tag}
           />
         ) : match.maps.length === 0 ? (
           <p className="text-[var(--text-muted)]">Aucun détail carte par carte saisi.</p>
