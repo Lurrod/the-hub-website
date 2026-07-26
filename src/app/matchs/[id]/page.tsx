@@ -135,6 +135,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             teamBName={match.teamB.name}
             teamATag={match.teamA.tag}
             teamBTag={match.teamB.tag}
+            teamALogo={match.teamA.logo}
+            teamBLogo={match.teamB.logo}
           />
         ) : match.maps.length === 0 ? (
           <p className="text-[var(--text-muted)]">Aucun détail carte par carte saisi.</p>

@@ -50,20 +50,37 @@ function OutcomeIcon({ o }: { o: string }) {
   );
 }
 
+function Crest({ url, tag, size }: { url: string | null; tag: string; size: string }) {
+  if (url) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt="" className={`${size} shrink-0 rounded object-cover`} />;
+  }
+  return (
+    <span
+      className={`${size} grid shrink-0 place-items-center rounded bg-[var(--surface)] text-[8px] text-[var(--text-muted)]`}
+    >
+      {tag.slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
+
 function TrackRow({
   rounds,
   side,
   label,
+  logo,
 }: {
   rounds: RoundEntry[];
   side: "A" | "B";
   label: string;
+  logo: string | null;
 }) {
   const wonBg = side === "A" ? "bg-[#289a87]" : "bg-[#c05655]";
   return (
     <div className="flex items-center gap-2">
-      <span className="w-16 shrink-0 truncate text-right text-[11px] font-medium text-[var(--text-muted)]">
-        {label}
+      <span className="flex w-20 shrink-0 items-center justify-end gap-1.5">
+        <Crest url={logo} tag={label} size="h-4 w-4" />
+        <span className="truncate text-[11px] font-medium text-[var(--text-muted)]">{label}</span>
       </span>
       <div className="flex gap-1">
         {rounds.map((r, i) => {
@@ -99,28 +116,36 @@ function RoundTimeline({
   teamBName: string;
   teamATag: string;
   teamBTag: string;
+  teamALogo: string | null;
+  teamBLogo: string | null;
   scoreA: number;
   scoreB: number;
 }) {
   if (rounds.length === 0) return null;
   return (
     <div className="mb-4">
-      {/* Score des équipes, au-dessus de la timeline */}
+      {/* Score + logos des équipes, au-dessus de la timeline */}
       <div className="mb-2 flex items-center justify-center gap-3 text-sm">
-        <span className="max-w-[40%] truncate text-right text-white">{teamAName}</span>
+        <span className="flex max-w-[40%] items-center justify-end gap-2 text-white">
+          <span className="truncate">{teamAName}</span>
+          <Crest url={teamALogo} tag={teamATag} size="h-6 w-6" />
+        </span>
         <span className="stat shrink-0 text-lg font-semibold text-white">
           <span className={scoreA > scoreB ? "text-[var(--accent)]" : ""}>{scoreA}</span>
           <span className="mx-1.5 text-[var(--text-subtle)]">–</span>
           <span className={scoreB > scoreA ? "text-[var(--accent)]" : ""}>{scoreB}</span>
         </span>
-        <span className="max-w-[40%] truncate text-left text-white">{teamBName}</span>
+        <span className="flex max-w-[40%] items-center gap-2 text-white">
+          <Crest url={teamBLogo} tag={teamBTag} size="h-6 w-6" />
+          <span className="truncate">{teamBName}</span>
+        </span>
       </div>
 
-      {/* Timeline en deux pistes, une par équipe */}
+      {/* Timeline en deux pistes, une par équipe, centrée */}
       <div className="overflow-x-auto">
-        <div className="w-max space-y-1">
-          <TrackRow rounds={rounds} side="A" label={teamATag} />
-          <TrackRow rounds={rounds} side="B" label={teamBTag} />
+        <div className="mx-auto w-max space-y-1">
+          <TrackRow rounds={rounds} side="A" label={teamATag} logo={teamALogo} />
+          <TrackRow rounds={rounds} side="B" label={teamBTag} logo={teamBLogo} />
         </div>
       </div>
     </div>
@@ -218,6 +243,8 @@ export default function MatchScoreboard({
   teamBName: string;
   teamATag: string;
   teamBTag: string;
+  teamALogo: string | null;
+  teamBLogo: string | null;
 }) {
   const [active, setActive] = useState(0);
   if (maps.length === 0) return null;
@@ -251,6 +278,8 @@ export default function MatchScoreboard({
         teamBName={teamBName}
         teamATag={teamATag}
         teamBTag={teamBTag}
+        teamALogo={teamALogo}
+        teamBLogo={teamBLogo}
         scoreA={map.scoreA}
         scoreB={map.scoreB}
       />
