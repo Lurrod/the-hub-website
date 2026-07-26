@@ -44,7 +44,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       : `${MATCH_STAGE_LABELS.GROUP}${match.group ? ` · ${match.group.name}` : ""}`;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto max-w-5xl px-4 py-10">
       <Link
         href={`/tournois/${match.tournamentId}`}
         className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
@@ -52,7 +52,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         {match.tournament.name}
       </Link>
 
-      <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
+      <div className="mx-auto mt-6 max-w-2xl rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
         <div className="flex justify-center">
           <span className="eyebrow">Match</span>
         </div>
@@ -130,7 +130,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
       <section className="mt-10">
         <h2 className="mb-3 text-lg font-semibold text-white">
-          {hasScoreboard ? "Scoreboard" : "Détail des maps"}
+          {hasScoreboard ? "Tableau des scores" : "Détail des maps"}
         </h2>
         {hasScoreboard ? (
           <MatchScoreboard
