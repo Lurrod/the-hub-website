@@ -108,6 +108,8 @@ function RoundTimeline({
   teamBName,
   teamATag,
   teamBTag,
+  teamALogo,
+  teamBLogo,
   scoreA,
   scoreB,
 }: {
@@ -237,6 +239,8 @@ export default function MatchScoreboard({
   teamBName,
   teamATag,
   teamBTag,
+  teamALogo,
+  teamBLogo,
 }: {
   maps: ScoreboardMap[];
   teamAName: string;
