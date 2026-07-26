@@ -40,35 +40,13 @@ const OUTCOME_LABEL: Record<string, string> = {
   time: "Temps écoulé",
 };
 
+const OUTCOMES = new Set(["elim", "detonate", "defuse", "time"]);
+
 function OutcomeIcon({ o }: { o: string }) {
-  const c = "h-2.5 w-2.5";
-  if (o === "detonate")
-    return (
-      <svg viewBox="0 0 24 24" className={c} fill="currentColor" aria-hidden="true">
-        <path d="M12 2l2.2 5.5L20 8l-4 4 1.5 6L12 15l-5.5 3L8 12 4 8l5.8-.5z" />
-      </svg>
-    );
-  if (o === "defuse")
-    return (
-      <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-        <circle cx="6" cy="6" r="3" />
-        <circle cx="6" cy="18" r="3" />
-        <path d="M8.5 7.5 20 19M8.5 16.5 20 5" />
-      </svg>
-    );
-  if (o === "time")
-    return (
-      <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </svg>
-    );
-  // elim (défaut)
+  const src = `/round/${OUTCOMES.has(o) ? o : "elim"}.png`;
   return (
-    <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-      <circle cx="12" cy="12" r="7" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className="h-3.5 w-3.5 object-contain" />
   );
 }
 
@@ -92,11 +70,9 @@ function TrackRow({
           return (
             <span
               key={i}
-              title={`Round ${i + 1} — ${won ? label : ""} ${won ? `· ${OUTCOME_LABEL[r.o] ?? r.o}` : ""}`.trim()}
+              title={`Round ${i + 1} — ${won ? `${label} · ${OUTCOME_LABEL[r.o] ?? r.o}` : "perdu"}`}
               className={`grid h-6 w-6 shrink-0 place-items-center rounded ${
-                won
-                  ? `text-white ${side === "A" ? "bg-[var(--accent)]" : "bg-[#43506b]"}`
-                  : "border border-[var(--border)] bg-[var(--bg)]"
+                won ? "bg-[var(--success)]" : "bg-[var(--destructive)]"
               }`}
             >
               {won ? <OutcomeIcon o={r.o} /> : null}
@@ -141,13 +117,6 @@ function RoundTimeline({
           <TrackRow rounds={rounds} side="A" label={teamAName} />
           <TrackRow rounds={rounds} side="B" label={teamBName} />
         </div>
-      </div>
-
-      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 pl-16 text-[10px] text-[var(--text-muted)]">
-        <span className="inline-flex items-center gap-1"><OutcomeIcon o="elim" /> Élim.</span>
-        <span className="inline-flex items-center gap-1"><OutcomeIcon o="detonate" /> Spike explosé</span>
-        <span className="inline-flex items-center gap-1"><OutcomeIcon o="defuse" /> Désamorcé</span>
-        <span className="inline-flex items-center gap-1"><OutcomeIcon o="time" /> Temps</span>
       </div>
     </div>
   );

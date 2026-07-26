@@ -52,11 +52,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         {match.tournament.name}
       </Link>
 
-      <div className="mt-6 flex justify-center">
-        <span className="eyebrow">Match</span>
-      </div>
+      <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
+        <div className="flex justify-center">
+          <span className="eyebrow">Match</span>
+        </div>
 
-      <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8">
+      <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8">
         {/* Équipe A */}
         <Link
           href={`/equipes/${match.teamAId}`}
@@ -125,6 +126,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </a>
         </div>
       )}
+      </div>
 
       <section className="mt-10">
         <h2 className="mb-3 text-lg font-semibold text-white">
