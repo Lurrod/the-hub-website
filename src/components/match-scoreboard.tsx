@@ -134,16 +134,14 @@ function Diff({ value }: { value: number }) {
   return <span className={cls}>{value > 0 ? `+${value}` : value}</span>;
 }
 
-function TeamBlock({ label, rounds, rows }: { label: string; rounds: number; rows: ScoreboardPlayerRow[] }) {
+function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
   const sorted = [...rows].sort((a, b) => b.rating - a.rating);
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[720px] border-collapse">
         <thead>
           <tr className="border-b border-[var(--border)]">
-            <th className="px-2 py-1.5 text-left text-sm font-semibold text-white" colSpan={2}>
-              {label} <span className="ml-1 text-[var(--accent)]">{rounds}</span>
-            </th>
+            <th colSpan={2} />
             <th className={HEAD}>R</th>
             <th className={HEAD}>ACS</th>
             <th className={HEAD}>K</th>
@@ -233,7 +231,7 @@ export default function MatchScoreboard({
                   : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
               }`}
             >
-              {m.mapName} {m.scoreA}–{m.scoreB}
+              {m.mapName} {m.scoreA} – {m.scoreB}
             </button>
           ))}
         </div>
@@ -250,9 +248,9 @@ export default function MatchScoreboard({
       />
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2">
-        <TeamBlock label={teamATag} rounds={map.scoreA} rows={map.stats.filter((s) => s.teamSide === "A")} />
+        <TeamBlock rows={map.stats.filter((s) => s.teamSide === "A")} />
         <div className="my-2 h-px bg-[var(--border)]" />
-        <TeamBlock label={teamBTag} rounds={map.scoreB} rows={map.stats.filter((s) => s.teamSide === "B")} />
+        <TeamBlock rows={map.stats.filter((s) => s.teamSide === "B")} />
       </div>
     </div>
   );
