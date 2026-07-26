@@ -59,6 +59,13 @@ function TeamBlock({
           </tr>
         </thead>
         <tbody>
+          {sorted.length === 0 && (
+            <tr>
+              <td colSpan={9} className="px-2 py-2 text-left text-xs text-[var(--text-muted)]">
+                Aucune donnée pour cette équipe.
+              </td>
+            </tr>
+          )}
           {sorted.map((r) => (
             <tr
               key={r.id}
