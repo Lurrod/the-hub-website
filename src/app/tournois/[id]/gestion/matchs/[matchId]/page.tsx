@@ -17,13 +17,10 @@ function toDateInput(d: Date | null): string {
 
 export default async function EditMatchPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string; matchId: string }>;
-  searchParams: Promise<{ error?: string }>;
 }) {
   const { id, matchId } = await params;
-  const { error } = await searchParams;
 
   const tournament = await getTournament(id);
   if (!tournament) notFound();
@@ -51,13 +48,17 @@ export default async function EditMatchPage({
         Éditer le match — {match.teamA.name} vs {match.teamB.name}
       </h1>
 
-      {error && (
-        <p className="mb-4 rounded border border-[var(--destructive)] bg-[var(--destructive-soft)] px-3 py-2 text-sm text-[var(--destructive)]">
-          {error === "stage"
-            ? "Cette phase n'est pas autorisée par le format du tournoi."
-            : "Données invalides : vérifie les champs du formulaire."}
+      {match.statsStatus === "MATCHED" ? (
+        <p className="mb-4 text-xs text-[var(--success)]">
+          Stats récupérées automatiquement depuis Riot
+          {match.statsFetchedAt ? ` (${new Date(match.statsFetchedAt).toLocaleString("fr-FR")})` : ""}.
         </p>
-      )}
+      ) : match.statsStatus === "NOT_FOUND" ? (
+        <p className="mb-4 text-xs text-[var(--text-muted)]">
+          Aucune partie custom correspondante trouvée. Ré-enregistre le match une fois la partie
+          disponible dans l&apos;historique Riot pour réessayer.
+        </p>
+      ) : null}
 
       <MatchForm
         action={updateWith}
