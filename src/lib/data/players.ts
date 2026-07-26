@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { PlayerInput } from "@/lib/validation/player";
 import type { MembershipRole } from "@prisma/client";
+import type { RiotAccount } from "@/lib/henrikdev";
 
 export function listPlayers() {
   return db.player.findMany({ orderBy: { pseudo: "asc" } });
@@ -93,6 +94,28 @@ export function endMembership(id: string, when: Date) {
 
 export function deleteMembership(id: string) {
   return db.teamMembership.delete({ where: { id } });
+}
+
+/** Enregistre le compte Riot vérifié sur un joueur. */
+export function setPlayerRiotAccount(playerId: string, account: RiotAccount) {
+  return db.player.update({
+    where: { id: playerId },
+    data: {
+      riotName: account.name,
+      riotTag: account.tag,
+      puuid: account.puuid,
+      region: account.region,
+    },
+  });
+}
+
+/** True si ce puuid est déjà pris par un AUTRE joueur. */
+export async function isPuuidTakenByOther(puuid: string, excludePlayerId?: string): Promise<boolean> {
+  const clash = await db.player.findFirst({
+    where: { puuid, ...(excludePlayerId ? { NOT: { id: excludePlayerId } } : {}) },
+    select: { id: true },
+  });
+  return clash !== null;
 }
 
 /** Fiche Player liée à un compte user (ou null). */
