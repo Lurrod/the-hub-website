@@ -51,7 +51,7 @@ export async function createPlayerAction(formData: FormData) {
       redirect(`/admin/joueurs/${player.id}?error=${riotFlashCode(e)}`);
     }
   }
-  redirect(`/admin/joueurs/${player.id}?ok=member-added`);
+  redirect(`/admin/joueurs/${player.id}?ok=player-created`);
 }
 
 export async function updatePlayerAction(playerId: string, formData: FormData) {
@@ -74,7 +74,7 @@ export async function updatePlayerAction(playerId: string, formData: FormData) {
     }
   }
   revalidatePath(`/joueurs/${playerId}`);
-  redirect(`/admin/joueurs/${playerId}?ok=profile-saved`);
+  redirect(`/admin/joueurs/${playerId}?ok=player-saved`);
 }
 
 export async function deletePlayerAction(playerId: string) {

@@ -16,6 +16,8 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "manager-added": { title: "Manager ajouté", message: "Le manager a bien été ajouté." },
   "member-added": { title: "Joueur ajouté", message: "Le joueur a été ajouté au roster." },
   "profile-saved": { title: "Profil enregistré", message: "Tes informations ont été mises à jour." },
+  "player-created": { title: "Joueur créé", message: "La fiche joueur a bien été créée." },
+  "player-saved": { title: "Joueur enregistré", message: "La fiche joueur a été mise à jour." },
   "left-team": { title: "Équipe quittée", message: "Tu as quitté ton équipe." },
   "riot-saved": { title: "Riot ID enregistré", message: "Ton compte Valorant est bien lié." },
 };
