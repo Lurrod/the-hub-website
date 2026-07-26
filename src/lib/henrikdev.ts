@@ -139,6 +139,8 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
     bodyshots: num(p.stats?.bodyshots),
     legshots: num(p.stats?.legshots),
     damageMade: num(p.stats?.damage?.dealt),
+    // Volontairement 0 en Phase B : les first kills ne sont pas exposés simplement
+    // par joueur dans l'API v4 (nécessitent l'analyse round-par-round). Extensible.
     firstKills: 0,
   }));
   return {
