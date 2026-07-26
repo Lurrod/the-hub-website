@@ -59,6 +59,7 @@ function TrackRow({
   side: "A" | "B";
   label: string;
 }) {
+  const wonBg = side === "A" ? "bg-[#289a87]" : "bg-[#c05655]";
   return (
     <div className="flex items-center gap-2">
       <span className="w-16 shrink-0 truncate text-right text-[11px] font-medium text-[var(--text-muted)]">
@@ -72,7 +73,7 @@ function TrackRow({
               key={i}
               title={`Round ${i + 1} — ${won ? `${label} · ${OUTCOME_LABEL[r.o] ?? r.o}` : "perdu"}`}
               className={`grid h-6 w-6 shrink-0 place-items-center rounded ${
-                won ? "bg-[#289a87]" : "bg-[#131619]"
+                won ? wonBg : "bg-[#131619]"
               }`}
             >
               {won ? <OutcomeIcon o={r.o} /> : null}
@@ -138,7 +139,14 @@ function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
   const sorted = [...rows].sort((a, b) => b.rating - a.rating);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] border-collapse">
+      <table className="w-full min-w-[720px] table-fixed border-collapse">
+        <colgroup>
+          <col className="w-8" />
+          <col />
+          {Array.from({ length: 11 }).map((_, i) => (
+            <col key={i} className="w-[48px]" />
+          ))}
+        </colgroup>
         <thead>
           <tr className="border-b border-[var(--border)]">
             <th colSpan={2} />

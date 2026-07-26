@@ -125,7 +125,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold text-white">
+        <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">
           {hasScoreboard ? "Tableau des scores" : "Détail des maps"}
         </h2>
         {hasScoreboard ? (
