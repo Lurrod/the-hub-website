@@ -128,6 +128,7 @@ model Player {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   memberships TeamMembership[]
+  gameStats   PlayerGameStat[]
 }
 
 model TeamMembership {
@@ -254,6 +255,8 @@ model Match {
   status          MatchStatus @default(SCHEDULED)
   date            DateTime?
   vodUrl          String?
+  statsStatus     String?
+  statsFetchedAt  DateTime?
   tournament      Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   group           Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
   teamA           Team        @relation("MatchTeamA", fields: [teamAId], references: [id], onDelete: Cascade)
@@ -274,8 +277,34 @@ model MatchMap {
   mapName String
   scoreA  Int
   scoreB  Int
-  order   Int    @default(0)
-  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  order       Int              @default(0)
+  riotMatchId String?          @unique
+  startedAt   DateTime?
+  stats       PlayerGameStat[]
+  match       Match            @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@index([matchId])
+}
+
+model PlayerGameStat {
+  id         String    @id @default(cuid())
+  matchMapId String
+  playerId   String?
+  riotName   String
+  riotTag    String?
+  puuid      String?
+  teamSide   String
+  agent      String?
+  kills      Int
+  deaths     Int
+  assists    Int
+  acs        Int
+  adr        Int
+  hsPct      Int
+  firstKills Int       @default(0)
+  matchMap   MatchMap  @relation(fields: [matchMapId], references: [id], onDelete: Cascade)
+  player     Player?   @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@index([matchMapId])
+  @@index([playerId])
 }
