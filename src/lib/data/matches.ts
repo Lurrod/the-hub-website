@@ -103,7 +103,14 @@ export function getMatch(id: string) {
       teamB: true,
       tournament: true,
       group: true,
-      maps: { orderBy: { order: "asc" } },
+      maps: {
+        orderBy: { order: "asc" },
+        include: {
+          stats: {
+            include: { player: { select: { id: true, pseudo: true } } },
+          },
+        },
+      },
     },
   });
 }
