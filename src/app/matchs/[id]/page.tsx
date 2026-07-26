@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getMatch } from "@/lib/data/matches";
 import { MATCH_STATUS_LABELS, MATCH_STAGE_LABELS, type MatchStatus } from "@/lib/constants";
 import StatusBadge from "@/components/status-badge";
+import MatchScoreboard, { type ScoreboardMap } from "@/components/match-scoreboard";
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -11,6 +12,28 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
+  const hasScoreboard =
+    match.statsStatus === "MATCHED" && match.maps.some((m) => m.stats.length > 0);
+  const scoreboardMaps: ScoreboardMap[] = match.maps.map((m) => ({
+    id: m.id,
+    mapName: m.mapName,
+    scoreA: m.scoreA,
+    scoreB: m.scoreB,
+    stats: m.stats.map((s) => ({
+      id: s.id,
+      playerId: s.playerId,
+      pseudo: s.player?.pseudo ?? null,
+      riotName: s.riotName,
+      teamSide: s.teamSide,
+      agent: s.agent,
+      kills: s.kills,
+      deaths: s.deaths,
+      assists: s.assists,
+      acs: s.acs,
+      adr: s.adr,
+      hsPct: s.hsPct,
+    })),
+  }));
   const phase =
     match.stage === "BRACKET"
       ? `${MATCH_STAGE_LABELS.BRACKET}${match.round ? ` · ${match.round}` : ""}`
@@ -22,7 +45,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         href={`/tournois/${match.tournamentId}`}
         className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
       >
-        ← {match.tournament.name}
+        {match.tournament.name}
       </Link>
 
       <div className="mt-6 flex justify-center">
@@ -100,8 +123,16 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       )}
 
       <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold text-white">Détail des maps</h2>
-        {match.maps.length === 0 ? (
+        <h2 className="mb-3 text-lg font-semibold text-white">
+          {hasScoreboard ? "Scoreboard" : "Détail des maps"}
+        </h2>
+        {hasScoreboard ? (
+          <MatchScoreboard
+            maps={scoreboardMaps}
+            teamAName={match.teamA.name}
+            teamBName={match.teamB.name}
+          />
+        ) : match.maps.length === 0 ? (
           <p className="text-[var(--text-muted)]">Aucun détail carte par carte saisi.</p>
         ) : (
           <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
