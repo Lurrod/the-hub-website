@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import AgentIcon from "@/components/agent-icon";
 
+export type RoundEntry = { w: "A" | "B"; o: string };
+
 export type ScoreboardPlayerRow = {
   id: string;
   playerId: string | null;
@@ -16,7 +18,10 @@ export type ScoreboardPlayerRow = {
   assists: number;
   acs: number;
   adr: number;
-  hsPct: number;
+  rating: number;
+  kast: number;
+  firstKills: number;
+  firstDeaths: number;
 };
 
 export type ScoreboardMap = {
@@ -24,75 +29,142 @@ export type ScoreboardMap = {
   mapName: string;
   scoreA: number;
   scoreB: number;
+  rounds: RoundEntry[];
   stats: ScoreboardPlayerRow[];
 };
 
-const HEAD =
-  "px-2 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
-const CELL = "stat px-2 py-1.5 text-right text-sm text-white";
+const OUTCOME_LABEL: Record<string, string> = {
+  elim: "Élimination",
+  detonate: "Spike explosé",
+  defuse: "Spike désamorcé",
+  time: "Temps écoulé",
+};
 
-function TeamBlock({
-  label,
-  rounds,
-  rows,
-}: {
-  label: string;
-  rounds: number;
-  rows: ScoreboardPlayerRow[];
-}) {
-  const sorted = [...rows].sort((a, b) => b.acs - a.acs);
+function OutcomeIcon({ o }: { o: string }) {
+  const c = "h-2.5 w-2.5";
+  if (o === "detonate")
+    return (
+      <svg viewBox="0 0 24 24" className={c} fill="currentColor" aria-hidden="true">
+        <path d="M12 2l2.2 5.5L20 8l-4 4 1.5 6L12 15l-5.5 3L8 12 4 8l5.8-.5z" />
+      </svg>
+    );
+  if (o === "defuse")
+    return (
+      <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+        <circle cx="6" cy="6" r="3" />
+        <circle cx="6" cy="18" r="3" />
+        <path d="M8.5 7.5 20 19M8.5 16.5 20 5" />
+      </svg>
+    );
+  if (o === "time")
+    return (
+      <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    );
+  // elim (défaut)
+  return (
+    <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+      <circle cx="12" cy="12" r="7" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </svg>
+  );
+}
+
+function RoundTimeline({ rounds }: { rounds: RoundEntry[] }) {
+  if (rounds.length === 0) return null;
+  return (
+    <div className="mb-3">
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {rounds.map((r, i) => (
+          <span
+            key={i}
+            title={`Round ${i + 1} — ${r.w === "A" ? "Équipe A" : "Équipe B"} · ${OUTCOME_LABEL[r.o] ?? r.o}`}
+            className={`grid h-6 w-6 shrink-0 place-items-center rounded text-white ${
+              r.w === "A" ? "bg-[var(--accent)]" : "bg-[#43506b]"
+            }`}
+          >
+            <OutcomeIcon o={r.o} />
+          </span>
+        ))}
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-[var(--text-muted)]">
+        <span className="inline-flex items-center gap-1"><OutcomeIcon o="elim" /> Élim.</span>
+        <span className="inline-flex items-center gap-1"><OutcomeIcon o="detonate" /> Spike explosé</span>
+        <span className="inline-flex items-center gap-1"><OutcomeIcon o="defuse" /> Désamorcé</span>
+        <span className="inline-flex items-center gap-1"><OutcomeIcon o="time" /> Temps</span>
+      </div>
+    </div>
+  );
+}
+
+const HEAD = "px-1.5 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
+const CELL = "stat px-1.5 py-1.5 text-right text-sm text-white";
+
+function Diff({ value }: { value: number }) {
+  const cls = value > 0 ? "text-[var(--success)]" : value < 0 ? "text-[var(--destructive)]" : "text-[var(--text-muted)]";
+  return <span className={cls}>{value > 0 ? `+${value}` : value}</span>;
+}
+
+function TeamBlock({ label, rounds, rows }: { label: string; rounds: number; rows: ScoreboardPlayerRow[] }) {
+  const sorted = [...rows].sort((a, b) => b.rating - a.rating);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] border-collapse">
+      <table className="w-full min-w-[720px] border-collapse">
         <thead>
           <tr className="border-b border-[var(--border)]">
             <th className="px-2 py-1.5 text-left text-sm font-semibold text-white" colSpan={2}>
-              {label}
+              {label} <span className="ml-1 text-[var(--accent)]">{rounds}</span>
             </th>
+            <th className={HEAD}>R</th>
+            <th className={HEAD}>ACS</th>
             <th className={HEAD}>K</th>
             <th className={HEAD}>D</th>
             <th className={HEAD}>A</th>
-            <th className={HEAD}>ACS</th>
+            <th className={HEAD}>+/−</th>
+            <th className={HEAD}>KAST</th>
             <th className={HEAD}>ADR</th>
-            <th className={HEAD}>HS%</th>
-            <th className={`${HEAD} pr-3 text-[var(--accent)]`}>{rounds}</th>
+            <th className={HEAD}>FK</th>
+            <th className={HEAD}>FD</th>
+            <th className={`${HEAD} pr-2`}>+/−</th>
           </tr>
         </thead>
         <tbody>
           {sorted.length === 0 && (
             <tr>
-              <td colSpan={9} className="px-2 py-2 text-left text-xs text-[var(--text-muted)]">
+              <td colSpan={13} className="px-2 py-2 text-left text-xs text-[var(--text-muted)]">
                 Aucune donnée pour cette équipe.
               </td>
             </tr>
           )}
           {sorted.map((r) => (
-            <tr
-              key={r.id}
-              className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--table-row-hover)]"
-            >
-              <td className="w-8 py-1.5 pl-2">
+            <tr key={r.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--table-row-hover)]">
+              <td className="w-7 py-1.5 pl-2">
                 <AgentIcon agent={r.agent} />
               </td>
-              <td className="max-w-[160px] truncate py-1.5 pr-2 text-left text-sm">
+              <td className="max-w-[130px] truncate py-1.5 pr-2 text-left text-sm">
                 {r.playerId ? (
-                  <Link
-                    href={`/joueurs/${r.playerId}`}
-                    className="text-white hover:text-[var(--accent)]"
-                  >
+                  <Link href={`/joueurs/${r.playerId}`} className="text-white hover:text-[var(--accent)]">
                     {r.pseudo ?? r.riotName}
                   </Link>
                 ) : (
                   <span className="text-[var(--text-muted)]">{r.riotName}</span>
                 )}
               </td>
+              <td className={`${CELL} font-semibold ${r.rating >= 1 ? "text-white" : "text-[var(--text-muted)]"}`}>
+                {r.rating.toFixed(2)}
+              </td>
+              <td className={CELL}>{r.acs}</td>
               <td className={CELL}>{r.kills}</td>
               <td className={CELL}>{r.deaths}</td>
               <td className={CELL}>{r.assists}</td>
-              <td className={CELL}>{r.acs}</td>
+              <td className={CELL}><Diff value={r.kills - r.deaths} /></td>
+              <td className={CELL}>{r.kast}%</td>
               <td className={CELL}>{r.adr}</td>
-              <td className={CELL}>{r.hsPct}%</td>
-              <td className={CELL}></td>
+              <td className={CELL}>{r.firstKills}</td>
+              <td className={CELL}>{r.firstDeaths}</td>
+              <td className={`${CELL} pr-2`}><Diff value={r.firstKills - r.firstDeaths} /></td>
             </tr>
           ))}
         </tbody>
@@ -115,7 +187,7 @@ export default function MatchScoreboard({
   const map = maps[Math.min(active, maps.length - 1)];
 
   return (
-    <div>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
       {maps.length > 1 && (
         <div className="mb-3 flex flex-wrap gap-2">
           {maps.map((m, i) => (
@@ -135,7 +207,10 @@ export default function MatchScoreboard({
           ))}
         </div>
       )}
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2">
+
+      <RoundTimeline rounds={map.rounds} />
+
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2">
         <TeamBlock label={teamAName} rounds={map.scoreA} rows={map.stats.filter((s) => s.teamSide === "A")} />
         <div className="my-2 h-px bg-[var(--border)]" />
         <TeamBlock label={teamBName} rounds={map.scoreB} rows={map.stats.filter((s) => s.teamSide === "B")} />

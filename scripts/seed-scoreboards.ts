@@ -2,12 +2,11 @@
  * Simulation de scoreboards (façon vlr.gg) sur les matchs terminés du tournoi
  * de démonstration « VCT 2026: EMEA Stage 1 » (vlr-emea-s1).
  *
- * Pour chaque match FINISHED avec un roster des deux côtés, on génère des cartes
- * (cohérentes avec le score de série BO3) et un scoreboard réaliste par joueur
- * (K/D/A/ACS/ADR/HS%, agents, léger avantage à l'équipe gagnante), puis on marque
- * le match `statsStatus = "MATCHED"`. Idempotent : on supprime les cartes existantes.
+ * Génère par carte : un scoreboard complet (rating, ACS, K/D/A, +/-, KAST, ADR,
+ * first kills / first deaths, +/-) et une timeline de rounds gagnés/perdus avec la
+ * raison de victoire. Marque le match `statsStatus = "MATCHED"`. Idempotent.
  *
- * Usage : npm run db:seed:scoreboards   (après npm run db:seed:dev / seed-vlr-emea)
+ * Usage : npm run db:seed:scoreboards   (après db:seed:vlr)
  */
 import { PrismaClient } from "@prisma/client";
 
@@ -16,13 +15,15 @@ const TID = "vlr-emea-s1";
 
 const MAP_POOL = ["Ascent", "Haven", "Bind", "Split", "Lotus", "Sunset", "Icebox", "Abyss", "Corrode"];
 const AGENT_POOL = [
-  "Jett", "Raze", "Phoenix", "Neon", "Yoru", // duelists
-  "Omen", "Brimstone", "Astra", "Harbor", "Clove", // controllers
-  "Sova", "Breach", "Skye", "KAY/O", "Fade", // initiators
-  "Killjoy", "Cypher", "Chamber", "Sage", "Vyse", // sentinels
+  "Jett", "Raze", "Phoenix", "Neon", "Yoru",
+  "Omen", "Brimstone", "Astra", "Harbor", "Clove",
+  "Sova", "Breach", "Skye", "KAY/O", "Fade",
+  "Killjoy", "Cypher", "Chamber", "Sage", "Vyse",
 ];
+const OUTCOMES = ["elim", "elim", "elim", "elim", "elim", "detonate", "detonate", "defuse", "time"] as const;
 
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -32,11 +33,10 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/** Ordre des vainqueurs de cartes : les cartes du perdant d'abord, la dernière au vainqueur. */
+/** Ordre des vainqueurs de cartes : cartes du perdant d'abord, dernière au vainqueur. */
 function mapWinners(mapsA: number, mapsB: number): ("A" | "B")[] {
   const seriesWinner: "A" | "B" = mapsA > mapsB ? "A" : "B";
   const list: ("A" | "B")[] = [...Array(mapsA).fill("A"), ...Array(mapsB).fill("B")];
-  // enlève un exemplaire du vainqueur, mélange le reste, puis remet le vainqueur en dernier
   list.splice(list.indexOf(seriesWinner), 1);
   return [...shuffle(list), seriesWinner];
 }
@@ -52,27 +52,60 @@ type Row = {
   acs: number;
   adr: number;
   hsPct: number;
+  rating: number;
+  kast: number;
+  firstKills: number;
+  firstDeaths: number;
 };
 
-/** Stats d'un joueur pour une carte donnée (avantage léger au vainqueur, star player en tête). */
-function playerLine(
-  rosterPseudo: string,
+function baseRow(
+  pseudo: string,
   playerId: string,
   side: "A" | "B",
   agent: string,
   won: boolean,
   rounds: number,
-  starTier: number // 0 = star, 4 = bottom
+  starTier: number
 ): Row {
   const boost = won ? 1.12 : 0.92;
-  const star = 1.15 - starTier * 0.06; // 1.15 .. 0.91
+  const star = 1.15 - starTier * 0.06;
   const acs = Math.round(rand(150, 270) * boost * star);
-  const kills = Math.max(4, Math.round((acs / 12) + rand(-2, 3)));
-  const deaths = Math.max(4, Math.round(rounds * (won ? rand(45, 62) : rand(55, 75)) / 100));
+  const kills = Math.max(4, Math.round(acs / 12 + rand(-2, 3)));
+  const deaths = Math.max(4, Math.round((rounds * (won ? rand(45, 62) : rand(55, 75))) / 100));
   const assists = rand(2, 9);
   const adr = Math.round(acs * (rand(55, 66) / 100));
   const hsPct = rand(14, 38);
-  return { riotName: rosterPseudo, playerId, teamSide: side, agent, kills, deaths, assists, acs, adr, hsPct };
+  const kast = clamp(Math.round((won ? 74 : 66) + rand(-8, 12)), 45, 95);
+  const rating = clamp(
+    Math.round((0.7 + acs / 300 + ((kills - deaths) / Math.max(1, rounds)) * 0.25 + rand(-6, 6) / 100) * 100) / 100,
+    0.4,
+    1.9
+  );
+  return {
+    riotName: pseudo, playerId, teamSide: side, agent,
+    kills, deaths, assists, acs, adr, hsPct, kast, rating,
+    firstKills: 0, firstDeaths: 0,
+  };
+}
+
+/** Distribue `rounds` first kills et `rounds` first deaths sur les joueurs (biais entrée). */
+function distributeFirsts(rows: Row[], rounds: number) {
+  // Poids d'entrée : les 2 premiers joueurs de chaque équipe font plus d'entrées.
+  const fkWeights = rows.map((r, i) => (i % 5 < 2 ? 3 : 1) * (r.kills > 15 ? 1.4 : 1));
+  const fdWeights = rows.map((r, i) => (i % 5 < 2 ? 3 : 1) * (r.deaths > 14 ? 1.3 : 1));
+  const pick = (weights: number[]) => {
+    const total = weights.reduce((s, w) => s + w, 0);
+    let x = Math.random() * total;
+    for (let i = 0; i < weights.length; i++) {
+      x -= weights[i];
+      if (x <= 0) return i;
+    }
+    return weights.length - 1;
+  };
+  for (let r = 0; r < rounds; r++) {
+    rows[pick(fkWeights)].firstKills += 1;
+    rows[pick(fdWeights)].firstDeaths += 1;
+  }
 }
 
 async function main() {
@@ -86,21 +119,17 @@ async function main() {
     const [rosterA, rosterB] = await Promise.all([
       db.teamMembership.findMany({
         where: { teamId: m.teamAId, role: "JOUEUR", leaveDate: null },
-        select: { playerId: true, player: { select: { pseudo: true } } },
-        take: 5,
+        select: { playerId: true, player: { select: { pseudo: true } } }, take: 5,
       }),
       db.teamMembership.findMany({
         where: { teamId: m.teamBId, role: "JOUEUR", leaveDate: null },
-        select: { playerId: true, player: { select: { pseudo: true } } },
-        take: 5,
+        select: { playerId: true, player: { select: { pseudo: true } } }, take: 5,
       }),
     ]);
     if (rosterA.length < 5 || rosterB.length < 5) continue;
+    if (m.scoreA + m.scoreB === 0) continue;
 
-    const mapsA = m.scoreA;
-    const mapsB = m.scoreB;
-    if (mapsA + mapsB === 0) continue;
-    const winners = mapWinners(mapsA, mapsB);
+    const winners = mapWinners(m.scoreA, m.scoreB);
     const mapNames = shuffle(MAP_POOL).slice(0, winners.length);
 
     await db.$transaction(async (tx) => {
@@ -116,28 +145,25 @@ async function main() {
         const agentsA = shuffle(AGENT_POOL).slice(0, 5);
         const agentsB = shuffle(AGENT_POOL).slice(0, 5);
         const rows: Row[] = [
-          ...rosterA.map((r, idx) =>
-            playerLine(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, rounds, idx)
-          ),
-          ...rosterB.map((r, idx) =>
-            playerLine(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, rounds, idx)
-          ),
+          ...rosterA.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, rounds, idx)),
+          ...rosterB.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, rounds, idx)),
         ];
+        distributeFirsts(rows, rounds);
+
+        // Timeline : roundsA rounds gagnés par A, roundsB par B, mélangés, avec une raison.
+        const timeline = shuffle([
+          ...Array(roundsA).fill("A"),
+          ...Array(roundsB).fill("B"),
+        ]).map((w) => ({ w, o: OUTCOMES[rand(0, OUTCOMES.length - 1)] }));
 
         const map = await tx.matchMap.create({
           data: {
-            matchId: m.id,
-            mapName: mapNames[i],
-            scoreA: roundsA,
-            scoreB: roundsB,
-            order: i,
-            riotMatchId: `sim-${m.id}-${i}`,
-            startedAt: new Date(`2026-05-01T18:00:00Z`),
+            matchId: m.id, mapName: mapNames[i], scoreA: roundsA, scoreB: roundsB,
+            order: i, riotMatchId: `sim-${m.id}-${i}`, startedAt: new Date("2026-05-01T18:00:00Z"),
+            roundTimeline: timeline,
           },
         });
-        await tx.playerGameStat.createMany({
-          data: rows.map((r) => ({ matchMapId: map.id, ...r })),
-        });
+        await tx.playerGameStat.createMany({ data: rows.map((r) => ({ matchMapId: map.id, ...r })) });
       }
 
       await tx.match.update({
@@ -148,7 +174,7 @@ async function main() {
     done++;
   }
 
-  console.log(`OK — scoreboards simulés sur ${done} match(s) terminé(s) du tournoi ${TID}.`);
+  console.log(`OK — scoreboards simulés (rating/KAST/FK-FD + timeline) sur ${done} match(s) du tournoi ${TID}.`);
 }
 
 main()

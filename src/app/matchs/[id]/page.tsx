@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getMatch } from "@/lib/data/matches";
 import { MATCH_STATUS_LABELS, MATCH_STAGE_LABELS, type MatchStatus } from "@/lib/constants";
 import StatusBadge from "@/components/status-badge";
-import MatchScoreboard, { type ScoreboardMap } from "@/components/match-scoreboard";
+import MatchScoreboard, { type ScoreboardMap, type RoundEntry } from "@/components/match-scoreboard";
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,6 +19,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     mapName: m.mapName,
     scoreA: m.scoreA,
     scoreB: m.scoreB,
+    rounds: (Array.isArray(m.roundTimeline) ? m.roundTimeline : []) as RoundEntry[],
     stats: m.stats.map((s) => ({
       id: s.id,
       playerId: s.playerId,
@@ -31,7 +32,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       assists: s.assists,
       acs: s.acs,
       adr: s.adr,
-      hsPct: s.hsPct,
+      rating: s.rating,
+      kast: s.kast,
+      firstKills: s.firstKills,
+      firstDeaths: s.firstDeaths,
     })),
   }));
   const phase =
