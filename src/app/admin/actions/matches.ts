@@ -17,6 +17,7 @@ import {
   removeMatchMap,
   getMatch,
 } from "@/lib/data/matches";
+import { fetchAndStoreMatchStats } from "@/lib/match-stats";
 
 async function assertMatchInTournament(matchId: string, tournamentId: string) {
   const match = await getMatch(matchId);
@@ -106,6 +107,14 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
   if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
   if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
   await updateMatch(matchId, tournamentId, data);
+  if (data.status === "FINISHED") {
+    try {
+      await fetchAndStoreMatchStats(matchId);
+    } catch (e) {
+      // Ne jamais casser la validation du match sur une erreur de récupération.
+      console.error("fetchAndStoreMatchStats failed", e);
+    }
+  }
   revalidateCompetition(tournamentId);
   revalidatePath(`/matchs/${matchId}`);
   revalidatePath(editBase);
