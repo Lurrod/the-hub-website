@@ -27,6 +27,92 @@ export function createPlayer(data: PlayerInput) {
   });
 }
 
+/**
+ * Joueurs à suivre (landing) : meilleur rating moyen sur leurs parties.
+ * Seuil minimum de cartes pour éviter qu'un joueur à 1 map monopolise le top ;
+ * repli sur tous les joueurs si moins de `limit` qualifiés.
+ */
+export async function listTopPlayers(limit = 6) {
+  const MIN_MAPS = 3;
+  const rows = await db.playerGameStat.findMany({
+    where: { playerId: { not: null } },
+    select: {
+      rating: true,
+      player: {
+        select: {
+          id: true,
+          pseudo: true,
+          photo: true,
+          nationality: true,
+          memberships: {
+            where: { leaveDate: null },
+            take: 1,
+            select: { team: { select: { tag: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  type Agg = {
+    id: string;
+    pseudo: string;
+    photo: string | null;
+    nationality: string | null;
+    teamTag: string | null;
+    sum: number;
+    games: number;
+  };
+  const byId = new Map<string, Agg>();
+  for (const r of rows) {
+    const p = r.player;
+    if (!p) continue;
+    const a =
+      byId.get(p.id) ??
+      {
+        id: p.id,
+        pseudo: p.pseudo,
+        photo: p.photo,
+        nationality: p.nationality,
+        teamTag: p.memberships[0]?.team.tag ?? null,
+        sum: 0,
+        games: 0,
+      };
+    a.sum += r.rating;
+    a.games += 1;
+    byId.set(p.id, a);
+  }
+
+  const all = [...byId.values()].map((a) => ({
+    id: a.id,
+    pseudo: a.pseudo,
+    photo: a.photo,
+    nationality: a.nationality,
+    teamTag: a.teamTag,
+    rating: Math.round((a.sum / a.games) * 100) / 100,
+    games: a.games,
+  }));
+
+  const qualified = all.filter((p) => p.games >= MIN_MAPS);
+  const pool = qualified.length >= limit ? qualified : all;
+  return pool.sort((x, y) => y.rating - x.rating).slice(0, limit);
+}
+
+/** Persos les plus joués par un joueur + total de parties (pour la carrière). */
+export async function getPlayerTopAgents(playerId: string, top = 3) {
+  const rows = await db.playerGameStat.findMany({
+    where: { playerId },
+    select: { agent: true },
+  });
+  const count = new Map<string, number>();
+  for (const r of rows) if (r.agent) count.set(r.agent, (count.get(r.agent) ?? 0) + 1);
+  const topAgents = [...count.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, top)
+    .map(([agent, games]) => ({ agent, games }));
+  return { topAgents, totalGames: rows.length };
+}
+
 export function updatePlayer(id: string, data: PlayerInput) {
   return db.player.update({
     where: { id },
@@ -35,6 +121,11 @@ export function updatePlayer(id: string, data: PlayerInput) {
       realName: data.realName,
       nationality: data.nationality,
       socials: data.socials ?? undefined,
+      // Champs facultatifs : ne touchés que si le formulaire les envoie (undefined = laisser).
+      ...(data.valorantRole !== undefined ? { valorantRole: data.valorantRole } : {}),
+      ...(data.birthdate !== undefined
+        ? { birthdate: data.birthdate ? new Date(data.birthdate) : null }
+        : {}),
     },
   });
 }
