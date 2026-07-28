@@ -17,11 +17,11 @@ que le décompresser et recharger pm2.
 
 Nommé d'après le domaine, comme `titouan-borde.com`. `/var/www/the-hub-website`
 existe déjà et héberge Fast Learner : on n'y touche pas, ce qui évite d'avoir à
-déplacer un site en production (son process pm2 et sa conf nginx pointent sur ce
+déplacer un site en production (son process pm2 et son VirtualHost pointent sur ce
 chemin et tomberaient le temps de la reprise).
 
 Si tu veux quand même renommer Fast Learner plus tard, ce n'est pas un simple
-`mv` : il faut arrêter son process, corriger sa conf nginx, puis le relancer
+`mv` : il faut arrêter son process, corriger son VirtualHost, puis le relancer
 depuis le nouveau chemin. Ça n'a aucun impact sur Le Hub.
 
 ## Arborescence
@@ -101,26 +101,36 @@ HENRIKDEV_API_KEY='<clé HenrikDev>'
 chmod 600 "$APP_DIR/shared/.env"
 ```
 
-`AUTH_TRUST_HOST` est requis derrière nginx, sinon Auth.js refuse l'en-tête
+`AUTH_TRUST_HOST` est requis derrière un reverse proxy, sinon Auth.js refuse l'en-tête
 `X-Forwarded-Host` et la connexion Discord échoue.
 
 Penser à ajouter `https://the-hub-vrc.fr/api/auth/callback/discord` dans les
 *Redirects* de l'application Discord — l'URL de dev ne suffit pas en prod.
 
-## 4. nginx + HTTPS
+## 4. Apache + HTTPS
+
+Le serveur tourne sous **Apache**, pas nginx.
 
 ```bash
-# deploy/nginx.conf est dans le dépôt, jamais cloné sur le serveur :
-# le copier depuis ton poste avant de l'activer.
-#   scp deploy/nginx.conf ubuntu@51.68.234.84:/tmp/
-sudo cp /tmp/nginx.conf /etc/nginx/sites-available/the-hub-vrc.fr
-sudo ln -s /etc/nginx/sites-available/the-hub-vrc.fr /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d the-hub-vrc.fr -d www.the-hub-vrc.fr
+sudo a2enmod proxy proxy_http headers deflate
+
+# deploy/apache.conf est dans le dépôt, jamais cloné sur le serveur :
+#   scp deploy/apache.conf ubuntu@51.68.234.84:/tmp/
+sudo cp /tmp/apache.conf /etc/apache2/sites-available/the-hub-vrc.fr.conf
+
+sudo a2ensite the-hub-vrc.fr
+sudo apache2ctl configtest && sudo systemctl reload apache2
+
+sudo apt install -y python3-certbot-apache
+sudo certbot --apache -d the-hub-vrc.fr -d www.the-hub-vrc.fr
 ```
 
 Le DNS de `the-hub-vrc.fr` doit pointer sur `51.68.234.84` **avant** certbot,
 sinon la validation échoue.
+
+`X-Forwarded-Proto` est posé via `expr=%{REQUEST_SCHEME}` et non en dur :
+certbot duplique ce VirtualHost pour le 443, et une valeur figée a `http` y
+ferait construire les callbacks Discord en http.
 
 ## 5. Clé SSH pour GitHub Actions
 
@@ -183,4 +193,4 @@ cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
 - **Le seed n'est jamais lancé automatiquement** : les scripts `db:seed*`
   contiennent des données de démonstration et n'ont rien à faire en production.
 - **Port 3200** : l'application n'écoute que sur `127.0.0.1`, elle n'est donc pas
-  joignable depuis l'extérieur autrement que par nginx.
+  joignable depuis l'extérieur autrement que par Apache.
