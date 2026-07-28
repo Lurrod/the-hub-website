@@ -56,9 +56,28 @@ sudo -u postgres createuser thehub --pwprompt
 sudo -u postgres createdb thehub -O thehub
 ```
 
-## 3. Secrets de production
+## Deux jeux de secrets, à ne pas confondre
 
-Créer `<APP_DIR>/shared/.env` (droits `600`) :
+|  | Étape 3 | Étape 6 |
+|---|---|---|
+| Où | fichier **sur le serveur** | interface **GitHub** |
+| Quoi | `<APP_DIR>/shared/.env` | Settings → Secrets → Actions |
+| Rôle | **faire tourner** le site (base, Discord, HenrikDev) | **livrer** le site (IP, user, clé SSH) |
+| Visible par GitHub | **non, jamais** | oui |
+
+Les secrets applicatifs ne quittent jamais le serveur. GitHub ne reçoit que de
+quoi s'y connecter en SSH.
+
+## 3. Secrets de production (sur le serveur)
+
+Créer `<APP_DIR>/shared/.env` (droits `600`). La plupart des valeurs se
+reprennent telles quelles depuis ton `.env.local` de développement :
+
+- **à copier tel quel** : `AUTH_DISCORD_ID`, `AUTH_DISCORD_SECRET`,
+  `ADMIN_DISCORD_IDS`, `HENRIKDEV_API_KEY`
+- **à refaire** : `DATABASE_URL` (base du serveur, étape 2) et `AUTH_SECRET`
+  (regénérer avec `npx auth secret` — ne pas réutiliser celui de dev)
+- **à ajouter** : `AUTH_URL`, `NEXT_PUBLIC_BASE_URL`, `AUTH_TRUST_HOST`
 
 ```ini
 DATABASE_URL="postgresql://thehub:MOT_DE_PASSE@localhost:5432/thehub"
@@ -107,9 +126,10 @@ ssh-keyscan 51.68.234.84                 # valeur de SSH_KNOWN_HOSTS
 ssh -i ~/.ssh/thehub_deploy ubuntu@51.68.234.84 'pm2 -v'   # vérifie que ça passe
 ```
 
-## 6. Secrets GitHub
+## 6. Secrets GitHub (pour la livraison)
 
-**Settings → Secrets and variables → Actions** :
+**Settings → Secrets and variables → Actions**. Rien d'applicatif ici : ces
+valeurs servent uniquement à GitHub Actions pour se connecter au serveur.
 
 | Secret | Valeur |
 |---|---|
