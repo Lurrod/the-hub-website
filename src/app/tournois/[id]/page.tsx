@@ -2,17 +2,33 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTournament, getTournamentTeamsWithPlayers } from "@/lib/data/tournaments";
 import { listTournamentMatches, getGroupsWithMatches, listBracketMatches } from "@/lib/data/matches";
+import { getTournamentStats } from "@/lib/data/tournament-stats";
 import TournamentTabs from "@/components/tournament-tabs";
+import TournamentStats from "@/components/tournament-stats";
 import UpcomingMatchList from "@/components/upcoming-match-list";
 import TournamentMatchList from "@/components/tournament-match-list";
 import StageMenu from "@/components/stage-menu";
 import ParticipantCard from "@/components/participant-card";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
+import { listTeamsManagedBy, countActiveRosterPlayers } from "@/lib/data/teams";
+import TournamentRegister, { type RegistrableTeam } from "@/components/tournament-register";
 import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import { computeStandings } from "@/lib/standings";
 import type { ReactNode } from "react";
+
+import { tournamentTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const name = await tournamentTitle(id);
+  return { title: name ?? "Tournoi" };
+}
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,11 +38,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const sessionUser = await getSessionUser();
   const canManage = canManageTournament(sessionUser, await getTournamentManagerIds(id));
 
-  const [participants, allMatches, groups, bracket] = await Promise.all([
+  const [participants, allMatches, groups, bracket, stats] = await Promise.all([
     getTournamentTeamsWithPlayers(id),
     listTournamentMatches(id),
     getGroupsWithMatches(id),
     listBracketMatches(id),
+    getTournamentStats(id),
   ]);
 
   // Étapes : chaque poule → son classement ; les playoffs → l'arbre du bracket.
@@ -84,9 +101,23 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     m.group ? m.group.name : m.round ?? "Playoffs";
 
   const teamCount = tournament.participants.length;
+
+  // Équipes que l'utilisateur gère, avec leur effectif : sert à proposer (ou non)
+  // l'inscription au tournoi.
+  const registeredIds = new Set(tournament.participants.map((p) => p.teamId));
+  const managedTeams = sessionUser ? await listTeamsManagedBy(sessionUser.id) : [];
+  const myTeams: RegistrableTeam[] = await Promise.all(
+    managedTeams.map(async (t) => ({
+      id: t.id,
+      name: t.name,
+      players: await countActiveRosterPlayers(t.id),
+      registered: registeredIds.has(t.id),
+    }))
+  );
+
   const fmt = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : null);
   const dateRange =
-    [fmt(tournament.startDate), fmt(tournament.endDate)].filter(Boolean).join(" – ") ||
+    [fmt(tournament.startDate), fmt(tournament.endDate)].filter(Boolean).join(" - ") ||
     "Dates à définir";
 
   const apercu = (
@@ -121,6 +152,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
             Équipes participantes
           </h2>
+          <div className="mb-4">
+            <TournamentRegister
+              tournamentId={id}
+              status={tournament.status}
+              teams={myTeams}
+              teamCount={teamCount}
+              maxTeams={tournament.maxTeams}
+            />
+          </div>
           {participants.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">Aucune équipe inscrite.</p>
           ) : (
@@ -174,6 +214,19 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     </div>
   );
 
+  const statsTab = stats.hasData ? (
+    <TournamentStats
+      tournamentRecords={stats.tournamentRecords}
+      records={stats.records}
+      averages={stats.averages}
+      totals={stats.totals}
+    />
+  ) : (
+    <div className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
+      Aucune statistique disponible pour le moment.
+    </div>
+  );
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <TournamentTabs
@@ -199,13 +252,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
             <div className="flex items-center gap-8 sm:ml-auto">
               <div className="text-left">
-                <div className="text-xs font-semibold text-white">{teamCount}</div>
+                <div className="text-xs font-semibold text-white">
+                  {tournament.maxTeams != null ? `${teamCount}/${tournament.maxTeams}` : teamCount}
+                </div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   équipes
                 </div>
               </div>
               <div className="text-left">
-                <div className="text-xs font-semibold text-white">{tournament.prizePool ?? "—"}</div>
+                <div className="text-xs font-semibold text-white">{tournament.prizePool ?? "-"}</div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   cash prize
                 </div>
@@ -224,6 +279,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         tabs={[
           { key: "apercu", label: "Aperçu", content: apercu },
           { key: "matches", label: "Matches", content: matchesTab },
+          { key: "stats", label: "Stats", content: statsTab },
           { key: "equipes", label: "Équipes", content: equipesTab },
         ]}
       />

@@ -22,11 +22,8 @@ export default function TeamCard({ team }: { team: TeamCardData }) {
           {team.tag.slice(0, 3).toUpperCase()}
         </div>
       )}
-      <div>
-        <div className="font-medium text-white">{team.name}</div>
-        <div className="text-xs text-[var(--text-muted)]">
-          {team.tag} · {team.region}
-        </div>
+      <div className="min-w-0">
+        <div className="truncate font-medium text-white">{team.name}</div>
       </div>
     </Link>
   );

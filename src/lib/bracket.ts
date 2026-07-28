@@ -84,7 +84,7 @@ function roundRank(name: string): number {
 
 /**
  * Regroupe les matchs en sections (upper / lower / grande finale) puis en rounds
- * ordonnés. Rendu en colonnes indépendantes par section — robuste pour TOUT
+ * ordonnés. Rendu en colonnes indépendantes par section - robuste pour TOUT
  * format (simple élim, double élim, swiss, poule unique…), sans supposer un
  * arbre binaire parfait (ce qui cassait avec un lower bracket).
  */

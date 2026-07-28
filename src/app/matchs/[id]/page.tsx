@@ -1,9 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMatch } from "@/lib/data/matches";
-import { MATCH_STATUS_LABELS, MATCH_STAGE_LABELS, type MatchStatus } from "@/lib/constants";
-import StatusBadge from "@/components/status-badge";
+import { MATCH_STAGE_LABELS } from "@/lib/constants";
 import MatchScoreboard, { type ScoreboardMap, type RoundEntry } from "@/components/match-scoreboard";
+
+import { matchTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const name = await matchTitle(id);
+  return { title: name ?? "Match" };
+}
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,6 +30,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     mapName: m.mapName,
     scoreA: m.scoreA,
     scoreB: m.scoreB,
+    durationSec: m.durationSec,
     rounds: (Array.isArray(m.roundTimeline) ? m.roundTimeline : []) as RoundEntry[],
     stats: m.stats.map((s) => ({
       id: s.id,
@@ -38,21 +50,14 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       firstDeaths: s.firstDeaths,
     })),
   }));
-  const phase =
-    match.stage === "BRACKET"
-      ? `${MATCH_STAGE_LABELS.BRACKET}${match.round ? ` · ${match.round}` : ""}`
-      : `${MATCH_STAGE_LABELS.GROUP}${match.group ? ` · ${match.group.name}` : ""}`;
+  const stageLabel =
+    match.stage === "BRACKET" ? MATCH_STAGE_LABELS.BRACKET : MATCH_STAGE_LABELS.GROUP;
+  const stageExtra =
+    match.stage === "BRACKET" ? match.round : (match.group?.name ?? null);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10">
-      <Link
-        href={`/tournois/${match.tournamentId}`}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
-      >
-        {match.tournament.name}
-      </Link>
-
-      <div className="mx-auto mt-6 max-w-2xl rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8">
         {/* Équipe A */}
         <Link
@@ -60,7 +65,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-end sm:text-right"
         >
           <div className="order-2 min-w-0 sm:order-1">
-            <div className={`truncate text-lg font-semibold sm:text-xl ${aWin ? "text-[var(--accent)]" : "text-white"}`}>
+            <div
+              style={{ fontSize: "18px" }}
+              className={`truncate font-semibold ${aWin ? "text-[var(--accent)]" : "text-white"}`}
+            >
               {match.teamA.name}
             </div>
             <div className="stat text-xs text-[var(--text-muted)]">{match.teamA.tag}</div>
@@ -76,10 +84,14 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </Link>
 
         {/* Score */}
-        <div className="stat flex items-center gap-2 text-4xl sm:gap-3 sm:text-5xl">
-          <span className={aWin ? "font-bold text-[var(--accent)]" : "text-white"}>{match.scoreA}</span>
-          <span className="text-lg text-[var(--text-subtle)] sm:text-2xl">–</span>
-          <span className={bWin ? "font-bold text-[var(--accent)]" : "text-white"}>{match.scoreB}</span>
+        <div className="stat flex items-center gap-2 sm:gap-3">
+          <span style={{ fontSize: "24px" }} className={aWin ? "font-bold text-[var(--accent)]" : "text-white"}>
+            {match.scoreA}
+          </span>
+          <span style={{ fontSize: "16px" }} className="text-[var(--text-subtle)]">-</span>
+          <span style={{ fontSize: "24px" }} className={bWin ? "font-bold text-[var(--accent)]" : "text-white"}>
+            {match.scoreB}
+          </span>
         </div>
 
         {/* Équipe B */}
@@ -96,7 +108,10 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
           <div className="min-w-0">
-            <div className={`truncate text-lg font-semibold sm:text-xl ${bWin ? "text-[var(--accent)]" : "text-white"}`}>
+            <div
+              style={{ fontSize: "18px" }}
+              className={`truncate font-semibold ${bWin ? "text-[var(--accent)]" : "text-white"}`}
+            >
               {match.teamB.name}
             </div>
             <div className="stat text-xs text-[var(--text-muted)]">{match.teamB.tag}</div>
@@ -104,14 +119,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
-        <span className="stat rounded bg-[var(--surface)] px-1.5 py-0.5 text-[10px] font-medium">BO{match.bestOf}</span>
-        <span>{phase}</span>
-        <StatusBadge label={MATCH_STATUS_LABELS[match.status as MatchStatus]} status={match.status} />
-      </div>
-
       {match.vodUrl && (
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <a
             href={match.vodUrl}
             target="_blank"
@@ -122,6 +131,38 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </a>
         </div>
       )}
+
+      {/* Bas du bandeau : à gauche le tournoi, à droite le stage + le BO */}
+      <div className="mt-6 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
+        <Link
+          href={`/tournois/${match.tournamentId}`}
+          className="group flex min-w-0 items-center gap-2"
+        >
+          {match.tournament.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={match.tournament.logo} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+          ) : (
+            <div className="monogram grid h-8 w-8 shrink-0 place-items-center rounded text-[10px]">
+              {match.tournament.name.slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <span className="truncate text-sm font-medium text-white transition-colors group-hover:text-[var(--accent)]">
+            {match.tournament.name}
+          </span>
+        </Link>
+        <div className="flex shrink-0 items-center gap-2 text-xs text-[var(--text-muted)]">
+          <span className="flex items-center">
+            {stageLabel}
+            {stageExtra && (
+              <>
+                <span className="dot-sep">·</span>
+                {stageExtra}
+              </>
+            )}
+          </span>
+          <span className="stat rounded bg-[var(--bg)] px-1.5 py-0.5 text-[10px] font-medium">BO{match.bestOf}</span>
+        </div>
+      </div>
       </div>
 
       <section className="mt-10">
@@ -146,7 +187,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <li key={m.id} className="flex items-center justify-between p-3 text-sm transition-colors hover:bg-[var(--table-row-hover)]">
                 <span className="text-white">{m.mapName}</span>
                 <span className="stat text-[var(--text-muted)]">
-                  {m.scoreA} – {m.scoreB}
+                  {m.scoreA} - {m.scoreB}
                 </span>
               </li>
             ))}

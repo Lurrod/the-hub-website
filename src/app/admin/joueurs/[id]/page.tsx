@@ -3,7 +3,20 @@ import { getSessionUser } from "@/lib/server-auth";
 import { isAdmin } from "@/lib/permissions";
 import { getPlayer } from "@/lib/data/players";
 import PlayerForm from "@/components/player-form";
+import ConfirmDeleteButton from "@/components/confirm-delete-button";
 import { updatePlayerAction, deletePlayerAction } from "@/app/admin/actions/players";
+
+import { playerTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const name = await playerTitle(id);
+  return { title: name ? `Admin · ${name}` : "Admin · Joueur" };
+}
 
 export default async function EditPlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,11 +41,14 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
           socials: (player.socials ?? {}) as { twitter?: string; twitch?: string },
         }}
       />
-      <form action={deleteWithId} className="mt-8">
-        <button className="rounded border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)]">
-          Supprimer le joueur
-        </button>
-      </form>
+      <div className="mt-8">
+        <ConfirmDeleteButton
+          action={deleteWithId}
+          label="Supprimer le joueur"
+          title="Supprimer le joueur ?"
+          message={`Le joueur « ${player.pseudo} » sera supprimé définitivement. Cette action est irréversible.`}
+        />
+      </div>
     </main>
   );
 }

@@ -4,15 +4,24 @@ import { canManageTeam } from "@/lib/permissions";
 import { getTeam } from "@/lib/data/teams";
 import { addManagerAction, removeManagerAction } from "@/app/admin/actions/teams";
 
-export default async function TeamManagersPage({
+import { teamTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
-  const { error } = await searchParams;
+  const name = await teamTitle(id);
+  return { title: name ? `Managers · ${name}` : "Managers" };
+}
+
+export default async function TeamManagersPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const user = await getSessionUser();
   const managerIds = await getTeamManagerIds(id);
   if (!canManageTeam(user, managerIds)) redirect("/");
@@ -24,7 +33,7 @@ export default async function TeamManagersPage({
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-white">Managers · {team.name}</h1>
+      <h1 className="mb-6 text-2xl font-bold text-white">Managers<span className="dot-sep">·</span>{team.name}</h1>
 
       <ul className="mb-6 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
         {team.managers.length === 0 && (
@@ -42,16 +51,6 @@ export default async function TeamManagersPage({
           );
         })}
       </ul>
-
-      {error && (
-        <p className="mb-4 rounded border border-[var(--destructive)] bg-[var(--destructive-soft)] px-3 py-2 text-sm text-[var(--destructive)]">
-          {error === "notfound"
-            ? "Aucun utilisateur avec cet ID Discord. Il doit s'être connecté au moins une fois via Discord pour exister en base."
-            : error === "lastmanager"
-              ? "Impossible de retirer le dernier manager de l'équipe."
-              : "Renseigne l'ID Discord de l'utilisateur."}
-        </p>
-      )}
 
       <form action={addWithId} className="flex gap-2">
         <input

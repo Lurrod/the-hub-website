@@ -24,7 +24,7 @@ export default function TournamentListRow({ t }: { t: Row }) {
   return (
     <Link
       href={`/tournois/${t.id}`}
-      className="card flex items-center gap-4 p-3 transition-colors hover:border-[var(--border-strong)]"
+      className="flex items-center gap-4 rounded px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
     >
       <div className="w-16 shrink-0 sm:w-24">
         <span className="stat block text-center text-sm font-semibold text-[var(--accent)]">
@@ -47,12 +47,12 @@ export default function TournamentListRow({ t }: { t: Row }) {
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-5 sm:gap-8">
-        <div className="text-right">
-          <div className="stat text-base text-white">{t.teamCount}</div>
+        <div className="text-left">
+          <div className="text-xs font-semibold text-white">{t.teamCount}</div>
           <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">équipes</div>
         </div>
-        <div className="text-right">
-          <div className="stat text-base text-white">{t.prizePool ?? "—"}</div>
+        <div className="text-left">
+          <div className="text-xs font-semibold text-white">{t.prizePool ?? "-"}</div>
           <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
             cash prize
           </div>

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 /**
  * Affiche le lien d'invitation complet + un bouton « Copier ».
  * Si `link` est relatif (NEXT_PUBLIC_BASE_URL absent), on préfixe l'origine
- * courante côté client — via useEffect pour éviter tout hydration mismatch.
+ * courante côté client - via useEffect pour éviter tout hydration mismatch.
  */
 export default function InviteLink({ link }: { link: string }) {
   const [url, setUrl] = useState(link);

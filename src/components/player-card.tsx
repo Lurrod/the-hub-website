@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Flag from "@/components/flag";
 
 type PlayerCardData = {
   id: string;
@@ -24,7 +25,9 @@ export default function PlayerCard({ player }: { player: PlayerCardData }) {
       <div>
         <div className="font-medium text-white">{player.pseudo}</div>
         {player.nationality && (
-          <div className="text-xs text-[var(--text-muted)]">{player.nationality}</div>
+          <div className="mt-0.5">
+            <Flag country={player.nationality} />
+          </div>
         )}
       </div>
     </Link>

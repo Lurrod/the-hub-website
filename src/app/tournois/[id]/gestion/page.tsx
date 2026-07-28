@@ -4,7 +4,20 @@ import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
 import TournamentForm from "@/components/tournament-form";
+import ConfirmDeleteButton from "@/components/confirm-delete-button";
 import { updateTournamentAction, deleteTournamentAction } from "@/app/admin/actions/tournaments";
+
+import { tournamentTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const name = await tournamentTitle(id);
+  return { title: name ? `Gestion · ${name}` : "Gestion du tournoi" };
+}
 
 function toDateInput(d: Date | null): string {
   return d ? new Date(d).toISOString().slice(0, 10) : "";
@@ -28,12 +41,12 @@ export default async function TournamentGestionPage({ params }: { params: Promis
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Gérer · {tournament.name}</h1>
+        <h1 className="text-2xl font-bold text-white">Gérer<span className="dot-sep">·</span>{tournament.name}</h1>
         <Link
           href={`/tournois/${id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
         >
-          ← Voir la page publique
+          Voir la page publique
         </Link>
       </div>
 
@@ -63,6 +76,10 @@ export default async function TournamentGestionPage({ params }: { params: Promis
           prizePool: tournament.prizePool ?? undefined,
           organizer: tournament.organizer ?? undefined,
           description: tournament.description ?? undefined,
+          maxTeams: tournament.maxTeams ?? undefined,
+          groupSize: tournament.groupSize ?? undefined,
+          bestOf: tournament.bestOf ?? undefined,
+          seeding: tournament.seeding ?? undefined,
         }}
       />
 
@@ -71,11 +88,12 @@ export default async function TournamentGestionPage({ params }: { params: Promis
         <p className="mb-3 text-sm text-[var(--text-muted)]">
           La suppression du tournoi est définitive (poules, matchs et inscriptions liés).
         </p>
-        <form action={deleteWithId}>
-          <button className="rounded border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)]">
-            Supprimer le tournoi
-          </button>
-        </form>
+        <ConfirmDeleteButton
+          action={deleteWithId}
+          label="Supprimer le tournoi"
+          title="Supprimer le tournoi ?"
+          message={`Le tournoi « ${tournament.name} » sera supprimé définitivement. Poules, matchs et inscriptions liés seront perdus.`}
+        />
       </section>
     </main>
   );

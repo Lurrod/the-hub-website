@@ -1,8 +1,29 @@
 import { randomBytes } from "node:crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma, type MembershipRole } from "@prisma/client";
 import { db } from "@/lib/db";
-import type { TeamInput } from "@/lib/validation/team";
+import type { TeamInput, RosterEntry } from "@/lib/validation/team";
 import { INVITE_TTL_DAYS } from "@/lib/invite";
+
+/**
+ * Crée un roster initial (nouveaux joueurs + adhésions) pour une équipe.
+ * Chaque joueur est créé de zéro, donc aucun conflit avec l'invariant
+ * « une seule adhésion active par joueur ».
+ */
+export async function addInitialRoster(teamId: string, roster: RosterEntry[]): Promise<void> {
+  if (roster.length === 0) return;
+  await db.$transaction(
+    roster.map((entry) =>
+      db.player.create({
+        data: {
+          pseudo: entry.pseudo,
+          memberships: {
+            create: { teamId, role: entry.role as MembershipRole },
+          },
+        },
+      })
+    )
+  );
+}
 
 export function listTeams(filters?: { region?: string }) {
   return db.team.findMany({
@@ -101,4 +122,22 @@ export function revokeTeamInvite(teamId: string) {
 /** Équipe correspondant à un token d'invitation (ou null). */
 export function getTeamByInviteToken(token: string) {
   return db.team.findUnique({ where: { inviteToken: token } });
+}
+
+/** Équipes dont l'utilisateur est manager (pour l'inscription à un tournoi). */
+export async function listTeamsManagedBy(userId: string) {
+  const rows = await db.teamManager.findMany({
+    where: { userId },
+    include: { team: { select: { id: true, name: true, tag: true } } },
+  });
+  return rows
+    .map((r) => r.team)
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+}
+
+/** Joueurs actifs du roster (hors COACH / MANAGER), pour le seuil d'inscription. */
+export function countActiveRosterPlayers(teamId: string): Promise<number> {
+  return db.teamMembership.count({
+    where: { teamId, leaveDate: null, role: { in: ["JOUEUR", "SUB"] } },
+  });
 }

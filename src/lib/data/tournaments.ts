@@ -14,6 +14,15 @@ export function listTournaments(filters?: { region?: string; status?: string }) 
   });
 }
 
+/** Tournois auxquels une équipe est (ou a été) inscrite, plus récents d'abord. */
+export function getTeamTournaments(teamId: string) {
+  return db.tournament.findMany({
+    where: { participants: { some: { teamId } } },
+    include: { _count: { select: { participants: true } } },
+    orderBy: [{ startDate: "desc" }, { name: "asc" }],
+  });
+}
+
 export function getTournament(id: string) {
   return db.tournament.findUnique({
     where: { id },
@@ -55,6 +64,10 @@ export function createTournament(data: TournamentInput, createdById: string) {
       prizePool: data.prizePool,
       organizer: data.organizer,
       description: data.description,
+      maxTeams: data.maxTeams,
+      groupSize: data.groupSize,
+      bestOf: data.bestOf,
+      seeding: data.seeding,
       createdById,
     },
   });
@@ -73,6 +86,10 @@ export function updateTournament(id: string, data: TournamentInput) {
       prizePool: data.prizePool ?? null,
       organizer: data.organizer ?? null,
       description: data.description ?? null,
+      maxTeams: data.maxTeams ?? null,
+      groupSize: data.groupSize ?? null,
+      bestOf: data.bestOf ?? null,
+      seeding: data.seeding ?? null,
     },
   });
 }

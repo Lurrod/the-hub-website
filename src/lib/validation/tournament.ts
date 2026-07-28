@@ -1,5 +1,19 @@
 import { z } from "zod";
-import { REGIONS, TOURNAMENT_FORMATS, TOURNAMENT_STATUSES } from "@/lib/constants";
+import {
+  REGIONS,
+  TOURNAMENT_FORMATS,
+  TOURNAMENT_STATUSES,
+  SEEDING_TYPES,
+} from "@/lib/constants";
+
+// Entier positif optionnel : "" ou absent -> undefined.
+const optionalPositiveInt = z
+  .union([z.string(), z.number()])
+  .optional()
+  .transform((v) => (v === undefined || v === "" ? undefined : Number(v)))
+  .refine((n) => n === undefined || (Number.isInteger(n) && n > 0), {
+    message: "Doit être un entier positif",
+  });
 
 // Date optionnelle : "" ou absente -> undefined ; sinon Date valide.
 const optionalDate = z
@@ -21,10 +35,18 @@ export const tournamentInputSchema = z
     prizePool: z.string().trim().max(120).optional(),
     organizer: z.string().trim().max(120).optional(),
     description: z.string().trim().max(4000).optional(),
+    maxTeams: optionalPositiveInt,
+    groupSize: optionalPositiveInt,
+    bestOf: optionalPositiveInt,
+    seeding: z.enum(SEEDING_TYPES).optional(),
   })
   .refine((v) => !(v.startDate && v.endDate) || v.startDate <= v.endDate, {
     message: "La date de fin doit suivre la date de début",
     path: ["endDate"],
+  })
+  .refine((v) => v.groupSize === undefined || v.maxTeams === undefined || v.groupSize <= v.maxTeams, {
+    message: "La taille de poule ne peut pas dépasser le nombre d'équipes",
+    path: ["groupSize"],
   });
 
 export type TournamentInput = z.infer<typeof tournamentInputSchema>;

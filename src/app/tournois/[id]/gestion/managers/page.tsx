@@ -7,15 +7,24 @@ import {
   removeTournamentManagerAction,
 } from "@/app/admin/actions/tournaments";
 
-export default async function TournamentManagersPage({
+import { tournamentTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
-  const { error } = await searchParams;
+  const name = await tournamentTitle(id);
+  return { title: name ? `Managers · ${name}` : "Managers" };
+}
+
+export default async function TournamentManagersPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   const user = await getSessionUser();
   const managerIds = await getTournamentManagerIds(id);
   if (!canManageTournament(user, managerIds)) redirect("/");
@@ -28,7 +37,7 @@ export default async function TournamentManagersPage({
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-white">Managers · {tournament.name}</h1>
+      <h1 className="mb-6 text-2xl font-bold text-white">Managers<span className="dot-sep">·</span>{tournament.name}</h1>
 
       <ul className="mb-6 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
         {tournament.managers.length === 0 && (
@@ -46,16 +55,6 @@ export default async function TournamentManagersPage({
           );
         })}
       </ul>
-
-      {error && (
-        <p className="mb-4 rounded border border-[var(--destructive)] bg-[var(--destructive-soft)] px-3 py-2 text-sm text-[var(--destructive)]">
-          {error === "notfound"
-            ? "Aucun utilisateur avec cet ID Discord. Il doit s'être connecté au moins une fois via Discord pour exister en base."
-            : error === "lastmanager"
-              ? "Impossible de retirer le dernier manager du tournoi."
-              : "Renseigne l'ID Discord de l'utilisateur."}
-        </p>
-      )}
 
       <form action={addWithId} className="flex gap-2">
         <input

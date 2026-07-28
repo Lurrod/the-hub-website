@@ -8,6 +8,10 @@ import {
 } from "@/app/profil/actions";
 import CountrySelect from "@/components/country-select";
 import RiotIdForm from "@/components/riot-id-form";
+import ImageUpload from "@/components/image-upload";
+import { VALORANT_ROLES, ROLE_LABELS } from "@/lib/roles";
+
+export const metadata = { title: "Mon profil" };
 
 const input =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-[var(--accent)]";
@@ -45,6 +49,9 @@ export default async function ProfilePage() {
   const membership = await getActiveMembership(player.id);
   const socials = (player.socials ?? {}) as { twitter?: string; twitch?: string };
   const nationality = player.nationality ?? "";
+  const birthdateValue = player.birthdate
+    ? new Date(player.birthdate).toISOString().slice(0, 10)
+    : "";
   const currentRiotId = player.riotName ? `${player.riotName}#${player.riotTag}` : "";
 
   return (
@@ -128,6 +135,27 @@ export default async function ProfilePage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className={lbl}>
+                Rôle principal
+                <select
+                  name="valorantRole"
+                  defaultValue={player.valorantRole ?? ""}
+                  className={input}
+                >
+                  <option value="">Aucun</option>
+                  {VALORANT_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_LABELS[r]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={lbl}>
+                Date de naissance
+                <input name="birthdate" type="date" defaultValue={birthdateValue} className={input} />
+              </label>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={lbl}>
                 Twitter (x.com)
                 <input
                   name="twitter"
@@ -148,15 +176,10 @@ export default async function ProfilePage() {
                 />
               </label>
             </div>
-            <label className={lbl}>
+            <div className={lbl}>
               Photo
-              <input
-                name="photo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className={input}
-              />
-            </label>
+              <ImageUpload name="photo" shape="round" currentUrl={player.photo} />
+            </div>
             <button className="mt-1 justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
               Enregistrer
             </button>

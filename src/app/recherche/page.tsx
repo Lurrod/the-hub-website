@@ -2,7 +2,8 @@ import { searchAll } from "@/lib/data/search";
 import TeamCard from "@/components/team-card";
 import PlayerCard from "@/components/player-card";
 import TournamentCard from "@/components/tournament-card";
-import SectionHeader from "@/components/section-header";
+
+export const metadata = { title: "Recherche" };
 
 export default async function SearchPage({
   searchParams,
@@ -16,64 +17,81 @@ export default async function SearchPage({
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6">
-        <SectionHeader eyebrow="Explorer" title="Recherche" />
+      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Recherche
+      </h1>
+
+      <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <form action="/recherche" method="get" className="mb-4">
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Équipe, joueur ou tournoi…"
+            aria-label="Rechercher"
+            className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[#191c22] px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+          />
+        </form>
+
+        {q.length === 0 ? (
+          <p className="text-sm text-[var(--text-muted)]">Saisis un terme pour lancer la recherche.</p>
+        ) : total === 0 ? (
+          <p className="text-sm text-[var(--text-muted)]">Aucun résultat pour « {q} ».</p>
+        ) : (
+          <div className="space-y-6">
+            {results.teams.length > 0 && (
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-white">
+                    Équipes
+                  </span>
+                  <span className="shrink-0 text-xs text-[var(--text-muted)]">
+                    {results.teams.length} résultat{results.teams.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {results.teams.map((t) => (
+                    <TeamCard key={t.id} team={t} />
+                  ))}
+                </div>
+              </section>
+            )}
+            {results.players.length > 0 && (
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-white">
+                    Joueurs
+                  </span>
+                  <span className="shrink-0 text-xs text-[var(--text-muted)]">
+                    {results.players.length} résultat{results.players.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {results.players.map((p) => (
+                    <PlayerCard key={p.id} player={p} />
+                  ))}
+                </div>
+              </section>
+            )}
+            {results.tournaments.length > 0 && (
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-white">
+                    Tournois
+                  </span>
+                  <span className="shrink-0 text-xs text-[var(--text-muted)]">
+                    {results.tournaments.length} résultat{results.tournaments.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {results.tournaments.map((t) => (
+                    <TournamentCard key={t.id} tournament={t} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
       </div>
-
-      <form action="/recherche" method="get" className="mb-8">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Équipe, joueur ou tournoi…"
-          aria-label="Rechercher"
-          className="w-full max-w-md rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
-        />
-      </form>
-
-      {q.length === 0 ? (
-        <p className="text-[var(--text-muted)]">Saisis un terme pour lancer la recherche.</p>
-      ) : total === 0 ? (
-        <p className="text-[var(--text-muted)]">Aucun résultat pour « {q} ».</p>
-      ) : (
-        <div className="space-y-10">
-          {results.teams.length > 0 && (
-            <section>
-              <h2 className="eyebrow mb-3">
-                Équipes ({results.teams.length})
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {results.teams.map((t) => (
-                  <TeamCard key={t.id} team={t} />
-                ))}
-              </div>
-            </section>
-          )}
-          {results.players.length > 0 && (
-            <section>
-              <h2 className="eyebrow mb-3">
-                Joueurs ({results.players.length})
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {results.players.map((p) => (
-                  <PlayerCard key={p.id} player={p} />
-                ))}
-              </div>
-            </section>
-          )}
-          {results.tournaments.length > 0 && (
-            <section>
-              <h2 className="eyebrow mb-3">
-                Tournois ({results.tournaments.length})
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {results.tournaments.map((t) => (
-                  <TournamentCard key={t.id} tournament={t} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-      )}
     </main>
   );
 }

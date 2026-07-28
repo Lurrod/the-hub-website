@@ -15,7 +15,7 @@ function TeamLine({ team }: { team: Team }) {
           {team?.tag?.slice(0, 3).toUpperCase() ?? "?"}
         </div>
       )}
-      <span className="truncate text-xs text-white">{team?.tag ?? "—"}</span>
+      <span className="truncate text-xs text-white">{team?.tag ?? "-"}</span>
     </div>
   );
 }

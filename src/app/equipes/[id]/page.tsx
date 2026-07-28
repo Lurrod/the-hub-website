@@ -3,11 +3,26 @@ import SocialLinks from "@/components/social-links";
 import { notFound } from "next/navigation";
 import { getTeam } from "@/lib/data/teams";
 import { getTeamRoster, getTeamAlumni } from "@/lib/data/players";
-import { getTeamRecentMatches, getTeamRecord } from "@/lib/data/matches";
+import { getTeamMatchesByTournament } from "@/lib/data/matches";
+import { getTeamTournaments } from "@/lib/data/tournaments";
 import { getSessionUser, getTeamManagerIds } from "@/lib/server-auth";
 import { canManageTeam } from "@/lib/permissions";
-import MatchRow from "@/components/match-row";
-import SectionHeader from "@/components/section-header";
+import TeamMatchGroups from "@/components/team-match-groups";
+import TournamentTabs from "@/components/tournament-tabs";
+import TournamentCard from "@/components/tournament-card";
+import Flag from "@/components/flag";
+
+import { teamTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const name = await teamTitle(id);
+  return { title: name ?? "Équipe" };
+}
 
 const ROLE_LABELS: Record<string, string> = {
   JOUEUR: "Joueur",
@@ -15,31 +30,6 @@ const ROLE_LABELS: Record<string, string> = {
   COACH: "Coach",
   MANAGER: "Manager",
 };
-
-function BilanCell({
-  label,
-  value,
-  tone = "default",
-}: {
-  label: string;
-  value: string;
-  tone?: "default" | "accent" | "pos" | "neg";
-}) {
-  const color =
-    tone === "accent"
-      ? "text-[var(--accent)]"
-      : tone === "pos"
-        ? "text-[var(--success)]"
-        : tone === "neg"
-          ? "text-[var(--text-muted)]"
-          : "text-white";
-  return (
-    <div className="bg-[var(--surface)] px-4 py-3">
-      <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{label}</div>
-      <div className={`stat mt-1 text-2xl ${color}`}>{value}</div>
-    </div>
-  );
-}
 
 export default async function TeamPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -49,113 +39,60 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const sessionUser = await getSessionUser();
   const canManage = canManageTeam(sessionUser, await getTeamManagerIds(team.id));
 
-  const [roster, recent, alumni, record] = await Promise.all([
+  const [roster, matchGroups, alumni, tournaments] = await Promise.all([
     getTeamRoster(team.id),
-    getTeamRecentMatches(team.id),
+    getTeamMatchesByTournament(team.id),
     getTeamAlumni(team.id),
-    getTeamRecord(team.id),
+    getTeamTournaments(team.id),
   ]);
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "…");
 
   const socials = (team.socials ?? {}) as Record<string, string | undefined>;
 
-  return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
-      {/* Hero d'identité */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        {team.logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={team.logo} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
-        ) : (
-          <div className="monogram grid h-20 w-20 shrink-0 place-items-center rounded-lg text-xl">
-            {team.tag.slice(0, 3).toUpperCase()}
-          </div>
-        )}
-        <div className="min-w-0">
-          <span className="eyebrow mb-1.5">Équipe</span>
-          <h1 className="text-2xl font-bold text-white">
-            {team.name} <span className="text-[var(--text-muted)]">[{team.tag}]</span>
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-[var(--text-muted)]">
-              {team.region}
-            </span>
-            <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-[var(--text-muted)]">
-              {team.status === "ACTIVE" ? "Actif" : "Inactif"}
-            </span>
-            {roster.length > 0 && (
-              <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-[var(--text-muted)]">
-                <span className="stat">{roster.length}</span> joueurs
-              </span>
-            )}
-          </div>
-        </div>
-        {canManage && (
-          <Link
-            href={`/equipes/${team.id}/gestion`}
-            className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white sm:ml-auto"
-          >
-            Gérer l&apos;équipe
-          </Link>
-        )}
-      </div>
-
-      {/* Bilan chiffré */}
-      {record.played > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--border)] sm:grid-cols-4">
-          <BilanCell label="Matchs" value={`${record.played}`} />
-          <BilanCell label="Victoires" value={`${record.wins}`} tone="accent" />
-          <BilanCell label="Winrate" value={`${record.winrate}%`} />
-          <BilanCell
-            label="Diff. maps"
-            value={record.mapDiff > 0 ? `+${record.mapDiff}` : `${record.mapDiff}`}
-            tone={record.mapDiff > 0 ? "pos" : record.mapDiff < 0 ? "neg" : "default"}
-          />
-        </div>
-      )}
-
+  // Onglet Aperçu : identité, réseaux, effectif, anciens joueurs.
+  const apercu = (
+    <div className="flex flex-col gap-10">
       {team.description && (
-        <p className="mt-6 whitespace-pre-line text-[var(--text)]">{team.description}</p>
+        <p className="whitespace-pre-line text-[var(--text)]">{team.description}</p>
       )}
 
-      <SocialLinks socials={socials} className="mt-4" />
+      <SocialLinks socials={socials} />
 
-      {/* Roster en cartes joueur */}
-      <section className="mt-10">
-        <SectionHeader eyebrow="Effectif" title="Roster" />
+      <section>
+        <h2 className="mb-4 text-[16px] font-bold tracking-tight text-[var(--accent)]">Roster</h2>
         {roster.length === 0 ? (
           <p className="text-[var(--text-muted)]">Aucun joueur enregistré pour cette équipe.</p>
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
+          /* Roster sur une seule ligne : les tuiles se partagent la largeur, avec
+             une taille plancher qui fait défiler la rangée sur petit écran. */
+          <ul className="flex gap-2 overflow-x-auto pb-1">
             {roster.map((m) => (
-              <li key={m.id}>
+              <li key={m.id} className="min-w-[100px] flex-1">
                 <Link
                   href={`/joueurs/${m.playerId}`}
-                  className="card card-interactive flex items-center gap-3 p-3"
+                  className="card card-interactive flex h-full flex-col items-center gap-2 p-3 text-center"
                 >
                   {m.player.photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.player.photo} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                    <img src={m.player.photo} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
                   ) : (
-                    <div className="monogram grid h-11 w-11 shrink-0 place-items-center rounded-lg text-xs">
+                    <div className="monogram grid h-14 w-14 shrink-0 place-items-center rounded-lg text-sm">
                       {m.player.pseudo.slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold text-white">{m.player.pseudo}</div>
+                  {/* flex-1 + mt-auto : le rôle reste aligné en bas d'une tuile à
+                      l'autre, même quand un joueur a un nom réel et pas les autres. */}
+                  <div className="flex w-full min-w-0 flex-1 flex-col">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {m.player.nationality && <Flag country={m.player.nationality} />}
+                      <span className="truncate font-semibold text-white">{m.player.pseudo}</span>
+                    </div>
                     {m.player.realName && (
                       <div className="truncate text-xs text-[var(--text-muted)]">{m.player.realName}</div>
                     )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {m.player.nationality && (
-                      <span className="stat text-[10px] uppercase text-[var(--text-muted)]">
-                        {m.player.nationality}
-                      </span>
-                    )}
-                    <span className="text-[10px] uppercase tracking-wide text-[var(--text-subtle)]">
+                    <div className="mt-auto pt-0.5 text-[10px] uppercase tracking-wide text-[var(--text-subtle)]">
                       {ROLE_LABELS[m.role] ?? m.role}
-                    </span>
+                    </div>
                   </div>
                 </Link>
               </li>
@@ -164,37 +101,9 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
         )}
       </section>
 
-      {recent.length > 0 && (
-        <section className="mt-10">
-          <SectionHeader eyebrow="Forme" title="Résultats récents" />
-          <div className="grid gap-2">
-            {recent.map((m) => (
-              <MatchRow
-                key={m.id}
-                match={{
-                  id: m.id,
-                  teamAId: m.teamAId,
-                  teamBId: m.teamBId,
-                  scoreA: m.scoreA,
-                  scoreB: m.scoreB,
-                  winnerId: m.winnerId,
-                  status: m.status,
-                  date: m.date,
-                  bestOf: m.bestOf,
-                  vodUrl: m.vodUrl,
-                  teamA: m.teamA ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo } : null,
-                  teamB: m.teamB ? { name: m.teamB.name, tag: m.teamB.tag, logo: m.teamB.logo } : null,
-                  contextLabel: m.tournament.name,
-                }}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {alumni.length > 0 && (
-        <section className="mt-10">
-          <SectionHeader eyebrow="Historique" title="Anciens joueurs" />
+        <section>
+          <h2 className="mb-4 text-lg font-bold tracking-tight text-white">Anciens joueurs</h2>
           <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
             {alumni.map((m) => (
               <li
@@ -205,7 +114,8 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
                   {m.player.pseudo}
                 </Link>
                 <span className="text-[var(--text-muted)]">
-                  {ROLE_LABELS[m.role] ?? m.role} ·{" "}
+                  {ROLE_LABELS[m.role] ?? m.role}
+                  <span className="dot-sep">·</span>
                   <span className="stat">
                     {fmtDate(m.joinDate)} → {fmtDate(m.leaveDate)}
                   </span>
@@ -215,6 +125,81 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           </ul>
         </section>
       )}
+    </div>
+  );
+
+  // Onglet Matchs : matchs joués, rangés par tournoi dans des zones repliables.
+  const matchesTab = (
+    <TeamMatchGroups
+      teamId={team.id}
+      groups={matchGroups.map((g) => ({
+        tournamentId: g.tournament.id,
+        tournamentName: g.tournament.name,
+        tournamentLogo: g.tournament.logo,
+        matches: g.matches.map((m) => ({
+          id: m.id,
+          teamAId: m.teamAId,
+          teamBId: m.teamBId,
+          scoreA: m.scoreA,
+          scoreB: m.scoreB,
+          winnerId: m.winnerId,
+          status: m.status,
+          date: m.date,
+          bestOf: m.bestOf,
+          vodUrl: m.vodUrl,
+          teamA: m.teamA ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo } : null,
+          teamB: m.teamB ? { name: m.teamB.name, tag: m.teamB.tag, logo: m.teamB.logo } : null,
+        })),
+      }))}
+    />
+  );
+
+  // Onglet Tournois : compétitions où l'équipe est inscrite.
+  const tournoisTab =
+    tournaments.length > 0 ? (
+      <div className="grid gap-4 sm:grid-cols-2">
+        {tournaments.map((t) => (
+          <TournamentCard key={t.id} tournament={t} />
+        ))}
+      </div>
+    ) : (
+      <p className="text-[var(--text-muted)]">Cette équipe n&apos;est inscrite à aucun tournoi.</p>
+    );
+
+  return (
+    <main className="mx-auto max-w-4xl px-4 py-10">
+      <TournamentTabs
+        header={
+          <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+            {team.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={team.logo} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+            ) : (
+              <div className="monogram grid h-16 w-16 shrink-0 place-items-center rounded-lg text-lg">
+                {team.tag.slice(0, 3).toUpperCase()}
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-white">{team.name}</h1>
+            </div>
+
+            {canManage && (
+              <Link
+                href={`/equipes/${team.id}/gestion`}
+                className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white sm:ml-auto"
+              >
+                Gérer l&apos;équipe
+              </Link>
+            )}
+          </div>
+        }
+        tabs={[
+          { key: "apercu", label: "Aperçu", content: apercu },
+          { key: "matchs", label: "Matchs", content: matchesTab },
+          { key: "tournois", label: "Tournois", content: tournoisTab },
+        ]}
+      />
     </main>
   );
 }

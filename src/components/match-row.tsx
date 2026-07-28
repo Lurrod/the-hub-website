@@ -48,7 +48,7 @@ function Side({
         </div>
       )}
       <span className={`truncate text-sm ${isWinner ? "font-semibold text-white" : "text-[var(--text-muted)]"}`}>
-        {team?.name ?? "—"}
+        {team?.name ?? "-"}
       </span>
     </div>
   );
@@ -71,7 +71,7 @@ export default function MatchRow({ match }: { match: MatchRowData }) {
             <div className="stat text-white">{schedule.time}</div>
           </>
         ) : (
-          <span className="text-[var(--text-muted)]">—</span>
+          <span className="text-[var(--text-muted)]">-</span>
         )}
       </div>
 
@@ -80,7 +80,7 @@ export default function MatchRow({ match }: { match: MatchRowData }) {
         <Side team={match.teamA} isWinner={aWin} align="left" />
         <div className="stat flex items-center gap-1.5 text-sm">
           <span className={aWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}>{match.scoreA}</span>
-          <span className="text-[var(--text-subtle)]">–</span>
+          <span className="text-[var(--text-subtle)]">-</span>
           <span className={bWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}>{match.scoreB}</span>
         </div>
         <Side team={match.teamB} isWinner={bWin} align="right" />

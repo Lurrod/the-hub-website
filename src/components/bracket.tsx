@@ -91,12 +91,12 @@ function BracketCell({ match }: { match: BracketMatchData }) {
       className="card block transition-colors hover:border-[var(--border-strong)]"
     >
       <div className={`${row} ${aWin ? "font-semibold text-[var(--accent)]" : "text-white"}`}>
-        <span className="truncate">{match.teamA?.tag ?? "—"}</span>
+        <span className="truncate">{match.teamA?.tag ?? "-"}</span>
         <span className="stat">{match.scoreA}</span>
       </div>
       <div className="border-t border-[var(--border)]" />
       <div className={`${row} ${bWin ? "font-semibold text-[var(--accent)]" : "text-white"}`}>
-        <span className="truncate">{match.teamB?.tag ?? "—"}</span>
+        <span className="truncate">{match.teamB?.tag ?? "-"}</span>
         <span className="stat">{match.scoreB}</span>
       </div>
     </Link>

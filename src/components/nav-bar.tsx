@@ -18,8 +18,8 @@ export default async function NavBar() {
   }
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-strong)] bg-[var(--shell)]/90 backdrop-blur-md">
-      <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <Link href="/" aria-label="The Hub — accueil" className="flex shrink-0 items-center">
+      <nav className="mx-auto flex h-[47px] max-w-6xl items-center gap-x-6 px-4">
+        <Link href="/" aria-label="The Hub - accueil" className="flex shrink-0 items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="The Hub" className="h-8 w-auto object-contain" />
         </Link>
@@ -27,7 +27,7 @@ export default async function NavBar() {
         <form
           action="/recherche"
           method="get"
-          className="relative order-last w-full sm:order-none sm:ml-auto sm:w-auto"
+          className="relative ml-auto"
         >
           <svg
             viewBox="0 0 24 24"

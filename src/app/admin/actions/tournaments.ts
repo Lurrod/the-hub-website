@@ -29,6 +29,10 @@ function parseTournamentForm(formData: FormData) {
     prizePool: formData.get("prizePool") || undefined,
     organizer: formData.get("organizer") || undefined,
     description: formData.get("description") || undefined,
+    maxTeams: formData.get("maxTeams") || undefined,
+    groupSize: formData.get("groupSize") || undefined,
+    bestOf: formData.get("bestOf") || undefined,
+    seeding: formData.get("seeding") || undefined,
   };
   return tournamentInputSchema.parse(raw);
 }
@@ -65,18 +69,24 @@ export async function createTournamentAction(formData: FormData) {
   await maybeStoreImage(formData, "banner", t.id);
   revalidatePath("/tournois");
   revalidatePath("/admin/tournois");
-  redirect(`/tournois/${t.id}/gestion`);
+  redirect(`/tournois/${t.id}/gestion?ok=tournament-created`);
 }
 
 export async function updateTournamentAction(tournamentId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
-  const data = parseTournamentForm(formData);
+  let data: ReturnType<typeof parseTournamentForm>;
+  try {
+    data = parseTournamentForm(formData);
+  } catch {
+    redirect(`/tournois/${tournamentId}/gestion?error=invalid`);
+  }
   await updateTournament(tournamentId, data);
   await maybeStoreImage(formData, "logo", tournamentId);
   await maybeStoreImage(formData, "banner", tournamentId);
   revalidatePath("/tournois");
   revalidatePath(`/tournois/${tournamentId}`);
   revalidatePath(`/tournois/${tournamentId}/gestion`);
+  redirect(`/tournois/${tournamentId}/gestion?ok=tournament-saved`);
 }
 
 export async function deleteTournamentAction(tournamentId: string) {
@@ -84,7 +94,7 @@ export async function deleteTournamentAction(tournamentId: string) {
   await deleteTournament(tournamentId);
   revalidatePath("/tournois");
   revalidatePath("/admin/tournois");
-  redirect("/tournois");
+  redirect("/tournois?ok=tournament-deleted");
 }
 
 export async function addParticipantAction(tournamentId: string, formData: FormData) {
@@ -106,7 +116,7 @@ export async function addParticipantAction(tournamentId: string, formData: FormD
   await addParticipant(tournamentId, teamId, seed);
   revalidatePath(base);
   revalidatePath(`/tournois/${tournamentId}`);
-  redirect(base);
+  redirect(`${base}?ok=participant-added`);
 }
 
 export async function removeParticipantAction(tournamentId: string, teamId: string) {
@@ -125,7 +135,7 @@ export async function addTournamentManagerAction(tournamentId: string, formData:
   if (!user) redirect(`${base}?error=notfound`);
   await addTournamentManager(tournamentId, user.id);
   revalidatePath(base);
-  redirect(base);
+  redirect(`${base}?ok=manager-added`);
 }
 
 export async function removeTournamentManagerAction(tournamentId: string, userId: string) {

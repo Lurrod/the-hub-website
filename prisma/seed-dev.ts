@@ -92,7 +92,7 @@ async function main() {
     },
     create: {
       id: TID,
-      name: "VCT EMEA 2026 — Stage 1",
+      name: "VCT EMEA 2026 - Stage 1",
       region: "EU",
       format: "GROUPS_THEN_ELIM",
       status: "ONGOING",

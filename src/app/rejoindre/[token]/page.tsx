@@ -5,6 +5,8 @@ import { getPlayerByUserId, getActiveMembership } from "@/lib/data/players";
 import { isInviteValid, isInviteTokenFormat } from "@/lib/invite";
 import { joinTeamViaInviteAction } from "@/app/rejoindre/actions";
 
+export const metadata = { title: "Rejoindre une équipe" };
+
 function Shell({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto max-w-md px-4 py-16 text-center">{children}</main>;
 }

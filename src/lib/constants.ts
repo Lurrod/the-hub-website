@@ -51,6 +51,9 @@ export const TOURNAMENT_FORMATS = [
   "SINGLE_ELIM",
   "DOUBLE_ELIM",
   "GROUPS_THEN_ELIM",
+  "SWISS",
+  "ROUND_ROBIN",
+  "LEAGUE",
 ] as const;
 export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number];
 export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
@@ -58,6 +61,9 @@ export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
   SINGLE_ELIM: "Élimination directe",
   DOUBLE_ELIM: "Double élimination",
   GROUPS_THEN_ELIM: "Poules puis élimination",
+  SWISS: "Système suisse",
+  ROUND_ROBIN: "Round Robin",
+  LEAGUE: "Ligue (championnat)",
 };
 
 export const TOURNAMENT_STATUSES = ["UPCOMING", "ONGOING", "FINISHED"] as const;
@@ -106,9 +112,43 @@ export const STAGES_BY_FORMAT: Record<TournamentFormat, readonly MatchStage[]> =
   SINGLE_ELIM: ["BRACKET"],
   DOUBLE_ELIM: ["BRACKET"],
   GROUPS_THEN_ELIM: ["GROUP", "BRACKET"],
+  SWISS: ["GROUP"],
+  ROUND_ROBIN: ["GROUP"],
+  LEAGUE: ["GROUP"],
+};
+
+/** Description courte de chaque format, affichée dans le sélecteur de création. */
+export const TOURNAMENT_FORMAT_DESCRIPTIONS: Record<TournamentFormat, string> = {
+  GROUPS: "Des poules où chaque équipe s'affronte, classement par points.",
+  SINGLE_ELIM: "Arbre à élimination directe : une défaite et c'est terminé.",
+  DOUBLE_ELIM: "Winner + loser bracket, il faut deux défaites pour sortir.",
+  GROUPS_THEN_ELIM: "Phase de poules qualificative puis playoffs à élimination.",
+  SWISS: "Appariements par score à chaque ronde, sans élimination directe.",
+  ROUND_ROBIN: "Toutes les équipes s'affrontent une fois, classement global.",
+  LEAGUE: "Championnat sur la durée (aller ou aller-retour), classement cumulé.",
 };
 
 /** Le format permet-il des poules (et donc des matchs de phase de poule) ? */
 export function formatAllowsGroups(format: TournamentFormat): boolean {
   return STAGES_BY_FORMAT[format].includes("GROUP");
 }
+
+/** Le format s'appuie-t-il sur une taille de poule configurable ? */
+export function formatUsesGroupSize(format: TournamentFormat): boolean {
+  return format === "GROUPS" || format === "GROUPS_THEN_ELIM";
+}
+
+/** Méthodes de seeding (placement des équipes) proposées à la création. */
+export const SEEDING_TYPES = ["MANUAL", "RANDOM", "RANKING"] as const;
+export type SeedingType = (typeof SEEDING_TYPES)[number];
+export const SEEDING_TYPE_LABELS: Record<SeedingType, string> = {
+  MANUAL: "Manuel",
+  RANDOM: "Aléatoire",
+  RANKING: "Par classement",
+};
+
+/**
+ * Effectif minimum pour inscrire une équipe à un tournoi : une équipe Valorant
+ * aligne 5 joueurs. Compte les adhésions actives hors staff (COACH / MANAGER).
+ */
+export const MIN_ROSTER_FOR_TOURNAMENT = 5;

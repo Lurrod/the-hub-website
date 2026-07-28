@@ -1,6 +1,6 @@
 /**
  * Seed de démonstration : importe « VCT 2026: EMEA Stage 1 » (données publiques
- * vlr.gg) — 8 équipes avec logos + rosters, 2 poules, classements, et un bracket
+ * vlr.gg) - 8 équipes avec logos + rosters, 2 poules, classements, et un bracket
  * de playoffs. Idempotent : supprime puis recrée les entrées préfixées « vlr- ».
  *
  * Lancer :  npx tsx scripts/seed-vlr-emea.ts
@@ -82,7 +82,7 @@ async function main() {
       endDate: new Date("2026-05-17T00:00:00Z"),
       prizePool: "$250 000",
       organizer: "Riot Games",
-      description: "Import de démonstration depuis vlr.gg — Riot Games Arena, Berlin.",
+      description: "Import de démonstration depuis vlr.gg - Riot Games Arena, Berlin.",
     },
   });
 
@@ -155,7 +155,7 @@ async function main() {
     });
   }
 
-  console.log(`OK — tournoi ${TID} importé : ${TEAMS.length} équipes, ${GROUP_MATCHES.length} matchs de poule, ${BRACKET_MATCHES.length} playoffs.`);
+  console.log(`OK - tournoi ${TID} importé : ${TEAMS.length} équipes, ${GROUP_MATCHES.length} matchs de poule, ${BRACKET_MATCHES.length} playoffs.`);
 }
 
 main()

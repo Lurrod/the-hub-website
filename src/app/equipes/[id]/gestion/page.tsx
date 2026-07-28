@@ -4,20 +4,30 @@ import { getSessionUser, getTeamManagerIds } from "@/lib/server-auth";
 import { canManageTeam } from "@/lib/permissions";
 import { getTeam } from "@/lib/data/teams";
 import TeamForm from "@/components/team-form";
+import ConfirmDeleteButton from "@/components/confirm-delete-button";
 import { updateTeamAction, deleteTeamAction } from "@/app/admin/actions/teams";
+
+import { teamTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const name = await teamTitle(id);
+  return { title: name ? `Gestion · ${name}` : "Gestion de l'équipe" };
+}
 
 const TAB_LINK =
   "rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]";
 
 export default async function TeamGestionPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
-  const { error } = await searchParams;
   const team = await getTeam(id);
   if (!team) notFound();
 
@@ -31,12 +41,12 @@ export default async function TeamGestionPage({
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Gérer · {team.name}</h1>
+        <h1 className="text-2xl font-bold text-white">Gérer<span className="dot-sep">·</span>{team.name}</h1>
         <Link
           href={`/equipes/${id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
         >
-          ← Voir la page publique
+          Voir la page publique
         </Link>
       </div>
 
@@ -71,18 +81,12 @@ export default async function TeamGestionPage({
         <p className="mb-3 text-sm text-[var(--text-muted)]">
           La suppression de l&apos;équipe est définitive (roster, historiques et participations liées).
         </p>
-        {error === "hasparticipations" && (
-          <p className="mb-3 rounded border border-[var(--destructive)] bg-[var(--destructive-soft)] px-3 py-2 text-sm text-[var(--destructive)]">
-            Impossible de supprimer : cette équipe est inscrite à un ou plusieurs tournois. Un admin
-            doit d&apos;abord la désinscrire (sinon l&apos;historique de matchs d&apos;autres tournois
-            serait détruit).
-          </p>
-        )}
-        <form action={deleteWithId}>
-          <button className="rounded border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)]">
-            Supprimer l&apos;équipe
-          </button>
-        </form>
+        <ConfirmDeleteButton
+          action={deleteWithId}
+          label="Supprimer l'équipe"
+          title="Supprimer l'équipe ?"
+          message={`L'équipe « ${team.name} » sera supprimée définitivement. Roster, historiques et participations liés seront perdus.`}
+        />
       </section>
     </main>
   );

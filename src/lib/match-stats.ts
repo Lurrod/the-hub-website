@@ -85,6 +85,7 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
         data: {
           matchId: match.id, mapName: cm.map || "?", scoreA: roundsA, scoreB: roundsB,
           order: i, riotMatchId: cm.matchId, startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
+          durationSec: cm.durationSec,
         },
       });
       await tx.playerGameStat.createMany({

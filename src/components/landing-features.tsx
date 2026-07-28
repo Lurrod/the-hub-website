@@ -1,7 +1,7 @@
 const FEATURES = [
   { title: "Joueur", desc: "Crée ton profil, suis tes stats et ta carrière." },
   { title: "Équipe", desc: "Référence ton équipe, gère ton roster et tes résultats." },
-  { title: "Compétition", desc: "Inscris-toi aux tournois — brackets et scoreboards." },
+  { title: "Compétition", desc: "Inscris-toi aux tournois - brackets et scoreboards." },
 ];
 
 /** Bloc statique « Ta place dans le Hub » de la landing. */

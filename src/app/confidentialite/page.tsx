@@ -1,0 +1,192 @@
+import Link from "next/link";
+import { ContactDiscord, LegalPage, Section, Ul } from "@/components/legal";
+
+export const metadata = { title: "Politique de confidentialité" };
+
+const TH = "border-b border-[var(--border)] px-3 py-2 text-left font-semibold text-white";
+const TD = "border-b border-[var(--border)] px-3 py-2 align-top";
+
+export default function ConfidentialitePage() {
+  return (
+    <LegalPage
+      title="Politique de confidentialité"
+      intro="Cette politique décrit les données personnelles traitées par The Hub, les raisons de ce traitement et les droits dont vous disposez, conformément au Règlement (UE) 2016/679 (RGPD) et à la loi Informatique et Libertés."
+    >
+      <Section title="Responsable du traitement">
+        <p>
+          Le responsable du traitement est Titouan Borde, joignable en rejoignant{" "}
+          <ContactDiscord />. Les coordonnées complètes
+          figurent dans les{" "}
+          <Link href="/mentions-legales" className="text-[var(--accent)] hover:underline">
+            mentions légales
+          </Link>
+          .
+        </p>
+      </Section>
+
+      <Section title="Données collectées">
+        <p>
+          Aucune donnée n&apos;est collectée tant que vous naviguez sans compte. La création
+          d&apos;un compte et l&apos;usage des fonctionnalités entraînent les traitements suivants.
+        </p>
+
+        <h3 className="pt-2 font-semibold text-white">1. Connexion via Discord</h3>
+        <p>
+          L&apos;authentification s&apos;effectue exclusivement via Discord. Nous ne créons ni ne
+          stockons de mot de passe. Discord nous transmet :
+        </p>
+        <Ul>
+          <li>votre identifiant Discord, votre nom d&apos;utilisateur et votre avatar ;</li>
+          <li>votre adresse électronique ;</li>
+          <li>
+            les jetons techniques permettant de maintenir la liaison avec votre compte Discord.
+          </li>
+        </Ul>
+
+        <h3 className="pt-2 font-semibold text-white">2. Fiche joueur</h3>
+        <p>Les informations que vous renseignez vous-même, toutes facultatives sauf le pseudo :</p>
+        <Ul>
+          <li>pseudo, nom réel, date de naissance, nationalité, région ;</li>
+          <li>photo de profil, liens vers vos réseaux sociaux ;</li>
+          <li>rôle Valorant et appartenance à une équipe.</li>
+        </Ul>
+
+        <h3 className="pt-2 font-semibold text-white">3. Compte Valorant</h3>
+        <p>
+          Si vous liez votre compte Valorant, nous enregistrons votre Riot ID (nom et tag), votre
+          identifiant de joueur Riot (PUUID) et votre région.
+        </p>
+
+        <h3 className="pt-2 font-semibold text-white">4. Statistiques de match</h3>
+        <p>
+          Pour chaque carte jouée dans un tournoi référencé : agent, éliminations, morts, assists,
+          ACS, ADR, pourcentage de tirs à la tête, KAST, premières éliminations et premières morts,
+          rating. Ces données décrivent une performance sportive et sont publiques sur le site.
+        </p>
+      </Section>
+
+      <Section title="Finalités et bases légales">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[520px] border-collapse">
+            <thead>
+              <tr>
+                <th className={TH}>Finalité</th>
+                <th className={TH}>Base légale</th>
+              </tr>
+            </thead>
+            <tbody className="text-[var(--text-muted)]">
+              <tr>
+                <td className={TD}>Créer et sécuriser votre compte, gérer la session</td>
+                <td className={TD}>Exécution des conditions d&apos;utilisation (art. 6.1.b)</td>
+              </tr>
+              <tr>
+                <td className={TD}>Afficher votre fiche joueur et vos appartenances d&apos;équipe</td>
+                <td className={TD}>Exécution des conditions d&apos;utilisation (art. 6.1.b)</td>
+              </tr>
+              <tr>
+                <td className={TD}>Vérifier votre Riot ID et rattacher vos statistiques</td>
+                <td className={TD}>Exécution des conditions d&apos;utilisation (art. 6.1.b)</td>
+              </tr>
+              <tr>
+                <td className={TD}>Publier les résultats et statistiques des tournois</td>
+                <td className={TD}>
+                  Intérêt légitime : informer sur la compétition (art. 6.1.f)
+                </td>
+              </tr>
+              <tr>
+                <td className={TD}>Prévenir les abus et faire respecter les règles</td>
+                <td className={TD}>Intérêt légitime : sécurité du service (art. 6.1.f)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Section>
+
+      <Section title="Caractère public de certaines données">
+        <p>
+          The Hub est un site de référencement compétitif : votre pseudo, votre photo, votre
+          nationalité, votre équipe et vos statistiques de match sont visibles par tous les
+          visiteurs et peuvent être indexés par les moteurs de recherche. Votre adresse
+          électronique et votre identifiant Discord ne sont jamais affichés publiquement.
+        </p>
+      </Section>
+
+      <Section title="Durées de conservation">
+        <Ul>
+          <li>Compte et fiche joueur : jusqu&apos;à la suppression du compte.</li>
+          <li>Sessions de connexion : expiration automatique, puis effacement.</li>
+          <li>
+            Résultats et statistiques de match : conservés après la suppression du compte, sous
+            forme dissociée de votre identité (le lien vers votre fiche est rompu), afin de
+            préserver l&apos;intégrité de l&apos;historique des compétitions.
+          </li>
+        </Ul>
+      </Section>
+
+      <Section title="Destinataires et sous-traitants">
+        <Ul>
+          <li>
+            <span className="text-white">Discord</span> - authentification. Les données sont
+            traitées selon la politique de confidentialité de Discord.
+          </li>
+          <li>
+            <span className="text-white">HenrikDev</span> (api.henrikdev.xyz) - vérification des
+            Riot ID. Seuls le nom et le tag Riot saisis sont transmis lors de la vérification.
+          </li>
+          <li>
+            <span className="text-white">OVH SAS</span> (marque Kimsufi), 2 rue Kellermann, 59100
+            Roubaix - hébergement du serveur, de la base de données et des images déposées.
+          </li>
+        </Ul>
+        <p>
+          Aucune donnée n&apos;est vendue ni cédée à des fins publicitaires. La base de données et
+          les fichiers sont hébergés en France, donc au sein de l&apos;Union européenne. Discord
+          relevant d&apos;une société établie aux États-Unis, les données échangées lors de
+          l&apos;authentification peuvent y être transférées, sur le fondement des garanties
+          prévues au chapitre V du RGPD (décision d&apos;adéquation ou clauses contractuelles
+          types).
+        </p>
+      </Section>
+
+      <Section title="Cookies">
+        <p>
+          Le site dépose uniquement un cookie de session, strictement nécessaire au maintien de
+          votre connexion. Il n&apos;y a ni mesure d&apos;audience, ni cookie publicitaire, ni
+          traceur tiers : aucun consentement préalable n&apos;est donc requis, et aucune bannière
+          n&apos;est affichée. Se déconnecter supprime ce cookie.
+        </p>
+      </Section>
+
+      <Section title="Mineurs">
+        <p>
+          La scène Tier 3 comptant des joueurs mineurs, aucune donnée n&apos;est demandée au-delà de
+          ce qui est nécessaire au référencement sportif. En France, un mineur de moins de 15 ans
+          doit disposer de l&apos;autorisation d&apos;un titulaire de l&apos;autorité parentale pour
+          créer un compte. Un représentant légal peut demander à tout moment la suppression des
+          données d&apos;un mineur en contactant l&apos;éditeur via <ContactDiscord />.
+        </p>
+      </Section>
+
+      <Section title="Vos droits">
+        <p>
+          Vous disposez des droits d&apos;accès, de rectification, d&apos;effacement, de limitation,
+          d&apos;opposition et de portabilité sur vos données. Vous pouvez les exercer à tout moment
+          en contactant l&apos;éditeur via <ContactDiscord />. Une réponse vous sera apportée dans
+          un délai d&apos;un mois.
+        </p>
+        <p>
+          Vous pouvez également introduire une réclamation auprès de la Commission nationale de
+          l&apos;informatique et des libertés (CNIL), 3 place de Fontenoy, TSA 80715, 75334 Paris
+          Cedex 07, ou sur www.cnil.fr.
+        </p>
+      </Section>
+
+      <Section title="Modification de cette politique">
+        <p>
+          Cette politique peut évoluer avec le service. La date de dernière mise à jour figure en
+          haut de page ; toute modification substantielle sera signalée sur le site.
+        </p>
+      </Section>
+    </LegalPage>
+  );
+}

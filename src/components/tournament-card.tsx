@@ -19,7 +19,7 @@ function formatDateRange(start: Date | null, end: Date | null): string {
   const fmt = (d: Date) =>
     new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
   if (!end) return fmt(start);
-  return `${fmt(start)} – ${fmt(end)}`;
+  return `${fmt(start)} - ${fmt(end)}`;
 }
 
 function StatItem({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
@@ -64,8 +64,8 @@ export default function TournamentCard({ tournament }: { tournament: TournamentC
           mono={!!tournament.startDate}
         />
         <div className="grid grid-cols-2 gap-4">
-          <StatItem label="Équipes" value={teamCount > 0 ? `${teamCount}` : "—"} mono={teamCount > 0} />
-          <StatItem label="Cashprize" value={tournament.prizePool ?? "—"} mono={tournament.prizePool != null} />
+          <StatItem label="Équipes" value={teamCount > 0 ? `${teamCount}` : "-"} mono={teamCount > 0} />
+          <StatItem label="Cashprize" value={tournament.prizePool ?? "-"} mono={tournament.prizePool != null} />
         </div>
       </div>
     </Link>

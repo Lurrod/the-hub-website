@@ -1,5 +1,5 @@
 // Squelette affiché instantanément pendant le rendu serveur de n'importe quelle
-// route (Suspense au niveau racine) — la navigation paraît immédiate.
+// route (Suspense au niveau racine) - la navigation paraît immédiate.
 export default function Loading() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">

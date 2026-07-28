@@ -2,8 +2,9 @@ import { listTournaments } from "@/lib/data/tournaments";
 import { REGIONS, TOURNAMENT_STATUSES } from "@/lib/constants";
 import TournamentFilters from "@/components/tournament-filters";
 import TournamentListRow from "@/components/tournament-list-row";
-import SectionHeader from "@/components/section-header";
 import { monthKey, monthLabel, daysUntil } from "@/lib/dates";
+
+export const metadata = { title: "Tournois" };
 
 export default async function TournamentsPage({
   searchParams,
@@ -29,40 +30,45 @@ export default async function TournamentsPage({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <SectionHeader eyebrow="Compétitions" title="Tournois" />
-      <div className="my-6">
-        <TournamentFilters activeRegion={region} activeStatus={status} />
-      </div>
+      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Tournois
+      </h1>
 
-      {tournaments.length === 0 ? (
-        <p className="text-[var(--text-muted)]">Aucun tournoi pour ce filtre.</p>
-      ) : (
-        <div className="space-y-8">
-          {months.map((mo) => (
-            <section key={mo.key}>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                {mo.label}
-              </h2>
-              <div className="stagger-in space-y-2">
-                {mo.items.map((t) => (
-                  <TournamentListRow
-                    key={t.id}
-                    t={{
-                      id: t.id,
-                      name: t.name,
-                      logo: t.logo,
-                      startDate: t.startDate,
-                      prizePool: t.prizePool,
-                      teamCount: t._count.participants,
-                      days: daysUntil(t.startDate, now),
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+      <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div className="mb-4">
+          <TournamentFilters activeRegion={region} activeStatus={status} />
         </div>
-      )}
+
+        {tournaments.length === 0 ? (
+          <p className="text-sm text-[var(--text-muted)]">Aucun tournoi pour ce filtre.</p>
+        ) : (
+          <div className="space-y-6">
+            {months.map((mo) => (
+              <section key={mo.key}>
+                <div className="mb-2 rounded-lg bg-[#242832] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                  {mo.label}
+                </div>
+                <div className="stagger-in space-y-2">
+                  {mo.items.map((t) => (
+                    <TournamentListRow
+                      key={t.id}
+                      t={{
+                        id: t.id,
+                        name: t.name,
+                        logo: t.logo,
+                        startDate: t.startDate,
+                        prizePool: t.prizePool,
+                        teamCount: t._count.participants,
+                        days: daysUntil(t.startDate, now),
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

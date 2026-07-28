@@ -179,19 +179,6 @@ export function listUpcomingMatches(limit = 8) {
   });
 }
 
-/** Derniers résultats d'une équipe (pour la page équipe). */
-export function getTeamRecentMatches(teamId: string, limit = 8) {
-  return db.match.findMany({
-    where: {
-      status: "FINISHED",
-      OR: [{ teamAId: teamId }, { teamBId: teamId }],
-    },
-    include: { teamA: true, teamB: true, tournament: true },
-    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
-    take: limit,
-  });
-}
-
 /** Bilan agrégé d'une équipe sur l'ensemble de ses matchs terminés. */
 export async function getTeamRecord(teamId: string) {
   const matches = await db.match.findMany({
@@ -225,4 +212,27 @@ export function listTournamentsWithMatches() {
       },
     },
   });
+}
+
+/**
+ * Matchs joués d'une équipe, regroupés par tournoi. Les matchs étant déjà triés
+ * du plus récent au plus ancien, l'ordre d'insertion de la Map classe les
+ * tournois par date de dernier match.
+ */
+export async function getTeamMatchesByTournament(teamId: string, limit = 200) {
+  const matches = await db.match.findMany({
+    where: { status: "FINISHED", OR: [{ teamAId: teamId }, { teamBId: teamId }] },
+    include: { teamA: true, teamB: true, tournament: true },
+    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+  });
+
+  type Entry = { tournament: (typeof matches)[number]["tournament"]; matches: typeof matches };
+  const byTournament = new Map<string, Entry>();
+  for (const m of matches) {
+    const found = byTournament.get(m.tournamentId);
+    if (found) found.matches.push(m);
+    else byTournament.set(m.tournamentId, { tournament: m.tournament, matches: [m] });
+  }
+  return [...byTournament.values()];
 }

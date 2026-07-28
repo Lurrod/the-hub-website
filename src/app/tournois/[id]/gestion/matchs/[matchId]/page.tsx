@@ -11,6 +11,18 @@ import {
   removeMatchMapAction,
 } from "@/app/admin/actions/matches";
 
+import { tournamentTitle } from "@/lib/data/titles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string; matchId: string }>;
+}) {
+  const { id } = await params;
+  const name = await tournamentTitle(id);
+  return { title: name ? `Éditer un match · ${name}` : "Éditer un match" };
+}
+
 function toDateInput(d: Date | null): string {
   return d ? new Date(d).toISOString().slice(0, 10) : "";
 }
@@ -45,7 +57,7 @@ export default async function EditMatchPage({
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="mb-6 text-2xl font-bold text-white">
-        Éditer le match — {match.teamA.name} vs {match.teamB.name}
+        Éditer le match - {match.teamA.name} vs {match.teamB.name}
       </h1>
 
       {match.statsStatus === "MATCHED" ? (
@@ -93,7 +105,9 @@ export default async function EditMatchPage({
             return (
               <li key={m.id} className="flex items-center justify-between p-3 text-sm">
                 <span className="text-white">
-                  {m.mapName} · {m.scoreA}–{m.scoreB}
+                  {m.mapName}
+                  <span className="dot-sep">·</span>
+                  {m.scoreA}-{m.scoreB}
                 </span>
                 <form action={removeWith}>
                   <button className="text-[var(--accent)]">Retirer</button>

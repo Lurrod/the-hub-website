@@ -67,6 +67,7 @@ export type CustomMatch = {
   matchId: string;
   map: string;
   startedAt: string | null;
+  durationSec: number | null;
   teamRounds: Record<string, number>; // team_id -> rounds gagnés
   players: CustomMatchPlayer[];
 };
@@ -109,7 +110,12 @@ export async function getPlayerCustomMatches(
 
 function mapRawCustomMatch(raw: unknown): CustomMatch {
   const m = raw as {
-    metadata?: { match_id?: string; map?: { name?: string }; started_at?: string };
+    metadata?: {
+      match_id?: string;
+      map?: { name?: string };
+      started_at?: string;
+      game_length_in_ms?: number;
+    };
     teams?: { team_id?: string; rounds?: { won?: number } }[];
     players?: {
       puuid?: string; name?: string; tag?: string; team_id?: string;
@@ -147,6 +153,10 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
     matchId: m.metadata?.match_id ?? "",
     map: m.metadata?.map?.name ?? "",
     startedAt: m.metadata?.started_at ?? null,
+    durationSec:
+      typeof m.metadata?.game_length_in_ms === "number"
+        ? Math.round(m.metadata.game_length_in_ms / 1000)
+        : null,
     teamRounds,
     players,
   };

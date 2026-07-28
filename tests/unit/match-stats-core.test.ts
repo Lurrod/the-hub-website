@@ -13,7 +13,7 @@ function player(puuid: string, teamId: string): CustomMatchPlayer {
 }
 function match(id: string, startedAt: string, puuidsRed: string[], puuidsBlue: string[]): CustomMatch {
   return {
-    matchId: id, map: "Ascent", startedAt,
+    matchId: id, map: "Ascent", startedAt, durationSec: 2400,
     teamRounds: { Red: 13, Blue: 9 },
     players: [...puuidsRed.map((p) => player(p, "Red")), ...puuidsBlue.map((p) => player(p, "Blue"))],
   };

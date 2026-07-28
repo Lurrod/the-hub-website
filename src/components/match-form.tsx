@@ -49,7 +49,7 @@ export default function MatchForm({
         <label className={lbl}>
           Équipe A
           <select name="teamAId" defaultValue={values?.teamAId ?? ""} required className={input}>
-            <option value="">— Équipe A —</option>
+            <option value="">- Équipe A -</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
@@ -60,7 +60,7 @@ export default function MatchForm({
         <label className={lbl}>
           Équipe B
           <select name="teamBId" defaultValue={values?.teamBId ?? ""} required className={input}>
-            <option value="">— Équipe B —</option>
+            <option value="">- Équipe B -</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
@@ -114,7 +114,7 @@ export default function MatchForm({
       <label className={lbl}>
         Poule (si phase = Poule)
         <select name="groupId" defaultValue={values?.groupId ?? ""} className={input}>
-          <option value="">— Aucune —</option>
+          <option value="">- Aucune -</option>
           {groups.map((g) => (
             <option key={g.id} value={g.id}>
               {g.name}

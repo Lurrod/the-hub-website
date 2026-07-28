@@ -29,9 +29,17 @@ export type ScoreboardMap = {
   mapName: string;
   scoreA: number;
   scoreB: number;
+  durationSec: number | null;
   rounds: RoundEntry[];
   stats: ScoreboardPlayerRow[];
 };
+
+/** Formate une durée en secondes → « 42:15 ». */
+function fmtDuration(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 const OUTCOME_LABEL: Record<string, string> = {
   elim: "Élimination",
@@ -88,7 +96,7 @@ function TrackRow({
           return (
             <span
               key={i}
-              title={`Round ${i + 1} — ${won ? `${label} · ${OUTCOME_LABEL[r.o] ?? r.o}` : "perdu"}`}
+              title={`Round ${i + 1} - ${won ? `${label} · ${OUTCOME_LABEL[r.o] ?? r.o}` : "perdu"}`}
               className={`grid h-6 w-6 shrink-0 place-items-center rounded ${
                 won ? wonBg : "bg-[#131619]"
               }`}
@@ -112,6 +120,7 @@ function RoundTimeline({
   teamBLogo,
   scoreA,
   scoreB,
+  durationSec,
 }: {
   rounds: RoundEntry[];
   teamAName: string;
@@ -122,6 +131,7 @@ function RoundTimeline({
   teamBLogo: string | null;
   scoreA: number;
   scoreB: number;
+  durationSec: number | null;
 }) {
   if (rounds.length === 0) return null;
   return (
@@ -134,12 +144,21 @@ function RoundTimeline({
         </span>
         <span className="stat shrink-0 text-lg font-semibold text-white">
           <span className={scoreA > scoreB ? "text-[var(--accent)]" : ""}>{scoreA}</span>
-          <span className="mx-1.5 text-[var(--text-subtle)]">–</span>
+          <span className="mx-1.5 text-[var(--text-subtle)]">-</span>
           <span className={scoreB > scoreA ? "text-[var(--accent)]" : ""}>{scoreB}</span>
         </span>
         <span className="flex max-w-[40%] items-center gap-2 text-white">
           <Crest url={teamBLogo} tag={teamBTag} size="h-6 w-6" />
           <span className="truncate">{teamBName}</span>
+        </span>
+      </div>
+
+      {/* Durée de la partie (réelle si l'API l'a fournie, sinon estimée) */}
+      <div className="mb-2 text-center text-[11px] text-[var(--text-muted)]">
+        <span className="stat">
+          {durationSec != null
+            ? fmtDuration(durationSec)
+            : `≈ ${Math.round((scoreA + scoreB) * 1.7)} min`}
         </span>
       </div>
 
@@ -255,43 +274,49 @@ export default function MatchScoreboard({
   const map = maps[Math.min(active, maps.length - 1)];
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)]">
       {maps.length > 1 && (
-        <div className="mb-3 flex flex-wrap justify-center gap-2">
-          {maps.map((m, i) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setActive(i)}
-              aria-pressed={i === active}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                i === active
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-white"
-                  : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
-              }`}
-            >
-              {m.mapName} {m.scoreA} – {m.scoreB}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1 border-b border-[var(--border)] px-2">
+          {maps.map((m, i) => {
+            const on = i === active;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setActive(i)}
+                aria-pressed={on}
+                className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  on
+                    ? "border-[var(--accent)] text-white"
+                    : "border-transparent text-[var(--text-muted)] hover:text-white"
+                }`}
+              >
+                {m.mapName}
+              </button>
+            );
+          })}
         </div>
       )}
 
-      <RoundTimeline
-        rounds={map.rounds}
-        teamAName={teamAName}
-        teamBName={teamBName}
-        teamATag={teamATag}
-        teamBTag={teamBTag}
-        teamALogo={teamALogo}
-        teamBLogo={teamBLogo}
-        scoreA={map.scoreA}
-        scoreB={map.scoreB}
-      />
+      <div className="p-4">
+        <RoundTimeline
+          rounds={map.rounds}
+          teamAName={teamAName}
+          teamBName={teamBName}
+          teamATag={teamATag}
+          teamBTag={teamBTag}
+          teamALogo={teamALogo}
+          teamBLogo={teamBLogo}
+          scoreA={map.scoreA}
+          scoreB={map.scoreB}
+          durationSec={map.durationSec}
+        />
 
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2">
-        <TeamBlock rows={map.stats.filter((s) => s.teamSide === "A")} />
-        <div className="my-2 h-px bg-[var(--border)]" />
-        <TeamBlock rows={map.stats.filter((s) => s.teamSide === "B")} />
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2">
+          <TeamBlock rows={map.stats.filter((s) => s.teamSide === "A")} />
+          <div className="my-2 h-px bg-[var(--border)]" />
+          <TeamBlock rows={map.stats.filter((s) => s.teamSide === "B")} />
+        </div>
       </div>
     </div>
   );

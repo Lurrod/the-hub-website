@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export type ParsedRiotId = { name: string; tag: string };
 
-// Nom Riot : 3–16 caractères (lettres, chiffres, espaces). Tag : 3–5 alphanum.
+// Nom Riot : 3-16 caractères (lettres, chiffres, espaces). Tag : 3-5 alphanum.
 const NAME_RE = /^[\p{L}\p{N} ]{3,16}$/u;
 const TAG_RE = /^[\p{L}\p{N}]{3,5}$/u;
 

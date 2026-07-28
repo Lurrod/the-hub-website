@@ -24,6 +24,26 @@ describe("playerInputSchema", () => {
         .success
     ).toBe(false);
   });
+  it("accepte un Twitter x.com et un Twitch twitch.tv", () => {
+    expect(
+      playerInputSchema.safeParse({
+        pseudo: "X",
+        socials: { twitter: "https://x.com/x", twitch: "https://twitch.tv/x" },
+      }).success
+    ).toBe(true);
+  });
+  it("rejette un Twitter qui n'est pas x.com", () => {
+    expect(
+      playerInputSchema.safeParse({ pseudo: "X", socials: { twitter: "https://twitter.com/x" } })
+        .success
+    ).toBe(false);
+  });
+  it("rejette un Twitch qui n'est pas twitch.tv", () => {
+    expect(
+      playerInputSchema.safeParse({ pseudo: "X", socials: { twitch: "https://youtube.com/x" } })
+        .success
+    ).toBe(false);
+  });
 });
 
 describe("rosterAddSchema", () => {

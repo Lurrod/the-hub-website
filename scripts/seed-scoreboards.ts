@@ -24,6 +24,34 @@ const OUTCOMES = ["elim", "elim", "elim", "elim", "elim", "detonate", "detonate"
 
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+/**
+ * Rating 2.0 - portage de la formule HLTV 2.0 adaptée à Valorant utilisée sur le site flhub
+ * (services/rating.py). Le coefficient ADR est rescalé de CS (0.0032) à Valorant (0.00171)
+ * pour recentrer le joueur moyen autour de ~1.00. Plancher à 0.01, jamais négatif ni nul.
+ */
+function computeRating2(s: {
+  rounds: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  kastPct: number;
+  adr: number;
+}): number {
+  if (s.rounds <= 0) return 0;
+  const kpr = s.kills / s.rounds;
+  const dpr = s.deaths / s.rounds;
+  const apr = s.assists / s.rounds;
+  const impact = 2.13 * kpr + 0.42 * apr - 0.41;
+  const rating =
+    0.0073 * s.kastPct +
+    0.3591 * kpr -
+    0.5329 * dpr +
+    0.2372 * impact +
+    0.00171 * s.adr -
+    0.001;
+  return Math.round(Math.max(0.01, rating) * 100) / 100;
+}
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -76,11 +104,8 @@ function baseRow(
   const adr = Math.round(acs * (rand(55, 66) / 100));
   const hsPct = rand(14, 38);
   const kast = clamp(Math.round((won ? 74 : 66) + rand(-8, 12)), 45, 95);
-  const rating = clamp(
-    Math.round((0.7 + acs / 300 + ((kills - deaths) / Math.max(1, rounds)) * 0.25 + rand(-6, 6) / 100) * 100) / 100,
-    0.4,
-    1.9
-  );
+  // Rating 2.0 flhub - dérivé des stats réelles du joueur (formule HLTV 2.0 Valorant).
+  const rating = computeRating2({ rounds, kills, deaths, assists, kastPct: kast, adr });
   return {
     riotName: pseudo, playerId, teamSide: side, agent,
     kills, deaths, assists, acs, adr, hsPct, kast, rating,
@@ -160,6 +185,8 @@ async function main() {
           data: {
             matchId: m.id, mapName: mapNames[i], scoreA: roundsA, scoreB: roundsB,
             order: i, riotMatchId: `sim-${m.id}-${i}`, startedAt: new Date("2026-05-01T18:00:00Z"),
+            // Durée réaliste : ~1m40-1m55 par round + un peu d'overhead (buy phases, pauses).
+            durationSec: rounds * rand(95, 115) + rand(90, 240),
             roundTimeline: timeline,
           },
         });
@@ -174,7 +201,7 @@ async function main() {
     done++;
   }
 
-  console.log(`OK — scoreboards simulés (rating/KAST/FK-FD + timeline) sur ${done} match(s) du tournoi ${TID}.`);
+  console.log(`OK - scoreboards simulés (rating/KAST/FK-FD + timeline) sur ${done} match(s) du tournoi ${TID}.`);
 }
 
 main()

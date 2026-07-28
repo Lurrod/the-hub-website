@@ -13,11 +13,16 @@ export default function NavLinks({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const links = [...LINKS, ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : [])];
   return (
-    <div className="flex items-center gap-1 text-sm">
+    <div className="flex items-stretch self-stretch gap-1 text-sm">
       {links.map((l) => {
         const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
         return (
-          <Link key={l.href} href={l.href} data-active={active} className="nav-link px-2.5 py-1">
+          <Link
+            key={l.href}
+            href={l.href}
+            data-active={active}
+            className="nav-link flex items-center px-2.5"
+          >
             {l.label}
           </Link>
         );

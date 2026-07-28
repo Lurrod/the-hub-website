@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/server-auth";
 import { isAdmin } from "@/lib/permissions";
 import { db } from "@/lib/db";
-import SectionHeader from "@/components/section-header";
+
+export const metadata = { title: "Administration" };
 
 type AdminSection = {
   href: string;
@@ -52,27 +53,32 @@ export default async function AdminDashboardPage() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-8">
-        <SectionHeader eyebrow="Administration" title="Tableau de bord" />
-        <p className="mt-1 text-sm text-[var(--text-muted)]">
-          {matches} match{matches > 1 ? "s" : ""} enregistré{matches > 1 ? "s" : ""} au total.
-        </p>
-      </div>
+      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Administration
+      </h1>
+      <p className="mb-6 mt-1 text-xs text-[var(--text-muted)]">
+        {matches} match{matches > 1 ? "s" : ""} enregistré{matches > 1 ? "s" : ""} au total.
+      </p>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {sections.map((s) => (
-          <div key={s.href} className="flex flex-col gap-4">
-            <Link href={s.href} className="card card-interactive flex flex-col gap-2 p-5">
+          <div key={s.href} className="flex flex-col gap-3">
+            <Link
+              href={s.href}
+              className="flex flex-1 flex-col gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 transition-colors hover:border-[var(--border-strong)]"
+            >
               <div className="flex items-baseline justify-between">
-                <span className="font-semibold text-white">{s.label}</span>
-                <span className="font-mono text-2xl text-[var(--accent)]">{s.count}</span>
+                <span className="text-sm font-semibold uppercase tracking-wide text-white">
+                  {s.label}
+                </span>
+                <span className="stat text-2xl text-[var(--accent)]">{s.count}</span>
               </div>
               <p className="text-xs text-[var(--text-muted)]">{s.description}</p>
             </Link>
             {s.createHref && (
               <Link
                 href={s.createHref}
-                className="rounded bg-[var(--accent)] px-3 py-1.5 text-center text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)]"
+                className="rounded-lg bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
               >
                 {s.createLabel}
               </Link>

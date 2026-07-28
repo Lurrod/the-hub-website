@@ -125,10 +125,19 @@ model Player {
   riotTag     String?
   puuid       String?          @unique
   region      String?
+  valorantRole ValorantRole?
+  birthdate    DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   memberships TeamMembership[]
   gameStats   PlayerGameStat[]
+}
+
+enum ValorantRole {
+  DUELIST
+  CONTROLLER
+  INITIATOR
+  SENTINEL
 }
 
 model TeamMembership {
@@ -280,6 +289,7 @@ model MatchMap {
   order       Int              @default(0)
   riotMatchId String?          @unique
   startedAt   DateTime?
+  durationSec Int?
   roundTimeline Json?
   stats       PlayerGameStat[]
   match       Match            @relation(fields: [matchId], references: [id], onDelete: Cascade)

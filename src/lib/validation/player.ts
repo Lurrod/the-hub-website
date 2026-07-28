@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { optionalUrl } from "@/lib/validation/common";
+import { optionalTwitterUrl, optionalTwitchUrl } from "@/lib/validation/common";
+import { VALORANT_ROLES } from "@/lib/roles";
 
 export const MEMBERSHIP_ROLES = ["JOUEUR", "SUB", "COACH", "MANAGER"] as const;
 
@@ -7,8 +8,10 @@ export const playerInputSchema = z.object({
   pseudo: z.string().trim().min(1, "Pseudo requis").max(40),
   realName: z.string().trim().max(80).optional(),
   nationality: z.string().trim().max(40).optional(),
+  valorantRole: z.enum(VALORANT_ROLES).nullish(),
+  birthdate: z.string().trim().optional(),
   socials: z
-    .object({ twitter: optionalUrl, twitch: optionalUrl })
+    .object({ twitter: optionalTwitterUrl, twitch: optionalTwitchUrl })
     .partial()
     .optional(),
 });

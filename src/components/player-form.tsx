@@ -1,9 +1,11 @@
 import CountrySelect from "@/components/country-select";
+import ImageUpload from "@/components/image-upload";
 
 type PlayerFormValues = {
   pseudo?: string;
   nationality?: string;
   riotId?: string;
+  photo?: string | null;
   socials?: { twitter?: string | null; twitch?: string | null } | null;
 };
 
@@ -34,10 +36,10 @@ export default function PlayerForm({
         Riot ID (optionnel, Nom#Tag)
         <input name="riotId" defaultValue={values?.riotId ?? ""} placeholder="Nom#Tag" className={input} />
       </label>
-      <label className="grid gap-1 text-sm text-[var(--text-muted)]">
+      <div className="grid gap-1 text-sm text-[var(--text-muted)]">
         Photo (png/jpg/webp, max 5 Mo)
-        <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" className={input} />
-      </label>
+        <ImageUpload name="photo" shape="round" currentUrl={values?.photo ?? null} />
+      </div>
       <fieldset className="grid gap-2">
         <legend className="text-sm text-[var(--text-muted)]">Réseaux (optionnel)</legend>
         <input name="twitter" placeholder="https://x.com/…" defaultValue={s.twitter ?? ""} className={input} />

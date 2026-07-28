@@ -1,6 +1,8 @@
 // Messages des modales de retour (succès / erreur), déclenchées via les
 // paramètres d'URL `?ok=<code>` ou `?error=<code>` après une action serveur.
 
+import { MIN_ROSTER_FOR_TOURNAMENT } from "@/lib/constants";
+
 export type FlashKind = "success" | "error";
 
 type FlashEntry = { title: string; message: string };
@@ -20,6 +22,10 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "player-saved": { title: "Joueur enregistré", message: "La fiche joueur a été mise à jour." },
   "left-team": { title: "Équipe quittée", message: "Tu as quitté ton équipe." },
   "riot-saved": { title: "Riot ID enregistré", message: "Ton compte Valorant est bien lié." },
+  "team-registered": {
+    title: "Inscription enregistrée",
+    message: "Ton équipe est inscrite au tournoi.",
+  },
 };
 
 export const ERROR_MESSAGES: Record<string, FlashEntry> = {
@@ -42,6 +48,22 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   riottaken: { title: "Riot ID déjà utilisé", message: "Ce Riot ID est déjà associé à un autre joueur." },
   ratelimited: { title: "Trop de requêtes", message: "Réessaie dans un instant." },
   riotapi: { title: "Service indisponible", message: "Vérification Riot momentanément indisponible." },
+  notupcoming: {
+    title: "Inscriptions fermées",
+    message: "Ce tournoi n'est plus en phase « À venir ».",
+  },
+  tournamentfull: {
+    title: "Tournoi complet",
+    message: "La limite d'équipes de ce tournoi est atteinte.",
+  },
+  alreadyregistered: {
+    title: "Déjà inscrite",
+    message: "Cette équipe est déjà inscrite à ce tournoi.",
+  },
+  rosterincomplete: {
+    title: "Effectif incomplet",
+    message: `Il faut au moins ${MIN_ROSTER_FOR_TOURNAMENT} joueurs dans l'équipe pour s'inscrire.`,
+  },
 };
 
 export function resolveFlash(

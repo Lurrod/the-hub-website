@@ -24,6 +24,8 @@ export async function updateMyProfileAction(formData: FormData) {
   const parsed = playerInputSchema.safeParse({
     pseudo: formData.get("pseudo"),
     nationality: formData.get("nationality") || undefined,
+    valorantRole: formData.get("valorantRole") || null,
+    birthdate: formData.get("birthdate") || "",
     socials: {
       twitter: formData.get("twitter") || undefined,
       twitch: formData.get("twitch") || undefined,

@@ -5,6 +5,8 @@ import { getPlayerByUserId } from "@/lib/data/players";
 import RiotIdForm from "@/components/riot-id-form";
 import { submitOnboardingRiotId } from "@/app/onboarding/actions";
 
+export const metadata = { title: "Bienvenue" };
+
 export default async function OnboardingPage() {
   const user = await getSessionUser();
   if (!user) redirect("/api/auth/signin");
