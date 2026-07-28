@@ -3,7 +3,7 @@ name: Déploiement (Kimsufi)
 # Déclenché à chaque push sur la branche de production, ou à la main.
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
