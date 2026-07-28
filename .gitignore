@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Visual brainstorming companion
 .superpowers/
+
+# Outillage design-sync (local, non lie au projet)
+.ds-sync/
