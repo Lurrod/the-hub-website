@@ -79,17 +79,22 @@ reprennent telles quelles depuis ton `.env.local` de développement :
   (regénérer avec `npx auth secret` — ne pas réutiliser celui de dev)
 - **à ajouter** : `AUTH_URL`, `NEXT_PUBLIC_BASE_URL`, `AUTH_TRUST_HOST`
 
+Guillemets **simples** : le script de déploiement fait `. shared/.env`, donc bash
+interpréterait un `$` placé entre guillemets doubles (un mot de passe contenant
+`$` serait tronqué sans erreur visible).
+
 ```ini
-DATABASE_URL="postgresql://thehub:MOT_DE_PASSE@localhost:5432/thehub"
-AUTH_SECRET="<npx auth secret>"
-AUTH_DISCORD_ID="<id application Discord>"
-AUTH_DISCORD_SECRET="<secret application Discord>"
-ADMIN_DISCORD_IDS="<ton id Discord>"
-AUTH_URL="https://the-hub-vrc.fr"
-NEXTAUTH_URL="https://the-hub-vrc.fr"
-NEXT_PUBLIC_BASE_URL="https://the-hub-vrc.fr"
-AUTH_TRUST_HOST="true"
-HENRIKDEV_API_KEY="<clé HenrikDev>"
+DATABASE_URL='postgresql://thehub:MOT_DE_PASSE@localhost:5432/thehub'
+AUTH_SECRET='<openssl rand -base64 32>'
+AUTH_DISCORD_ID='<id application Discord>'
+AUTH_DISCORD_SECRET='<secret application Discord>'
+# Plusieurs administrateurs : séparés par des virgules
+ADMIN_DISCORD_IDS='<id1>,<id2>'
+AUTH_URL='https://the-hub-vrc.fr'
+NEXTAUTH_URL='https://the-hub-vrc.fr'
+NEXT_PUBLIC_BASE_URL='https://the-hub-vrc.fr'
+AUTH_TRUST_HOST='true'
+HENRIKDEV_API_KEY='<clé HenrikDev>'
 ```
 
 ```bash
@@ -105,7 +110,10 @@ Penser à ajouter `https://the-hub-vrc.fr/api/auth/callback/discord` dans les
 ## 4. nginx + HTTPS
 
 ```bash
-sudo cp deploy/nginx.conf /etc/nginx/sites-available/the-hub-vrc.fr
+# deploy/nginx.conf est dans le dépôt, jamais cloné sur le serveur :
+# le copier depuis ton poste avant de l'activer.
+#   scp deploy/nginx.conf ubuntu@51.68.234.84:/tmp/
+sudo cp /tmp/nginx.conf /etc/nginx/sites-available/the-hub-vrc.fr
 sudo ln -s /etc/nginx/sites-available/the-hub-vrc.fr /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d the-hub-vrc.fr -d www.the-hub-vrc.fr
