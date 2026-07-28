@@ -9,38 +9,20 @@ Next.js est gourmande et ne doit pas pouvoir faire tomber les autres sites.
 Actions produit un paquet autonome (`output: "standalone"`), le serveur ne fait
 que le décompresser et recharger pm2.
 
-## ⚠ Conflit de nom à régler avant tout
+## Emplacement retenu
 
-`/var/www/the-hub-website` **existe déjà** et héberge un autre projet (Fast
-Learner). Deux options :
-
-**Option A — renommer l'existant** (ce que tu as demandé). Ce n'est pas un simple
-`mv` : le process pm2 et la conf nginx du site pointent sur l'ancien chemin et
-casseront tant qu'ils ne sont pas mis à jour.
-
-```bash
-# 1. Repérer le nom du process et la conf nginx concernés
-pm2 list
-grep -rl "the-hub-website" /etc/nginx/sites-available/
-
-# 2. Arrêter, renommer, repartir
-pm2 stop <nom-du-process-fast-learner>
-sudo mv /var/www/the-hub-website /var/www/fl-website
-sudo sed -i "s#/var/www/the-hub-website#/var/www/fl-website#g" /etc/nginx/sites-available/<conf-fast-learner>
-sudo nginx -t && sudo systemctl reload nginx
-
-# 3. Relancer depuis le nouveau chemin
-cd /var/www/fl-website && pm2 delete <nom-du-process> && pm2 start <sa-commande> && pm2 save
+```
+/var/www/the-hub-vrc.fr
 ```
 
-Le Hub va ensuite dans `/var/www/the-hub-website`, libéré.
+Nommé d'après le domaine, comme `titouan-borde.com`. `/var/www/the-hub-website`
+existe déjà et héberge Fast Learner : on n'y touche pas, ce qui évite d'avoir à
+déplacer un site en production (son process pm2 et sa conf nginx pointent sur ce
+chemin et tomberaient le temps de la reprise).
 
-**Option B — ne toucher à rien** : installer Le Hub dans
-`/var/www/the-hub-vrc.fr`, comme `titouan-borde.com` est nommé d'après son
-domaine. Aucun risque pour le site existant, et le nom reste sans ambiguïté.
-
-Le chemin retenu est simplement la valeur du secret `APP_DIR`, rien d'autre ne
-change dans le workflow.
+Si tu veux quand même renommer Fast Learner plus tard, ce n'est pas un simple
+`mv` : il faut arrêter son process, corriger sa conf nginx, puis le relancer
+depuis le nouveau chemin. Ça n'a aucun impact sur Le Hub.
 
 ## Arborescence
 
@@ -60,7 +42,7 @@ sans ça, chaque déploiement effacerait les images envoyées par les utilisateu
 ## 1. Préparer le dossier (une seule fois)
 
 ```bash
-APP_DIR=/var/www/the-hub-website          # ou /var/www/the-hub-vrc.fr (option B)
+APP_DIR=/var/www/the-hub-vrc.fr
 sudo mkdir -p "$APP_DIR"/{releases,shared/uploads,shared/logs}
 sudo chown -R ubuntu:ubuntu "$APP_DIR"
 ```
@@ -136,7 +118,7 @@ ssh -i ~/.ssh/thehub_deploy ubuntu@51.68.234.84 'pm2 -v'   # vérifie que ça pa
 | `SSH_PORT` | `22` |
 | `SSH_PRIVATE_KEY` | contenu de `~/.ssh/thehub_deploy` (clé privée entière) |
 | `SSH_KNOWN_HOSTS` | sortie de `ssh-keyscan 51.68.234.84` |
-| `APP_DIR` | le chemin choisi au point 1 |
+| `APP_DIR` | `/var/www/the-hub-vrc.fr` |
 
 ## 7. Mise en ligne
 
@@ -158,8 +140,9 @@ pm2 save
 Retour arrière :
 
 ```bash
-ln -sfn /var/www/<app>/releases/<version-precedente> /var/www/<app>/current
-cd /var/www/<app>/current && pm2 reload ecosystem.config.cjs --update-env
+APP=/var/www/the-hub-vrc.fr
+ln -sfn "$APP/releases/<version-precedente>" "$APP/current"
+cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
 ```
 
 ## Points à surveiller
