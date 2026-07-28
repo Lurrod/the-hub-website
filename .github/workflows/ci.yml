@@ -1,0 +1,38 @@
+name: CI
+
+# Contrôles exécutés sur chaque push et chaque pull request.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Générer le client Prisma
+        run: npx prisma generate
+
+      - name: Vérification des types
+        run: npx tsc --noEmit
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Build de production
+        # DATABASE_URL est requis pour instancier le client Prisma pendant le
+        # build. Aucune connexion réelle n'est ouverte : une URL factice suffit.
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/build
+          AUTH_SECRET: build-only-placeholder
+        run: npm run build

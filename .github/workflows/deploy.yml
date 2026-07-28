@@ -1,0 +1,121 @@
+name: Déploiement (Kimsufi)
+
+# Déclenché à chaque push sur la branche de production, ou à la main.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  # Un seul déploiement à la fois : deux rsync simultanés casseraient la release.
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Générer le client Prisma
+        run: npx prisma generate
+
+      - name: Vérification des types
+        run: npx tsc --noEmit
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Build de production
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/build
+          AUTH_SECRET: build-only-placeholder
+        run: npm run build
+
+      - name: Assembler le paquet à déployer
+        # `output: "standalone"` ne recopie ni les assets statiques ni /public :
+        # Next attend qu'on les place à côté du serveur.
+        run: |
+          mkdir -p release
+          cp -r .next/standalone/. release/
+          mkdir -p release/.next
+          cp -r .next/static release/.next/static
+          cp -r public release/public
+          # Migrations + schéma : `prisma migrate deploy` tourne sur le serveur.
+          cp -r prisma release/prisma
+          # Le traçage de fichiers de Next embarque un dossier `uploads` s'il
+          # existe au moment du build. Il doit être un lien vers le volume
+          # persistant du serveur, pas un vrai dossier livré avec la release.
+          rm -rf release/uploads release/.env
+          tar -czf release.tar.gz -C release .
+
+      - name: Préparer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Épingle l'empreinte du serveur : sans ça, une attaque active
+          # pourrait se faire passer pour le Kimsufi pendant le déploiement.
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Envoyer la release
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          USER: ${{ secrets.SSH_USER }}
+          PORT: ${{ secrets.SSH_PORT || '22' }}
+        run: scp -P "$PORT" release.tar.gz "$USER@$HOST:/tmp/release.tar.gz"
+
+      - name: Activer la nouvelle version
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          USER: ${{ secrets.SSH_USER }}
+          PORT: ${{ secrets.SSH_PORT || '22' }}
+          APP_DIR: ${{ secrets.APP_DIR }}
+        run: |
+          ssh -p "$PORT" "$USER@$HOST" APP_DIR="$APP_DIR" 'bash -euo pipefail -s' <<'REMOTE'
+            RELEASE="$APP_DIR/releases/$(date +%Y%m%d%H%M%S)"
+            mkdir -p "$RELEASE"
+            tar -xzf /tmp/release.tar.gz -C "$RELEASE"
+            rm /tmp/release.tar.gz
+
+            # Éléments persistants : jamais dans la release, sinon un déploiement
+            # effacerait les images déjà envoyées par les utilisateurs.
+            # Le rm est indispensable : `ln -s cible dossier_existant` créerait
+            # le lien *dans* le dossier au lieu de le remplacer.
+            rm -rf "$RELEASE/uploads" "$RELEASE/.env"
+            ln -s "$APP_DIR/shared/uploads" "$RELEASE/uploads"
+            ln -s "$APP_DIR/shared/.env" "$RELEASE/.env"
+
+            # Migrations avant bascule : le nouveau code suppose le nouveau schéma.
+            cd "$RELEASE"
+            npx --yes prisma@6 migrate deploy --schema prisma/schema.prisma
+
+            ln -sfn "$RELEASE" "$APP_DIR/current"
+            sudo systemctl restart the-hub
+
+            # Ne conserver que les 5 dernières releases.
+            ls -1dt "$APP_DIR"/releases/*/ | tail -n +6 | xargs -r rm -rf
+          REMOTE
+
+      - name: Vérifier que le site répond
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          USER: ${{ secrets.SSH_USER }}
+          PORT: ${{ secrets.SSH_PORT || '22' }}
+        run: |
+          ssh -p "$PORT" "$USER@$HOST" 'for i in $(seq 1 15); do
+              code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3200/ || true)
+              [ "$code" = "200" ] && echo "OK ($code)" && exit 0
+              sleep 2
+            done
+            echo "Le service ne répond pas"; sudo journalctl -u the-hub -n 40 --no-pager; exit 1'

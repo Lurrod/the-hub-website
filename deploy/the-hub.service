@@ -1,0 +1,28 @@
+[Unit]
+Description=The Hub - site T3 Valorant
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=thehub
+# `current` est un lien symbolique vers la release active : le remplacer puis
+# redémarrer suffit à basculer de version (et à revenir en arrière).
+WorkingDirectory=/srv/the-hub/current
+EnvironmentFile=/srv/the-hub/shared/.env
+Environment=NODE_ENV=production
+Environment=PORT=3200
+Environment=HOSTNAME=127.0.0.1
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+
+# Durcissement : le service n'a besoin d'écrire que dans les uploads.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/the-hub/shared/uploads
+
+[Install]
+WantedBy=multi-user.target
