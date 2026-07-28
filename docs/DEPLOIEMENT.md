@@ -1,44 +1,82 @@
-# Déploiement — the-hub-vrc.fr (Kimsufi)
+# Déploiement — the-hub-vrc.fr
 
-Le build tourne dans GitHub Actions, jamais sur le serveur : un Kimsufi d'entrée
-de gamme n'a pas toujours la RAM pour compiler Next.js, et une compilation ratée
-ne doit pas pouvoir casser la prod. Actions envoie un paquet autonome
-(`output: "standalone"`), le serveur ne fait que le décompresser et redémarrer.
+Serveur OVH `51.68.234.84`, utilisateur `ubuntu`, sites dans `/var/www`, process
+gérés par **pm2** — on s'aligne sur ce qui tourne déjà (`titouan-borde.com`,
+`vol-histoire`, …).
 
-## Arborescence sur le serveur
+Le build tourne dans GitHub Actions, jamais sur le serveur : une compilation
+Next.js est gourmande et ne doit pas pouvoir faire tomber les autres sites.
+Actions produit un paquet autonome (`output: "standalone"`), le serveur ne fait
+que le décompresser et recharger pm2.
+
+## ⚠ Conflit de nom à régler avant tout
+
+`/var/www/the-hub-website` **existe déjà** et héberge un autre projet (Fast
+Learner). Deux options :
+
+**Option A — renommer l'existant** (ce que tu as demandé). Ce n'est pas un simple
+`mv` : le process pm2 et la conf nginx du site pointent sur l'ancien chemin et
+casseront tant qu'ils ne sont pas mis à jour.
+
+```bash
+# 1. Repérer le nom du process et la conf nginx concernés
+pm2 list
+grep -rl "the-hub-website" /etc/nginx/sites-available/
+
+# 2. Arrêter, renommer, repartir
+pm2 stop <nom-du-process-fast-learner>
+sudo mv /var/www/the-hub-website /var/www/fl-website
+sudo sed -i "s#/var/www/the-hub-website#/var/www/fl-website#g" /etc/nginx/sites-available/<conf-fast-learner>
+sudo nginx -t && sudo systemctl reload nginx
+
+# 3. Relancer depuis le nouveau chemin
+cd /var/www/fl-website && pm2 delete <nom-du-process> && pm2 start <sa-commande> && pm2 save
+```
+
+Le Hub va ensuite dans `/var/www/the-hub-website`, libéré.
+
+**Option B — ne toucher à rien** : installer Le Hub dans
+`/var/www/the-hub-vrc.fr`, comme `titouan-borde.com` est nommé d'après son
+domaine. Aucun risque pour le site existant, et le nom reste sans ambiguïté.
+
+Le chemin retenu est simplement la valeur du secret `APP_DIR`, rien d'autre ne
+change dans le workflow.
+
+## Arborescence
 
 ```
-/srv/the-hub/
+<APP_DIR>/
 ├── current -> releases/20260729...   lien vers la version active
 ├── releases/                          5 dernières versions (retour arrière possible)
 └── shared/
     ├── .env                           secrets de production
+    ├── logs/                          sorties pm2
     └── uploads/                       images déposées (persistantes)
 ```
 
 `uploads/` et `.env` vivent dans `shared/` et sont liés dans chaque release :
 sans ça, chaque déploiement effacerait les images envoyées par les utilisateurs.
 
-## 1. Préparer le serveur (une seule fois)
+## 1. Préparer le dossier (une seule fois)
 
 ```bash
-# Utilisateur dédié, sans shell de connexion
-sudo adduser --system --group --home /srv/the-hub thehub
-sudo mkdir -p /srv/the-hub/{releases,shared/uploads}
-sudo chown -R thehub:thehub /srv/the-hub
+APP_DIR=/var/www/the-hub-website          # ou /var/www/the-hub-vrc.fr (option B)
+sudo mkdir -p "$APP_DIR"/{releases,shared/uploads,shared/logs}
+sudo chown -R ubuntu:ubuntu "$APP_DIR"
+```
 
-# Node 22 + nginx + PostgreSQL
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs nginx postgresql certbot python3-certbot-nginx
+## 2. Base de données
 
-# Base de données
+```bash
+# Si PostgreSQL n'est pas encore installé
+sudo apt update && sudo apt install -y postgresql
 sudo -u postgres createuser thehub --pwprompt
 sudo -u postgres createdb thehub -O thehub
 ```
 
-## 2. Secrets de production
+## 3. Secrets de production
 
-Créer `/srv/the-hub/shared/.env` (droits `600`, propriétaire `thehub`) :
+Créer `<APP_DIR>/shared/.env` (droits `600`) :
 
 ```ini
 DATABASE_URL="postgresql://thehub:MOT_DE_PASSE@localhost:5432/thehub"
@@ -53,87 +91,85 @@ AUTH_TRUST_HOST="true"
 HENRIKDEV_API_KEY="<clé HenrikDev>"
 ```
 
+```bash
+chmod 600 "$APP_DIR/shared/.env"
+```
+
 `AUTH_TRUST_HOST` est requis derrière nginx, sinon Auth.js refuse l'en-tête
 `X-Forwarded-Host` et la connexion Discord échoue.
 
 Penser à ajouter `https://the-hub-vrc.fr/api/auth/callback/discord` dans les
 *Redirects* de l'application Discord — l'URL de dev ne suffit pas en prod.
 
-## 3. Service et proxy
+## 4. nginx + HTTPS
 
 ```bash
-sudo cp deploy/the-hub.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable the-hub
-
 sudo cp deploy/nginx.conf /etc/nginx/sites-available/the-hub-vrc.fr
 sudo ln -s /etc/nginx/sites-available/the-hub-vrc.fr /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-
-# HTTPS (voir la note plus bas : ce n'est pas optionnel)
 sudo certbot --nginx -d the-hub-vrc.fr -d www.the-hub-vrc.fr
 ```
 
-Le workflow redémarre le service via `sudo systemctl restart the-hub`. Autoriser
-cette seule commande sans mot de passe, avec `sudo visudo -f /etc/sudoers.d/thehub` :
+Le DNS de `the-hub-vrc.fr` doit pointer sur `51.68.234.84` **avant** certbot,
+sinon la validation échoue.
 
-```
-deploy ALL=(root) NOPASSWD: /bin/systemctl restart the-hub
-```
+## 5. Clé SSH pour GitHub Actions
 
-## 4. Accès SSH pour GitHub Actions
-
-Créer une paire de clés **dédiée au déploiement**, sans passphrase :
+Un mot de passe ne convient pas pour de l'automatisé : il faut une paire dédiée,
+sans passphrase. À générer **sur ton poste**, pas sur le serveur :
 
 ```bash
 ssh-keygen -t ed25519 -C "github-actions-the-hub" -f ~/.ssh/thehub_deploy -N ""
-ssh-copy-id -i ~/.ssh/thehub_deploy.pub deploy@<ip-du-kimsufi>
-ssh-keyscan -p 22 <ip-du-kimsufi>       # valeur de SSH_KNOWN_HOSTS
+ssh-copy-id -i ~/.ssh/thehub_deploy.pub ubuntu@51.68.234.84
+ssh-keyscan 51.68.234.84                 # valeur de SSH_KNOWN_HOSTS
+ssh -i ~/.ssh/thehub_deploy ubuntu@51.68.234.84 'pm2 -v'   # vérifie que ça passe
 ```
 
-## 5. Secrets GitHub
+## 6. Secrets GitHub
 
-Dans **Settings → Secrets and variables → Actions** :
+**Settings → Secrets and variables → Actions** :
 
-| Secret | Contenu |
+| Secret | Valeur |
 |---|---|
-| `SSH_HOST` | IP ou hôte du Kimsufi |
-| `SSH_USER` | utilisateur de déploiement (ex. `deploy`) |
-| `SSH_PORT` | port SSH (par défaut `22`) |
+| `SSH_HOST` | `51.68.234.84` |
+| `SSH_USER` | `ubuntu` |
+| `SSH_PORT` | `22` |
 | `SSH_PRIVATE_KEY` | contenu de `~/.ssh/thehub_deploy` (clé privée entière) |
-| `SSH_KNOWN_HOSTS` | sortie de `ssh-keyscan` |
-| `APP_DIR` | `/srv/the-hub` |
+| `SSH_KNOWN_HOSTS` | sortie de `ssh-keyscan 51.68.234.84` |
+| `APP_DIR` | le chemin choisi au point 1 |
 
-## 6. Mise en ligne
+## 7. Mise en ligne
 
-Tout push sur `master` déclenche : types → tests → build → envoi → migrations →
-redémarrage → vérification HTTP. En cas d'échec sur l'un de ces contrôles, rien
-n'est envoyé et la version en ligne reste intacte.
+Tout push sur `main` déclenche : types → tests → build → envoi → migrations →
+`pm2 reload` → vérification HTTP. Si un contrôle échoue, rien n'est envoyé et la
+version en ligne reste intacte.
 
-Retour arrière manuel :
+Le workflow refuse de déployer si `<APP_DIR>/shared/.env` n'existe pas : c'est le
+garde-fou qui empêche d'écraser un autre site en cas d'`APP_DIR` erroné.
+
+Vérifier que pm2 redémarre bien au reboot (probablement déjà fait pour tes autres
+sites) :
 
 ```bash
-ln -sfn /srv/the-hub/releases/<version-precedente> /srv/the-hub/current
-sudo systemctl restart the-hub
+pm2 startup     # à exécuter une fois, suivre la commande affichée
+pm2 save
 ```
 
-## HTTPS : pourquoi le `http://` de l'énoncé ne tient pas
+Retour arrière :
 
-Le site authentifie via Discord OAuth et pose un cookie de session. En clair
-(`http://`), ce cookie circule en clair : n'importe qui sur le même réseau peut
-le capter et se faire passer pour l'utilisateur — y compris un administrateur.
-Auth.js préfixe d'ailleurs ses cookies en `__Secure-` en production, ce que les
-navigateurs refusent hors HTTPS.
-
-Certbot est gratuit et la configuration nginx ci-dessus est prête. Les variables
-d'environnement pointent donc sur `https://the-hub-vrc.fr`, avec redirection
-automatique depuis `http://`.
+```bash
+ln -sfn /var/www/<app>/releases/<version-precedente> /var/www/<app>/current
+cd /var/www/<app>/current && pm2 reload ecosystem.config.cjs --update-env
+```
 
 ## Points à surveiller
 
 - **Sauvegardes** : rien n'est sauvegardé pour l'instant. Prévoir un `pg_dump`
   quotidien et une copie de `shared/uploads/`.
 - **Migrations destructives** : `prisma migrate deploy` tourne avant la bascule.
-  Une migration qui supprime une colonne cassera l'ancienne version pendant les
-  quelques secondes de redémarrage.
+  Une migration qui supprime une colonne cassera l'ancienne version pendant le
+  rechargement.
 - **Le seed n'est jamais lancé automatiquement** : les scripts `db:seed*`
   contiennent des données de démonstration et n'ont rien à faire en production.
+- **Port 3200** : l'application n'écoute que sur `127.0.0.1`, elle n'est donc pas
+  joignable depuis l'extérieur autrement que par nginx.

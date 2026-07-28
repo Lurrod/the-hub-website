@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # Un seul déploiement à la fois : deux rsync simultanés casseraient la release.
+  # Un seul déploiement à la fois : deux envois simultanés casseraient la release.
   group: deploy-production
   cancel-in-progress: false
 
@@ -52,6 +52,7 @@ jobs:
           cp -r public release/public
           # Migrations + schéma : `prisma migrate deploy` tourne sur le serveur.
           cp -r prisma release/prisma
+          cp ecosystem.config.cjs release/
           # Le traçage de fichiers de Next embarque un dossier `uploads` s'il
           # existe au moment du build. Il doit être un lien vers le volume
           # persistant du serveur, pas un vrai dossier livré avec la release.
@@ -73,7 +74,7 @@ jobs:
           HOST: ${{ secrets.SSH_HOST }}
           USER: ${{ secrets.SSH_USER }}
           PORT: ${{ secrets.SSH_PORT || '22' }}
-        run: scp -P "$PORT" release.tar.gz "$USER@$HOST:/tmp/release.tar.gz"
+        run: scp -P "$PORT" release.tar.gz "$USER@$HOST:/tmp/the-hub-release.tar.gz"
 
       - name: Activer la nouvelle version
         env:
@@ -83,10 +84,19 @@ jobs:
           APP_DIR: ${{ secrets.APP_DIR }}
         run: |
           ssh -p "$PORT" "$USER@$HOST" APP_DIR="$APP_DIR" 'bash -euo pipefail -s' <<'REMOTE'
+            # Garde-fou : refuse de déployer dans un dossier qui n'a pas été
+            # préparé (voir docs/DEPLOIEMENT.md). Évite d'écraser un autre site
+            # si APP_DIR est mal renseigné.
+            if [ ! -f "$APP_DIR/shared/.env" ]; then
+              echo "ERREUR : $APP_DIR/shared/.env introuvable."
+              echo "Le dossier n'est pas initialise, ou APP_DIR pointe au mauvais endroit."
+              exit 1
+            fi
+
             RELEASE="$APP_DIR/releases/$(date +%Y%m%d%H%M%S)"
             mkdir -p "$RELEASE"
-            tar -xzf /tmp/release.tar.gz -C "$RELEASE"
-            rm /tmp/release.tar.gz
+            tar -xzf /tmp/the-hub-release.tar.gz -C "$RELEASE"
+            rm /tmp/the-hub-release.tar.gz
 
             # Éléments persistants : jamais dans la release, sinon un déploiement
             # effacerait les images déjà envoyées par les utilisateurs.
@@ -96,12 +106,24 @@ jobs:
             ln -s "$APP_DIR/shared/uploads" "$RELEASE/uploads"
             ln -s "$APP_DIR/shared/.env" "$RELEASE/.env"
 
-            # Migrations avant bascule : le nouveau code suppose le nouveau schéma.
             cd "$RELEASE"
+
+            # Secrets exportés dans l'environnement : pm2 les transmet au process
+            # grâce à --update-env. `set -a` exporte tout ce qui est affecté.
+            set -a
+            . "$APP_DIR/shared/.env"
+            set +a
+
+            # Migrations avant bascule : le nouveau code suppose le nouveau schéma.
             npx --yes prisma@6 migrate deploy --schema prisma/schema.prisma
 
             ln -sfn "$RELEASE" "$APP_DIR/current"
-            sudo systemctl restart the-hub
+
+            # startOrReload : démarre au premier déploiement, recharge ensuite
+            # sans coupure. pm2 relit ecosystem.config.cjs depuis la release, donc
+            # le cwd suit automatiquement la nouvelle version.
+            pm2 startOrReload ecosystem.config.cjs --update-env
+            pm2 save
 
             # Ne conserver que les 5 dernières releases.
             ls -1dt "$APP_DIR"/releases/*/ | tail -n +6 | xargs -r rm -rf
@@ -118,4 +140,4 @@ jobs:
               [ "$code" = "200" ] && echo "OK ($code)" && exit 0
               sleep 2
             done
-            echo "Le service ne répond pas"; sudo journalctl -u the-hub -n 40 --no-pager; exit 1'
+            echo "Le service ne repond pas"; pm2 logs the-hub --lines 40 --nostream; exit 1'
