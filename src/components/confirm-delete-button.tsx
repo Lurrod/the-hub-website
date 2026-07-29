@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useFormStatus } from "react-dom";
 
 interface ConfirmDeleteButtonProps {
@@ -39,6 +40,13 @@ export default function ConfirmDeleteButton({
   message,
 }: ConfirmDeleteButtonProps) {
   const [open, setOpen] = useState(false);
+  // La modale est rendue dans <body> via un portail : `template.tsx` enveloppe
+  // chaque page dans un `.animate-in` qui anime `transform`. Avec
+  // `animation-fill-mode: both`, ce wrapper reste un bloc conteneur même une
+  // fois l'animation finie, et un `position: fixed` s'y ancre au lieu de la
+  // fenêtre - la modale se centrait alors au milieu de la page entière.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +72,7 @@ export default function ConfirmDeleteButton({
         {label}
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
           role="dialog"
@@ -91,7 +99,8 @@ export default function ConfirmDeleteButton({
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

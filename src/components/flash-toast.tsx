@@ -46,7 +46,16 @@ export default function FlashToast() {
 
   useEffect(() => {
     const f = resolveFlash(ok, error);
-    if (!f) return;
+    if (!f) {
+      // L'URL n'a plus de code flash : le toast ne doit pas lui survivre.
+      // Sans ça, toute navigation pendant l'affichage (un filtre sur /tournois
+      // ou /equipes, par exemple) relançait l'effet, sortait ici, et laissait
+      // le toast figé à l'écran indéfiniment - ses minuteurs venant d'être
+      // annulés par le nettoyage de l'exécution précédente.
+      setFlash(null);
+      setShow(false);
+      return;
+    }
     setFlash(f);
     setShow(true);
 
