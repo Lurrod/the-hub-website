@@ -3,6 +3,7 @@ import { auth, signIn, signOut } from "@/lib/auth";
 import { getPlayerByUserId } from "@/lib/data/players";
 import NavLinks from "@/components/nav-links";
 import UserMenu from "@/components/user-menu";
+import { DiscordIcon, SearchIcon } from "@/components/icons";
 
 export default async function NavBar() {
   const session = await auth();
@@ -18,30 +19,30 @@ export default async function NavBar() {
   }
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-strong)] bg-[var(--shell)]/90 backdrop-blur-md">
-      <nav className="mx-auto flex h-[47px] max-w-6xl items-center gap-x-6 px-4">
+      {/* Sous 640px, la barre est trop étroite pour le champ de recherche et le
+          libellé complet du bouton : le champ devient une icône vers /recherche
+          et le bouton se réduit à l'icône Discord. */}
+      <nav className="mx-auto flex h-[47px] max-w-6xl items-center gap-x-2 px-4 sm:gap-x-6">
         <Link href="/" aria-label="The Hub - accueil" className="flex shrink-0 items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="The Hub" className="h-8 w-auto object-contain" />
         </Link>
         <NavLinks isAdmin={isAdmin} />
+
+        <Link
+          href="/recherche"
+          aria-label="Rechercher"
+          className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--border)] bg-[var(--card)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-white sm:hidden"
+        >
+          <SearchIcon />
+        </Link>
+
         <form
           action="/recherche"
           method="get"
-          className="relative ml-auto"
+          className="relative ml-auto hidden sm:block"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
+          <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
           <input
             name="q"
             placeholder="Rechercher…"
@@ -63,8 +64,12 @@ export default async function NavBar() {
               await signIn("discord");
             }}
           >
-            <button className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)]">
-              Connexion Discord
+            <button
+              aria-label="Connexion Discord"
+              className="flex shrink-0 items-center gap-2 rounded bg-[var(--accent)] px-2.5 py-1.5 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)] sm:px-3"
+            >
+              <DiscordIcon className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Connexion Discord</span>
             </button>
           </form>
         )}
