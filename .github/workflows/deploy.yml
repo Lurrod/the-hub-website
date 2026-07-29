@@ -119,11 +119,26 @@ jobs:
 
             ln -sfn "$RELEASE" "$APP_DIR/current"
 
-            # startOrReload : démarre au premier déploiement, recharge ensuite
-            # sans coupure. pm2 relit ecosystem.config.cjs depuis la release, donc
-            # le cwd suit automatiquement la nouvelle version.
-            pm2 startOrReload ecosystem.config.cjs --update-env
+            # delete + start, et non `startOrReload` : pm2 ne met à jour ni le
+            # chemin du script ni le cwd d'un process existant. Il relançait donc
+            # indéfiniment la toute première release, malgré des redémarrages
+            # apparemment réussis à chaque déploiement.
+            pm2 delete the-hub >/dev/null 2>&1 || true
+            pm2 start ecosystem.config.cjs --update-env
             pm2 save
+
+            # Vérifie que pm2 exécute bien la release qu'on vient de livrer.
+            RUNNING=$(pm2 jlist | node -e "
+              let d = '';
+              process.stdin.on('data', c => d += c).on('end', () => {
+                const app = JSON.parse(d).find(p => p.name === 'the-hub');
+                console.log(app ? app.pm2_env.pm_cwd : '');
+              });
+            ")
+            if [ "$RUNNING" != "$RELEASE" ]; then
+              echo "ERREUR : pm2 execute $RUNNING au lieu de $RELEASE"
+              exit 1
+            fi
 
             # Ne conserver que les 5 dernières releases.
             ls -1dt "$APP_DIR"/releases/*/ | tail -n +6 | xargs -r rm -rf
