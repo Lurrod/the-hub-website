@@ -23,14 +23,36 @@ const bricolage = Bricolage_Grotesque({
   weight: ["600", "700", "800"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://the-hub-vrc.fr";
+const DESCRIPTION =
+  "Chaque match de chaque tournoi du Tier 3 Valorant francophone, analysé : " +
+  "scoreboard complet, timeline des rounds, ACS, ADR, KAST.";
+
 export const metadata: Metadata = {
+  // Base des URLs absolues des métadonnées (image de partage notamment).
+  metadataBase: new URL(SITE_URL),
   // `template` s'applique à toute page qui définit son propre titre ; `default`
   // sert de repli (accueil et pages sans metadata).
   title: {
     default: "The Hub",
     template: "%s · The Hub",
   },
-  description: "Référencement des équipes et tournois du Tier 3 Valorant.",
+  description: DESCRIPTION,
+  // Aperçu affiché par Discord, X, iMessage… L'image vient de
+  // `app/opengraph-image.png`, détectée automatiquement par Next.
+  openGraph: {
+    type: "website",
+    siteName: "The Hub",
+    title: "The Hub - T3 Valorant",
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: "fr_FR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Hub - T3 Valorant",
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
