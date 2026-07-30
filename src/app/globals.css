@@ -558,3 +558,19 @@ body :is(h1, h2, h3, h4, h5, h6) {
     transition: none;
   }
 }
+
+/* Page équipe : tailles imposées du bandeau et des cartes joueurs. Hors @layer
+   et accrochées à des classes pour primer sur la règle globale `body *` qui
+   plafonne le site à 12/16px (un `text-[16px]` Tailwind y perdrait). */
+.t-title {
+  font-size: 24px;
+}
+.tp-name {
+  font-size: 16px;
+}
+.tp-label {
+  font-size: 10px;
+}
+.tp-value {
+  font-size: 12px;
+}

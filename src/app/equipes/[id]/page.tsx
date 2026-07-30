@@ -223,7 +223,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
             )}
 
             <div className="min-w-0">
-              <h1 className="text-[24px] font-bold text-white">{team.name}</h1>
+              <h1 className="t-title font-bold text-white">{team.name}</h1>
               <SocialLinks socials={socials} size="h-4 w-4" className="mt-2" />
             </div>
 
