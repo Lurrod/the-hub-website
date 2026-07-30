@@ -39,31 +39,32 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
       href={`/joueurs/${player.id}`}
       className="card card-interactive flex h-full flex-col gap-2.5 p-3"
     >
-      {/* L'icône porte le rôle à elle seule ; le libellé ne sert que pour le
-          staff, qui n'a pas d'icône de rôle Valorant. */}
-      <div className="flex h-5 items-center gap-1.5 text-[10px] uppercase tracking-wide text-[var(--text-subtle)]">
-        {roleIcon ? (
+      {/* Le rôle flotte sur le coin haut gauche : la photo occupe tout le haut
+          de la carte. L'icône porte le rôle à elle seule ; le libellé ne sert
+          que pour le staff, qui n'a pas d'icône de rôle Valorant. */}
+      <div className="relative">
+        <div className="absolute left-0 top-0 z-10 flex items-center text-[10px] uppercase tracking-wide text-[var(--text-subtle)]">
+          {roleIcon ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={roleIcon} alt={roleName ?? ""} title={roleName} className="h-5 w-5" />
+          ) : (
+            <span>{MEMBERSHIP_LABELS[player.membershipRole] ?? player.membershipRole}</span>
+          )}
+        </div>
+
+        {player.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={roleIcon} alt={roleName ?? ""} title={roleName} className="h-5 w-5 shrink-0" />
+          <img
+            src={player.photo}
+            alt=""
+            className="mx-auto h-[120px] w-[120px] rounded-full object-cover"
+          />
         ) : (
-          <span className="truncate">
-            {MEMBERSHIP_LABELS[player.membershipRole] ?? player.membershipRole}
-          </span>
+          <div className="monogram mx-auto grid h-[120px] w-[120px] place-items-center rounded-full text-2xl">
+            {player.pseudo.slice(0, 2).toUpperCase()}
+          </div>
         )}
       </div>
-
-      {player.photo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={player.photo}
-          alt=""
-          className="mx-auto h-16 w-16 shrink-0 rounded-full object-cover"
-        />
-      ) : (
-        <div className="monogram mx-auto grid h-16 w-16 shrink-0 place-items-center rounded-full text-base">
-          {player.pseudo.slice(0, 2).toUpperCase()}
-        </div>
-      )}
 
       <div className="flex min-w-0 items-center justify-center gap-1.5">
         <span className="truncate text-[16px] font-semibold text-white">{player.pseudo}</span>
@@ -87,12 +88,12 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
         })}
       </div>
 
-      <div className="mt-auto flex items-start justify-between gap-2 border-t border-[var(--border)] pt-2">
-        <div>
+      <div className="mt-auto flex items-start justify-around gap-2 pt-1">
+        <div className="text-center">
           <div className="text-[10px] leading-tight text-[#9fa0a2]">Âge</div>
           <div className="stat text-[12px] leading-tight text-white">{age ?? "—"}</div>
         </div>
-        <div className="text-right">
+        <div className="text-center">
           <div className="text-[10px] leading-tight text-[#9fa0a2]">A rejoint</div>
           <div className="stat text-[12px] leading-tight text-white">{since ?? "—"}</div>
         </div>

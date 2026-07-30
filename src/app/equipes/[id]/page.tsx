@@ -215,15 +215,15 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
             {team.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={team.logo} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+              <img src={team.logo} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
             ) : (
-              <div className="monogram grid h-16 w-16 shrink-0 place-items-center rounded-lg text-lg">
+              <div className="monogram grid h-20 w-20 shrink-0 place-items-center rounded-lg text-xl">
                 {team.tag.slice(0, 3).toUpperCase()}
               </div>
             )}
 
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-white">{team.name}</h1>
+              <h1 className="text-[24px] font-bold text-white">{team.name}</h1>
               <SocialLinks socials={socials} size="h-4 w-4" className="mt-2" />
             </div>
 
