@@ -13,6 +13,16 @@ const nextConfig: NextConfig = {
   // dépendances utilisées. Le build se fait en CI et on n'envoie que ce dossier
   // sur le Kimsufi, qui n'a donc ni à installer node_modules ni à compiler.
   output: "standalone",
+  experimental: {
+    serverActions: {
+      // Next plafonne le corps des server actions à 1 Mo par défaut et renvoie
+      // une 413 avant même d'exécuter l'action : un logo de plus de 1 Mo cassait
+      // l'enregistrement d'équipe. On accepte deux images à la limite applicative
+      // (MAX_UPLOAD_BYTES = 5 Mo, logo + bannière de tournoi) plus le surcoût
+      // multipart et les autres champs du formulaire.
+      bodySizeLimit: "12mb",
+    },
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

@@ -31,14 +31,22 @@ export default function ImageUpload({
     shape === "wide" ? "aspect-[3/1] w-48" : shape === "round" ? "h-24 w-24" : "h-24 w-24";
   const radius = shape === "round" ? "rounded-full" : "rounded-lg";
 
+  /** Vide l'input : sans ça un fichier refusé partirait quand même au serveur. */
+  function reject(message: string) {
+    if (ref.current) ref.current.value = "";
+    setPreview(currentUrl);
+    setFileName(null);
+    setError(message);
+  }
+
   function handleFile(f: File | undefined | null) {
     if (!f) return;
     if (!ACCEPT.includes(f.type)) {
-      setError("Format non supporté - PNG, JPEG ou WebP.");
+      reject("Format non supporté - PNG, JPEG ou WebP.");
       return;
     }
     if (f.size > maxSizeMb * 1024 * 1024) {
-      setError(`Fichier trop lourd - max ${maxSizeMb} Mo.`);
+      reject(`Fichier trop lourd - max ${maxSizeMb} Mo.`);
       return;
     }
     setError(null);
