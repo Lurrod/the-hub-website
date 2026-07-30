@@ -54,14 +54,25 @@ function Side({
   );
 }
 
-export default function MatchRow({ match }: { match: MatchRowData }) {
+export default function MatchRow({
+  match,
+  bare = false,
+}: {
+  match: MatchRowData;
+  /** Sans contour ni fond : pour les listes déjà encadrées par leur conteneur. */
+  bare?: boolean;
+}) {
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
   const schedule = formatSchedule(match.date);
   return (
     <Link
       href={`/matchs/${match.id}`}
-      className="card card-interactive grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 py-1.5"
+      className={`${
+        bare
+          ? "cursor-pointer rounded-lg transition-colors hover:bg-[var(--card-hover)]"
+          : "card card-interactive"
+      } grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 py-1.5`}
     >
       {/* Horaires (gauche) */}
       <div className="w-14 shrink-0 text-xs leading-tight">

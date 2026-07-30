@@ -52,6 +52,27 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     listTeamUpcomingMatches(team.id),
     listTeamRecentMatches(team.id),
   ]);
+  // Le staff (coachs, managers) a sa propre zone : ses cartes n'ont ni rôle
+  // Valorant ni agents, elles n'ont rien à faire au milieu des joueurs.
+  const STAFF_ROLES = new Set(["COACH", "MANAGER"]);
+  const players = roster.filter((m) => !STAFF_ROLES.has(m.role));
+  const staff = roster.filter((m) => STAFF_ROLES.has(m.role));
+  const playerCard = (m: (typeof roster)[number]) => (
+    <TeamPlayerCard
+      key={m.membershipId}
+      player={{
+        id: m.player.id,
+        pseudo: m.player.pseudo,
+        photo: m.player.photo,
+        nationality: m.player.nationality,
+        valorantRole: m.player.valorantRole,
+        birthdate: m.player.birthdate,
+        membershipRole: m.role,
+        joinDate: m.joinDate,
+        topAgents: m.topAgents,
+      }}
+    />
+  );
   const miniMatch = (m: (typeof upcoming)[number], played: boolean) => ({
     id: m.id,
     date: m.date,
@@ -95,33 +116,31 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           </section>
         </div>
 
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-            Roster
-          </h2>
-          {roster.length === 0 ? (
-            <p className="text-[var(--text-muted)]">Aucun joueur enregistré pour cette équipe.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {roster.map((m) => (
-                <TeamPlayerCard
-                  key={m.membershipId}
-                  player={{
-                    id: m.player.id,
-                    pseudo: m.player.pseudo,
-                    photo: m.player.photo,
-                    nationality: m.player.nationality,
-                    valorantRole: m.player.valorantRole,
-                    birthdate: m.player.birthdate,
-                    membershipRole: m.role,
-                    joinDate: m.joinDate,
-                    topAgents: m.topAgents,
-                  }}
-                />
-              ))}
-            </div>
+        <div className="flex flex-col gap-8">
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+              Roster
+            </h2>
+            {players.length === 0 ? (
+              <p className="text-[var(--text-muted)]">Aucun joueur enregistré pour cette équipe.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {players.map(playerCard)}
+              </div>
+            )}
+          </section>
+
+          {staff.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+                Staff
+              </h2>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {staff.map(playerCard)}
+              </div>
+            </section>
           )}
-        </section>
+        </div>
       </div>
 
       {alumni.length > 0 && (

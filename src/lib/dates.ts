@@ -76,16 +76,16 @@ export function computeAge(birthdate: Date | null, now: Date = new Date()): numb
   return age;
 }
 
-/** Ancienneté depuis `from` (« 12 j », « 8 mois », « 3 ans »), null si absente. */
-export function durationSince(from: Date | null, now: Date = new Date()): string | null {
+/** Ancienneté compacte depuis `from` (« 12j », « 8m », « 3a »), null si absente. */
+export function durationShort(from: Date | null, now: Date = new Date()): string | null {
   if (!from) return null;
   const start = new Date(from);
   const years = computeAge(start, now) ?? 0;
-  if (years >= 1) return `${years} ${years === 1 ? "an" : "ans"}`;
+  if (years >= 1) return `${years}a`;
   const months =
     (now.getFullYear() - start.getFullYear()) * 12 +
     (now.getMonth() - start.getMonth()) -
     (now.getDate() < start.getDate() ? 1 : 0);
-  if (months >= 1) return `${months} mois`;
-  return `${Math.max(0, Math.round((now.getTime() - start.getTime()) / DAY_MS))} j`;
+  if (months >= 1) return `${months}m`;
+  return `${Math.max(0, Math.round((now.getTime() - start.getTime()) / DAY_MS))}j`;
 }

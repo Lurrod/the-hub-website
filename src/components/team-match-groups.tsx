@@ -94,9 +94,9 @@ export default function TeamMatchGroups({
               <Chevron />
             </summary>
 
-            <div className="grid gap-2 border-t border-[var(--border)] p-3">
+            <div className="grid gap-1 border-t border-[var(--border)] p-3">
               {g.matches.map((m) => (
-                <MatchRow key={m.id} match={m} />
+                <MatchRow key={m.id} match={m} bare />
               ))}
             </div>
           </details>

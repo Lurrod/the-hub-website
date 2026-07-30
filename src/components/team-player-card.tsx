@@ -2,7 +2,7 @@ import Link from "next/link";
 import Flag from "@/components/flag";
 import { agentIconUrl } from "@/lib/agents";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
-import { computeAge, durationSince } from "@/lib/dates";
+import { computeAge, durationShort } from "@/lib/dates";
 
 const MEMBERSHIP_LABELS: Record<string, string> = {
   JOUEUR: "Joueur",
@@ -30,24 +30,26 @@ export type TeamPlayerCardData = {
  */
 export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData }) {
   const roleIcon = roleIconUrl(player.valorantRole);
-  const role =
-    roleLabel(player.valorantRole) ??
-    MEMBERSHIP_LABELS[player.membershipRole] ??
-    player.membershipRole;
+  const roleName = roleLabel(player.valorantRole);
   const age = computeAge(player.birthdate);
-  const since = durationSince(player.joinDate);
+  const since = durationShort(player.joinDate);
 
   return (
     <Link
       href={`/joueurs/${player.id}`}
-      className="card card-interactive flex h-full flex-col gap-3 p-3"
+      className="card card-interactive flex h-full flex-col gap-2.5 p-3"
     >
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-[var(--text-subtle)]">
-        {roleIcon && (
+      {/* L'icône porte le rôle à elle seule ; le libellé ne sert que pour le
+          staff, qui n'a pas d'icône de rôle Valorant. */}
+      <div className="flex h-5 items-center gap-1.5 text-[10px] uppercase tracking-wide text-[var(--text-subtle)]">
+        {roleIcon ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={roleIcon} alt="" className="h-4 w-4 shrink-0" />
+          <img src={roleIcon} alt={roleName ?? ""} title={roleName} className="h-5 w-5 shrink-0" />
+        ) : (
+          <span className="truncate">
+            {MEMBERSHIP_LABELS[player.membershipRole] ?? player.membershipRole}
+          </span>
         )}
-        <span className="truncate">{role}</span>
       </div>
 
       {player.photo ? (
@@ -64,31 +66,36 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
       )}
 
       <div className="flex min-w-0 items-center justify-center gap-1.5">
-        <span className="truncate font-semibold text-white">{player.pseudo}</span>
-        {player.nationality && <Flag country={player.nationality} className="h-3 w-4" />}
+        <span className="truncate text-[16px] font-semibold text-white">{player.pseudo}</span>
+        {player.nationality && <Flag country={player.nationality} className="h-[12px] w-[16px]" />}
       </div>
 
       {/* Hauteur réservée même sans stats : les cartes restent alignées. */}
-      <div className="flex h-6 items-center justify-center gap-1.5">
+      <div className="flex h-[43.2px] items-center justify-center gap-1">
         {player.topAgents.map((agent) => {
           const icon = agentIconUrl(agent);
           return icon ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={agent} src={icon} alt={agent} title={agent} className="h-6 w-6 rounded" />
+            <img
+              key={agent}
+              src={icon}
+              alt={agent}
+              title={agent}
+              className="h-[43.2px] w-[43.2px] rounded"
+            />
           ) : null;
         })}
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-[var(--border)] pt-2 text-[10px] text-[var(--text-muted)]">
-        <span className="stat">{age != null ? `${age} ans` : "—"}</span>
-        <span className="truncate">
-          {player.joinDate
-            ? `Arrivé ${new Date(player.joinDate).toLocaleDateString("fr-FR", {
-                month: "2-digit",
-                year: "numeric",
-              })}${since ? ` · ${since}` : ""}`
-            : "—"}
-        </span>
+      <div className="mt-auto flex items-start justify-between gap-2 border-t border-[var(--border)] pt-2">
+        <div>
+          <div className="text-[10px] leading-tight text-[#9fa0a2]">Âge</div>
+          <div className="stat text-[12px] leading-tight text-white">{age ?? "—"}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] leading-tight text-[#9fa0a2]">A rejoint</div>
+          <div className="stat text-[12px] leading-tight text-white">{since ?? "—"}</div>
+        </div>
       </div>
     </Link>
   );

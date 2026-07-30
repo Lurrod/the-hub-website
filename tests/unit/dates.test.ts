@@ -6,7 +6,7 @@ import {
   monthLabel,
   dayKey,
   computeAge,
-  durationSince,
+  durationShort,
 } from "@/lib/dates";
 
 const now = new Date("2026-07-25T12:00:00");
@@ -67,18 +67,18 @@ describe("computeAge", () => {
   });
 });
 
-describe("durationSince", () => {
+describe("durationShort", () => {
   it("retourne null sans date", () => {
-    expect(durationSince(null, now)).toBe(null);
+    expect(durationShort(null, now)).toBe(null);
   });
   it("compte en jours sous un mois", () => {
-    expect(durationSince(new Date("2026-07-13T12:00:00"), now)).toBe("12 j");
+    expect(durationShort(new Date("2026-07-13T12:00:00"), now)).toBe("12j");
   });
   it("compte en mois sous un an", () => {
-    expect(durationSince(new Date("2025-11-25T12:00:00"), now)).toBe("8 mois");
+    expect(durationShort(new Date("2025-11-25T12:00:00"), now)).toBe("8m");
   });
   it("compte en années au-delà", () => {
-    expect(durationSince(new Date("2025-07-25T12:00:00"), now)).toBe("1 an");
-    expect(durationSince(new Date("2023-01-10T12:00:00"), now)).toBe("3 ans");
+    expect(durationShort(new Date("2025-07-25T12:00:00"), now)).toBe("1a");
+    expect(durationShort(new Date("2023-01-10T12:00:00"), now)).toBe("3a");
   });
 });

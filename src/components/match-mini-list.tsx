@@ -62,7 +62,7 @@ export default function MatchMiniList({
             >
               <div
                 aria-hidden
-                className="absolute inset-0 -z-10 bg-[radial-gradient(100%_120%_at_100%_50%,var(--accent-glow),transparent_65%)]"
+                className="absolute inset-0 -z-10 bg-[radial-gradient(55%_75%_at_100%_100%,var(--accent-glow),transparent_60%)]"
               />
               <div className="mb-1.5 flex items-center gap-2 text-[10px]">
                 <span className="text-white">{timeLabel(m.date)}</span>
