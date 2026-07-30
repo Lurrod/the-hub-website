@@ -3,14 +3,30 @@
  * vlr.gg) - 8 équipes avec logos + rosters, 2 poules, classements, et un bracket
  * de playoffs. Idempotent : supprime puis recrée les entrées préfixées « vlr- ».
  *
+ * Profils joueurs : pseudo, nationalité et photo viennent de vlr.gg (les photos
+ * restent hébergées chez eux, rien n'est copié dans le dépôt). Le rôle Valorant,
+ * la date de naissance et la date d'arrivée sont des valeurs plausibles de
+ * démonstration, pas des données importées.
+ *
  * Lancer :  npx tsx scripts/seed-vlr-emea.ts
  */
-import { PrismaClient, type MatchStage, type MatchStatus } from "@prisma/client";
+import { PrismaClient, type MatchStage, type MatchStatus, type ValorantRole } from "@prisma/client";
 
 const db = new PrismaClient();
 
 const TID = "vlr-emea-s1";
-const logo = (h: string) => `https://owcdn.net/img/${h}.png`;
+const img = (h: string) => `https://owcdn.net/img/${h}.png`;
+
+type PersonSeed = {
+  pseudo: string;
+  /** Nom de pays en français (voir src/lib/countries.ts), null si inconnu. */
+  country: string | null;
+  /** Hash de l'image vlr.gg, null si le joueur n'a pas de photo là-bas. */
+  photo: string | null;
+  role: ValorantRole | null;
+  born: string | null;
+  joined: string;
+};
 
 type TeamSeed = {
   id: string;
@@ -19,19 +35,114 @@ type TeamSeed = {
   logo: string;
   group: "alpha" | "omega";
   seed: number;
-  players: string[];
-  coach: string;
+  players: PersonSeed[];
+  coach: PersonSeed;
 };
 
+const TR = "Turquie";
+const RU = "Russie";
+const PL = "Pologne";
+const UK = "Royaume-Uni";
+const CZ = "République tchèque";
+const LT = "Lituanie";
+
 const TEAMS: TeamSeed[] = [
-  { id: "vlr-fut", name: "FUT Esports", tag: "FUT", logo: logo("632be9976b8fe"), group: "alpha", seed: 1, players: ["sociablEE", "s0pp", "xeus", "yetujey", "KROSTALY"], coach: "Vlad" },
-  { id: "vlr-tl", name: "Team Liquid", tag: "TL", logo: logo("640c381f0603f"), group: "alpha", seed: 2, players: ["nAts", "purp0", "kamo", "trexx", "Kicks"], coach: "LohaN" },
-  { id: "vlr-th", name: "Team Heretics", tag: "TH", logo: logo("637b755224c12"), group: "alpha", seed: 3, players: ["Boo", "koshmaras", "Wo0t", "RieNs", "benjyfishy"], coach: "neilzinho" },
-  { id: "vlr-gm", name: "Gentle Mates", tag: "GM", logo: logo("6670153fa9120"), group: "alpha", seed: 4, players: ["starxo", "Proxh", "bipo", "marteen", "Minny"], coach: "KUNDIKUNDI" },
-  { id: "vlr-fnc", name: "FNATIC", tag: "FNC", logo: logo("62a40cc2b5e29"), group: "omega", seed: 1, players: ["Boaster", "crashies", "kaajak", "Cloud", "Alfajer"], coach: "ENGH" },
-  { id: "vlr-vit", name: "Team Vitality", tag: "VIT", logo: logo("6466d79e1ed40"), group: "omega", seed: 2, players: ["Jamppi", "PROFEK", "Derke", "Chronicle", "Sayonara"], coach: "PAL" },
-  { id: "vlr-bbl", name: "BBL Esports", tag: "BBL", logo: logo("65b8ccef5e273"), group: "omega", seed: 3, players: ["Rosé", "Crewen", "Lar0k", "Loita", "lovers rock"], coach: "KEY" },
-  { id: "vlr-ef", name: "Eternal Fire", tag: "EF", logo: logo("6628980dcdaea"), group: "omega", seed: 4, players: ["nekky", "Spear", "audaz", "Favian", "echo"], coach: "afr0nfire" },
+  {
+    id: "vlr-fut", name: "FUT Esports", tag: "FUT", logo: img("632be9976b8fe"),
+    group: "alpha", seed: 1,
+    players: [
+      { pseudo: "sociablEE", country: TR, photo: "680a926893d7b", role: "INITIATOR", born: "2002-02-11", joined: "2025-11-06" },
+      { pseudo: "s0pp", country: TR, photo: null, role: "DUELIST", born: "2005-08-23", joined: "2026-01-12" },
+      { pseudo: "xeus", country: TR, photo: "697ab97a4855f", role: "SENTINEL", born: "2001-06-30", joined: "2024-10-18" },
+      { pseudo: "yetujey", country: TR, photo: "697ab948ca75e", role: "CONTROLLER", born: "2000-03-04", joined: "2023-11-22" },
+      { pseudo: "KROSTALY", country: TR, photo: "697aba0af3cd9", role: "INITIATOR", born: "2004-09-17", joined: "2025-06-09" },
+    ],
+    coach: { pseudo: "Vlad", country: TR, photo: "68730dca15978", role: null, born: "1996-05-02", joined: "2023-12-01" },
+  },
+  {
+    id: "vlr-tl", name: "Team Liquid", tag: "TL", logo: img("640c381f0603f"),
+    group: "alpha", seed: 2,
+    players: [
+      { pseudo: "nAts", country: RU, photo: "69735612b9b30", role: "SENTINEL", born: "2002-12-14", joined: "2023-11-15" },
+      { pseudo: "purp0", country: RU, photo: "6973563baf5bc", role: "DUELIST", born: "2004-04-08", joined: "2025-11-20" },
+      { pseudo: "kamo", country: PL, photo: "697355a36ffa7", role: "INITIATOR", born: "2003-07-26", joined: "2025-11-20" },
+      { pseudo: "trexx", country: RU, photo: "67ab62d450b3c", role: "CONTROLLER", born: "2003-01-19", joined: "2025-01-08" },
+      { pseudo: "Kicks", country: "Suède", photo: "677d6506baa65", role: "INITIATOR", born: "2001-10-05", joined: "2024-12-11" },
+    ],
+    coach: { pseudo: "LohaN", country: "Portugal", photo: "697356f3844e0", role: null, born: "1995-02-27", joined: "2025-11-20" },
+  },
+  {
+    id: "vlr-th", name: "Team Heretics", tag: "TH", logo: img("637b755224c12"),
+    group: "alpha", seed: 3,
+    players: [
+      { pseudo: "Boo", country: LT, photo: "69778b1c2192b", role: "CONTROLLER", born: "1999-09-12", joined: "2023-10-30" },
+      { pseudo: "koshmaras", country: LT, photo: null, role: "INITIATOR", born: "2004-06-21", joined: "2026-01-05" },
+      { pseudo: "Wo0t", country: TR, photo: "69778b5885054", role: "DUELIST", born: "2006-03-16", joined: "2024-11-04" },
+      { pseudo: "RieNs", country: TR, photo: "69778b71c9366", role: "SENTINEL", born: "2004-02-08", joined: "2024-11-04" },
+      { pseudo: "benjyfishy", country: UK, photo: "69778b2bf3e20", role: "INITIATOR", born: "2004-05-31", joined: "2023-10-30" },
+    ],
+    coach: { pseudo: "neilzinho", country: "Canada", photo: "69778b4dbd0a9", role: null, born: "1994-08-19", joined: "2023-10-30" },
+  },
+  {
+    id: "vlr-gm", name: "Gentle Mates", tag: "GM", logo: img("6670153fa9120"),
+    group: "alpha", seed: 4,
+    players: [
+      { pseudo: "starxo", country: PL, photo: "697767895bac5", role: "DUELIST", born: "2001-11-09", joined: "2024-10-22" },
+      { pseudo: "Proxh", country: TR, photo: "679c760fde2dd", role: "INITIATOR", born: "2005-01-27", joined: "2025-12-15" },
+      { pseudo: "bipo", country: "Canada", photo: "697767f365fc0", role: "SENTINEL", born: "2003-03-30", joined: "2025-11-28" },
+      { pseudo: "marteen", country: CZ, photo: "6977651551705", role: "INITIATOR", born: "2004-07-14", joined: "2024-10-22" },
+      { pseudo: "Minny", country: CZ, photo: "697765bb6904c", role: "CONTROLLER", born: "2002-05-06", joined: "2025-11-28" },
+    ],
+    coach: { pseudo: "KUNDIKUNDI", country: CZ, photo: "6977694c5cf17", role: null, born: "1997-01-23", joined: "2024-10-22" },
+  },
+  {
+    id: "vlr-fnc", name: "FNATIC", tag: "FNC", logo: img("62a40cc2b5e29"),
+    group: "omega", seed: 1,
+    players: [
+      { pseudo: "Boaster", country: UK, photo: "687e2c495dcc6", role: "CONTROLLER", born: "1998-03-27", joined: "2021-01-14" },
+      { pseudo: "crashies", country: "États-Unis", photo: "687e2c376a05d", role: "INITIATOR", born: "1999-12-02", joined: "2023-11-08" },
+      { pseudo: "kaajak", country: PL, photo: "687e2c5192fe5", role: "DUELIST", born: "2005-04-18", joined: "2025-10-09" },
+      { pseudo: "Cloud", country: RU, photo: "646bd06211000", role: "INITIATOR", born: "2003-08-25", joined: "2026-01-20" },
+      { pseudo: "Alfajer", country: TR, photo: "687e2c40ac175", role: "SENTINEL", born: "2005-01-11", joined: "2022-01-06" },
+    ],
+    coach: { pseudo: "ENGH", country: null, photo: "60a0cf472d122", role: null, born: null, joined: "2021-11-30" },
+  },
+  {
+    id: "vlr-vit", name: "Team Vitality", tag: "VIT", logo: img("6466d79e1ed40"),
+    group: "omega", seed: 2,
+    players: [
+      { pseudo: "Jamppi", country: "Finlande", photo: "6977a6f130128", role: "INITIATOR", born: "2001-06-11", joined: "2023-11-02" },
+      { pseudo: "PROFEK", country: PL, photo: "6977a6e4ea727", role: "SENTINEL", born: "2000-10-20", joined: "2025-11-12" },
+      { pseudo: "Derke", country: RU, photo: "6977a70c4ff1b", role: "DUELIST", born: "2001-09-01", joined: "2023-11-02" },
+      { pseudo: "Chronicle", country: RU, photo: "6977a6d8e354a", role: "CONTROLLER", born: "2000-11-25", joined: "2025-11-12" },
+      { pseudo: "Sayonara", country: "Roumanie", photo: "6977a7018811e", role: "INITIATOR", born: "2004-03-09", joined: "2025-11-12" },
+    ],
+    coach: { pseudo: "PAL", country: UK, photo: "6977a7159f173", role: null, born: "1993-07-15", joined: "2024-11-18" },
+  },
+  {
+    id: "vlr-bbl", name: "BBL Esports", tag: "BBL", logo: img("65b8ccef5e273"),
+    group: "omega", seed: 3,
+    players: [
+      { pseudo: "Rosé", country: TR, photo: "6979757c1322c", role: "DUELIST", born: "2003-02-19", joined: "2024-11-27" },
+      { pseudo: "Crewen", country: TR, photo: "69797451d6733", role: "CONTROLLER", born: "2002-08-07", joined: "2023-12-06" },
+      { pseudo: "Lar0k", country: TR, photo: "697974e4d16d5", role: "INITIATOR", born: "2005-05-23", joined: "2025-11-19" },
+      { pseudo: "Loita", country: TR, photo: "6979752e8d3fa", role: "SENTINEL", born: "2001-12-28", joined: "2024-11-27" },
+      { pseudo: "lovers rock", country: TR, photo: "697975c71d41b", role: "INITIATOR", born: "2004-10-16", joined: "2026-01-09" },
+    ],
+    coach: { pseudo: "KEY", country: TR, photo: "69797492d5ce7", role: null, born: "1996-11-03", joined: "2023-12-06" },
+  },
+  {
+    id: "vlr-ef", name: "Eternal Fire", tag: "EF", logo: img("6628980dcdaea"),
+    group: "omega", seed: 4,
+    players: [
+      { pseudo: "nekky", country: TR, photo: "69e22617e9dba", role: "DUELIST", born: "2004-01-30", joined: "2024-12-03" },
+      { pseudo: "Spear", country: TR, photo: "69c98fc775fe3", role: "INITIATOR", born: "2005-09-08", joined: "2026-07-22" },
+      { pseudo: "audaz", country: TR, photo: "69e2266f85fd8", role: "CONTROLLER", born: "2002-04-25", joined: "2024-12-03" },
+      { pseudo: "Favian", country: TR, photo: "69e226459b5e0", role: "SENTINEL", born: "2003-06-13", joined: "2025-11-25" },
+      { pseudo: "echo", country: TR, photo: "69e226559a674", role: "INITIATOR", born: "2001-03-21", joined: "2023-11-29" },
+    ],
+    coach: { pseudo: "afr0nfire", country: TR, photo: "69e2267b850ee", role: null, born: "1995-06-17", joined: "2023-11-29" },
+  },
 ];
 
 const GRP_ALPHA = "vlr-grp-alpha";
@@ -98,17 +209,27 @@ async function main() {
     await db.team.create({
       data: { id: t.id, name: t.name, tag: t.tag, logo: t.logo, region: "EMEA", status: "ACTIVE" },
     });
+    const squad: [string, PersonSeed][] = [
+      ...t.players.map((p, i): [string, PersonSeed] => [`vlr-p-${t.id}-${i}`, p]),
+      [`vlr-p-${t.id}-c`, t.coach],
+    ];
     await db.player.createMany({
-      data: [
-        ...t.players.map((p, i) => ({ id: `vlr-p-${t.id}-${i}`, pseudo: p, nationality: null })),
-        { id: `vlr-p-${t.id}-c`, pseudo: t.coach, nationality: null },
-      ],
+      data: squad.map(([id, p]) => ({
+        id,
+        pseudo: p.pseudo,
+        nationality: p.country,
+        photo: p.photo ? img(p.photo) : null,
+        valorantRole: p.role,
+        birthdate: p.born ? new Date(`${p.born}T00:00:00Z`) : null,
+      })),
     });
     await db.teamMembership.createMany({
-      data: [
-        ...t.players.map((_, i) => ({ teamId: t.id, playerId: `vlr-p-${t.id}-${i}`, role: "JOUEUR" as const })),
-        { teamId: t.id, playerId: `vlr-p-${t.id}-c`, role: "COACH" as const },
-      ],
+      data: squad.map(([id, p], i) => ({
+        teamId: t.id,
+        playerId: id,
+        role: i === squad.length - 1 ? ("COACH" as const) : ("JOUEUR" as const),
+        joinDate: new Date(`${p.joined}T00:00:00Z`),
+      })),
     });
     await db.tournamentParticipant.create({
       data: { tournamentId: TID, teamId: t.id, seed: t.seed, groupId: groupOf(t) },

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { rankTopAgentsByPlayer } from "@/lib/agents";
 import type { PlayerInput } from "@/lib/validation/player";
 import type { MembershipRole } from "@prisma/client";
 import type { RiotAccount } from "@/lib/henrikdev";
@@ -270,4 +271,28 @@ export function joinTeamIfFree(
     await tx.teamMembership.create({ data: { teamId, playerId, role } });
     return { ok: true as const };
   });
+}
+
+/**
+ * Roster actuel enrichi pour les cartes joueurs de la page équipe : profil,
+ * ancienneté et agents les plus joués. Les agents sont agrégés en une requête
+ * pour tout le roster plutôt qu'une par joueur.
+ */
+export async function getTeamRosterCards(teamId: string) {
+  const memberships = await getTeamRoster(teamId);
+  const playerIds = memberships.map((m) => m.playerId);
+  const stats = playerIds.length
+    ? await db.playerGameStat.findMany({
+        where: { playerId: { in: playerIds } },
+        select: { playerId: true, agent: true },
+      })
+    : [];
+  const topAgents = rankTopAgentsByPlayer(stats);
+  return memberships.map((m) => ({
+    membershipId: m.id,
+    role: m.role,
+    joinDate: m.joinDate,
+    player: m.player,
+    topAgents: topAgents.get(m.playerId) ?? [],
+  }));
 }

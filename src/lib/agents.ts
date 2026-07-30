@@ -37,3 +37,31 @@ export function agentIconUrl(agent: string | null | undefined): string | undefin
   if (!agent) return undefined;
   return AGENT_ICONS[agent];
 }
+
+/**
+ * Agents les plus joués, par joueur, à partir de lignes de scoreboard.
+ * Une seule requête suffit ainsi pour tout un roster.
+ */
+export function rankTopAgentsByPlayer(
+  rows: { playerId: string | null; agent: string | null }[],
+  top = 3
+): Map<string, string[]> {
+  const counts = new Map<string, Map<string, number>>();
+  for (const row of rows) {
+    if (!row.playerId || !row.agent) continue;
+    const byAgent = counts.get(row.playerId) ?? new Map<string, number>();
+    byAgent.set(row.agent, (byAgent.get(row.agent) ?? 0) + 1);
+    counts.set(row.playerId, byAgent);
+  }
+  const ranked = new Map<string, string[]>();
+  for (const [playerId, byAgent] of counts) {
+    ranked.set(
+      playerId,
+      [...byAgent.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, top)
+        .map(([agent]) => agent)
+    );
+  }
+  return ranked;
+}

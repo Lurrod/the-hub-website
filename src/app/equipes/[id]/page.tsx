@@ -2,15 +2,20 @@ import Link from "next/link";
 import SocialLinks from "@/components/social-links";
 import { notFound } from "next/navigation";
 import { getTeam } from "@/lib/data/teams";
-import { getTeamRoster, getTeamAlumni } from "@/lib/data/players";
-import { getTeamMatchesByTournament } from "@/lib/data/matches";
+import { getTeamRosterCards, getTeamAlumni } from "@/lib/data/players";
+import {
+  getTeamMatchesByTournament,
+  listTeamUpcomingMatches,
+  listTeamRecentMatches,
+} from "@/lib/data/matches";
 import { getTeamTournaments } from "@/lib/data/tournaments";
 import { getSessionUser, getTeamManagerIds } from "@/lib/server-auth";
 import { canManageTeam } from "@/lib/permissions";
 import TeamMatchGroups from "@/components/team-match-groups";
 import TournamentTabs from "@/components/tournament-tabs";
 import TournamentCard from "@/components/tournament-card";
-import Flag from "@/components/flag";
+import MatchMiniList from "@/components/match-mini-list";
+import TeamPlayerCard from "@/components/team-player-card";
 
 import { teamTitle } from "@/lib/data/titles";
 
@@ -39,67 +44,85 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const sessionUser = await getSessionUser();
   const canManage = canManageTeam(sessionUser, await getTeamManagerIds(team.id));
 
-  const [roster, matchGroups, alumni, tournaments] = await Promise.all([
-    getTeamRoster(team.id),
+  const [roster, matchGroups, alumni, tournaments, upcoming, recent] = await Promise.all([
+    getTeamRosterCards(team.id),
     getTeamMatchesByTournament(team.id),
     getTeamAlumni(team.id),
     getTeamTournaments(team.id),
+    listTeamUpcomingMatches(team.id),
+    listTeamRecentMatches(team.id),
   ]);
+  const miniMatch = (m: (typeof upcoming)[number], played: boolean) => ({
+    id: m.id,
+    date: m.date,
+    teamA: { tag: m.teamA.tag, logo: m.teamA.logo },
+    teamB: { tag: m.teamB.tag, logo: m.teamB.logo },
+    scoreA: played ? m.scoreA : undefined,
+    scoreB: played ? m.scoreB : undefined,
+  });
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "…");
 
   const socials = (team.socials ?? {}) as Record<string, string | undefined>;
 
-  // Onglet Aperçu : identité, réseaux, effectif, anciens joueurs.
+  // Onglet Aperçu : matchs de l'équipe en colonne (comme l'aperçu d'un tournoi),
+  // cartes joueurs sur le reste de la largeur, anciens joueurs en dessous.
   const apercu = (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {team.description && (
         <p className="whitespace-pre-line text-[var(--text)]">{team.description}</p>
       )}
 
-      <SocialLinks socials={socials} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-6 self-start">
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+              Matchs à venir
+            </h2>
+            <MatchMiniList
+              empty="Aucun match à venir."
+              matches={upcoming.map((m) => miniMatch(m, false))}
+            />
+          </section>
 
-      <section>
-        <h2 className="mb-4 text-[16px] font-bold tracking-tight text-[var(--accent)]">Roster</h2>
-        {roster.length === 0 ? (
-          <p className="text-[var(--text-muted)]">Aucun joueur enregistré pour cette équipe.</p>
-        ) : (
-          /* Roster sur une seule ligne : les tuiles se partagent la largeur, avec
-             une taille plancher qui fait défiler la rangée sur petit écran. */
-          <ul className="flex gap-2 overflow-x-auto pb-1">
-            {roster.map((m) => (
-              <li key={m.id} className="min-w-[100px] flex-1">
-                <Link
-                  href={`/joueurs/${m.playerId}`}
-                  className="card card-interactive flex h-full flex-col items-center gap-2 p-3 text-center"
-                >
-                  {m.player.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.player.photo} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
-                  ) : (
-                    <div className="monogram grid h-14 w-14 shrink-0 place-items-center rounded-lg text-sm">
-                      {m.player.pseudo.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  {/* flex-1 + mt-auto : le rôle reste aligné en bas d'une tuile à
-                      l'autre, même quand un joueur a un nom réel et pas les autres. */}
-                  <div className="flex w-full min-w-0 flex-1 flex-col">
-                    <div className="flex items-center justify-center gap-1.5">
-                      {m.player.nationality && <Flag country={m.player.nationality} />}
-                      <span className="truncate font-semibold text-white">{m.player.pseudo}</span>
-                    </div>
-                    {m.player.realName && (
-                      <div className="truncate text-xs text-[var(--text-muted)]">{m.player.realName}</div>
-                    )}
-                    <div className="mt-auto pt-0.5 text-[10px] uppercase tracking-wide text-[var(--text-subtle)]">
-                      {ROLE_LABELS[m.role] ?? m.role}
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+              Derniers résultats
+            </h2>
+            <MatchMiniList
+              empty="Aucun match joué."
+              matches={recent.map((m) => miniMatch(m, true))}
+            />
+          </section>
+        </div>
+
+        <section>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+            Roster
+          </h2>
+          {roster.length === 0 ? (
+            <p className="text-[var(--text-muted)]">Aucun joueur enregistré pour cette équipe.</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {roster.map((m) => (
+                <TeamPlayerCard
+                  key={m.membershipId}
+                  player={{
+                    id: m.player.id,
+                    pseudo: m.player.pseudo,
+                    photo: m.player.photo,
+                    nationality: m.player.nationality,
+                    valorantRole: m.player.valorantRole,
+                    birthdate: m.player.birthdate,
+                    membershipRole: m.role,
+                    joinDate: m.joinDate,
+                    topAgents: m.topAgents,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {alumni.length > 0 && (
         <section>
@@ -167,7 +190,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     );
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
+    <main className="mx-auto max-w-6xl px-4 py-10">
       <TournamentTabs
         header={
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
@@ -182,6 +205,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
 
             <div className="min-w-0">
               <h1 className="text-2xl font-bold text-white">{team.name}</h1>
+              <SocialLinks socials={socials} size="h-4 w-4" className="mt-2" />
             </div>
 
             {canManage && (

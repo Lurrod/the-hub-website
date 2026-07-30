@@ -5,7 +5,7 @@ import { listTournamentMatches, getGroupsWithMatches, listBracketMatches } from 
 import { getTournamentStats } from "@/lib/data/tournament-stats";
 import TournamentTabs from "@/components/tournament-tabs";
 import TournamentStats from "@/components/tournament-stats";
-import UpcomingMatchList from "@/components/upcoming-match-list";
+import MatchMiniList from "@/components/match-mini-list";
 import TournamentMatchList from "@/components/tournament-match-list";
 import StageMenu from "@/components/stage-menu";
 import ParticipantCard from "@/components/participant-card";
@@ -126,7 +126,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
           Matchs à venir
         </h2>
-        <UpcomingMatchList
+        <MatchMiniList
+          empty="Aucun match à venir."
           matches={upcoming.map((m) => ({
             id: m.id,
             date: m.date,

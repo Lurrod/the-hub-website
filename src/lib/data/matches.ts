@@ -236,3 +236,26 @@ export async function getTeamMatchesByTournament(teamId: string, limit = 200) {
   }
   return [...byTournament.values()];
 }
+
+/** Prochains matchs d'une équipe (programmés ou en direct), du plus proche au plus lointain. */
+export function listTeamUpcomingMatches(teamId: string, limit = 4) {
+  return db.match.findMany({
+    where: {
+      status: { in: ["SCHEDULED", "LIVE"] },
+      OR: [{ teamAId: teamId }, { teamBId: teamId }],
+    },
+    include: { teamA: true, teamB: true },
+    orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+    take: limit,
+  });
+}
+
+/** Derniers résultats d'une équipe, du plus récent au plus ancien. */
+export function listTeamRecentMatches(teamId: string, limit = 4) {
+  return db.match.findMany({
+    where: { status: "FINISHED", OR: [{ teamAId: teamId }, { teamBId: teamId }] },
+    include: { teamA: true, teamB: true },
+    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+  });
+}

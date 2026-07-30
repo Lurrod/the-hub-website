@@ -63,3 +63,29 @@ export function timeLabel(date: Date | null): string {
   if (!date) return "--:--";
   return new Date(date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
+
+/** Âge en années révolues, null si la date de naissance est inconnue. */
+export function computeAge(birthdate: Date | null, now: Date = new Date()): number | null {
+  if (!birthdate) return null;
+  const b = new Date(birthdate);
+  let age = now.getFullYear() - b.getFullYear();
+  const beforeBirthday =
+    now.getMonth() < b.getMonth() ||
+    (now.getMonth() === b.getMonth() && now.getDate() < b.getDate());
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+/** Ancienneté depuis `from` (« 12 j », « 8 mois », « 3 ans »), null si absente. */
+export function durationSince(from: Date | null, now: Date = new Date()): string | null {
+  if (!from) return null;
+  const start = new Date(from);
+  const years = computeAge(start, now) ?? 0;
+  if (years >= 1) return `${years} ${years === 1 ? "an" : "ans"}`;
+  const months =
+    (now.getFullYear() - start.getFullYear()) * 12 +
+    (now.getMonth() - start.getMonth()) -
+    (now.getDate() < start.getDate() ? 1 : 0);
+  if (months >= 1) return `${months} mois`;
+  return `${Math.max(0, Math.round((now.getTime() - start.getTime()) / DAY_MS))} j`;
+}

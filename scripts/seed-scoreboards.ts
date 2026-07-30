@@ -22,6 +22,16 @@ const AGENT_POOL = [
 ];
 const OUTCOMES = ["elim", "elim", "elim", "elim", "elim", "detonate", "detonate", "defuse", "time"] as const;
 
+// Agents par rôle : un joueur tourne dans le vivier de son rôle, avec un main
+// qui revient souvent. Sans ça, ses « agents les plus joués » seraient aléatoires
+// et contrediraient le rôle affiché sur sa carte.
+const AGENTS_BY_ROLE: Record<string, string[]> = {
+  DUELIST: ["Jett", "Raze", "Phoenix", "Neon", "Yoru", "Iso"],
+  CONTROLLER: ["Omen", "Brimstone", "Astra", "Harbor", "Clove", "Viper"],
+  INITIATOR: ["Sova", "Breach", "Skye", "KAY/O", "Fade", "Gekko", "Tejo"],
+  SENTINEL: ["Killjoy", "Cypher", "Chamber", "Sage", "Vyse", "Deadlock"],
+};
+
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -113,6 +123,31 @@ function baseRow(
   };
 }
 
+/** Somme des codes de caractères : sert à donner un main stable à chaque joueur. */
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+/** Agents d'un roster sur une carte : chacun dans son rôle, sans doublon d'équipe. */
+function pickAgents(roster: { playerId: string; valorantRole: string | null }[]): string[] {
+  const used = new Set<string>();
+  return roster.map((p) => {
+    const pool = (p.valorantRole && AGENTS_BY_ROLE[p.valorantRole]) || AGENT_POOL;
+    const main = pool[hash(p.playerId) % pool.length];
+    const free = pool.filter((a) => !used.has(a));
+    const fallback = AGENT_POOL.filter((a) => !used.has(a));
+    // 55 % du temps sur son main, sinon un autre agent de son rôle.
+    const agent =
+      !used.has(main) && Math.random() < 0.55
+        ? main
+        : (free.length ? shuffle(free) : shuffle(fallback))[0];
+    used.add(agent);
+    return agent;
+  });
+}
+
 /** Distribue `rounds` first kills et `rounds` first deaths sur les joueurs (biais entrée). */
 function distributeFirsts(rows: Row[], rounds: number) {
   // Poids d'entrée : les 2 premiers joueurs de chaque équipe font plus d'entrées.
@@ -144,11 +179,11 @@ async function main() {
     const [rosterA, rosterB] = await Promise.all([
       db.teamMembership.findMany({
         where: { teamId: m.teamAId, role: "JOUEUR", leaveDate: null },
-        select: { playerId: true, player: { select: { pseudo: true } } }, take: 5,
+        select: { playerId: true, player: { select: { pseudo: true, valorantRole: true } } }, take: 5,
       }),
       db.teamMembership.findMany({
         where: { teamId: m.teamBId, role: "JOUEUR", leaveDate: null },
-        select: { playerId: true, player: { select: { pseudo: true } } }, take: 5,
+        select: { playerId: true, player: { select: { pseudo: true, valorantRole: true } } }, take: 5,
       }),
     ]);
     if (rosterA.length < 5 || rosterB.length < 5) continue;
@@ -167,8 +202,12 @@ async function main() {
         const roundsB = aWon ? loserRounds : 13;
         const rounds = roundsA + roundsB;
 
-        const agentsA = shuffle(AGENT_POOL).slice(0, 5);
-        const agentsB = shuffle(AGENT_POOL).slice(0, 5);
+        const agentsA = pickAgents(
+          rosterA.map((r) => ({ playerId: r.playerId, valorantRole: r.player.valorantRole }))
+        );
+        const agentsB = pickAgents(
+          rosterB.map((r) => ({ playerId: r.playerId, valorantRole: r.player.valorantRole }))
+        );
         const rows: Row[] = [
           ...rosterA.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, rounds, idx)),
           ...rosterB.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, rounds, idx)),
