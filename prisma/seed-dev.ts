@@ -2,9 +2,20 @@ import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 
 async function main() {
+  // Équipe fictive : elle porte les six réseaux pour vérifier le rendu du
+  // bandeau, ce que les équipes réelles ne permettent pas (vlr.gg n'en liste
+  // que deux ou trois).
+  const alphaSocials = {
+    twitter: "https://x.com/exemple",
+    twitch: "https://twitch.tv/exemple",
+    youtube: "https://youtube.com/@exemple",
+    instagram: "https://instagram.com/exemple",
+    discord: "https://discord.gg/exemple",
+    website: "https://exemple.gg",
+  };
   await db.team.upsert({
     where: { id: "seed-team-alpha" },
-    update: {},
+    update: { socials: alphaSocials },
     create: {
       id: "seed-team-alpha",
       name: "Alpha Esports",
@@ -12,6 +23,7 @@ async function main() {
       region: "France",
       description: "Équipe de démonstration.",
       status: "ACTIVE",
+      socials: alphaSocials,
     },
   });
 

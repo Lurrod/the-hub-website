@@ -67,8 +67,8 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
       </div>
 
       <div className="flex min-w-0 items-center justify-center gap-1.5">
-        <span className="truncate text-[16px] font-semibold text-white">{player.pseudo}</span>
         {player.nationality && <Flag country={player.nationality} className="h-[12px] w-[16px]" />}
+        <span className="truncate text-[16px] font-semibold text-white">{player.pseudo}</span>
       </div>
 
       {/* Hauteur réservée même sans stats : les cartes restent alignées. */}

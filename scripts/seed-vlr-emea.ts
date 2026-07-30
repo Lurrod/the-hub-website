@@ -8,6 +8,10 @@
  * la date de naissance et la date d'arrivée sont des valeurs plausibles de
  * démonstration, pas des données importées.
  *
+ * Réseaux des équipes : uniquement ceux listés par vlr.gg (site officiel et X,
+ * parfois Instagram). Pour voir le bandeau avec les six réseaux, utiliser
+ * l'équipe fictive « Alpha Esports » du seed de dev.
+ *
  * Lancer :  npx tsx scripts/seed-vlr-emea.ts
  */
 import { PrismaClient, type MatchStage, type MatchStatus, type ValorantRole } from "@prisma/client";
@@ -33,6 +37,8 @@ type TeamSeed = {
   name: string;
   tag: string;
   logo: string;
+  /** Liens officiels tels que listés sur vlr.gg (site + X, parfois Instagram). */
+  socials: Record<string, string>;
   group: "alpha" | "omega";
   seed: number;
   players: PersonSeed[];
@@ -49,6 +55,7 @@ const LT = "Lituanie";
 const TEAMS: TeamSeed[] = [
   {
     id: "vlr-fut", name: "FUT Esports", tag: "FUT", logo: img("632be9976b8fe"),
+    socials: { website: "https://futesports.gg/", twitter: "https://x.com/FUTesportsgg" },
     group: "alpha", seed: 1,
     players: [
       { pseudo: "sociablEE", country: TR, photo: "680a926893d7b", role: "INITIATOR", born: "2002-02-11", joined: "2025-11-06" },
@@ -61,6 +68,7 @@ const TEAMS: TeamSeed[] = [
   },
   {
     id: "vlr-tl", name: "Team Liquid", tag: "TL", logo: img("640c381f0603f"),
+    socials: { website: "https://teamliquid.com/", twitter: "https://x.com/LiquidValorant" },
     group: "alpha", seed: 2,
     players: [
       { pseudo: "nAts", country: RU, photo: "69735612b9b30", role: "SENTINEL", born: "2002-12-14", joined: "2023-11-15" },
@@ -73,6 +81,7 @@ const TEAMS: TeamSeed[] = [
   },
   {
     id: "vlr-th", name: "Team Heretics", tag: "TH", logo: img("637b755224c12"),
+    socials: { website: "https://teamheretics.com/", twitter: "https://x.com/HereticsVal" },
     group: "alpha", seed: 3,
     players: [
       { pseudo: "Boo", country: LT, photo: "69778b1c2192b", role: "CONTROLLER", born: "1999-09-12", joined: "2023-10-30" },
@@ -85,6 +94,7 @@ const TEAMS: TeamSeed[] = [
   },
   {
     id: "vlr-gm", name: "Gentle Mates", tag: "GM", logo: img("6670153fa9120"),
+    socials: { website: "https://gentlemates.fr/", twitter: "https://x.com/gentlemates" },
     group: "alpha", seed: 4,
     players: [
       { pseudo: "starxo", country: PL, photo: "697767895bac5", role: "DUELIST", born: "2001-11-09", joined: "2024-10-22" },
@@ -97,6 +107,7 @@ const TEAMS: TeamSeed[] = [
   },
   {
     id: "vlr-fnc", name: "FNATIC", tag: "FNC", logo: img("62a40cc2b5e29"),
+    socials: { website: "https://fnatic.com/", twitter: "https://x.com/FNATIC" },
     group: "omega", seed: 1,
     players: [
       { pseudo: "Boaster", country: UK, photo: "687e2c495dcc6", role: "CONTROLLER", born: "1998-03-27", joined: "2021-01-14" },
@@ -109,6 +120,7 @@ const TEAMS: TeamSeed[] = [
   },
   {
     id: "vlr-vit", name: "Team Vitality", tag: "VIT", logo: img("6466d79e1ed40"),
+    socials: { website: "https://vitality.gg/", twitter: "https://x.com/TeamVitalityVAL" },
     group: "omega", seed: 2,
     players: [
       { pseudo: "Jamppi", country: "Finlande", photo: "6977a6f130128", role: "INITIATOR", born: "2001-06-11", joined: "2023-11-02" },
@@ -121,6 +133,7 @@ const TEAMS: TeamSeed[] = [
   },
   {
     id: "vlr-bbl", name: "BBL Esports", tag: "BBL", logo: img("65b8ccef5e273"),
+    socials: { website: "https://bblesports.com/", twitter: "https://x.com/BBL_Esports", instagram: "https://instagram.com/bblespor" },
     group: "omega", seed: 3,
     players: [
       { pseudo: "Rosé", country: TR, photo: "6979757c1322c", role: "DUELIST", born: "2003-02-19", joined: "2024-11-27" },
@@ -133,6 +146,7 @@ const TEAMS: TeamSeed[] = [
   },
   {
     id: "vlr-ef", name: "Eternal Fire", tag: "EF", logo: img("6628980dcdaea"),
+    socials: { twitter: "https://x.com/eternalfiregg" },
     group: "omega", seed: 4,
     players: [
       { pseudo: "nekky", country: TR, photo: "69e22617e9dba", role: "DUELIST", born: "2004-01-30", joined: "2024-12-03" },
@@ -207,7 +221,10 @@ async function main() {
   // --- Équipes + rosters + participations ---
   for (const t of TEAMS) {
     await db.team.create({
-      data: { id: t.id, name: t.name, tag: t.tag, logo: t.logo, region: "EMEA", status: "ACTIVE" },
+      data: {
+        id: t.id, name: t.name, tag: t.tag, logo: t.logo,
+        socials: t.socials, region: "EMEA", status: "ACTIVE",
+      },
     });
     const squad: [string, PersonSeed][] = [
       ...t.players.map((p, i): [string, PersonSeed] => [`vlr-p-${t.id}-${i}`, p]),
