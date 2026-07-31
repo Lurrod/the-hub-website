@@ -47,10 +47,6 @@ export default async function LftPage({
                   photo: p.photo,
                   nationality: p.nationality,
                   valorantRole: p.valorantRole,
-                  lftSince: p.lftSince,
-                  team: p.memberships[0]
-                    ? { name: p.memberships[0].team.name, tag: p.memberships[0].team.tag }
-                    : null,
                 }}
               />
             ))}

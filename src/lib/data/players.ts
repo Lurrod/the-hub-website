@@ -21,9 +21,8 @@ export async function listLftCountries(): Promise<string[]> {
 }
 
 /**
- * Joueurs en recherche d'équipe, avec leur adhésion active éventuelle : un
- * joueur déjà en équipe peut rester LFT, sa carte porte alors le badge de son
- * équipe. Les plus récemment déclarés LFT remontent en premier.
+ * Joueurs en recherche d'équipe. Les plus récemment déclarés LFT remontent en
+ * premier ; le pseudo départage les fiches sans `lftSince`.
  */
 export function listLftPlayers(filters?: { role?: string; country?: string }) {
   return db.player.findMany({
@@ -33,13 +32,6 @@ export function listLftPlayers(filters?: { role?: string; country?: string }) {
       ...(filters?.country ? { nationality: filters.country } : {}),
     },
     orderBy: [{ lftSince: "desc" }, { pseudo: "asc" }],
-    include: {
-      memberships: {
-        where: { leaveDate: null },
-        take: 1,
-        select: { team: { select: { id: true, name: true, tag: true, logo: true } } },
-      },
-    },
   });
 }
 
