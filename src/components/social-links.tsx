@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import HoverGroup from "@/components/hover-group";
+import Tooltip from "@/components/tooltip";
 
 type Socials = {
   twitter?: string;
@@ -79,20 +81,20 @@ export default function SocialLinks({
   const keys = ORDER.filter((k) => socials[k]);
   if (keys.length === 0) return null;
   return (
-    <div className={`flex gap-3 ${className ?? ""}`}>
+    <HoverGroup className={`flex gap-3 ${className ?? ""}`}>
       {keys.map((k) => (
-        <a
-          key={k}
-          href={socials[k]!}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={LABELS[k]}
-          title={LABELS[k]}
-          className={`inline-flex ${size} text-[var(--text-muted)] transition-all duration-150 ease-out hover:-translate-y-0.5 hover:scale-110 hover:text-[var(--accent)] active:translate-y-0 active:scale-95`}
-        >
-          {ICONS[k]}
-        </a>
+        <Tooltip key={k} label={LABELS[k]}>
+          <a
+            href={socials[k]!}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={LABELS[k]}
+            className={`t-avatar inline-flex ${size} text-[var(--text-muted)] hover:text-[var(--accent)]`}
+          >
+            {ICONS[k]}
+          </a>
+        </Tooltip>
       ))}
-    </div>
+    </HoverGroup>
   );
 }

@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { resolveFlash, type FlashKind } from "@/lib/flash-messages";
 
-function Icon({ kind }: { kind: FlashKind }) {
+function Icon({ kind, drawn }: { kind: FlashKind; drawn: boolean }) {
   const color = kind === "success" ? "var(--success)" : "var(--destructive)";
-  return (
+  const svg = (
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -28,6 +28,15 @@ function Icon({ kind }: { kind: FlashKind }) {
       )}
     </svg>
   );
+
+  // Le tracé de la coche est le seul à se dessiner : l'icône d'erreur reste
+  // hors du wrapper, sinon ses trois tracés hériteraient du stroke-dasharray.
+  if (kind !== "success") return svg;
+  return (
+    <span className="t-success-check shrink-0" data-state={drawn ? "in" : "out"} aria-hidden="true">
+      {svg}
+    </span>
+  );
 }
 
 /**
@@ -40,6 +49,9 @@ export default function FlashToast() {
   const pathname = usePathname();
   const [flash, setFlash] = useState<ReturnType<typeof resolveFlash>>(null);
   const [show, setShow] = useState(false);
+  // Départ à froid en "out" : la coche ne se dessine qu'au frame suivant,
+  // sinon elle naît déjà en état final et l'animation ne joue pas.
+  const [drawn, setDrawn] = useState(false);
 
   const ok = params.get("ok");
   const error = params.get("error");
@@ -78,6 +90,15 @@ export default function FlashToast() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ok, error]);
 
+  useEffect(() => {
+    if (flash?.kind !== "success") {
+      setDrawn(false);
+      return;
+    }
+    const raf = requestAnimationFrame(() => setDrawn(true));
+    return () => cancelAnimationFrame(raf);
+  }, [flash]);
+
   if (!flash) return null;
 
   const accent = flash.kind === "success" ? "var(--success)" : "var(--destructive)";
@@ -85,13 +106,13 @@ export default function FlashToast() {
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-50">
       <div
-        className={`flex max-w-xs items-start gap-2.5 rounded-lg border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2.5 shadow-xl transition-all duration-300 ${
+        className={`flex max-w-xs items-start gap-2.5 rounded-lg border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2.5 shadow-xl transition-[opacity,transform] duration-300 ${
           show ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
         }`}
         style={{ borderLeft: `3px solid ${accent}` }}
         role="status"
       >
-        <Icon kind={flash.kind} />
+        <Icon kind={flash.kind} drawn={drawn} />
         <div className="min-w-0">
           <p className="text-xs font-semibold text-white">{flash.title}</p>
           <p className="mt-0.5 text-xs text-[var(--text-muted)]">{flash.message}</p>

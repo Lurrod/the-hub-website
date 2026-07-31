@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Segmented from "@/components/segmented";
+import ClearableSearch from "@/components/clearable-search";
 import { VALORANT_ROLES, ROLE_LABELS, ROLE_ICONS } from "@/lib/roles";
 import { AGE_BRACKETS, TEAM_STATUSES, lftHref, hasActiveLftFilter, type LftFilters } from "@/lib/lft";
 
@@ -25,11 +27,12 @@ export default function LftFilters({
 
   return (
     <div className="grid gap-3">
-      <div className="segment justify-self-start">
+      <Segmented activeKey={role ?? "all"} className="justify-self-start">
         <Link
           href={lftHref({ ...filters, role: undefined })}
-          className="segment-item"
-          data-active={!role}
+          className="t-tab"
+          role="tab"
+          aria-selected={!role}
         >
           Tous les rôles
         </Link>
@@ -37,8 +40,9 @@ export default function LftFilters({
           <Link
             key={r}
             href={lftHref({ ...filters, role: r })}
-            className="segment-item"
-            data-active={role === r}
+            className="t-tab"
+            role="tab"
+            aria-selected={role === r}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -49,20 +53,18 @@ export default function LftFilters({
             {ROLE_LABELS[r]}
           </Link>
         ))}
-      </div>
+      </Segmented>
 
       <form action="/lft" className="flex flex-wrap items-center gap-2">
         {/* Le rôle n'a pas de contrôle dans ce formulaire : on le réémet. */}
         {role && <input type="hidden" name="role" value={role} />}
 
-        <input
-          type="search"
+        <ClearableSearch
           name="q"
           defaultValue={q ?? ""}
-          maxLength={40}
           placeholder="Rechercher un pseudo"
-          aria-label="Rechercher un pseudo"
-          className="field min-w-0 flex-1 sm:max-w-56"
+          ariaLabel="Rechercher un pseudo"
+          className="min-w-0 flex-1 sm:max-w-56"
         />
 
         <label className="sr-only" htmlFor="lft-country">

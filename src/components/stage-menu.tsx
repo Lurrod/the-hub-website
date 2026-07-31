@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Segmented from "@/components/segmented";
 
 type Stage = { key: string; label: string; content: ReactNode };
 
@@ -11,26 +12,21 @@ export default function StageMenu({ stages }: { stages: Stage[] }) {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-1 border-b border-[var(--border)]">
-        {stages.map((s) => {
-          const on = s.key === active;
-          return (
+      <div className="mb-4 border-b border-[var(--border)]">
+        <Segmented activeKey={active ?? ""} variant="underline">
+          {stages.map((s) => (
             <button
               key={s.key}
               type="button"
               onClick={() => setActive(s.key)}
-              aria-selected={on}
+              aria-selected={s.key === active}
               role="tab"
-              className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                on
-                  ? "border-[var(--accent)] text-white"
-                  : "border-transparent text-[var(--text-muted)] hover:text-white"
-              }`}
+              className="t-tab shrink-0"
             >
               {s.label}
             </button>
-          );
-        })}
+          ))}
+        </Segmented>
       </div>
       <div key={current?.key} className="animate-in">
         {current?.content}

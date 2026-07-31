@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 
 type Props = {
@@ -29,15 +29,31 @@ function Icon({ children }: { children: ReactNode }) {
 
 export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: Props) {
   const [open, setOpen] = useState(false);
+  // Le menu reste monté en permanence : c'est ce qui permet d'animer sa
+  // fermeture. `closing` porte l'état intermédiaire le temps du repli.
+  const [closing, setClosing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<number | null>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setClosing(true);
+    // Durée lue depuis la variable CSS pour rester en phase avec le snippet.
+    const closeMs =
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--dropdown-close-dur")
+      ) || 150;
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setClosing(false), closeMs);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     }
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -45,7 +61,11 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, close]);
+
+  useEffect(() => () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+  }, []);
 
   const item =
     "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-white transition-colors duration-[130ms] hover:bg-[var(--card-hover)]";
@@ -54,7 +74,7 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? close() : (setClosing(false), setOpen(true)))}
         aria-haspopup="menu"
         aria-expanded={open}
         className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] py-1 pl-1 pr-2.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--border-strong)]"
@@ -82,19 +102,22 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
         </svg>
       </button>
 
-      {open && (
-        <div
-          role="menu"
-          className="t-menu-in absolute right-0 z-40 mt-2 w-52 overflow-hidden rounded-lg border border-[var(--border-strong)] bg-[var(--card)] py-1 shadow-xl"
-        >
-          <Link role="menuitem" href={profilHref} onClick={() => setOpen(false)} className={item}>
+      <div
+        role="menu"
+        inert={!open}
+        data-origin="top-right"
+        className={`t-dropdown absolute right-0 z-40 mt-2 w-52 overflow-hidden rounded-lg border border-[var(--border-strong)] bg-[var(--card)] py-1 shadow-xl ${
+          open ? "is-open" : closing ? "is-closing" : ""
+        }`}
+      >
+          <Link role="menuitem" href={profilHref} onClick={close} className={item}>
             <Icon>
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </Icon>
             Profil
           </Link>
-          <Link role="menuitem" href="/profil" onClick={() => setOpen(false)} className={item}>
+          <Link role="menuitem" href="/profil" onClick={close} className={item}>
             <Icon>
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z" />
@@ -112,8 +135,7 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
               Déconnexion
             </button>
           </form>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

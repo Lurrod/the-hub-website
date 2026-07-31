@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 
 const ACCEPT = ["image/png", "image/jpeg", "image/webp"];
 
@@ -26,6 +26,41 @@ export default function ImageUpload({
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const isNew = fileName !== null;
+  const dropRef = useRef<HTMLDivElement>(null);
+  const revertTimer = useRef<number | null>(null);
+
+  /**
+   * Rejet d'un fichier : secousse de la zone puis retour au neutre
+   * (snippet `12-error-state-shake`). `.is-error` et `.is-shaking` restent
+   * distinctes, c'est ce qui permet de rejouer la secousse sans faire
+   * clignoter tout l'état d'erreur.
+   */
+  useEffect(() => {
+    const el = dropRef.current;
+    if (!el || !error) return;
+    const cs = getComputedStyle(document.documentElement);
+    const ms = (name: string, fb: number) => {
+      const v = parseFloat(cs.getPropertyValue(name));
+      return Number.isFinite(v) ? v : fb;
+    };
+
+    el.classList.remove("is-shaking");
+    void el.offsetWidth; // reflow : sans lui la secousse ne rejoue pas
+    el.classList.add("is-shaking");
+
+    const shakeMs = ms("--shake-dur-a", 80) * 2 + ms("--shake-dur-b", 60) * 2;
+    const stop = window.setTimeout(() => el.classList.remove("is-shaking"), shakeMs + 20);
+
+    if (revertTimer.current) window.clearTimeout(revertTimer.current);
+    revertTimer.current = window.setTimeout(
+      () => setError(null),
+      shakeMs + ms("--revert-hold", 3000)
+    );
+    return () => {
+      window.clearTimeout(stop);
+      if (revertTimer.current) window.clearTimeout(revertTimer.current);
+    };
+  }, [error]);
 
   const box =
     shape === "wide" ? "aspect-[3/1] w-48" : shape === "round" ? "h-24 w-24" : "h-24 w-24";
@@ -74,9 +109,10 @@ export default function ImageUpload({
   }
 
   return (
-    <div>
+    <div className={`t-input-wrap ${error ? "is-error" : ""}`}>
       <div className="flex items-center gap-3">
         <div
+          ref={dropRef}
           onClick={() => ref.current?.click()}
           onDragOver={(e) => {
             e.preventDefault();
@@ -84,20 +120,33 @@ export default function ImageUpload({
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className={`relative grid ${box} ${radius} shrink-0 cursor-pointer place-items-center overflow-hidden border transition-colors ${
+          className={`t-input relative grid ${box} ${radius} shrink-0 cursor-pointer place-items-center overflow-hidden border ${
+            error ? "is-error " : ""
+          }${
             dragging
               ? "border-[var(--accent)] bg-[var(--accent-soft)]"
               : "border-dashed border-[var(--border)] bg-[var(--bg)] hover:border-[var(--border-strong)]"
           }`}
         >
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="px-2 text-center text-[10px] text-[var(--text-muted)]">
+          {/* Les deux états occupent la même cellule de grille : l'aperçu
+              remplace l'invite par un fondu croisé plutôt qu'un saut. */}
+          <span
+            className="t-icon-swap h-full w-full place-items-center"
+            data-state={preview ? "b" : "a"}
+          >
+            <span
+              className="t-icon px-2 text-center text-[10px] text-[var(--text-muted)]"
+              data-icon="a"
+            >
               Cliquer ou glisser
             </span>
-          )}
+            <span className="t-icon h-full w-full" data-icon="b">
+              {preview && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={preview} alt="" className="h-full w-full object-cover" />
+              )}
+            </span>
+          </span>
           {isNew && (
             <button
               type="button"
@@ -147,7 +196,11 @@ export default function ImageUpload({
         </div>
       </div>
 
-      {error && <p className="mt-1.5 text-xs text-[var(--destructive)]">{error}</p>}
+      {/* Toujours monté : le message doit rester peint pendant son fondu de
+          sortie, ce que `visibility` différée du snippet gère. */}
+      <p className="t-error-msg mt-1.5 text-xs text-[var(--destructive)]" role="alert">
+        {error}
+      </p>
 
       <input
         ref={ref}

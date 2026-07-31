@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { REGIONS, TOURNAMENT_STATUSES, TOURNAMENT_STATUS_LABELS } from "@/lib/constants";
+import Segmented from "@/components/segmented";
 
 function buildHref(params: { region?: string; status?: string }): string {
   const sp = new URLSearchParams();
@@ -18,36 +19,48 @@ export default function TournamentFilters({
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="segment">
-        <Link href={buildHref({ region: activeRegion })} className="segment-item" data-active={!activeStatus}>
+      <Segmented activeKey={activeStatus ?? "all"}>
+        <Link
+          href={buildHref({ region: activeRegion })}
+          className="t-tab"
+          role="tab"
+          aria-selected={!activeStatus}
+        >
           Tous statuts
         </Link>
         {TOURNAMENT_STATUSES.map((s) => (
           <Link
             key={s}
             href={buildHref({ region: activeRegion, status: s })}
-            className="segment-item"
-            data-active={activeStatus === s}
+            className="t-tab"
+            role="tab"
+            aria-selected={activeStatus === s}
           >
             {TOURNAMENT_STATUS_LABELS[s]}
           </Link>
         ))}
-      </div>
-      <div className="segment">
-        <Link href={buildHref({ status: activeStatus })} className="segment-item" data-active={!activeRegion}>
+      </Segmented>
+      <Segmented activeKey={activeRegion ?? "all"}>
+        <Link
+          href={buildHref({ status: activeStatus })}
+          className="t-tab"
+          role="tab"
+          aria-selected={!activeRegion}
+        >
           Toutes régions
         </Link>
         {REGIONS.map((r) => (
           <Link
             key={r}
             href={buildHref({ region: r, status: activeStatus })}
-            className="segment-item"
-            data-active={activeRegion === r}
+            className="t-tab"
+            role="tab"
+            aria-selected={activeRegion === r}
           >
             {r}
           </Link>
         ))}
-      </div>
+      </Segmented>
     </div>
   );
 }

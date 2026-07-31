@@ -1,4 +1,5 @@
 import { countryCode } from "@/lib/countries";
+import Tooltip from "@/components/tooltip";
 
 /**
  * Affiche le drapeau d'un pays (image flagcdn.com). Rien si le pays est inconnu.
@@ -15,7 +16,7 @@ export default function Flag({
 }) {
   const code = countryCode(country);
   if (!code) return null;
-  return (
+  const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`https://flagcdn.com/w40/${code}.png`}
@@ -23,9 +24,12 @@ export default function Flag({
       width={24}
       height={18}
       alt={country ?? ""}
-      title={title ? country ?? undefined : undefined}
       className={`inline-block shrink-0 rounded object-cover align-middle ${className}`}
       loading="lazy"
     />
   );
+  // Infobulle maison plutôt que `title=` natif : apparition immédiate,
+  // stylée, et visible au focus clavier.
+  if (!title || !country) return img;
+  return <Tooltip label={country}>{img}</Tooltip>;
 }

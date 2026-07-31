@@ -1,4 +1,5 @@
 import CountrySelect from "@/components/country-select";
+import ErrorShake from "@/components/error-shake";
 import ImageUpload from "@/components/image-upload";
 import { VALORANT_ROLES, ROLE_LABELS } from "@/lib/roles";
 
@@ -56,26 +57,30 @@ export default function ProfileFields({ values }: { values: ProfileFieldValues }
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className={lbl}>
-          Twitter (x.com)
-          <input
-            name="twitter"
-            type="url"
-            placeholder="https://x.com/…"
-            defaultValue={values.twitter}
-            className={input}
-          />
-        </label>
-        <label className={lbl}>
-          Twitch (twitch.tv)
-          <input
-            name="twitch"
-            type="url"
-            placeholder="https://twitch.tv/…"
-            defaultValue={values.twitch}
-            className={input}
-          />
-        </label>
+        <ErrorShake codes={["twitter"]}>
+          <label className={lbl}>
+            Twitter (x.com)
+            <input
+              name="twitter"
+              type="url"
+              placeholder="https://x.com/…"
+              defaultValue={values.twitter}
+              className={`t-input ${input}`}
+            />
+          </label>
+        </ErrorShake>
+        <ErrorShake codes={["twitch"]}>
+          <label className={lbl}>
+            Twitch (twitch.tv)
+            <input
+              name="twitch"
+              type="url"
+              placeholder="https://twitch.tv/…"
+              defaultValue={values.twitch}
+              className={`t-input ${input}`}
+            />
+          </label>
+        </ErrorShake>
       </div>
       <div className={lbl}>
         Photo

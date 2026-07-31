@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Segmented from "@/components/segmented";
 import { listTournamentsWithMatches } from "@/lib/data/matches";
 import { MatchListItem } from "@/components/tournament-match-list";
 
@@ -36,18 +37,19 @@ export default async function MatchesPage({
       <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Matchs</h1>
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-        <div className="segment mb-4">
+        <Segmented activeKey={filter} className="mb-4">
           {FILTERS.map((x) => (
             <Link
               key={x.key}
               href={x.key === "all" ? "/matchs" : `/matchs?f=${x.key}`}
-              className="segment-item"
-              data-active={filter === x.key}
+              className="t-tab"
+              role="tab"
+              aria-selected={filter === x.key}
             >
               {x.label}
             </Link>
           ))}
-        </div>
+        </Segmented>
 
         {tournaments.length === 0 ? (
           <p className="text-sm text-[var(--text-muted)]">Aucun match pour ce filtre.</p>

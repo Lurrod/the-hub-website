@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Segmented from "@/components/segmented";
 
 type Tab = { key: string; label: string; content: ReactNode };
 
@@ -19,26 +20,21 @@ export default function TournamentTabs({
       {/* Bandeau + barre d'onglets accrochée à son bas, dans un même bloc. */}
       <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-card)]">
         {header}
-        <div className="flex flex-wrap gap-1 border-t border-[var(--border)] px-2">
-          {tabs.map((t) => {
-            const on = t.key === active;
-            return (
+        <div className="border-t border-[var(--border)] px-2">
+          <Segmented activeKey={active ?? ""} variant="underline">
+            {tabs.map((t) => (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setActive(t.key)}
-                aria-selected={on}
+                aria-selected={t.key === active}
                 role="tab"
-                className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  on
-                    ? "border-[var(--accent)] text-white"
-                    : "border-transparent text-[var(--text-muted)] hover:text-white"
-                }`}
+                className="t-tab shrink-0"
               >
                 {t.label}
               </button>
-            );
-          })}
+            ))}
+          </Segmented>
         </div>
       </div>
 
