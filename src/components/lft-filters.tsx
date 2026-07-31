@@ -25,10 +25,10 @@ export default function LftFilters({
 
   return (
     <div className="grid gap-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="segment justify-self-start">
         <Link
           href={lftHref({ ...filters, role: undefined })}
-          className="chip"
+          className="segment-item"
           data-active={!role}
         >
           Tous les rôles
@@ -37,7 +37,7 @@ export default function LftFilters({
           <Link
             key={r}
             href={lftHref({ ...filters, role: r })}
-            className="chip"
+            className="segment-item"
             data-active={role === r}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -103,7 +103,7 @@ export default function LftFilters({
 
         {/* Action et non état : bordure accent pour ne pas se confondre avec
             une pilule de filtre inactive. */}
-        <button className="chip border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white">
+        <button className="field border-[var(--accent)] text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white">
           Filtrer
         </button>
 

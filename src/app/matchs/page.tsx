@@ -36,12 +36,12 @@ export default async function MatchesPage({
       <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Matchs</h1>
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="segment mb-4">
           {FILTERS.map((x) => (
             <Link
               key={x.key}
               href={x.key === "all" ? "/matchs" : `/matchs?f=${x.key}`}
-              className="chip"
+              className="segment-item"
               data-active={filter === x.key}
             >
               {x.label}

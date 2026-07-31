@@ -190,43 +190,50 @@ body {
   }
 
   /* Filtre en pilule - accent sobre à l'état actif (pas de aplat criard) */
-  /* Filtre : pilule. Inactif discret sans fond, actif en aplat accent. */
-  .chip {
+  /* Filtre : segmented control. La piste encastrée regroupe les options d'un
+     même filtre ; seule l'option active est posée sur une pastille claire. */
+  .segment {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .segment-item {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border-radius: 9999px;
-    border: 1px solid var(--border);
-    padding: 5px 14px;
+    border-radius: 7px;
+    padding: 5px 12px;
     font-size: 12px;
     line-height: 1.25;
     color: var(--text-muted);
     white-space: nowrap;
     transition:
       color var(--hover-fast) var(--ease),
-      border-color var(--hover-fast) var(--ease),
       background-color var(--hover-fast) var(--ease);
   }
-  .chip:hover {
+  .segment-item:hover {
     color: var(--text);
-    border-color: var(--border-strong);
-    background: var(--card-hover);
   }
-  /* Déclaré après :hover : à spécificité égale, l'aplat actif l'emporte, y
-     compris au survol. */
-  .chip[data-active="true"] {
+  /* Déclaré après :hover : à spécificité égale, la pastille active l'emporte,
+     y compris au survol. */
+  .segment-item[data-active="true"] {
     color: #fff;
-    border-color: var(--accent);
-    background: var(--accent);
+    background: var(--card-hover);
+    box-shadow: var(--shadow-card);
   }
 
-  /* Contrôle de filtre saisissable (recherche, listes déroulantes) : même
-     pilule que .chip, pour que la barre de filtres reste homogène. */
+  /* Contrôle de filtre saisissable (recherche, listes déroulantes) : même fond
+     encastré et même rayon que la piste, pour une barre de filtres homogène. */
   .field {
-    border-radius: 9999px;
+    border-radius: 8px;
     border: 1px solid var(--border);
-    background: transparent;
-    padding: 5px 14px;
+    background: var(--bg);
+    padding: 6px 12px;
     font-size: 12px;
     line-height: 1.25;
     color: var(--text);
@@ -236,17 +243,15 @@ body {
   }
   .field:hover {
     border-color: var(--border-strong);
-    background: var(--card-hover);
   }
   .field:focus {
     outline: none;
     border-color: var(--accent);
-    background: var(--card-hover);
   }
   .field::placeholder {
     color: var(--text-subtle);
   }
-  /* Le menu natif d'un <select> ne suit pas le fond transparent du contrôle. */
+  /* Le menu natif d'un <select> ne suit pas le fond du contrôle. */
   .field option {
     background: var(--surface);
     color: var(--text);

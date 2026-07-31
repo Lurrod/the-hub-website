@@ -18,30 +18,30 @@ export default function TournamentFilters({
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="flex flex-wrap gap-2">
-        <Link href={buildHref({ region: activeRegion })} className="chip" data-active={!activeStatus}>
+      <div className="segment">
+        <Link href={buildHref({ region: activeRegion })} className="segment-item" data-active={!activeStatus}>
           Tous statuts
         </Link>
         {TOURNAMENT_STATUSES.map((s) => (
           <Link
             key={s}
             href={buildHref({ region: activeRegion, status: s })}
-            className="chip"
+            className="segment-item"
             data-active={activeStatus === s}
           >
             {TOURNAMENT_STATUS_LABELS[s]}
           </Link>
         ))}
       </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Link href={buildHref({ status: activeStatus })} className="chip" data-active={!activeRegion}>
+      <div className="segment">
+        <Link href={buildHref({ status: activeStatus })} className="segment-item" data-active={!activeRegion}>
           Toutes régions
         </Link>
         {REGIONS.map((r) => (
           <Link
             key={r}
             href={buildHref({ region: r, status: activeStatus })}
-            className="chip"
+            className="segment-item"
             data-active={activeRegion === r}
           >
             {r}
