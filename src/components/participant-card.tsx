@@ -12,7 +12,7 @@ type P = {
     aux 5 joueurs cliquables ; le nom reste en place en dessous. */
 export default function ParticipantCard({ p }: { p: P }) {
   return (
-    <div className="card group relative flex h-40 w-40 flex-col items-center bg-[var(--bg)] p-3 text-center">
+    <div className="card group relative flex h-40 w-40 flex-col items-center bg-[#242832] p-3 text-center">
       <div className="relative flex w-full flex-1 items-center justify-center">
         <Link href={`/equipes/${p.teamId}`} aria-label={p.name}>
           {p.logo ? (
@@ -25,7 +25,7 @@ export default function ParticipantCard({ p }: { p: P }) {
           )}
         </Link>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 rounded bg-[var(--bg)]/95 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 rounded bg-[#242832]/95 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100">
           {p.players.length > 0 ? (
             p.players.map((pl) => (
               <Link

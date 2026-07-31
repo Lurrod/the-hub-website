@@ -32,6 +32,24 @@ export function listTeams(filters?: { region?: string }) {
   });
 }
 
+/**
+ * Comme listTeams, mais avec le roster actif (hors staff) pour l'affichage
+ * en cartes façon page tournoi (survol → joueurs).
+ */
+export function listTeamsWithRoster(filters?: { region?: string }) {
+  return db.team.findMany({
+    where: filters?.region ? { region: filters.region } : undefined,
+    orderBy: { name: "asc" },
+    include: {
+      memberships: {
+        where: { leaveDate: null, role: { in: ["JOUEUR", "SUB"] } },
+        orderBy: { role: "asc" },
+        include: { player: true },
+      },
+    },
+  });
+}
+
 export function getTeam(id: string) {
   return db.team.findUnique({
     where: { id },

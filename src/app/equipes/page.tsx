@@ -1,6 +1,6 @@
-import { listTeams } from "@/lib/data/teams";
+import { listTeamsWithRoster } from "@/lib/data/teams";
 import { REGIONS } from "@/lib/constants";
-import TeamCard from "@/components/team-card";
+import ParticipantCard from "@/components/participant-card";
 import RegionFilter from "@/components/region-filter";
 
 export const metadata = { title: "Équipes" };
@@ -13,7 +13,7 @@ export default async function TeamsPage({
   const { region: rawRegion } = await searchParams;
   // On n'accepte que les régions connues (rejette toute valeur d'URL arbitraire).
   const region = (REGIONS as readonly string[]).includes(rawRegion ?? "") ? rawRegion : undefined;
-  const teams = await listTeams({ region });
+  const teams = await listTeamsWithRoster({ region });
 
   // Regroupe par région. On n'exclut aucune équipe : les régions connues (REGIONS)
   // passent en premier, puis toute autre région réellement présente dans les données.
@@ -51,9 +51,19 @@ export default async function TeamsPage({
                     {g.items.length} équipe{g.items.length > 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="stagger-in flex flex-wrap gap-3">
                   {g.items.map((t) => (
-                    <TeamCard key={t.id} team={t} />
+                    <ParticipantCard
+                      key={t.id}
+                      p={{
+                        teamId: t.id,
+                        name: t.name,
+                        logo: t.logo,
+                        players: t.memberships
+                          .slice(0, 5)
+                          .map((m) => ({ id: m.player.id, pseudo: m.player.pseudo })),
+                      }}
+                    />
                   ))}
                 </div>
               </section>
