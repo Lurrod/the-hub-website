@@ -2,8 +2,6 @@ import Link from "next/link";
 import { VALORANT_ROLES, ROLE_LABELS, ROLE_ICONS } from "@/lib/roles";
 import { AGE_BRACKETS, TEAM_STATUSES, lftHref, hasActiveLftFilter, type LftFilters } from "@/lib/lft";
 
-const select =
-  "rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-sm text-white outline-none transition-colors focus:border-[var(--accent)]";
 
 /**
  * Filtres de la page LFT.
@@ -30,7 +28,7 @@ export default function LftFilters({
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href={lftHref({ ...filters, role: undefined })}
-          className="chip rounded-lg data-[active=true]:text-white"
+          className="chip"
           data-active={!role}
         >
           Tous les rôles
@@ -39,7 +37,7 @@ export default function LftFilters({
           <Link
             key={r}
             href={lftHref({ ...filters, role: r })}
-            className="chip flex items-center gap-1.5 rounded-lg data-[active=true]:text-white"
+            className="chip"
             data-active={role === r}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -64,13 +62,13 @@ export default function LftFilters({
           maxLength={40}
           placeholder="Rechercher un pseudo"
           aria-label="Rechercher un pseudo"
-          className={`${select} min-w-0 flex-1 sm:max-w-56`}
+          className="field min-w-0 flex-1 sm:max-w-56"
         />
 
         <label className="sr-only" htmlFor="lft-country">
           Pays
         </label>
-        <select id="lft-country" name="country" defaultValue={country ?? ""} className={select}>
+        <select id="lft-country" name="country" defaultValue={country ?? ""} className="field">
           <option value="">Tous les pays</option>
           {countries.map((c) => (
             <option key={c} value={c}>
@@ -82,7 +80,7 @@ export default function LftFilters({
         <label className="sr-only" htmlFor="lft-age">
           Âge
         </label>
-        <select id="lft-age" name="age" defaultValue={age ?? ""} className={select}>
+        <select id="lft-age" name="age" defaultValue={age ?? ""} className="field">
           <option value="">Tous les âges</option>
           {AGE_BRACKETS.map((b) => (
             <option key={b.key} value={b.key}>
@@ -94,7 +92,7 @@ export default function LftFilters({
         <label className="sr-only" htmlFor="lft-team">
           Statut d&apos;équipe
         </label>
-        <select id="lft-team" name="team" defaultValue={team ?? ""} className={select}>
+        <select id="lft-team" name="team" defaultValue={team ?? ""} className="field">
           <option value="">Avec ou sans équipe</option>
           {TEAM_STATUSES.map((s) => (
             <option key={s.key} value={s.key}>
@@ -103,7 +101,9 @@ export default function LftFilters({
           ))}
         </select>
 
-        <button className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-white transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">
+        {/* Action et non état : bordure accent pour ne pas se confondre avec
+            une pilule de filtre inactive. */}
+        <button className="chip border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white">
           Filtrer
         </button>
 

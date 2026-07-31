@@ -190,12 +190,18 @@ body {
   }
 
   /* Filtre en pilule - accent sobre à l'état actif (pas de aplat criard) */
+  /* Filtre : pilule. Inactif discret sans fond, actif en aplat accent. */
   .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     border-radius: 9999px;
     border: 1px solid var(--border);
-    padding: 4px 12px;
+    padding: 5px 14px;
     font-size: 12px;
+    line-height: 1.25;
     color: var(--text-muted);
+    white-space: nowrap;
     transition:
       color var(--hover-fast) var(--ease),
       border-color var(--hover-fast) var(--ease),
@@ -204,11 +210,46 @@ body {
   .chip:hover {
     color: var(--text);
     border-color: var(--border-strong);
+    background: var(--card-hover);
   }
+  /* Déclaré après :hover : à spécificité égale, l'aplat actif l'emporte, y
+     compris au survol. */
   .chip[data-active="true"] {
-    color: var(--accent);
+    color: #fff;
     border-color: var(--accent);
-    background: var(--accent-soft);
+    background: var(--accent);
+  }
+
+  /* Contrôle de filtre saisissable (recherche, listes déroulantes) : même
+     pilule que .chip, pour que la barre de filtres reste homogène. */
+  .field {
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    padding: 5px 14px;
+    font-size: 12px;
+    line-height: 1.25;
+    color: var(--text);
+    transition:
+      border-color var(--hover-fast) var(--ease),
+      background-color var(--hover-fast) var(--ease);
+  }
+  .field:hover {
+    border-color: var(--border-strong);
+    background: var(--card-hover);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--card-hover);
+  }
+  .field::placeholder {
+    color: var(--text-subtle);
+  }
+  /* Le menu natif d'un <select> ne suit pas le fond transparent du contrôle. */
+  .field option {
+    background: var(--surface);
+    color: var(--text);
   }
 
   /* Monogramme (placeholder de logo équipe/tournoi) */

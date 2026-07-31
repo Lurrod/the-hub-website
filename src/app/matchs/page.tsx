@@ -41,7 +41,7 @@ export default async function MatchesPage({
             <Link
               key={x.key}
               href={x.key === "all" ? "/matchs" : `/matchs?f=${x.key}`}
-              className="chip rounded-lg data-[active=true]:text-white"
+              className="chip"
               data-active={filter === x.key}
             >
               {x.label}
