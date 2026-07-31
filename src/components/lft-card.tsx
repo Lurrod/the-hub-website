@@ -26,7 +26,7 @@ export default function LftCard({ player }: { player: LftPlayerCardData }) {
   return (
     <Link
       href={`/joueurs/${player.id}`}
-      className="card card-interactive flex flex-col gap-3 p-4"
+      className="card card-interactive flex flex-col gap-3 bg-[#242832] p-4"
     >
       <div className="flex items-center gap-3">
         {player.photo ? (
