@@ -20,16 +20,32 @@ export async function listLftCountries(): Promise<string[]> {
   return rows.map((r) => r.nationality).filter((n): n is string => Boolean(n));
 }
 
+export type LftQuery = {
+  role?: string;
+  country?: string;
+  /** Intervalle de dates de naissance dérivé d'une tranche d'âge. */
+  birthdate?: { lte: Date; gt?: Date };
+  team?: "free" | "team";
+  q?: string;
+};
+
 /**
  * Joueurs en recherche d'équipe. Les plus récemment déclarés LFT remontent en
  * premier ; le pseudo départage les fiches sans `lftSince`.
+ *
+ * Le filtre d'âge passe par la date de naissance (seule colonne stockée), donc
+ * les joueurs qui n'ont pas renseigné la leur en sortent — c'est voulu.
  */
-export function listLftPlayers(filters?: { role?: string; country?: string }) {
+export function listLftPlayers(filters?: LftQuery) {
   return db.player.findMany({
     where: {
       lft: true,
       ...(filters?.role ? { valorantRole: filters.role as ValorantRole } : {}),
       ...(filters?.country ? { nationality: filters.country } : {}),
+      ...(filters?.birthdate ? { birthdate: filters.birthdate } : {}),
+      ...(filters?.team === "free" ? { memberships: { none: { leaveDate: null } } } : {}),
+      ...(filters?.team === "team" ? { memberships: { some: { leaveDate: null } } } : {}),
+      ...(filters?.q ? { pseudo: { contains: filters.q, mode: "insensitive" as const } } : {}),
     },
     orderBy: [{ lftSince: "desc" }, { pseudo: "asc" }],
   });

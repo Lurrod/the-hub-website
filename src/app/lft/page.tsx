@@ -1,24 +1,47 @@
 import { listLftPlayers, listLftCountries } from "@/lib/data/players";
-import { normalizeLftRole, normalizeLftCountry } from "@/lib/lft";
+import {
+  normalizeLftRole,
+  normalizeLftCountry,
+  normalizeAgeBracket,
+  normalizeTeamStatus,
+  normalizeLftSearch,
+  birthdateRangeForAge,
+  type LftFilters,
+} from "@/lib/lft";
 import LftCard from "@/components/lft-card";
-import LftFilters from "@/components/lft-filters";
+import LftFiltersBar from "@/components/lft-filters";
 
 export const metadata = { title: "LFT" };
 
 export default async function LftPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; country?: string }>;
+  searchParams: Promise<{
+    role?: string;
+    country?: string;
+    age?: string;
+    team?: string;
+    q?: string;
+  }>;
 }) {
-  const { role: rawRole, country: rawCountry } = await searchParams;
+  const raw = await searchParams;
 
-  // Les filtres viennent de l'URL : on ne garde que des valeurs connues
-  // (rôle Valorant existant, pays réellement présent) avant d'interroger la base.
+  // Les filtres viennent de l'URL : on ne garde que des valeurs connues (rôle
+  // Valorant existant, pays réellement présent, tranche d'âge et statut
+  // déclarés) avant d'interroger la base.
   const countries = await listLftCountries();
-  const role = normalizeLftRole(rawRole);
-  const country = normalizeLftCountry(rawCountry, countries);
+  const filters: LftFilters = {
+    role: normalizeLftRole(raw.role),
+    country: normalizeLftCountry(raw.country, countries),
+    age: normalizeAgeBracket(raw.age),
+    team: normalizeTeamStatus(raw.team),
+    q: normalizeLftSearch(raw.q),
+  };
 
-  const players = await listLftPlayers({ role, country });
+  const players = await listLftPlayers({
+    ...filters,
+    birthdate: birthdateRangeForAge(filters.age),
+  });
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -29,12 +52,12 @@ export default async function LftPage({
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="mb-4">
-          <LftFilters role={role} country={country} countries={countries} />
+          <LftFiltersBar filters={filters} countries={countries} total={players.length} />
         </div>
 
         {players.length === 0 ? (
           <p className="text-sm text-[var(--text-muted)]">
-            Aucun joueur en recherche d&apos;équipe pour ce filtre.
+            Aucun joueur en recherche d&apos;équipe pour ces filtres.
           </p>
         ) : (
           <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
