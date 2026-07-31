@@ -10,17 +10,28 @@ import { getPlayerByUserId } from "@/lib/data/players";
  * d'écrire un cookie, seuls une Server Action et un Route Handler le peuvent.
  * `/onboarding` tentait de le faire et levait « Cookies can only be modified
  * in a Server Action or Route Handler » dès qu'un compte déjà lié y passait.
+ *
+ * Redirections RELATIVES, jamais construites depuis `request.url` : dans un
+ * Route Handler celui-ci porte l'URL interne vue par Node, soit
+ * `http://localhost:3200/...` derrière l'Apache du Kimsufi. Une redirection
+ * absolue bâtie dessus renvoyait le visiteur sur localhost. Le proxy, lui,
+ * peut utiliser `request.url` : en middleware Next le reconstruit à partir de
+ * `X-Forwarded-Host`.
  */
-export async function GET(request: Request) {
+function redirectTo(path: string): NextResponse {
+  return new NextResponse(null, { status: 307, headers: { Location: path } });
+}
+
+export async function GET() {
   const user = await getSessionUser();
-  if (!user) return NextResponse.redirect(new URL("/api/auth/signin", request.url));
+  if (!user) return redirectTo("/api/auth/signin");
 
   // Le cookie n'est posé que si le Riot ID est réellement lié : sinon il
   // suffirait de visiter cette URL pour sauter l'onboarding.
   const player = await getPlayerByUserId(user.id);
-  if (!player?.puuid) return NextResponse.redirect(new URL("/onboarding", request.url));
+  if (!player?.puuid) return redirectTo("/onboarding");
 
-  const res = NextResponse.redirect(new URL("/", request.url));
+  const res = redirectTo("/");
   res.cookies.set("onboarded", "1", {
     path: "/",
     sameSite: "lax",
