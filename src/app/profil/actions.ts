@@ -11,7 +11,9 @@ import {
   getActiveMembership,
   endMembership,
   setPlayerRiotAccount,
+  setPlayerLft,
 } from "@/lib/data/players";
+import { nextLftState } from "@/lib/lft";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
 
@@ -58,6 +60,19 @@ export async function updateMyRiotIdAction(formData: FormData) {
   revalidatePath("/profil");
   revalidatePath(`/joueurs/${player.id}`);
   redirect("/profil?ok=riot-saved");
+}
+
+export async function toggleMyLftAction() {
+  const user = await getSessionUser();
+  if (!user) throw new Error("UNAUTHENTICATED");
+  const player = await getPlayerByUserId(user.id);
+  if (!player) throw new Error("NO_PLAYER");
+
+  const state = nextLftState(player.lft);
+  await setPlayerLft(player.id, state);
+  revalidatePath("/profil");
+  revalidatePath("/lft");
+  redirect(`/profil?ok=${state.lft ? "lft-on" : "lft-off"}`);
 }
 
 export async function leaveMyTeamAction() {

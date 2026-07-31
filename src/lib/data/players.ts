@@ -1,11 +1,54 @@
 import { db } from "@/lib/db";
 import { rankTopAgentsByPlayer } from "@/lib/agents";
 import type { PlayerInput } from "@/lib/validation/player";
-import type { MembershipRole } from "@prisma/client";
+import type { MembershipRole, ValorantRole } from "@prisma/client";
 import type { RiotAccount } from "@/lib/henrikdev";
+import type { LftState } from "@/lib/lft";
 
 export function listPlayers() {
   return db.player.findMany({ orderBy: { pseudo: "asc" } });
+}
+
+/** Pays distincts des joueurs en recherche d'équipe, pour alimenter le filtre. */
+export async function listLftCountries(): Promise<string[]> {
+  const rows = await db.player.findMany({
+    where: { lft: true, nationality: { not: null } },
+    select: { nationality: true },
+    distinct: ["nationality"],
+    orderBy: { nationality: "asc" },
+  });
+  return rows.map((r) => r.nationality).filter((n): n is string => Boolean(n));
+}
+
+/**
+ * Joueurs en recherche d'équipe, avec leur adhésion active éventuelle : un
+ * joueur déjà en équipe peut rester LFT, sa carte porte alors le badge de son
+ * équipe. Les plus récemment déclarés LFT remontent en premier.
+ */
+export function listLftPlayers(filters?: { role?: string; country?: string }) {
+  return db.player.findMany({
+    where: {
+      lft: true,
+      ...(filters?.role ? { valorantRole: filters.role as ValorantRole } : {}),
+      ...(filters?.country ? { nationality: filters.country } : {}),
+    },
+    orderBy: [{ lftSince: "desc" }, { pseudo: "asc" }],
+    include: {
+      memberships: {
+        where: { leaveDate: null },
+        take: 1,
+        select: { team: { select: { id: true, name: true, tag: true, logo: true } } },
+      },
+    },
+  });
+}
+
+/** Applique un statut LFT calculé par `nextLftState`. */
+export function setPlayerLft(playerId: string, state: LftState) {
+  return db.player.update({
+    where: { id: playerId },
+    data: { lft: state.lft, lftSince: state.lftSince },
+  });
 }
 
 export function getPlayer(id: string) {

@@ -127,6 +127,8 @@ model Player {
   region      String?
   valorantRole ValorantRole?
   birthdate    DateTime?
+  lft          Boolean          @default(false)
+  lftSince     DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   memberships TeamMembership[]

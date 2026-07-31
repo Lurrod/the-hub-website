@@ -22,6 +22,14 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "player-saved": { title: "Joueur enregistré", message: "La fiche joueur a été mise à jour." },
   "left-team": { title: "Équipe quittée", message: "Tu as quitté ton équipe." },
   "riot-saved": { title: "Riot ID enregistré", message: "Ton compte Valorant est bien lié." },
+  "lft-on": {
+    title: "Statut LFT activé",
+    message: "Tu apparais maintenant sur la page LFT.",
+  },
+  "lft-off": {
+    title: "Statut LFT désactivé",
+    message: "Tu n'apparais plus sur la page LFT.",
+  },
   "team-registered": {
     title: "Inscription enregistrée",
     message: "Ton équipe est inscrite au tournoi.",

@@ -5,17 +5,12 @@ import {
   updateMyProfileAction,
   updateMyRiotIdAction,
   leaveMyTeamAction,
+  toggleMyLftAction,
 } from "@/app/profil/actions";
-import CountrySelect from "@/components/country-select";
 import RiotIdForm from "@/components/riot-id-form";
-import ImageUpload from "@/components/image-upload";
-import { VALORANT_ROLES, ROLE_LABELS } from "@/lib/roles";
+import ProfileFields from "@/components/profile-fields";
 
 export const metadata = { title: "Mon profil" };
-
-const input =
-  "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-[var(--accent)]";
-const lbl = "grid gap-1 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -101,6 +96,37 @@ export default async function ProfilePage() {
 
         <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+            Recherche d&apos;équipe
+          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-0">
+              <p className="text-sm text-white">
+                {player.lft
+                  ? "Tu apparais sur la page LFT."
+                  : "Tu n'apparais pas sur la page LFT."}
+              </p>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                {membership
+                  ? "Tu es dans une équipe : ta fiche s'affichera avec le tag de ton équipe actuelle."
+                  : "Les recruteurs consultent cette page pour trouver des joueurs libres."}
+              </p>
+            </div>
+            <form action={toggleMyLftAction} className="ml-auto shrink-0">
+              <button
+                className={
+                  player.lft
+                    ? "rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
+                    : "rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                }
+              >
+                {player.lft ? "Ne plus être LFT" : "Me déclarer LFT"}
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
             Compte Valorant
           </h2>
           <p className="mb-4 text-xs text-[var(--text-muted)]">
@@ -119,67 +145,17 @@ export default async function ProfilePage() {
             Informations
           </h2>
           <form action={updateMyProfileAction} className="grid gap-4">
-            <label className={lbl}>
-              Pseudo
-              <input
-                name="pseudo"
-                defaultValue={player.pseudo}
-                required
-                maxLength={40}
-                className={input}
-              />
-            </label>
-            <div className={lbl}>
-              Pays
-              <CountrySelect name="nationality" defaultValue={nationality} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={lbl}>
-                Rôle principal
-                <select
-                  name="valorantRole"
-                  defaultValue={player.valorantRole ?? ""}
-                  className={input}
-                >
-                  <option value="">Aucun</option>
-                  {VALORANT_ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {ROLE_LABELS[r]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className={lbl}>
-                Date de naissance
-                <input name="birthdate" type="date" defaultValue={birthdateValue} className={input} />
-              </label>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={lbl}>
-                Twitter (x.com)
-                <input
-                  name="twitter"
-                  type="url"
-                  placeholder="https://x.com/…"
-                  defaultValue={socials.twitter ?? ""}
-                  className={input}
-                />
-              </label>
-              <label className={lbl}>
-                Twitch (twitch.tv)
-                <input
-                  name="twitch"
-                  type="url"
-                  placeholder="https://twitch.tv/…"
-                  defaultValue={socials.twitch ?? ""}
-                  className={input}
-                />
-              </label>
-            </div>
-            <div className={lbl}>
-              Photo
-              <ImageUpload name="photo" shape="round" currentUrl={player.photo} />
-            </div>
+            <ProfileFields
+              values={{
+                pseudo: player.pseudo,
+                nationality,
+                valorantRole: player.valorantRole ?? "",
+                birthdate: birthdateValue,
+                twitter: socials.twitter ?? "",
+                twitch: socials.twitch ?? "",
+                photo: player.photo,
+              }}
+            />
             <button className="mt-1 justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
               Enregistrer
             </button>
