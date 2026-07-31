@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { ensurePlayerForUser } from "@/lib/data/players";
@@ -22,11 +21,9 @@ export default async function OnboardingPage() {
     photo: session.user.image,
   });
 
-  if (player.puuid) {
-    const store = await cookies();
-    store.set("onboarded", "1", { path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
-    redirect("/");
-  }
+  // Riot ID déjà lié : on passe par la route qui pose le cookie. Une page ne
+  // peut pas écrire de cookie elle-même.
+  if (player.puuid) redirect("/api/onboarded");
 
   const socials = (player.socials ?? {}) as { twitter?: string; twitch?: string };
   const birthdateValue = player.birthdate
