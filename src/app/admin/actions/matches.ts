@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { assertCanManageTournament } from "@/lib/server-auth";
+import { logger, describeError } from "@/lib/logger";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
 import { matchInputSchema, matchMapSchema } from "@/lib/validation/match";
 import {
@@ -111,8 +112,9 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
     try {
       await fetchAndStoreMatchStats(matchId);
     } catch (e) {
-      // Ne jamais casser la validation du match sur une erreur de récupération.
-      console.error("fetchAndStoreMatchStats failed", e);
+      // Ne jamais casser la validation du match sur une erreur de récupération :
+      // l'appel sortant vers HenrikDev est le point le plus fragile du flux.
+      logger.error("match.stats.fetch_failed", { matchId, ...describeError(e) });
     }
   }
   revalidateCompetition(tournamentId);
