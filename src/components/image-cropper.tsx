@@ -62,6 +62,8 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
   const dragStart = useRef<{ x: number; y: number; offset: Offset } | null>(null);
   const pinchStart = useRef<{ dist: number; zoom: number } | null>(null);
 
+  // drapeau de montage nécessaire au portail, inconnu au premier rendu.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   /** Ferme en jouant le repli de `.t-modal` avant de rendre la main au parent. */
@@ -86,6 +88,9 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
   // tard à drawImage, sans dépendre de l'aperçu affiché.
   useEffect(() => {
     const objectUrl = URL.createObjectURL(file);
+    // createObjectURL est un effet de bord navigateur : son résultat ne peut
+    // venir que d'ici.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUrl(objectUrl);
     setFailed(false);
     const img = new Image();
@@ -154,6 +159,9 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
   // Re-clamp après mesure du cadre ou changement d'image : les bornes bougent.
   useEffect(() => {
     if (!natural || frame.width === 0) return;
+    // re-clamp après mesure réelle du cadre : les bornes dépendent du layout,
+    // pas des props.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setView((v) => {
       const zoom = clampZoom(v.zoom, natural, frame);
       return { zoom, offset: clampOffset(v.offset, natural, frame, zoom) };

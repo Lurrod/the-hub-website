@@ -25,8 +25,8 @@ describe("teamInputSchema", () => {
     expect(teamInputSchema.safeParse({ ...valid, tag: "TOOLONGTAG" }).success).toBe(false);
   });
   it("accepte sans description ni socials", () => {
-    const { description, socials, ...min } = valid;
-    expect(teamInputSchema.safeParse(min).success).toBe(true);
+    const { name, tag, region, status } = valid;
+    expect(teamInputSchema.safeParse({ name, tag, region, status }).success).toBe(true);
   });
   it("rejette une URL social invalide", () => {
     expect(

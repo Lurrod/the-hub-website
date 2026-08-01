@@ -64,8 +64,8 @@ export default async function TeamManagersPage({
         </button>
       </form>
       <p className="mt-2 text-xs text-[var(--text-muted)]">
-        L'utilisateur doit s'être déjà connecté au moins une fois (via Discord) pour exister en base.
-        Utilise son ID Discord (Discord → Paramètres → Avancés → Mode développeur, puis clic droit sur le profil → « Copier l'identifiant »).
+        L&apos;utilisateur doit s&apos;être déjà connecté au moins une fois (via Discord) pour exister en base.
+        Utilise son ID Discord (Discord → Paramètres → Avancés → Mode développeur, puis clic droit sur le profil → « Copier l&apos;identifiant »).
       </p>
     </main>
   );

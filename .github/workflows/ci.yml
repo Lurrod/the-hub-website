@@ -23,11 +23,29 @@ jobs:
       - name: Générer le client Prisma
         run: npx prisma generate
 
+      - name: Lint
+        run: npm run lint
+
       - name: Vérification des types
         run: npx tsc --noEmit
 
-      - name: Tests unitaires
-        run: npm test
+      - name: Tests unitaires et couverture
+        # Les seuils sont dans vitest.config.ts et font office de cliquet :
+        # la couverture ne peut plus baisser sans faire échouer la CI.
+        run: npm run test:coverage
+
+      - name: Rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+      - name: Audit des dépendances
+        # Bloque sur une vulnérabilité haute ou critique. Les niveaux inférieurs
+        # sont signalés par la sortie sans faire échouer la CI.
+        run: npm audit --audit-level=high
 
       - name: Build de production
         # DATABASE_URL est requis pour instancier le client Prisma pendant le
@@ -36,3 +54,66 @@ jobs:
           DATABASE_URL: postgresql://user:pass@localhost:5432/build
           AUTH_SECRET: build-only-placeholder
         run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    # TODO : passer à `false` une fois la première exécution vérifiée verte.
+    # Le job n'a jamais tourné : il a été ajouté par un audit, sur un poste sans
+    # PostgreSQL jetable pour l'éprouver. Non bloquant en attendant, pour ne pas
+    # faire échouer la CI de tout le dépôt sur une configuration non validée.
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: thehub_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/thehub_test
+      AUTH_SECRET: e2e-only-placeholder
+      NEXTAUTH_URL: http://localhost:3200
+      # Signale à playwright.config.ts qu'il doit servir le build de production
+      # plutôt que le serveur de développement.
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Appliquer le schéma
+        run: npx prisma migrate deploy
+
+      - name: Jeu de données de démonstration
+        # Les scénarios Playwright s'appuient sur les fixtures de seed-dev
+        # (Alpha Esports, Open de démo, Team Heretics…).
+        run: npm run db:seed:dev
+
+      - name: Build de production
+        run: npm run build
+
+      - name: Installer les navigateurs
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests end-to-end
+        run: npm run test:e2e
+
+      - name: Rapport Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

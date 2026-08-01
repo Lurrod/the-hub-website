@@ -64,6 +64,10 @@ export default function FlashToast() {
       // ou /equipes, par exemple) relançait l'effet, sortait ici, et laissait
       // le toast figé à l'écran indéfiniment - ses minuteurs venant d'être
       // annulés par le nettoyage de l'exécution précédente.
+      // l'état du toast est dérivé de la querystring, qui change par
+      // navigation ; le synchroniser ailleurs laissait le toast figé (voir
+      // ci-dessus).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFlash(null);
       setShow(false);
       return;
@@ -92,6 +96,9 @@ export default function FlashToast() {
 
   useEffect(() => {
     if (flash?.kind !== "success") {
+      // remise à zéro du tracé de la coche avant de le relancer au frame
+      // suivant.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDrawn(false);
       return;
     }

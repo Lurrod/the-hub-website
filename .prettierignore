@@ -1,0 +1,7 @@
+.next
+node_modules
+audit
+test-results
+playwright-report
+package-lock.json
+.ds-sync

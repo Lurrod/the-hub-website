@@ -13,6 +13,9 @@ export default function InviteLink({ link }: { link: string }) {
   const revert = useRef<number | null>(null);
 
   useEffect(() => {
+    // l'origine n'existe qu'au navigateur : la lire au rendu provoquerait un
+    // écart d'hydratation, c'est précisément ce que cet effet évite.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (link.startsWith("/")) setUrl(window.location.origin + link);
   }, [link]);
 

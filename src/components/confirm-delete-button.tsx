@@ -53,6 +53,9 @@ export default function ConfirmDeleteButton({
   // fois l'animation finie, et un `position: fixed` s'y ancre au lieu de la
   // fenêtre - la modale se centrait alors au milieu de la page entière.
   const [mounted, setMounted] = useState(false);
+  // drapeau de montage nécessaire au portail : il ne peut par définition pas
+  // être connu au premier rendu, serveur comme client.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   const close = useCallback(() => {

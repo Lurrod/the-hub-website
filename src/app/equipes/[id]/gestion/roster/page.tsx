@@ -109,7 +109,8 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
           </button>
         </form>
         <p className="mt-2 text-xs text-[var(--text-muted)]">
-          Crée un nouveau joueur et l'ajoute au roster. Les dates d'arrivée sont fixées à aujourd'hui
+          Crée un nouveau joueur et l&apos;ajoute au roster. Les dates d&apos;arrivée sont fixées à
+          aujourd&apos;hui
           (la saisie de dates historiques précises viendra en finition).
         </p>
       </section>
