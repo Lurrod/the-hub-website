@@ -36,6 +36,11 @@ export async function GET() {
     path: "/",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365,
+    // Aucun script n'a besoin de lire ce cookie : le rendre inaccessible au
+    // JavaScript évite qu'un `document.cookie = "onboarded=1"` suffise à
+    // franchir le gate, et `secure` l'empêche de partir en clair.
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
   });
   return res;
 }

@@ -23,3 +23,44 @@ describe("limite de corps des server actions", () => {
     expect(toBytes(limit!)).toBeGreaterThanOrEqual(MAX_IMAGES_PAR_FORMULAIRE * MAX_UPLOAD_BYTES);
   });
 });
+
+/** Récupère les en-têtes appliqués à toutes les routes. */
+async function headersFor(source: string): Promise<Record<string, string>> {
+  const groups = await nextConfig.headers!();
+  const group = groups.find((g) => g.source === source);
+  if (!group) throw new Error(`Aucun groupe d'en-têtes pour ${source}`);
+  return Object.fromEntries(group.headers.map((h) => [h.key, h.value]));
+}
+
+describe("en-têtes de sécurité", () => {
+  it("émet les protections de base sur toutes les routes", async () => {
+    const h = await headersFor("/(.*)");
+    expect(h["X-Content-Type-Options"]).toBe("nosniff");
+    expect(h["X-Frame-Options"]).toBe("DENY");
+    expect(h["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
+  });
+
+  it("impose HTTPS pendant au moins un an, sous-domaines compris", async () => {
+    // Sans HSTS, la toute première visite tapée sans schéma part en clair et
+    // le cookie de session Auth.js est interceptable (SSL stripping).
+    const hsts = (await headersFor("/(.*)"))["Strict-Transport-Security"];
+    expect(hsts).toBeDefined();
+    const maxAge = Number(/max-age=(\d+)/.exec(hsts)?.[1]);
+    expect(maxAge).toBeGreaterThanOrEqual(31536000);
+    expect(hsts).toContain("includeSubDomains");
+  });
+
+  it("refuse les API navigateur que le site n'utilise pas", async () => {
+    const pp = (await headersFor("/(.*)"))["Permissions-Policy"];
+    expect(pp).toBeDefined();
+    for (const feature of ["camera", "microphone", "geolocation"]) {
+      expect(pp).toContain(`${feature}=()`);
+    }
+  });
+
+  it("n'annonce pas la technologie du serveur", () => {
+    // `poweredByHeader` vaut true par défaut : sans ce réglage, chaque réponse
+    // porte `X-Powered-By: Next.js`.
+    expect(nextConfig.poweredByHeader).toBe(false);
+  });
+});
