@@ -1,0 +1,15 @@
+# `core.autocrlf` etant actif sur les postes Windows, git applique une
+# conversion de fins de ligne a tout fichier qu'il juge textuel. Sa detection
+# automatique s'est trompee sur le PDF de l'audit : un clone frais le recevait
+# augmente de 506 octets, donc illisible. Les types binaires sont declares ici
+# explicitement plutot que devines.
+*.pdf   binary
+*.xlsx  binary
+*.docx  binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
