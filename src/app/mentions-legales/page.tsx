@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ContactDiscord, LegalPage, Section, Ul } from "@/components/legal";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "Mentions légales" };
+export const metadata = pageMetadata({
+  path: "/mentions-legales",
+  title: "Mentions légales",
+});
 
 export default function MentionsLegalesPage() {
   return (

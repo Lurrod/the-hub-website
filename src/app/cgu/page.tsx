@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ContactDiscord, LegalPage, Section, Ul } from "@/components/legal";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "Conditions générales d'utilisation" };
+export const metadata = pageMetadata({
+  path: "/cgu",
+  title: "Conditions générales d'utilisation",
+});
 
 export default function CguPage() {
   return (

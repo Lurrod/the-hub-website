@@ -2,8 +2,14 @@ import { listTeamsWithRoster } from "@/lib/data/teams";
 import { REGIONS } from "@/lib/constants";
 import ParticipantCard from "@/components/participant-card";
 import RegionFilter from "@/components/region-filter";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "Équipes" };
+export const metadata = pageMetadata({
+  path: "/equipes",
+  title: "Équipes",
+  description:
+    "Les équipes du Tier 3 Valorant francophone et leurs rosters.",
+});
 
 export default async function TeamsPage({
   searchParams,

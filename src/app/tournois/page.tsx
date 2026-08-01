@@ -3,8 +3,14 @@ import { REGIONS, TOURNAMENT_STATUSES } from "@/lib/constants";
 import TournamentFilters from "@/components/tournament-filters";
 import TournamentListRow from "@/components/tournament-list-row";
 import { monthKey, monthLabel, daysUntil } from "@/lib/dates";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "Tournois" };
+export const metadata = pageMetadata({
+  path: "/tournois",
+  title: "Tournois",
+  description:
+    "Tous les tournois du Tier 3 Valorant francophone : calendrier, format, équipes inscrites et résultats.",
+});
 
 export default async function TournamentsPage({
   searchParams,

@@ -10,8 +10,14 @@ import {
 } from "@/lib/lft";
 import LftCard from "@/components/lft-card";
 import LftFiltersBar from "@/components/lft-filters";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "LFT" };
+export const metadata = pageMetadata({
+  path: "/lft",
+  title: "LFT",
+  description:
+    "Les joueurs à la recherche d'une équipe (looking for team) sur la scène T3 Valorant francophone.",
+});
 
 export default async function LftPage({
   searchParams,

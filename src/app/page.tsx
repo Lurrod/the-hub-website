@@ -2,6 +2,9 @@ import { auth, signIn } from "@/lib/auth";
 import { getPlayerByUserId } from "@/lib/data/players";
 import LandingHero from "@/components/landing-hero";
 import LandingFeed from "@/components/landing-feed";
+import { pageMetadata } from "@/lib/metadata";
+
+export const metadata = pageMetadata({ path: "/" });
 
 /**
  * Temporaire : l'accueil se limite au hero tant qu'aucune équipe n'est inscrite

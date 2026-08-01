@@ -1,6 +1,12 @@
 import { redirect } from "next/navigation";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
+import { NOINDEX } from "@/lib/metadata";
+
+/** Toute la gestion est hors index : hérité par les sous-pages, qui ne
+ *  définissent pas leur propre clé `robots`. */
+export const metadata = NOINDEX;
+
 
 /**
  * Garde partagée de toute la gestion de tournoi : admin OU manager du tournoi.

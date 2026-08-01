@@ -2,8 +2,9 @@ import { searchAll } from "@/lib/data/search";
 import TeamCard from "@/components/team-card";
 import PlayerCard from "@/components/player-card";
 import TournamentCard from "@/components/tournament-card";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "Recherche" };
+export const metadata = pageMetadata({ path: "/recherche", title: "Recherche" });
 
 export default async function SearchPage({
   searchParams,

@@ -18,6 +18,9 @@ import MatchMiniList from "@/components/match-mini-list";
 import TeamPlayerCard from "@/components/team-player-card";
 
 import { teamTitle } from "@/lib/data/titles";
+import JsonLdScript from "@/components/json-ld";
+import { teamJsonLd } from "@/lib/structured-data";
+import { pageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -26,7 +29,7 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   const name = await teamTitle(id);
-  return { title: name ?? "Équipe" };
+  return pageMetadata({ path: `/equipes/${id}`, title: name ?? "Équipe" });
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -210,6 +213,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
+      <JsonLdScript data={teamJsonLd(team)} />
       <TournamentTabs
         header={
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">

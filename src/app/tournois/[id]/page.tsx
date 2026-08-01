@@ -19,6 +19,9 @@ import { computeStandings } from "@/lib/standings";
 import type { ReactNode } from "react";
 
 import { tournamentTitle } from "@/lib/data/titles";
+import JsonLdScript from "@/components/json-ld";
+import { tournamentJsonLd } from "@/lib/structured-data";
+import { pageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -27,7 +30,7 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   const name = await tournamentTitle(id);
-  return { title: name ?? "Tournoi" };
+  return pageMetadata({ path: `/tournois/${id}`, title: name ?? "Tournoi" });
 }
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -230,6 +233,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
+      <JsonLdScript data={tournamentJsonLd(tournament)} />
       <TournamentTabs
         header={
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">

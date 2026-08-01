@@ -2,8 +2,14 @@ import Link from "next/link";
 import Segmented from "@/components/segmented";
 import { listTournamentsWithMatches } from "@/lib/data/matches";
 import { MatchListItem } from "@/components/tournament-match-list";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "Matchs" };
+export const metadata = pageMetadata({
+  path: "/matchs",
+  title: "Matchs",
+  description:
+    "Tous les matchs du Tier 3 Valorant francophone, tournoi par tournoi, avec leurs scores.",
+});
 
 const FILTERS = [
   { key: "all", label: "Tout" },

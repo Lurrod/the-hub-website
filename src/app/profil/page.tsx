@@ -9,8 +9,9 @@ import {
 } from "@/app/profil/actions";
 import RiotIdForm from "@/components/riot-id-form";
 import ProfileFields from "@/components/profile-fields";
+import { NOINDEX } from "@/lib/metadata";
 
-export const metadata = { title: "Mon profil" };
+export const metadata = { title: "Mon profil", ...NOINDEX };
 
 export default async function ProfilePage() {
   const session = await auth();

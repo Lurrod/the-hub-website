@@ -5,6 +5,9 @@ import { MATCH_STAGE_LABELS } from "@/lib/constants";
 import MatchScoreboard, { type ScoreboardMap, type RoundEntry } from "@/components/match-scoreboard";
 
 import { matchTitle } from "@/lib/data/titles";
+import JsonLdScript from "@/components/json-ld";
+import { matchJsonLd } from "@/lib/structured-data";
+import { pageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -13,7 +16,7 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   const name = await matchTitle(id);
-  return { title: name ?? "Match" };
+  return pageMetadata({ path: `/matchs/${id}`, title: name ?? "Match" });
 }
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
@@ -57,6 +60,15 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10">
+      <JsonLdScript
+        data={matchJsonLd({
+          id: match.id,
+          date: match.date,
+          teamA: match.teamA,
+          teamB: match.teamB,
+          tournamentName: match.tournament.name,
+        })}
+      />
       <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8">
         {/* Équipe A */}

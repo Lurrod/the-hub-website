@@ -3,8 +3,9 @@ import { auth } from "@/lib/auth";
 import { ensurePlayerForUser } from "@/lib/data/players";
 import ProfileFields from "@/components/profile-fields";
 import { submitOnboarding } from "@/app/onboarding/actions";
+import { NOINDEX } from "@/lib/metadata";
 
-export const metadata = { title: "Bienvenue" };
+export const metadata = { title: "Bienvenue", ...NOINDEX };
 
 const input =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-[var(--accent)]";

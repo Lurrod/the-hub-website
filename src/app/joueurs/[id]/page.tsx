@@ -11,6 +11,9 @@ import { getPlayerCareer } from "@/lib/data/player-career";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
 
 import { playerTitle } from "@/lib/data/titles";
+import JsonLdScript from "@/components/json-ld";
+import { playerJsonLd } from "@/lib/structured-data";
+import { pageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -19,7 +22,7 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   const name = await playerTitle(id);
-  return { title: name ?? "Joueur" };
+  return pageMetadata({ path: `/joueurs/${id}`, title: name ?? "Joueur" });
 }
 
 function computeAge(birthdate: Date | null): number | null {
@@ -63,6 +66,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10">
+      <JsonLdScript data={playerJsonLd(player)} />
       <TournamentTabs
         header={
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
