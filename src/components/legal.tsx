@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /** Date de dernière révision affichée en tête des pages légales. */
-export const LEGAL_UPDATED = "29 juillet 2026";
+export const LEGAL_UPDATED = "1er août 2026";
 
 /** Canal de contact unique de l'éditeur (mentions légales, RGPD, signalements). */
 export const DISCORD_INVITE = "https://discord.com/invite/XN5aXeMMB8";

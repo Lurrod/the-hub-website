@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ContactDiscord, LegalPage, Section, Ul } from "@/components/legal";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = { title: "Politique de confidentialité" };
+export const metadata = pageMetadata({
+  path: "/confidentialite",
+  title: "Politique de confidentialité",
+});
 
 const TH = "border-b border-[var(--border)] px-3 py-2 text-left font-semibold text-white";
 const TD = "border-b border-[var(--border)] px-3 py-2 align-top";
@@ -150,10 +154,23 @@ export default function ConfidentialitePage() {
 
       <Section title="Cookies">
         <p>
-          Le site dépose uniquement un cookie de session, strictement nécessaire au maintien de
-          votre connexion. Il n&apos;y a ni mesure d&apos;audience, ni cookie publicitaire, ni
-          traceur tiers : aucun consentement préalable n&apos;est donc requis, et aucune bannière
-          n&apos;est affichée. Se déconnecter supprime ce cookie.
+          Le site dépose deux cookies, tous deux strictement nécessaires à son fonctionnement :
+        </p>
+        <Ul>
+          <li>
+            <span className="text-white">Cookie de session</span> - maintient votre connexion.
+            Déposé à la connexion, supprimé à la déconnexion.
+          </li>
+          <li>
+            <span className="text-white">Cookie « onboarded »</span> - mémorise que vous avez
+            terminé l&apos;écran d&apos;accueil, pour ne plus vous y renvoyer. Conservé un an, il
+            ne contient aucune donnée vous concernant et subsiste après la déconnexion.
+          </li>
+        </Ul>
+        <p>
+          Il n&apos;y a ni mesure d&apos;audience, ni cookie publicitaire, ni traceur tiers : ces
+          deux cookies étant nécessaires au service que vous demandez, aucun consentement préalable
+          n&apos;est requis et aucune bannière n&apos;est affichée.
         </p>
       </Section>
 
