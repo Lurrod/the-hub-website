@@ -175,7 +175,7 @@ export default function ImageUpload({
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className={`t-input relative grid ${box} ${radius} shrink-0 cursor-pointer place-items-center overflow-hidden border ${
+          className={`t-input relative grid ${box} ${radius} shrink-0 cursor-pointer place-items-center border ${
             error ? "is-error " : ""
           }${
             dragging
@@ -184,9 +184,15 @@ export default function ImageUpload({
           }`}
         >
           {/* Les deux états occupent la même cellule de grille : l'aperçu
-              remplace l'invite par un fondu croisé plutôt qu'un saut. */}
+              remplace l'invite par un fondu croisé plutôt qu'un saut.
+
+              Le rognage est porté ici et non par le conteneur : en forme ronde,
+              un `overflow-hidden` sur le parent découpait aussi le bouton de
+              retrait, posé à 45° sur le cercle — il n'en restait que la moitié
+              intérieure. Le clip couvre exactement la même surface qu'avant,
+              l'aperçu est donc rendu à l'identique. */}
           <span
-            className="t-icon-swap h-full w-full place-items-center"
+            className={`t-icon-swap h-full w-full ${radius} place-items-center overflow-hidden`}
             data-state={preview ? "b" : "a"}
           >
             <span
