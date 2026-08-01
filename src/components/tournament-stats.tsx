@@ -124,7 +124,13 @@ function FactCard({ fact }: { fact: TournamentFact }) {
       {hasImg && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={fact.image!} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+          <img
+            loading="lazy"
+            decoding="async"
+            src={fact.image!}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-30"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/70 to-transparent" />
         </>
       )}

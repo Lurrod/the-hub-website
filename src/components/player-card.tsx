@@ -16,7 +16,7 @@ export default function PlayerCard({ player }: { player: PlayerCardData }) {
     >
       {player.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={player.photo} alt="" className="h-10 w-10 rounded-full object-cover" />
+        <img loading="lazy" decoding="async" src={player.photo} alt="" className="h-10 w-10 rounded-full object-cover" />
       ) : (
         <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface)] text-xs text-[var(--text-muted)]">
           {player.pseudo.slice(0, 2).toUpperCase()}

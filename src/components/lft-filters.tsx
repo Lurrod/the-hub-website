@@ -46,7 +46,7 @@ export default function LftFilters({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={ROLE_ICONS[r]}
+              loading="lazy" decoding="async" src={ROLE_ICONS[r]}
               alt=""
               className={`h-4 w-4 shrink-0 ${role === r ? "opacity-100" : "opacity-60"}`}
             />

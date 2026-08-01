@@ -34,7 +34,7 @@ export default function TournamentListRow({ t }: { t: Row }) {
 
       {t.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={t.logo} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+        <img loading="lazy" decoding="async" src={t.logo} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
       ) : (
         <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs text-[var(--text-muted)]">
           {t.name.slice(0, 2).toUpperCase()}

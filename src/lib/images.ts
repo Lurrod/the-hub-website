@@ -42,6 +42,18 @@ export function resolveUploadPath(segments: string[]): string {
 }
 
 /**
+ * Validateur de cache d'une image servie.
+ *
+ * Les clés sont stables (elles portent l'identifiant en base) : un logo
+ * remplacé garde donc la même URL. L'ETag est dérivé de la taille et de la
+ * date de modification, ce qui le fait changer dès la réécriture du fichier et
+ * permet de répondre 304 le reste du temps.
+ */
+export function imageEtag(stat: { size: number; mtimeMs: number }): string {
+  return `"${stat.size.toString(36)}-${Math.floor(stat.mtimeMs).toString(36)}"`;
+}
+
+/**
  * Redimensionne en webp et écrit uploads/<cat>/<id>[-banner].webp.
  * - logo (défaut) : 512×512 max, sans agrandissement
  * - bannière : 1280×360, recadrage cover

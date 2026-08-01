@@ -81,7 +81,7 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
       >
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" className="h-7 w-7 rounded-full object-cover" />
+          <img loading="lazy" decoding="async" src={photo} alt="" className="h-7 w-7 rounded-full object-cover" />
         ) : (
           <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--surface)] text-[10px] font-medium text-[var(--text-muted)]">
             {pseudo.slice(0, 2).toUpperCase()}

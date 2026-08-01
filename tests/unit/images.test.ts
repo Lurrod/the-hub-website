@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { validateImageUpload, imageKeyFor, resolveUploadPath } from "@/lib/images";
+import {
+  validateImageUpload,
+  imageKeyFor,
+  resolveUploadPath,
+  imageEtag,
+} from "@/lib/images";
 
 describe("validateImageUpload", () => {
   it("accepte un png sous la limite", () => {
@@ -51,5 +56,25 @@ describe("resolveUploadPath (tournaments)", () => {
     const p = resolveUploadPath(["tournaments", "t1-banner.webp"]);
     expect(p).toContain("uploads");
     expect(p.endsWith("t1-banner.webp")).toBe(true);
+  });
+});
+
+describe("imageEtag", () => {
+  it("produit un ETag fort et cité", () => {
+    expect(imageEtag({ size: 1234, mtimeMs: 1_700_000_000_000 })).toMatch(/^"[0-9a-z]+-[0-9a-z]+"$/);
+  });
+  it("change quand le fichier est réécrit", () => {
+    // Les clés d'image sont stables (identifiant en base) : sans ce lien avec
+    // mtime, un logo remplacé resterait servi depuis le cache navigateur.
+    const a = imageEtag({ size: 100, mtimeMs: 1 });
+    const b = imageEtag({ size: 100, mtimeMs: 2 });
+    expect(a).not.toBe(b);
+  });
+  it("change quand la taille change à mtime égal", () => {
+    expect(imageEtag({ size: 100, mtimeMs: 1 })).not.toBe(imageEtag({ size: 101, mtimeMs: 1 }));
+  });
+  it("est stable pour un même fichier", () => {
+    const s = { size: 42, mtimeMs: 99 };
+    expect(imageEtag(s)).toBe(imageEtag(s));
   });
 });

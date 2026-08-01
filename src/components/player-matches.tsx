@@ -27,7 +27,7 @@ function fmtDay(date: Date | null): string {
 function Crest({ logo, tag, size = "h-6 w-6" }: { logo: string | null; tag: string; size?: string }) {
   if (logo) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={logo} alt="" className={`${size} shrink-0 rounded object-cover`} />;
+    return <img loading="lazy" decoding="async" src={logo} alt="" className={`${size} shrink-0 rounded object-cover`} />;
   }
   return (
     <span className={`${size} grid shrink-0 place-items-center rounded bg-[var(--bg)] text-[9px] text-[var(--text-muted)]`}>

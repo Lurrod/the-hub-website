@@ -41,7 +41,7 @@ export default function TournamentCard({ tournament }: { tournament: TournamentC
       <div className="flex items-center gap-3">
         {tournament.logo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={tournament.logo} alt="" className="h-12 w-12 rounded-lg object-cover" />
+          <img loading="lazy" decoding="async" src={tournament.logo} alt="" className="h-12 w-12 rounded-lg object-cover" />
         ) : (
           <div className="monogram grid h-12 w-12 place-items-center rounded-lg text-sm">
             {tournament.name.slice(0, 2).toUpperCase()}

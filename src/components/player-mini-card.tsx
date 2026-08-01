@@ -16,7 +16,7 @@ export default function PlayerMiniCard({ player }: { player: MiniPlayer }) {
     <Link href={`/joueurs/${player.id}`} className="card card-interactive flex items-center gap-3 p-3">
       {player.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={player.photo} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
+        <img loading="lazy" decoding="async" src={player.photo} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
       ) : (
         <div className="monogram grid h-11 w-11 shrink-0 place-items-center rounded-full text-xs">
           {player.pseudo.slice(0, 2).toUpperCase()}

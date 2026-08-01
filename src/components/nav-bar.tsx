@@ -24,8 +24,18 @@ export default async function NavBar() {
           et le bouton se réduit à l'icône Discord. */}
       <nav className="mx-auto flex h-[47px] max-w-6xl items-center gap-x-2 px-4 sm:gap-x-6">
         <Link href="/" aria-label="The Hub - accueil" className="flex shrink-0 items-center">
+          {/* Rendu à 32 px de haut : le PNG source de 1125 px (98 Ko) était
+              téléchargé sur chaque page. Le webp fait 3,7 Ko pour un rendu
+              identique jusqu'en densité 4x. `width`/`height` déclarent le
+              rapport intrinsèque et évitent tout décalage au chargement. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="The Hub" className="h-8 w-auto object-contain" />
+          <img
+            src="/logo.webp"
+            width={130}
+            height={128}
+            alt="The Hub"
+            className="h-8 w-auto object-contain"
+          />
         </Link>
         <NavLinks isAdmin={isAdmin} />
 

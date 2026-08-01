@@ -54,14 +54,14 @@ function OutcomeIcon({ o }: { o: string }) {
   const src = `/round/${OUTCOMES.has(o) ? o : "elim"}.png`;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" className="h-3.5 w-3.5 object-contain" />
+    <img loading="lazy" decoding="async" src={src} alt="" className="h-3.5 w-3.5 object-contain" />
   );
 }
 
 function Crest({ url, tag, size }: { url: string | null; tag: string; size: string }) {
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt="" className={`${size} shrink-0 rounded object-cover`} />;
+    return <img loading="lazy" decoding="async" src={url} alt="" className={`${size} shrink-0 rounded object-cover`} />;
   }
   return (
     <span

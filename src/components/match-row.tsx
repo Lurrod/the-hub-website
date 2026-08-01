@@ -41,7 +41,7 @@ function Side({
     >
       {team?.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.logo} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
+        <img loading="lazy" decoding="async" src={team.logo} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
       ) : (
         <div className="monogram grid h-6 w-6 shrink-0 place-items-center rounded text-[10px]">
           {(team?.tag ?? "?").slice(0, 3).toUpperCase()}

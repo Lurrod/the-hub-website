@@ -45,7 +45,7 @@ export default function PlayerCareerTable({ stints }: { stints: CareerStint[] })
                   <Link href={`/equipes/${s.teamId}`} className="flex items-center gap-2 hover:text-[var(--accent)]">
                     {s.teamLogo ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={s.teamLogo} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
+                      <img loading="lazy" decoding="async" src={s.teamLogo} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
                     ) : (
                       <span className="monogram grid h-6 w-6 shrink-0 place-items-center rounded text-[9px]">
                         {s.teamTag.slice(0, 2).toUpperCase()}

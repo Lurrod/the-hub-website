@@ -65,7 +65,7 @@ export default function TeamMatchGroups({
                 {g.tournamentLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={g.tournamentLogo}
+                    loading="lazy" decoding="async" src={g.tournamentLogo}
                     alt=""
                     className="h-6 w-6 shrink-0 rounded object-cover"
                   />
