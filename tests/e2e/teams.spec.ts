@@ -6,10 +6,12 @@ test("l'annuaire des équipes affiche l'équipe de démo", async ({ page }) => {
   await expect(page.getByText("Alpha Esports")).toBeVisible();
 });
 
+// Les regions se limitent a France et Autre (src/lib/constants.ts) : le test
+// visait « DACH », qui n'existe plus et etait donc ignore par le filtre.
 test("le filtre région France montre l'équipe, une autre région la masque", async ({ page }) => {
   await page.goto("/equipes?region=France");
   await expect(page.getByText("Alpha Esports")).toBeVisible();
-  await page.goto("/equipes?region=DACH");
+  await page.goto("/equipes?region=Autre");
   await expect(page.getByText("Alpha Esports")).toHaveCount(0);
 });
 

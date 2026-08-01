@@ -7,7 +7,8 @@ test("la barre de navigation contient un champ de recherche", async ({ page }) =
 
 test("la recherche trouve une équipe par son nom", async ({ page }) => {
   await page.goto("/recherche?q=Vitality");
-  await expect(page.getByRole("heading", { name: /Équipes/ })).toBeVisible();
+  // Les intitules de categorie ne sont pas des titres mais de simples libelles.
+  await expect(page.getByText("Équipes", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /Team Vitality/ })).toBeVisible();
 });
 

@@ -57,11 +57,6 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    # TODO : passer à `false` une fois la première exécution vérifiée verte.
-    # Le job n'a jamais tourné : il a été ajouté par un audit, sur un poste sans
-    # PostgreSQL jetable pour l'éprouver. Non bloquant en attendant, pour ne pas
-    # faire échouer la CI de tout le dépôt sur une configuration non validée.
-    continue-on-error: true
     services:
       postgres:
         image: postgres:16
@@ -79,6 +74,10 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/thehub_test
       AUTH_SECRET: e2e-only-placeholder
       NEXTAUTH_URL: http://localhost:3200
+      # `npm run start` sert le build de production : Auth.js y refuse tout hôte
+      # non déclaré et chaque rendu levait UntrustedHost. En développement la
+      # confiance est implicite, d'où un problème invisible en local.
+      AUTH_TRUST_HOST: "true"
       # Signale à playwright.config.ts qu'il doit servir le build de production
       # plutôt que le serveur de développement.
       CI: "true"
