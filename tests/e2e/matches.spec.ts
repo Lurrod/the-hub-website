@@ -1,23 +1,24 @@
 import { test, expect } from "@playwright/test";
 
-// Le nom du tournoi porte un tiret simple dans le jeu de donnees, pas un tiret
-// cadratin : la valeur attendue suit prisma/seed-dev.ts.
-const TOURNOI = "VCT EMEA 2026 - Stage 1";
+// Le jeu de donnees de dev ne contient plus que les tournois de demonstration
+// des formats (prisma/seed-formats.ts). `fmt-groups-elim` est le seul a porter
+// a la fois des poules et un bracket.
+const TOURNOI = "Hub Championship - Poules puis playoffs";
 
 test("la page tournoi VCT affiche les poules et le bracket", async ({ page }) => {
-  await page.goto("/tournois/vct-emea-stage1");
+  await page.goto("/tournois/fmt-groups-elim");
   await expect(page.getByRole("heading", { name: TOURNOI })).toBeVisible();
   // Les titres « Poules » et « Bracket » ont laisse place au menu « Etapes »,
   // dont les onglets portent le nom de chaque poule puis « Playoffs ». Seule
   // l'etape active est rendue : il faut donc basculer pour voir le bracket.
   await expect(page.getByRole("heading", { name: "Étapes" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Groupe Alpha" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Groupe A" })).toBeVisible();
   await page.getByRole("tab", { name: "Playoffs" }).click();
   await expect(page.getByText("Finale", { exact: true }).first()).toBeVisible();
 });
 
 test("la page match affiche le score et le détail des maps", async ({ page }) => {
-  await page.goto("/matchs/vct-m-1");
+  await page.goto("/matchs/fmt-single-elim-m-qf1");
   await expect(page.getByRole("link", { name: "Team Heretics" })).toBeVisible();
   await expect(page.getByText("Ascent")).toBeVisible();
 });

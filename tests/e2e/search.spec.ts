@@ -9,7 +9,9 @@ test("la recherche trouve une équipe par son nom", async ({ page }) => {
   await page.goto("/recherche?q=Vitality");
   // Les intitules de categorie ne sont pas des titres mais de simples libelles.
   await expect(page.getByText("Équipes", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /Team Vitality/ })).toBeVisible();
+  // `.first()` : plusieurs jeux de donnees de dev peuvent contenir une equipe
+  // du meme nom (seed-dev et seed-vlr), la recherche les remonte toutes.
+  await expect(page.getByRole("link", { name: /Team Vitality/ }).first()).toBeVisible();
 });
 
 test("une recherche sans résultat affiche un message", async ({ page }) => {
