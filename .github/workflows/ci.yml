@@ -97,8 +97,19 @@ jobs:
 
       - name: Jeu de données de démonstration
         # Les scénarios Playwright s'appuient sur les fixtures de seed-dev
-        # (Alpha Esports, Open de démo, Team Heretics…).
+        # (Alpha Esports, joueurs, pages admin…).
         run: npm run db:seed:dev
+
+      - name: Équipes VCT EMEA
+        # Fournit les huit équipes « vlr-* » (Team Heretics, Fnatic…) dont
+        # dépendent les tournois de démonstration des formats.
+        run: npm run db:seed:vlr
+
+      - name: Tournois de démonstration des formats
+        # Crée les tournois « fmt-* » ciblés par la suite Playwright, puis
+        # supprime les autres (--prune) pour reproduire l'état de la base de
+        # développement sur laquelle la suite est vérifiée.
+        run: npm run db:seed:formats -- --prune
 
       - name: Build de production
         run: npm run build
