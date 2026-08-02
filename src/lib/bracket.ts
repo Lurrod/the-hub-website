@@ -1,3 +1,5 @@
+import type { TournamentFormat } from "@/lib/constants";
+
 export type BracketMatchData = {
   id: string;
   round: string | null;
@@ -11,85 +13,253 @@ export type BracketMatchData = {
   teamB: { tag: string } | null;
 };
 
-const ROUND_ORDER = [
-  "Huitièmes de finale",
-  "Huitièmes",
-  "Quarts de finale",
-  "Quarts",
-  "Demi-finales",
-  "Demi-finale",
-  "Finale",
-  "Grande finale",
-];
+/** Une case de l'arbre : un match réel, ou un emplacement vide (bye). */
+export type BracketSlot =
+  | { kind: "match"; key: string; match: BracketMatchData }
+  | { kind: "bye"; key: string };
 
-export function orderBracketRounds(
-  matches: BracketMatchData[]
-): { name: string; matches: BracketMatchData[] }[] {
-  const byRound = new Map<string, BracketMatchData[]>();
-  for (const m of matches) {
-    const key = m.round ?? "Bracket";
-    const list = byRound.get(key) ?? [];
-    list.push(m);
-    byRound.set(key, list);
-  }
-  return [...byRound.entries()]
-    .map(([name, ms]) => ({
-      name,
-      matches: [...ms].sort((a, b) => a.id.localeCompare(b.id)),
-    }))
-    .sort((a, b) => {
-      const ia = ROUND_ORDER.indexOf(a.name);
-      const ib = ROUND_ORDER.indexOf(b.name);
-      const oa = ia === -1 ? 500 : ia;
-      const ob = ib === -1 ? 500 : ib;
-      return oa - ob || b.matches.length - a.matches.length || a.name.localeCompare(b.name);
-    });
-}
+export type BracketRound = { name: string; slots: BracketSlot[] };
 
-export type BracketRound = { name: string; matches: BracketMatchData[] };
-export type BracketSection = { key: string; title: string; rounds: BracketRound[] };
+export type BracketSectionKey = "single" | "upper" | "lower" | "final";
+export type BracketSection = {
+  key: BracketSectionKey;
+  title: string;
+  rounds: BracketRound[];
+};
 
-const SECTION_ORDER = ["single", "upper", "lower", "final"];
-const SECTION_TITLE: Record<string, string> = {
+/**
+ * Géométrie de rendu déduite du format :
+ * - `tree`   : un seul arbre binaire (élimination directe, poules puis élim) ;
+ * - `double` : upper + lower + grande finale ;
+ * - `flat`   : simples colonnes, sans arbre (suisse, ligue, round robin…).
+ */
+export type BracketLayout = "tree" | "double" | "flat";
+
+export type BracketTree = { layout: BracketLayout; sections: BracketSection[] };
+
+const SECTION_ORDER: BracketSectionKey[] = ["single", "upper", "lower", "final"];
+const SECTION_TITLE: Record<BracketSectionKey, string> = {
   single: "",
   upper: "Upper Bracket",
   lower: "Lower Bracket",
   final: "Grande Finale",
 };
 
+/** Libellé canonique d'un round selon le nombre de matchs qu'il contient. */
+const ROUND_SIZE_LABELS: Record<number, string> = {
+  1: "Finale",
+  2: "Demi-finales",
+  4: "Quarts de finale",
+  8: "Huitièmes de finale",
+  16: "Seizièmes de finale",
+  32: "Trente-deuxièmes de finale",
+};
+
+export function roundLabelForSize(size: number): string {
+  return ROUND_SIZE_LABELS[size] ?? `1/${size}e de finale`;
+}
+
+/** Minuscules, sans accents, espaces normalisés : base de toutes les regex. */
+const DIACRITICS = /[̀-ͯ]/g;
+
+function normalizeLabel(label: string): string {
+  return label
+    .normalize("NFD")
+    .replace(DIACRITICS, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[.:·-]+$/, "")
+    .trim();
+}
+
+const SIZE_PATTERNS: { size: number; test: RegExp }[] = [
+  { size: 1, test: /^(grande? )?finales?$/ },
+  { size: 1, test: /^(grand )?finals?$/ },
+  { size: 2, test: /^(demi|semi)/ },
+  { size: 4, test: /^(quarts?|quarter|qf)/ },
+  { size: 8, test: /^(huitiemes?|round of 16|ro ?16)/ },
+  { size: 16, test: /^(seiziemes?|round of 32|ro ?32)/ },
+  { size: 32, test: /^(trente|round of 64|ro ?64)/ },
+];
+
+/**
+ * Taille d'arbre impliquée par un libellé de round (« Quarts de finale » → 4),
+ * ou null si le libellé ne dit rien de la profondeur.
+ */
+export function roundSizeFromLabel(label: string): number | null {
+  const n = normalizeLabel(label);
+  const fraction = /^1\/(\d+)/.exec(n);
+  if (fraction) {
+    const size = Number(fraction[1]);
+    return Number.isFinite(size) && size > 0 ? size : null;
+  }
+  for (const { size, test } of SIZE_PATTERNS) {
+    if (test.test(n)) return size;
+  }
+  return null;
+}
+
+/** Numéro de tour d'un libellé générique (« Tour 2 », « Round 3 ») sinon null. */
+function roundNumberFromLabel(label: string): number | null {
+  const m = /^(?:tour|round|ronde|journee|j|r) ?(\d+)$/.exec(normalizeLabel(label));
+  return m ? Number(m[1]) : null;
+}
+
+/** Libellé sans information propre, qu'on peut remplacer par le nom canonique. */
+function isGenericLabel(label: string): boolean {
+  const n = normalizeLabel(label);
+  if (n === "" || n === "bracket" || n === "playoffs" || n === "playoff") return true;
+  return roundNumberFromLabel(label) != null;
+}
+
 /**
  * Déduit la section (upper/lower/finale/simple) et le libellé de round depuis le
  * nom saisi. Reconnaît les préfixes UB/LB/Upper/Lower/Winners/Losers et les
  * grandes finales, de façon à supporter simple élim, double élim, swiss, etc.
  */
-export function parseRound(round: string | null): { section: string; label: string } {
+export function parseRound(round: string | null): { section: BracketSectionKey; label: string } {
   const r = (round ?? "Bracket").trim();
   const low = r.toLowerCase();
   if (/grande?\s*finale|grand\s*final/.test(low)) return { section: "final", label: r };
   if (/^(lb|lower|losers?)\b/.test(low) || /\b(lower\s*bracket|losers?\s*bracket)\b/.test(low)) {
-    const label = r.replace(/^lb\s*[-:·]?\s*/i, "").replace(/lower\s*bracket\s*[-:·]?\s*/i, "").trim();
+    const label = r
+      .replace(/^lb\s*[-:·]?\s*/i, "")
+      .replace(/lower\s*bracket\s*[-:·]?\s*/i, "")
+      .trim();
     return { section: "lower", label: label || r };
   }
   if (/^(ub|upper|winners?)\b/.test(low) || /\b(upper\s*bracket|winners?\s*bracket)\b/.test(low)) {
-    const label = r.replace(/^ub\s*[-:·]?\s*/i, "").replace(/upper\s*bracket\s*[-:·]?\s*/i, "").trim();
+    const label = r
+      .replace(/^ub\s*[-:·]?\s*/i, "")
+      .replace(/upper\s*bracket\s*[-:·]?\s*/i, "")
+      .trim();
     return { section: "upper", label: label || r };
   }
   return { section: "single", label: r };
 }
 
-function roundRank(name: string): number {
-  const i = ROUND_ORDER.indexOf(name);
-  return i === -1 ? 500 : i;
+/** Géométrie attendue pour un format donné, avant correction par les données. */
+export function bracketLayoutFor(format: TournamentFormat): BracketLayout {
+  if (format === "DOUBLE_ELIM") return "double";
+  if (format === "SINGLE_ELIM" || format === "GROUPS_THEN_ELIM") return "tree";
+  return "flat";
+}
+
+type RawRound = { label: string; matches: BracketMatchData[] };
+
+function minPosition(matches: BracketMatchData[]): number | null {
+  const positions = matches
+    .map((m) => m.position)
+    .filter((p): p is number => p != null && Number.isFinite(p));
+  return positions.length > 0 ? Math.min(...positions) : null;
 }
 
 /**
- * Regroupe les matchs en sections (upper / lower / grande finale) puis en rounds
- * ordonnés. Rendu en colonnes indépendantes par section - robuste pour TOUT
- * format (simple élim, double élim, swiss, poule unique…), sans supposer un
- * arbre binaire parfait (ce qui cassait avec un lower bracket).
+ * Clé de tri d'un round : les tours numérotés d'abord, puis ceux repérés par
+ * `bracketPosition`, puis les rounds nommés, de l'entrée de tableau vers la
+ * finale. Volontairement indépendant du nombre de matchs saisis, qui peut être
+ * incomplet en cours de tournoi.
  */
-export function orderBracketSections(matches: BracketMatchData[]): BracketSection[] {
-  const bySection = new Map<string, Map<string, BracketMatchData[]>>();
+function roundOrderKey(round: RawRound): number {
+  const size = roundSizeFromLabel(round.label);
+  if (size != null) return 1000 - Math.log2(size);
+  const tour = roundNumberFromLabel(round.label);
+  if (tour != null) return tour;
+  const pos = minPosition(round.matches);
+  if (pos != null) return 500 + pos / 100000;
+  return 600;
+}
+
+function sortRounds(rounds: RawRound[]): RawRound[] {
+  return [...rounds].sort(
+    (a, b) => roundOrderKey(a) - roundOrderKey(b) || b.matches.length - a.matches.length
+  );
+}
+
+function sortMatches(matches: BracketMatchData[]): BracketMatchData[] {
+  return [...matches].sort(
+    (a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
+      a.id.localeCompare(b.id)
+  );
+}
+
+function pow2Ceil(n: number): number {
+  let p = 1;
+  while (p < n) p *= 2;
+  return p;
+}
+
+/**
+ * Répartit les matchs d'un round sur `size` emplacements. Si tous les matchs
+ * portent un `bracketPosition` distinct et dans les bornes, il fait foi : les
+ * trous restants deviennent des byes. Sinon on remplit dans l'ordre.
+ */
+function toSlots(matches: BracketMatchData[], size: number, roundKey: string): BracketSlot[] {
+  const ordered = sortMatches(matches);
+  const slots: (BracketMatchData | null)[] = Array.from({ length: size }, () => null);
+
+  const positions = ordered.map((m) => m.position);
+  const usablePositions =
+    positions.every((p) => p != null && Number.isInteger(p) && p >= 1 && p <= size) &&
+    new Set(positions).size === ordered.length;
+
+  if (usablePositions) {
+    for (const m of ordered) slots[m.position! - 1] = m;
+  } else {
+    ordered.forEach((m, i) => {
+      slots[i] = m;
+    });
+  }
+
+  return slots.map((m, i) =>
+    m ? { kind: "match" as const, key: m.id, match: m } : { kind: "bye" as const, key: `${roundKey}-bye-${i}` }
+  );
+}
+
+/**
+ * Complète un enchaînement de rounds en arbre binaire : la taille de base est
+ * la plus grande profondeur impliquée par l'un des rounds (son libellé ou son
+ * nombre de matchs, arrondi à la puissance de 2 supérieure), puis chaque round
+ * suivant vaut la moitié. Les emplacements manquants deviennent des byes -
+ * c'est ce qui permet à un tableau de 6 ou 12 équipes de rester lisible.
+ */
+function buildTreeRounds(rounds: RawRound[]): BracketRound[] {
+  if (rounds.length === 0) return [];
+
+  const base = Math.max(
+    ...rounds.map((r, i) => {
+      const implied = Math.max(pow2Ceil(r.matches.length || 1), roundSizeFromLabel(r.label) ?? 1);
+      return implied * 2 ** i;
+    })
+  );
+
+  return rounds.map((r, i) => {
+    const size = Math.max(1, Math.round(base / 2 ** i));
+    const name = isGenericLabel(r.label) ? roundLabelForSize(size) : normalizedName(r.label, size);
+    return { name, slots: toSlots(r.matches, size, `${name}-${i}`) };
+  });
+}
+
+/** Uniformise l'orthographe d'un round reconnu, sinon garde le libellé saisi. */
+function normalizedName(label: string, fallbackSize: number): string {
+  const size = roundSizeFromLabel(label);
+  if (size != null) return roundLabelForSize(size);
+  return label || roundLabelForSize(fallbackSize);
+}
+
+/** Rounds sans géométrie d'arbre : pas de bye, on garde les matchs tels quels. */
+function buildFlatRounds(rounds: RawRound[]): BracketRound[] {
+  return rounds.map((r, i) => {
+    const name = isGenericLabel(r.label)
+      ? r.label.trim() || `Tour ${i + 1}`
+      : normalizedName(r.label, r.matches.length || 1);
+    return { name, slots: toSlots(r.matches, r.matches.length, `${name}-${i}`) };
+  });
+}
+
+function groupBySection(matches: BracketMatchData[]): Map<BracketSectionKey, RawRound[]> {
+  const bySection = new Map<BracketSectionKey, Map<string, BracketMatchData[]>>();
   for (const m of matches) {
     const { section, label } = parseRound(m.round);
     if (!bySection.has(section)) bySection.set(section, new Map());
@@ -98,19 +268,77 @@ export function orderBracketSections(matches: BracketMatchData[]): BracketSectio
     list.push(m);
     rounds.set(label, list);
   }
-  return [...bySection.entries()]
-    .sort((a, b) => SECTION_ORDER.indexOf(a[0]) - SECTION_ORDER.indexOf(b[0]))
-    .map(([key, rounds]) => ({
+  const out = new Map<BracketSectionKey, RawRound[]>();
+  for (const [key, rounds] of bySection) {
+    out.set(
       key,
-      title: SECTION_TITLE[key] ?? "",
-      rounds: [...rounds.entries()]
-        .map(([name, ms]) => ({ name, matches: [...ms].sort((a, b) => a.id.localeCompare(b.id)) }))
-        // Ordre des rounds : par bracketPosition (fiable pour le lower bracket),
-        // puis nombre de matchs, puis l'ordre connu des rounds.
-        .sort((a, b) => {
-          const pa = Math.min(...a.matches.map((m) => m.position ?? 9999));
-          const pb = Math.min(...b.matches.map((m) => m.position ?? 9999));
-          return pa - pb || b.matches.length - a.matches.length || roundRank(a.name) - roundRank(b.name);
-        }),
-    }));
+      sortRounds([...rounds.entries()].map(([label, ms]) => ({ label, matches: ms })))
+    );
+  }
+  return out;
+}
+
+/** Fusionne plusieurs listes de rounds en une seule, regroupée par libellé. */
+function mergeRounds(...lists: (RawRound[] | undefined)[]): RawRound[] {
+  const byLabel = new Map<string, BracketMatchData[]>();
+  for (const list of lists) {
+    for (const r of list ?? []) {
+      const key = normalizeLabel(r.label);
+      byLabel.set(key, [...(byLabel.get(key) ?? []), ...r.matches]);
+    }
+  }
+  const labels = new Map<string, string>();
+  for (const list of lists) {
+    for (const r of list ?? []) {
+      const key = normalizeLabel(r.label);
+      if (!labels.has(key)) labels.set(key, r.label);
+    }
+  }
+  return sortRounds(
+    [...byLabel.entries()].map(([key, matches]) => ({ label: labels.get(key) ?? key, matches }))
+  );
+}
+
+/**
+ * Construit l'arbre de playoffs à partir des matchs et du format du tournoi.
+ * Le format choisit la géométrie ; les données peuvent la corriger (un lower
+ * bracket présent force la double élimination, même si le format dit autre
+ * chose), pour ne jamais rendre un arbre faux.
+ */
+export function buildBracket(matches: BracketMatchData[], format: TournamentFormat): BracketTree {
+  const bySection = groupBySection(matches);
+  const declared = bracketLayoutFor(format);
+  const hasLower = (bySection.get("lower")?.length ?? 0) > 0;
+  const layout: BracketLayout = hasLower ? "double" : declared;
+
+  if (layout === "double") {
+    const sections: BracketSection[] = [];
+    const upper = mergeRounds(bySection.get("upper"), bySection.get("single"));
+    const lower = bySection.get("lower") ?? [];
+    const final = bySection.get("final") ?? [];
+    if (upper.length > 0) sections.push({ key: "upper", title: SECTION_TITLE.upper, rounds: buildTreeRounds(upper) });
+    if (lower.length > 0) sections.push({ key: "lower", title: SECTION_TITLE.lower, rounds: buildFlatRounds(lower) });
+    if (final.length > 0) sections.push({ key: "final", title: SECTION_TITLE.final, rounds: buildFlatRounds(final) });
+    return { layout, sections };
+  }
+
+  if (layout === "tree") {
+    // Élimination directe : tout tient dans un seul arbre, y compris un match
+    // libellé « Grande finale ».
+    const all = mergeRounds(
+      bySection.get("single"),
+      bySection.get("upper"),
+      bySection.get("final")
+    );
+    return {
+      layout,
+      sections: all.length > 0 ? [{ key: "single", title: "", rounds: buildTreeRounds(all) }] : [],
+    };
+  }
+
+  // Formats sans arbre : on liste les rounds en colonnes, dans l'ordre.
+  const sections: BracketSection[] = [...bySection.entries()]
+    .sort((a, b) => SECTION_ORDER.indexOf(a[0]) - SECTION_ORDER.indexOf(b[0]))
+    .map(([key, rounds]) => ({ key, title: SECTION_TITLE[key], rounds: buildFlatRounds(rounds) }));
+  return { layout, sections };
 }

@@ -82,6 +82,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       label: "Playoffs",
       content: (
         <Bracket
+          format={tournament.format}
           matches={bracket.map((m) => ({
             id: m.id,
             round: m.round,

@@ -716,6 +716,38 @@ body :is(h1, h2, h3, h4, h5, h6) {
   font-size: 12px;
 }
 
+/* Défilement horizontal discret (arbre de playoffs) : on ne garde que le
+   curseur orange. Pas de piste, pas de contour, pas de flèches. Hors @layer
+   pour primer sur les utilitaires Tailwind du conteneur. */
+.scroll-accent {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+.scroll-accent::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+  background: transparent;
+}
+.scroll-accent::-webkit-scrollbar-track,
+.scroll-accent::-webkit-scrollbar-corner {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.scroll-accent::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.scroll-accent::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+}
+.scroll-accent::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
 /* ==========================================================================
    transitions-dev — snippets installés verbatim.
    Hors @layer volontairement : ces règles pilotent transform/opacity et ne
