@@ -18,7 +18,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "db:seed:formats": "tsx prisma/seed-formats.ts"
   },
   "overrides": {
     "sharp": "^0.35.3",
