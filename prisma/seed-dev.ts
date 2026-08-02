@@ -1,6 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 
+/**
+ * Seed de développement, réexécutable : chaque `upsert` réapplique exactement
+ * les mêmes champs en création et en mise à jour. Relancer le script suffit
+ * donc à remettre la base locale à niveau après un changement de données -
+ * sans quoi les lignes déjà présentes gardent indéfiniment leurs anciennes
+ * valeurs (nom de tournoi, format, dates…).
+ */
 async function main() {
   // Équipe fictive : elle porte les six réseaux pour vérifier le rendu du
   // bandeau, ce que les équipes réelles ne permettent pas (vlr.gg n'en liste
@@ -13,63 +20,60 @@ async function main() {
     discord: "https://discord.gg/exemple",
     website: "https://exemple.gg",
   };
+  const alphaTeam = {
+    name: "Alpha Esports",
+    tag: "ALP",
+    region: "France",
+    description: "Équipe de démonstration.",
+    status: "ACTIVE" as const,
+    socials: alphaSocials,
+  };
   await db.team.upsert({
     where: { id: "seed-team-alpha" },
-    update: { socials: alphaSocials },
-    create: {
-      id: "seed-team-alpha",
-      name: "Alpha Esports",
-      tag: "ALP",
-      region: "France",
-      description: "Équipe de démonstration.",
-      status: "ACTIVE",
-      socials: alphaSocials,
-    },
+    update: alphaTeam,
+    create: { id: "seed-team-alpha", ...alphaTeam },
   });
 
+  const neoPlayer = { pseudo: "Neo", nationality: "France" };
   await db.player.upsert({
     where: { id: "seed-player-neo" },
-    update: {},
-    create: { id: "seed-player-neo", pseudo: "Neo", nationality: "France" },
+    update: neoPlayer,
+    create: { id: "seed-player-neo", ...neoPlayer },
   });
 
+  const neoMembership = {
+    teamId: "seed-team-alpha",
+    playerId: "seed-player-neo",
+    role: "JOUEUR" as const,
+  };
   await db.teamMembership.upsert({
     where: { id: "seed-membership-neo" },
-    update: {},
-    create: {
-      id: "seed-membership-neo",
-      teamId: "seed-team-alpha",
-      playerId: "seed-player-neo",
-      role: "JOUEUR",
-    },
+    update: neoMembership,
+    create: { id: "seed-membership-neo", ...neoMembership },
   });
 
+  const openTournament = {
+    name: "Open de démo",
+    region: "France",
+    format: "GROUPS" as const,
+    status: "ONGOING" as const,
+    organizer: "The Hub",
+    description: "Tournoi de démonstration.",
+    startDate: new Date("2026-08-02"),
+    endDate: new Date("2026-08-16"),
+    prizePool: "2 500 €",
+  };
   await db.tournament.upsert({
     where: { id: "seed-tournament-open" },
-    update: {
-      startDate: new Date("2026-08-02"),
-      endDate: new Date("2026-08-16"),
-      prizePool: "2 500 €",
-    },
-    create: {
-      id: "seed-tournament-open",
-      name: "Open de démo",
-      region: "France",
-      format: "GROUPS",
-      status: "ONGOING",
-      organizer: "The Hub",
-      description: "Tournoi de démonstration.",
-      startDate: new Date("2026-08-02"),
-      endDate: new Date("2026-08-16"),
-      prizePool: "2 500 €",
-    },
+    update: openTournament,
+    create: { id: "seed-tournament-open", ...openTournament },
   });
 
   await db.tournamentParticipant.upsert({
     where: {
       tournamentId_teamId: { tournamentId: "seed-tournament-open", teamId: "seed-team-alpha" },
     },
-    update: {},
+    update: { seed: 1 },
     create: {
       id: "seed-participant-alpha",
       tournamentId: "seed-tournament-open",
@@ -95,45 +99,42 @@ async function main() {
     { tag: "EF", name: "Eternal Fire", group: "omega", players: ["Izzy", "audaz", "Favian", "echo", "nekky"] },
   ];
 
+  const vctTournament = {
+    name: "VCT EMEA 2026 - Stage 1",
+    region: "EU",
+    format: "GROUPS_THEN_ELIM" as const,
+    status: "ONGOING" as const,
+    organizer: "Riot Games",
+    description: "Données de démonstration inspirées de la saison VCT EMEA 2026.",
+    startDate: new Date("2026-06-14"),
+    endDate: new Date("2026-07-20"),
+    prizePool: "250 000 €",
+  };
   await db.tournament.upsert({
     where: { id: TID },
-    update: {
-      startDate: new Date("2026-06-14"),
-      endDate: new Date("2026-07-20"),
-      prizePool: "250 000 €",
-    },
-    create: {
-      id: TID,
-      name: "VCT EMEA 2026 - Stage 1",
-      region: "EU",
-      format: "GROUPS_THEN_ELIM",
-      status: "ONGOING",
-      organizer: "Riot Games",
-      description: "Données de démonstration inspirées de la saison VCT EMEA 2026.",
-      startDate: new Date("2026-06-14"),
-      endDate: new Date("2026-07-20"),
-      prizePool: "250 000 €",
-    },
+    update: vctTournament,
+    create: { id: TID, ...vctTournament },
   });
 
   for (const key of ["alpha", "omega"] as const) {
+    const group = {
+      tournamentId: TID,
+      name: key === "alpha" ? "Groupe Alpha" : "Groupe Omega",
+    };
     await db.group.upsert({
       where: { id: `vct-group-${key}` },
-      update: {},
-      create: {
-        id: `vct-group-${key}`,
-        tournamentId: TID,
-        name: key === "alpha" ? "Groupe Alpha" : "Groupe Omega",
-      },
+      update: group,
+      create: { id: `vct-group-${key}`, ...group },
     });
   }
 
   for (const t of VCT_TEAMS) {
     const teamId = `vct-team-${t.tag.toLowerCase()}`;
+    const team = { name: t.name, tag: t.tag, region: "EU", status: "ACTIVE" as const };
     await db.team.upsert({
       where: { id: teamId },
-      update: {},
-      create: { id: teamId, name: t.name, tag: t.tag, region: "EU", status: "ACTIVE" },
+      update: team,
+      create: { id: teamId, ...team },
     });
 
     await db.tournamentParticipant.upsert({
@@ -151,18 +152,14 @@ async function main() {
       const playerId = `vct-p-${t.tag}-${i}`;
       await db.player.upsert({
         where: { id: playerId },
-        update: {},
+        update: { pseudo: t.players[i] },
         create: { id: playerId, pseudo: t.players[i] },
       });
+      const membership = { teamId, playerId, role: i === 4 ? ("COACH" as const) : ("JOUEUR" as const) };
       await db.teamMembership.upsert({
         where: { id: `vct-mem-${t.tag}-${i}` },
-        update: {},
-        create: {
-          id: `vct-mem-${t.tag}-${i}`,
-          teamId,
-          playerId,
-          role: i === 4 ? "COACH" : "JOUEUR",
-        },
+        update: membership,
+        create: { id: `vct-mem-${t.tag}-${i}`, ...membership },
       });
     }
   }
@@ -192,31 +189,34 @@ async function main() {
   for (let i = 0; i < GROUP_MATCHES.length; i++) {
     const m = GROUP_MATCHES[i];
     const winnerId = m.sa === m.sb ? null : m.sa > m.sb ? tid(m.a) : tid(m.b);
+    const match = {
+      tournamentId: TID,
+      groupId: `vct-group-${m.group}`,
+      teamAId: tid(m.a),
+      teamBId: tid(m.b),
+      scoreA: m.sa,
+      scoreB: m.sb,
+      winnerId,
+      stage: "GROUP" as const,
+      round: null,
+      bracketPosition: null,
+      bestOf: 3,
+      status: "FINISHED" as const,
+      date: matchDate(i),
+      vodUrl: m.vod ?? null,
+    };
     await db.match.upsert({
       where: { id: m.id },
-      update: { vodUrl: m.vod ?? null },
-      create: {
-        id: m.id,
-        tournamentId: TID,
-        groupId: `vct-group-${m.group}`,
-        teamAId: tid(m.a),
-        teamBId: tid(m.b),
-        scoreA: m.sa,
-        scoreB: m.sb,
-        winnerId,
-        stage: "GROUP",
-        bestOf: 3,
-        status: "FINISHED",
-        date: matchDate(i),
-        vodUrl: m.vod ?? null,
-      },
+      update: match,
+      create: { id: m.id, ...match },
     });
     for (let j = 0; j < m.maps.length; j++) {
       const [name, sa, sb] = m.maps[j];
+      const map = { matchId: m.id, mapName: name, scoreA: sa, scoreB: sb, order: j };
       await db.matchMap.upsert({
         where: { id: `${m.id}-map-${j}` },
-        update: {},
-        create: { id: `${m.id}-map-${j}`, matchId: m.id, mapName: name, scoreA: sa, scoreB: sb, order: j },
+        update: map,
+        create: { id: `${m.id}-map-${j}`, ...map },
       });
     }
   }
@@ -229,10 +229,11 @@ async function main() {
     { tag: "BIG", name: "BIG" },
   ];
   for (const t of EXTRA_TEAMS) {
+    const team = { name: t.name, tag: t.tag, region: "EU", status: "ACTIVE" as const };
     await db.team.upsert({
       where: { id: tid(t.tag) },
-      update: {},
-      create: { id: tid(t.tag), name: t.name, tag: t.tag, region: "EU", status: "ACTIVE" },
+      update: team,
+      create: { id: tid(t.tag), ...team },
     });
   }
 
@@ -264,24 +265,25 @@ async function main() {
   for (let i = 0; i < BRACKET_MATCHES.length; i++) {
     const m = BRACKET_MATCHES[i];
     const winnerId = m.status !== "FINISHED" || m.sa === m.sb ? null : m.sa > m.sb ? tid(m.a) : tid(m.b);
+    const match = {
+      tournamentId: TID,
+      groupId: null,
+      teamAId: tid(m.a),
+      teamBId: tid(m.b),
+      scoreA: m.sa,
+      scoreB: m.sb,
+      winnerId,
+      stage: "BRACKET" as const,
+      round: m.round,
+      bracketPosition: m.pos,
+      bestOf: 5,
+      status: m.status,
+      date: matchDate(10 + i),
+    };
     await db.match.upsert({
       where: { id: m.id },
-      update: {},
-      create: {
-        id: m.id,
-        tournamentId: TID,
-        teamAId: tid(m.a),
-        teamBId: tid(m.b),
-        scoreA: m.sa,
-        scoreB: m.sb,
-        winnerId,
-        stage: "BRACKET",
-        round: m.round,
-        bracketPosition: m.pos,
-        bestOf: 5,
-        status: m.status,
-        date: matchDate(10 + i),
-      },
+      update: match,
+      create: { id: m.id, ...match },
     });
   }
 
@@ -291,22 +293,25 @@ async function main() {
     { id: "vct-up-3", a: "GX", b: "BBL", status: "SCHEDULED" as const, offset: 17 },
   ];
   for (const m of UPCOMING_MATCHES) {
+    const match = {
+      tournamentId: TID,
+      groupId: "vct-group-alpha",
+      teamAId: tid(m.a),
+      teamBId: tid(m.b),
+      scoreA: 0,
+      scoreB: 0,
+      winnerId: null,
+      stage: "GROUP" as const,
+      round: null,
+      bracketPosition: null,
+      bestOf: 3,
+      status: m.status,
+      date: matchDate(m.offset),
+    };
     await db.match.upsert({
       where: { id: m.id },
-      update: { status: m.status },
-      create: {
-        id: m.id,
-        tournamentId: TID,
-        groupId: "vct-group-alpha",
-        teamAId: tid(m.a),
-        teamBId: tid(m.b),
-        scoreA: 0,
-        scoreB: 0,
-        stage: "GROUP",
-        bestOf: 3,
-        status: m.status,
-        date: matchDate(m.offset),
-      },
+      update: match,
+      create: { id: m.id, ...match },
     });
   }
 
