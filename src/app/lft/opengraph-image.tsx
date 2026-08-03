@@ -6,10 +6,12 @@ export const alt = "Joueurs en recherche d'équipe";
 export { contentType, size } from "@/lib/og/size";
 
 /**
- * Les chiffres de la carte viennent de la base : sans cette option, Next fige
- * l'image au build et le compteur ne bougerait plus jusqu'au déploiement suivant.
+ * Rendu à la demande, jamais au build : la CI construit avec un `DATABASE_URL`
+ * factice, donc un prérendu produirait le cadre nu — sans titre ni compteur —
+ * et le figerait dans l'artefact déployé. La mise en cache est portée par
+ * l'en-tête `Cache-Control` posé par `renderOg`.
  */
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function Image() {
   return renderOg("LFT", async () => {
