@@ -239,17 +239,39 @@ export function deleteMembership(id: string) {
   return db.teamMembership.delete({ where: { id } });
 }
 
-/** Enregistre le compte Riot vérifié sur un joueur. */
-export function setPlayerRiotAccount(playerId: string, account: RiotAccount) {
-  return db.player.update({
-    where: { id: playerId },
-    data: {
-      riotName: account.name,
-      riotTag: account.tag,
-      puuid: account.puuid,
-      region: account.region,
-    },
-  });
+/**
+ * Enregistre le compte Riot vérifié sur un joueur, et recale les scoreboards
+ * déjà en base sur ce puuid.
+ *
+ * Le rattachement d'une ligne de scoreboard à une fiche se fait à l'import, par
+ * puuid. Sans ce rattrapage, lier un Riot ID *après* avoir importé un tournoi
+ * laisserait ces stats orphelines pour toujours : toutes les lectures côté
+ * joueur filtrent sur `playerId`.
+ */
+export async function setPlayerRiotAccount(playerId: string, account: RiotAccount) {
+  const [player] = await db.$transaction([
+    db.player.update({
+      where: { id: playerId },
+      data: {
+        riotName: account.name,
+        riotTag: account.tag,
+        puuid: account.puuid,
+        region: account.region,
+      },
+    }),
+    // Les parties de ce puuid qui n'étaient rattachées à personne lui reviennent.
+    db.playerGameStat.updateMany({
+      where: { puuid: account.puuid, playerId: null },
+      data: { playerId },
+    }),
+    // Symétrique : un Riot ID corrigé ne doit pas laisser sur la fiche les
+    // parties d'un autre compte, rattachées sur la foi de l'ancien puuid.
+    db.playerGameStat.updateMany({
+      where: { playerId, NOT: { puuid: account.puuid } },
+      data: { playerId: null },
+    }),
+  ]);
+  return player;
 }
 
 /** True si ce puuid est déjà pris par un AUTRE joueur. */

@@ -14,6 +14,19 @@ export function hasRiotStats(status: string | null): boolean {
   return status === "MATCHED" || status === "MANUAL";
 }
 
+/**
+ * Index `puuid -> playerId` des fiches du site. Sert à rattacher un scoreboard
+ * à ses joueurs sans passer par les rosters : un remplaçant, ou un joueur d'un
+ * tournoi rejoué hors du site, n'est pas dans l'effectif des deux équipes.
+ */
+export function indexPlayerIdsByPuuid(
+  rows: readonly { id: string; puuid: string | null }[]
+): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const r of rows) if (r.puuid) index.set(r.puuid, r.id);
+  return index;
+}
+
 /** Rounds gagnés de chaque côté, une fois les camps Riot rattachés à A et B. */
 function roundsBySide(
   match: CustomMatch,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  countExpected, assignSides, assignSidesFromCamp, computeDerivedStats, hasRiotStats, selectSeries,
+  countExpected, assignSides, assignSidesFromCamp, computeDerivedStats, hasRiotStats,
+  indexPlayerIdsByPuuid, selectSeries,
 } from "@/lib/match-stats-core";
 import type { CustomMatch, CustomMatchPlayer } from "@/lib/henrikdev";
 
@@ -99,5 +100,29 @@ describe("hasRiotStats", () => {
   it("faux sans récupération aboutie", () => {
     expect(hasRiotStats("NOT_FOUND")).toBe(false);
     expect(hasRiotStats(null)).toBe(false);
+  });
+});
+
+describe("indexPlayerIdsByPuuid", () => {
+  it("indexe les fiches par puuid", () => {
+    const idx = indexPlayerIdsByPuuid([
+      { id: "p1", puuid: "aaa" },
+      { id: "p2", puuid: "bbb" },
+    ]);
+    expect(idx.get("aaa")).toBe("p1");
+    expect(idx.get("bbb")).toBe("p2");
+    expect(idx.size).toBe(2);
+  });
+  it("ignore les fiches sans compte Riot lié", () => {
+    const idx = indexPlayerIdsByPuuid([
+      { id: "p1", puuid: null },
+      { id: "p2", puuid: "" },
+      { id: "p3", puuid: "ccc" },
+    ]);
+    expect(idx.size).toBe(1);
+    expect(idx.get("ccc")).toBe("p3");
+  });
+  it("renvoie un index vide sans fiche", () => {
+    expect(indexPlayerIdsByPuuid([]).size).toBe(0);
   });
 });

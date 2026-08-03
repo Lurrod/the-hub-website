@@ -9,6 +9,7 @@ import {
   assignSides,
   assignSidesFromCamp,
   computeDerivedStats,
+  indexPlayerIdsByPuuid,
   selectSeries,
   type Side,
 } from "@/lib/match-stats-core";
@@ -38,6 +39,22 @@ async function knownPlayers(teamAId: string, teamBId: string): Promise<Known[]> 
     });
   }
   return known;
+}
+
+/**
+ * Fiches du site correspondant aux puuid présents dans une partie. La recherche
+ * porte sur tous les joueurs, pas seulement sur l'effectif des deux équipes :
+ * un remplaçant ou un joueur non encore rostered doit voir ses stats sur sa
+ * fiche, sinon elles restent orphelines pour toujours.
+ */
+async function playerIdsByPuuid(puuids: readonly string[]): Promise<Map<string, string>> {
+  const wanted = [...new Set(puuids.filter((p) => p.length > 0))];
+  if (wanted.length === 0) return new Map();
+  const rows = await db.player.findMany({
+    where: { puuid: { in: wanted } },
+    select: { id: true, puuid: true },
+  });
+  return indexPlayerIdsByPuuid(rows);
 }
 
 async function setStatus(matchId: string, status: string) {
@@ -87,7 +104,6 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
   const known = await knownPlayers(match.teamAId, match.teamBId);
   const expected = new Set(known.map((k) => k.puuid));
   const puuidToSide = new Map<string, Side>(known.map((k) => [k.puuid, k.side]));
-  const playerIdByPuuid = new Map<string, string>(known.map((k) => [k.puuid, k.playerId]));
   if (expected.size < MATCH_THRESHOLD) {
     await setStatus(match.id, "NOT_FOUND");
     return "NOT_FOUND";
@@ -111,6 +127,10 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
     await setStatus(match.id, "NOT_FOUND");
     return "NOT_FOUND";
   }
+
+  const playerIdByPuuid = await playerIdsByPuuid(
+    series.flatMap((cm) => cm.players.map((p) => p.puuid))
+  );
 
   let mapsA = 0;
   let mapsB = 0;
@@ -177,7 +197,6 @@ export async function importMatchMapFromRiotId(
   if (already) return "DUPLICATE";
 
   const known = await knownPlayers(match.teamAId, match.teamBId);
-  const playerIdByPuuid = new Map<string, string>(known.map((k) => [k.puuid, k.playerId]));
 
   let cm: CustomMatch;
   try {
@@ -187,6 +206,7 @@ export async function importMatchMapFromRiotId(
     return "API_ERROR";
   }
 
+  const playerIdByPuuid = await playerIdsByPuuid(cm.players.map((p) => p.puuid));
   const { sideOfTeam, roundsA, roundsB } =
     input.campOfTeamA === "AUTO"
       ? assignSides(cm, new Map(known.map((k) => [k.puuid, k.side])))
