@@ -53,9 +53,13 @@ src/lib/og/
   size.ts      constantes size / contentType / alt, réexportées par chaque route
   fonts.ts     lecture des .ttf depuis assets/fonts/, mémoïsée par processus
   image.ts     lecture d'un upload → PNG en data URI (sharp), null si absent
+  labels.ts    formatage pur : dates, scores, bilans, badges, monogrammes
   fields.tsx   briques de contenu : titre, ligne de méta, bloc de chiffres
   frame.tsx    le cadre commun ; prend un badge et des enfants
 ```
+
+Le formatage est séparé du JSX (`labels.ts` / `fields.tsx`) pour que toute la
+logique testable vive dans un module sans rendu.
 
 Chaque `opengraph-image.tsx` fait 15 à 25 lignes : il charge sa donnée, la mappe
 sur les briques, rend le cadre. Toute la mise en forme vit dans `src/lib/og/` ;
@@ -146,8 +150,14 @@ Satori n'accepte que `ttf`, `otf` et `woff`, et ne voit ni les polices
 `next/font/google` ni le CSS du site. Deux fichiers TTF sous-ensemblés au latin
 sont versionnés dans `assets/fonts/` :
 
-- Bricolage Grotesque ExtraBold — titres, cohérent avec la police d'affichage du site.
-- Geist Mono Medium — badges, chiffres, pied de page.
+- Bricolage Grotesque ExtraBold — titres, cohérent avec la police d'affichage du site. 81 Ko.
+- Geist Mono Medium — badges, chiffres, pied de page. 70 Ko.
+
+Soit 151 Ko à deux, largement sous le budget de 500 Ko. Les fichiers viennent de
+l'API CSS de Google Fonts interrogée avec un agent utilisateur ancien ; le
+`User-Agent` détermine le format servi, et il faut viser un navigateur assez
+vieux pour recevoir du TTF mais pas au point de recevoir de l'EOT, que Satori ne
+décode pas. La commande exacte est consignée dans `assets/fonts/README.md`.
 
 `fonts.ts` les lit avec `readFile(join(process.cwd(), "assets/fonts", …))` et
 mémoïse le résultat au niveau du module, pour ne pas relire le disque à chaque
@@ -168,8 +178,7 @@ aperçu, là où l'image de marque aurait fait l'affaire.
 
 ## Tests
 
-`tests/unit/og.test.ts` couvre les fonctions pures de `src/lib/og/fields.tsx` et
-`src/lib/og/image.ts` :
+`tests/unit/og.test.ts` couvre `src/lib/og/labels.ts` et `src/lib/og/image.ts` :
 
 - formatage de la plage de dates d'un tournoi (une date, deux dates, aucune) ;
 - `12/16 équipes` et `12 équipes` quand `maxTeams` est nul ;
@@ -184,10 +193,9 @@ vérifiées à l'œil, image par image, avant livraison.
 
 ## Risques
 
-**Budget de 500 Ko par route, polices comprises.** Bricolage Grotesque en TTF
-complet est lourd. Les fichiers sont sous-ensemblés au latin et leur poids est
-vérifié après le build. Si le budget déborde malgré tout, la mono est abandonnée
-et les chiffres passent en Bricolage.
+**Budget de 500 Ko par route, polices comprises.** Levé à la conception : les
+deux TTF sous-ensemblés au latin pèsent 151 Ko à eux deux. Le poids reste à
+revérifier au build, mais la marge est confortable.
 
 **Fraîcheur des aperçus.** Discord et X mettent l'image en cache par URL. L'URL ne
 changeant pas quand la donnée change, un lien partagé pendant un match gardera son
