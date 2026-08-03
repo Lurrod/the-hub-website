@@ -6,7 +6,12 @@ import { db } from "@/lib/db";
 import { assertCanManageTournament } from "@/lib/server-auth";
 import { logger, describeError } from "@/lib/logger";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
-import { matchInputSchema, matchMapSchema } from "@/lib/validation/match";
+import {
+  matchInputSchema,
+  matchMapImportSchema,
+  matchMapSchema,
+  type MatchMapImportInput,
+} from "@/lib/validation/match";
 import {
   createGroup,
   deleteGroup,
@@ -18,7 +23,11 @@ import {
   removeMatchMap,
   getMatch,
 } from "@/lib/data/matches";
-import { fetchAndStoreMatchStats } from "@/lib/match-stats";
+import {
+  fetchAndStoreMatchStats,
+  importMatchMapFromRiotId,
+  type ManualImportResult,
+} from "@/lib/match-stats";
 
 async function assertMatchInTournament(matchId: string, tournamentId: string) {
   const match = await getMatch(matchId);
@@ -140,6 +149,53 @@ export async function addMatchMapAction(tournamentId: string, matchId: string, f
   await addMatchMap(matchId, data);
   revalidatePath(`/matchs/${matchId}`);
   revalidatePath(`/tournois/${tournamentId}/gestion/matchs/${matchId}`);
+}
+
+/** Code de retour d'URL pour chaque issue d'un import manuel. */
+const IMPORT_FLASH: Record<ManualImportResult, string> = {
+  IMPORTED: "ok=map-imported",
+  DUPLICATE: "error=riotmatchduplicate",
+  NOT_FOUND: "error=riotmatchnotfound",
+  RATE_LIMITED: "error=ratelimited",
+  API_ERROR: "error=riotapi",
+};
+
+/**
+ * Rattrapage manuel : l'admin colle l'identifiant d'une partie Riot que la
+ * recherche automatique n'a pas su retrouver, et la map est importée avec son
+ * scoreboard.
+ */
+export async function importMatchMapAction(
+  tournamentId: string,
+  matchId: string,
+  formData: FormData
+) {
+  await assertCanManageTournament(tournamentId);
+  await assertMatchInTournament(matchId, tournamentId);
+  const editBase = `/tournois/${tournamentId}/gestion/matchs/${matchId}`;
+
+  let data: MatchMapImportInput;
+  try {
+    data = matchMapImportSchema.parse({
+      riotMatchId: formData.get("riotMatchId"),
+      campOfTeamA: formData.get("campOfTeamA") || "AUTO",
+    });
+  } catch {
+    redirect(`${editBase}?error=riotmatchformat`);
+  }
+
+  let result: ManualImportResult;
+  try {
+    result = await importMatchMapFromRiotId(matchId, data);
+  } catch (e) {
+    logger.error("match.stats.manual_import_failed", { matchId, ...describeError(e) });
+    redirect(`${editBase}?error=riotapi`);
+  }
+
+  revalidatePath(`/matchs/${matchId}`);
+  revalidatePath(editBase);
+  revalidateCompetition(tournamentId);
+  redirect(`${editBase}?${IMPORT_FLASH[result]}`);
 }
 
 export async function removeMatchMapAction(tournamentId: string, matchId: string, mapId: string) {

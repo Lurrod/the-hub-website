@@ -108,6 +108,38 @@ export async function getPlayerCustomMatches(
   return list.map(mapRawCustomMatch);
 }
 
+/**
+ * Une partie précise, par son identifiant Riot. Sert au rattrapage manuel :
+ * quand la recherche par historique ne trouve rien, un admin colle l'ID de la
+ * partie et on va la chercher directement.
+ */
+export async function getCustomMatchById(region: string, matchId: string): Promise<CustomMatch> {
+  const key = process.env.HENRIKDEV_API_KEY;
+  if (!key) throw new RiotIdError("API_ERROR");
+
+  const url = `${BASE}/valorant/v4/match/${encodeURIComponent(region)}/${encodeURIComponent(matchId)}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { Authorization: key }, signal: controller.signal });
+  } catch {
+    throw new RiotIdError("API_ERROR");
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (res.status === 404) throw new RiotIdError("NOT_FOUND");
+  if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
+  if (!res.ok) throw new RiotIdError("API_ERROR");
+
+  const json = (await res.json().catch(() => null)) as { data?: unknown } | null;
+  // L'endpoint renvoie un objet, mais on tolère la forme tableau des listes :
+  // les deux enveloppes coexistent selon les versions de l'API.
+  const raw = Array.isArray(json?.data) ? json.data[0] : json?.data;
+  if (!raw || typeof raw !== "object") throw new RiotIdError("NOT_FOUND");
+  return mapRawCustomMatch(raw);
+}
+
 function mapRawCustomMatch(raw: unknown): CustomMatch {
   const m = raw as {
     metadata?: {

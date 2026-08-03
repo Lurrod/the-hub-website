@@ -239,26 +239,99 @@ export function deleteMembership(id: string) {
   return db.teamMembership.delete({ where: { id } });
 }
 
-/** Enregistre le compte Riot vérifié sur un joueur. */
-export function setPlayerRiotAccount(playerId: string, account: RiotAccount) {
-  return db.player.update({
-    where: { id: playerId },
-    data: {
-      riotName: account.name,
-      riotTag: account.tag,
-      puuid: account.puuid,
-      region: account.region,
-    },
+/**
+ * Enregistre le compte Riot vérifié sur un joueur, et recale les scoreboards
+ * déjà en base sur ce puuid.
+ *
+ * Le rattachement d'une ligne de scoreboard à une fiche se fait à l'import, par
+ * puuid. Sans ce rattrapage, lier un Riot ID *après* avoir importé un tournoi
+ * laisserait ces stats orphelines pour toujours : toutes les lectures côté
+ * joueur filtrent sur `playerId`.
+ */
+export async function setPlayerRiotAccount(playerId: string, account: RiotAccount) {
+  const [player] = await db.$transaction([
+    db.player.update({
+      where: { id: playerId },
+      data: {
+        riotName: account.name,
+        riotTag: account.tag,
+        puuid: account.puuid,
+        region: account.region,
+      },
+    }),
+    // Les parties de ce puuid qui n'étaient rattachées à personne lui reviennent.
+    db.playerGameStat.updateMany({
+      where: { puuid: account.puuid, playerId: null },
+      data: { playerId },
+    }),
+    // Symétrique : un Riot ID corrigé ne doit pas laisser sur la fiche les
+    // parties d'un autre compte, rattachées sur la foi de l'ancien puuid.
+    db.playerGameStat.updateMany({
+      where: { playerId, NOT: { puuid: account.puuid } },
+      data: { playerId: null },
+    }),
+  ]);
+  return player;
+}
+
+/** Fiche portant ce puuid, autre que celle indiquée. `null` si personne. */
+export function findPlayerByPuuid(
+  puuid: string,
+  excludePlayerId?: string
+): Promise<{ id: string; userId: string | null } | null> {
+  return db.player.findFirst({
+    where: { puuid, ...(excludePlayerId ? { NOT: { id: excludePlayerId } } : {}) },
+    select: { id: true, userId: true },
   });
 }
 
 /** True si ce puuid est déjà pris par un AUTRE joueur. */
 export async function isPuuidTakenByOther(puuid: string, excludePlayerId?: string): Promise<boolean> {
-  const clash = await db.player.findFirst({
-    where: { puuid, ...(excludePlayerId ? { NOT: { id: excludePlayerId } } : {}) },
-    select: { id: true },
+  return (await findPlayerByPuuid(puuid, excludePlayerId)) !== null;
+}
+
+/**
+ * Donne à un compte une fiche existante restée sans propriétaire, puis
+ * supprime la fiche vide créée à la connexion.
+ *
+ * La fiche revendiquée est conservée telle quelle : c'est elle qui porte les
+ * scoreboards et les adhésions d'équipe des tournois archivés. Seul le profil
+ * que l'utilisateur vient de saisir la recouvre — c'est le sien.
+ */
+export async function claimPlayerFiche(claimedId: string, temporaryId: string): Promise<void> {
+  const temp = await db.player.findUnique({
+    where: { id: temporaryId },
+    select: {
+      userId: true, pseudo: true, realName: true, nationality: true, photo: true,
+      socials: true, valorantRole: true, birthdate: true, lft: true, lftSince: true,
+    },
   });
-  return clash !== null;
+  if (!temp?.userId) throw new Error("CLAIM_NO_USER");
+
+  await db.$transaction([
+    // Par sécurité : en pratique la fiche temporaire n'a ni adhésion ni stat,
+    // l'inscription étant bloquante avant tout le reste. Mais les déplacer
+    // vaut mieux que de les perdre dans la suppression.
+    db.teamMembership.updateMany({ where: { playerId: temporaryId }, data: { playerId: claimedId } }),
+    db.playerGameStat.updateMany({ where: { playerId: temporaryId }, data: { playerId: claimedId } }),
+    // Le `userId` est unique : il faut le libérer avant de le poser ailleurs.
+    db.player.delete({ where: { id: temporaryId } }),
+    db.player.update({
+      where: { id: claimedId },
+      data: {
+        userId: temp.userId,
+        pseudo: temp.pseudo,
+        realName: temp.realName,
+        nationality: temp.nationality,
+        photo: temp.photo,
+        socials: temp.socials ?? undefined,
+        valorantRole: temp.valorantRole,
+        birthdate: temp.birthdate,
+        lft: temp.lft,
+        lftSince: temp.lftSince,
+      },
+    }),
+  ]);
 }
 
 /** Fiche Player liée à un compte user (ou null). */

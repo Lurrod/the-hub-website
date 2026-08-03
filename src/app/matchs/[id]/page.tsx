@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMatch } from "@/lib/data/matches";
 import { MATCH_STAGE_LABELS } from "@/lib/constants";
+import { hasRiotStats } from "@/lib/match-stats-core";
 import MatchScoreboard, { type ScoreboardMap, type RoundEntry } from "@/components/match-scoreboard";
 
 import { matchTitle } from "@/lib/data/titles";
@@ -27,7 +28,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
   const hasScoreboard =
-    match.statsStatus === "MATCHED" && match.maps.some((m) => m.stats.length > 0);
+    hasRiotStats(match.statsStatus) && match.maps.some((m) => m.stats.length > 0);
   const scoreboardMaps: ScoreboardMap[] = match.maps.map((m) => ({
     id: m.id,
     mapName: m.mapName,

@@ -8,6 +8,7 @@ import { VALORANT_MAPS, STAGES_BY_FORMAT } from "@/lib/constants";
 import {
   updateMatchAction,
   addMatchMapAction,
+  importMatchMapAction,
   removeMatchMapAction,
 } from "@/app/admin/actions/matches";
 
@@ -51,6 +52,7 @@ export default async function EditMatchPage({
 
   const updateWith = updateMatchAction.bind(null, id, matchId);
   const addMapWith = addMatchMapAction.bind(null, id, matchId);
+  const importMapWith = importMatchMapAction.bind(null, id, matchId);
   const input =
     "rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
 
@@ -60,15 +62,16 @@ export default async function EditMatchPage({
         Éditer le match - {match.teamA.name} vs {match.teamB.name}
       </h1>
 
-      {match.statsStatus === "MATCHED" ? (
+      {match.statsStatus === "MATCHED" || match.statsStatus === "MANUAL" ? (
         <p className="mb-4 text-xs text-[var(--success)]">
-          Stats récupérées automatiquement depuis Riot
-          {match.statsFetchedAt ? ` (${new Date(match.statsFetchedAt).toLocaleString("fr-FR")})` : ""}.
+          Stats récupérées depuis Riot
+          {match.statsStatus === "MANUAL" ? " (import manuel)" : " (recherche automatique)"}
+          {match.statsFetchedAt ? ` le ${new Date(match.statsFetchedAt).toLocaleString("fr-FR")}` : ""}.
         </p>
       ) : match.statsStatus === "NOT_FOUND" ? (
         <p className="mb-4 text-xs text-[var(--text-muted)]">
           Aucune partie custom correspondante trouvée. Ré-enregistre le match une fois la partie
-          disponible dans l&apos;historique Riot pour réessayer.
+          disponible dans l&apos;historique Riot, ou importe-la plus bas par son identifiant.
         </p>
       ) : null}
 
@@ -137,6 +140,36 @@ export default async function EditMatchPage({
             Ajouter la map
           </button>
         </form>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-1 text-lg font-semibold text-white">Importer une map depuis Riot</h2>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">
+          À utiliser quand la recherche automatique ne trouve pas la partie. L&apos;identifiant se
+          lit dans l&apos;URL de la partie sur un site de tracking, ou dans l&apos;historique Riot.
+          La map s&apos;ajoute à la suite des autres et le score du match est recalculé.
+        </p>
+
+        <form action={importMapWith} className="flex flex-wrap items-end gap-2">
+          <input
+            name="riotMatchId"
+            placeholder="00000000-0000-0000-0000-000000000000"
+            required
+            className={`${input} min-w-72 flex-1 font-mono`}
+          />
+          <select name="campOfTeamA" defaultValue="AUTO" className={input} aria-label="Camp Riot de l'équipe A">
+            <option value="AUTO">Déduire le camp</option>
+            <option value="Blue">{match.teamA.name} était Blue</option>
+            <option value="Red">{match.teamA.name} était Red</option>
+          </select>
+          <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white">
+            Importer
+          </button>
+        </form>
+        <p className="mt-2 text-xs text-[var(--text-muted)]">
+          « Déduire le camp » se base sur les joueurs dont le Riot ID est lié. Sans joueur lié,
+          choisis le camp à la main, sinon les deux équipes risquent d&apos;être inversées.
+        </p>
       </section>
     </main>
   );
