@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import sharp from "sharp";
 import { resolveUploadPath } from "@/lib/images";
+import { logger, describeError } from "@/lib/logger";
 
 const KEY_PREFIX = "/api/images/";
 
@@ -32,9 +33,11 @@ export async function uploadAsPngDataUri(
       .png()
       .toBuffer();
     return `data:image/png;base64,${png.toString("base64")}`;
-  } catch {
+  } catch (e) {
     // Un logo manquant ou corrompu ne doit jamais priver la page de sa carte
-    // de partage : le monogramme prend le relais.
+    // de partage : le monogramme prend le relais. On trace tout de même, car
+    // la carte reste un 200 valide — sans cette ligne, l'incident est muet.
+    logger.warn("og.image.unreadable", { key, ...describeError(e) });
     return null;
   }
 }
