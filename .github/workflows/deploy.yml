@@ -49,7 +49,14 @@ jobs:
           cp -r .next/standalone/. release/
           mkdir -p release/.next
           cp -r .next/static release/.next/static
-          cp -r public release/public
+          # `public/.` et non `public` : le traçage de fichiers de Next place
+          # dans le standalone les fichiers de `public/` lus par le serveur (le
+          # logo des images de partage). `release/public` existe donc déjà, et
+          # `cp -r public release/public` y imbriquerait un second `public/` au
+          # lieu d'en remplir le contenu — tout le reste de `public/` devenait
+          # alors introuvable en production.
+          mkdir -p release/public
+          cp -r public/. release/public/
           # Migrations + schéma : `prisma migrate deploy` tourne sur le serveur.
           cp -r prisma release/prisma
           cp ecosystem.config.cjs release/
