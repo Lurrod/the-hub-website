@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MATCH_STAGES, MATCH_STATUSES, BEST_OF_OPTIONS } from "@/lib/constants";
+import { RIOT_CAMPS } from "@/lib/match-stats-core";
 
 const optionalDate = z
   .string()
@@ -46,3 +47,19 @@ export const matchMapSchema = z.object({
 });
 
 export type MatchMapInput = z.infer<typeof matchMapSchema>;
+
+/**
+ * Import manuel d'une map par son identifiant de partie Riot, quand la
+ * recherche automatique ne trouve rien. `campOfTeamA` laisse l'admin dire quel
+ * camp Riot est l'équipe A ; « AUTO » retombe sur la déduction par les puuid.
+ */
+// Forme d'un identifiant de partie, sans la contrainte de version/variante de
+// `z.uuid()` : c'est un identifiant opaque côté Riot, pas un UUID à valider.
+const RIOT_MATCH_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const matchMapImportSchema = z.object({
+  riotMatchId: z.string().trim().regex(RIOT_MATCH_ID, "Identifiant de partie invalide"),
+  campOfTeamA: z.enum(["AUTO", ...RIOT_CAMPS]).default("AUTO"),
+});
+
+export type MatchMapImportInput = z.infer<typeof matchMapImportSchema>;

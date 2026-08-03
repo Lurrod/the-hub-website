@@ -1,6 +1,18 @@
 import { db } from "@/lib/db";
-import { getPlayerCustomMatches, type CustomMatch } from "@/lib/henrikdev";
-import { assignSides, computeDerivedStats, selectSeries, type Side } from "@/lib/match-stats-core";
+import {
+  getCustomMatchById,
+  getPlayerCustomMatches,
+  RiotIdError,
+  type CustomMatch,
+} from "@/lib/henrikdev";
+import {
+  assignSides,
+  assignSidesFromCamp,
+  computeDerivedStats,
+  selectSeries,
+  type Side,
+} from "@/lib/match-stats-core";
+import type { MatchMapImportInput } from "@/lib/validation/match";
 
 const MATCH_THRESHOLD = 8;
 const MAX_PLAYER_QUERIES = 4;
@@ -30,6 +42,35 @@ async function knownPlayers(teamAId: string, teamBId: string): Promise<Known[]> 
 
 async function setStatus(matchId: string, status: string) {
   await db.match.update({ where: { id: matchId }, data: { statsStatus: status } });
+}
+
+/** Lignes de scoreboard d'une partie, prêtes pour un `createMany`. */
+function gameStatRows(
+  cm: CustomMatch,
+  matchMapId: string,
+  sideOfTeam: Record<string, Side>,
+  playerIdByPuuid: Map<string, string>,
+  rounds: number
+) {
+  return cm.players.map((p) => {
+    const d = computeDerivedStats(p, rounds);
+    return {
+      matchMapId,
+      playerId: playerIdByPuuid.get(p.puuid) ?? null,
+      riotName: p.name,
+      riotTag: p.tag,
+      puuid: p.puuid || null,
+      teamSide: sideOfTeam[p.teamId] ?? "A",
+      agent: p.agent,
+      kills: p.kills,
+      deaths: p.deaths,
+      assists: p.assists,
+      acs: d.acs,
+      adr: d.adr,
+      hsPct: d.hsPct,
+      firstKills: p.firstKills,
+    };
+  });
 }
 
 /**
@@ -89,18 +130,7 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
         },
       });
       await tx.playerGameStat.createMany({
-        data: cm.players.map((p) => {
-          const rounds = roundsA + roundsB;
-          const d = computeDerivedStats(p, rounds);
-          return {
-            matchMapId: created.id,
-            playerId: playerIdByPuuid.get(p.puuid) ?? null,
-            riotName: p.name, riotTag: p.tag, puuid: p.puuid || null,
-            teamSide: sideOfTeam[p.teamId] ?? "A",
-            agent: p.agent, kills: p.kills, deaths: p.deaths, assists: p.assists,
-            acs: d.acs, adr: d.adr, hsPct: d.hsPct, firstKills: p.firstKills,
-          };
-        }),
+        data: gameStatRows(cm, created.id, sideOfTeam, playerIdByPuuid, roundsA + roundsB),
       });
     }
     const winnerId = mapsA > mapsB ? match.teamAId : mapsB > mapsA ? match.teamBId : null;
@@ -110,4 +140,100 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
     });
   });
   return "MATCHED";
+}
+
+export type ManualImportResult =
+  | "IMPORTED"
+  | "DUPLICATE"
+  | "NOT_FOUND"
+  | "RATE_LIMITED"
+  | "API_ERROR";
+
+/** Région à interroger : celle des joueurs liés, `eu` à défaut. */
+function pickRegion(known: Known[]): string {
+  return known[0]?.region ?? "eu";
+}
+
+/**
+ * Importe une map à partir de son identifiant de partie Riot, saisi par un
+ * admin quand la recherche automatique n'a rien trouvé. La map s'ajoute à la
+ * suite de celles déjà présentes, puis le score du match est recalculé sur
+ * l'ensemble des maps. Idempotent : un identifiant déjà importé est refusé.
+ */
+export async function importMatchMapFromRiotId(
+  matchId: string,
+  input: MatchMapImportInput
+): Promise<ManualImportResult> {
+  const match = await db.match.findUnique({
+    where: { id: matchId },
+    select: { id: true, teamAId: true, teamBId: true },
+  });
+  if (!match) return "NOT_FOUND";
+
+  const already = await db.matchMap.findUnique({
+    where: { riotMatchId: input.riotMatchId },
+    select: { id: true },
+  });
+  if (already) return "DUPLICATE";
+
+  const known = await knownPlayers(match.teamAId, match.teamBId);
+  const playerIdByPuuid = new Map<string, string>(known.map((k) => [k.puuid, k.playerId]));
+
+  let cm: CustomMatch;
+  try {
+    cm = await getCustomMatchById(pickRegion(known), input.riotMatchId);
+  } catch (e) {
+    if (e instanceof RiotIdError && e.code !== "TAKEN") return e.code;
+    return "API_ERROR";
+  }
+
+  const { sideOfTeam, roundsA, roundsB } =
+    input.campOfTeamA === "AUTO"
+      ? assignSides(cm, new Map(known.map((k) => [k.puuid, k.side])))
+      : assignSidesFromCamp(cm, input.campOfTeamA);
+
+  await db.$transaction(async (tx) => {
+    const order = await tx.matchMap.count({ where: { matchId: match.id } });
+    const created = await tx.matchMap.create({
+      data: {
+        matchId: match.id,
+        mapName: cm.map || "?",
+        scoreA: roundsA,
+        scoreB: roundsB,
+        order,
+        riotMatchId: cm.matchId || input.riotMatchId,
+        startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
+        durationSec: cm.durationSec,
+      },
+    });
+    await tx.playerGameStat.createMany({
+      data: gameStatRows(cm, created.id, sideOfTeam, playerIdByPuuid, roundsA + roundsB),
+    });
+
+    // Le score du match se relit sur toutes les maps, pas seulement celle qu'on
+    // vient d'ajouter : l'import est incrémental et peut compléter une série
+    // déjà partiellement saisie à la main.
+    const maps = await tx.matchMap.findMany({
+      where: { matchId: match.id },
+      select: { scoreA: true, scoreB: true },
+    });
+    let mapsA = 0;
+    let mapsB = 0;
+    for (const m of maps) {
+      if (m.scoreA > m.scoreB) mapsA += 1;
+      else if (m.scoreB > m.scoreA) mapsB += 1;
+    }
+    await tx.match.update({
+      where: { id: match.id },
+      data: {
+        scoreA: mapsA,
+        scoreB: mapsB,
+        winnerId: mapsA > mapsB ? match.teamAId : mapsB > mapsA ? match.teamBId : null,
+        statsStatus: "MANUAL",
+        statsFetchedAt: new Date(),
+      },
+    });
+  });
+
+  return "IMPORTED";
 }

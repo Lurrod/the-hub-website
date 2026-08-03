@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { matchInputSchema, matchMapSchema } from "@/lib/validation/match";
+import { matchInputSchema, matchMapImportSchema, matchMapSchema } from "@/lib/validation/match";
 
 describe("matchInputSchema", () => {
   it("accepte un match de poule valide", () => {
@@ -66,5 +66,26 @@ describe("matchMapSchema", () => {
 
   it("refuse un nom de map vide", () => {
     expect(() => matchMapSchema.parse({ mapName: "", scoreA: "13", scoreB: "10" })).toThrow();
+  });
+});
+
+describe("matchMapImportSchema", () => {
+  const uuid = "0e3a1f2b-1111-2222-3333-444455556666";
+
+  it("accepte un identifiant de partie Riot et un camp explicite", () => {
+    const r = matchMapImportSchema.parse({ riotMatchId: uuid, campOfTeamA: "Blue" });
+    expect(r).toEqual({ riotMatchId: uuid, campOfTeamA: "Blue" });
+  });
+  it("déduit le camp par défaut", () => {
+    expect(matchMapImportSchema.parse({ riotMatchId: uuid }).campOfTeamA).toBe("AUTO");
+  });
+  it("tolère les espaces autour de l'identifiant collé", () => {
+    expect(matchMapImportSchema.parse({ riotMatchId: `  ${uuid} ` }).riotMatchId).toBe(uuid);
+  });
+  it("refuse un identifiant qui n'est pas un UUID", () => {
+    expect(() => matchMapImportSchema.parse({ riotMatchId: "12345" })).toThrow();
+  });
+  it("refuse un camp inconnu", () => {
+    expect(() => matchMapImportSchema.parse({ riotMatchId: uuid, campOfTeamA: "Green" })).toThrow();
   });
 });

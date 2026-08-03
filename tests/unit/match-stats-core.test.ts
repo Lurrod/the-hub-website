@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  countExpected, assignSides, computeDerivedStats, selectSeries,
+  countExpected, assignSides, assignSidesFromCamp, computeDerivedStats, hasRiotStats, selectSeries,
 } from "@/lib/match-stats-core";
 import type { CustomMatch, CustomMatchPlayer } from "@/lib/henrikdev";
 
@@ -65,5 +65,39 @@ describe("selectSeries", () => {
     const m3 = match("m3", "2026-07-27T21:00:00Z", red, ["f", "x", "y", "z", "w"]);
     const out = selectSeries([m1, m2, m3], expected, 8, 3);
     expect(out.map((m) => m.matchId)).toEqual(["m2", "m1"]);
+  });
+});
+
+describe("assignSidesFromCamp", () => {
+  it("attribue A au camp choisi par l'admin", () => {
+    const m = match("m", "t", red, blue);
+    const out = assignSidesFromCamp(m, "Blue");
+    expect(out.sideOfTeam).toEqual({ Red: "B", Blue: "A" });
+    expect(out.roundsA).toBe(9);
+    expect(out.roundsB).toBe(13);
+  });
+  it("inverse quand l'admin dit que l'équipe A est Red", () => {
+    const out = assignSidesFromCamp(match("m", "t", red, blue), "Red");
+    expect(out.sideOfTeam).toEqual({ Red: "A", Blue: "B" });
+    expect(out.roundsA).toBe(13);
+    expect(out.roundsB).toBe(9);
+  });
+  it("ignore la casse du camp saisi", () => {
+    expect(assignSidesFromCamp(match("m", "t", red, blue), "blue").roundsA).toBe(9);
+  });
+  it("ne dépend pas des puuid liés", () => {
+    const m = { ...match("m", "t", red, blue), players: [] };
+    expect(assignSidesFromCamp(m, "Red").roundsA).toBe(13);
+  });
+});
+
+describe("hasRiotStats", () => {
+  it("vrai pour une série trouvée automatiquement ou importée à la main", () => {
+    expect(hasRiotStats("MATCHED")).toBe(true);
+    expect(hasRiotStats("MANUAL")).toBe(true);
+  });
+  it("faux sans récupération aboutie", () => {
+    expect(hasRiotStats("NOT_FOUND")).toBe(false);
+    expect(hasRiotStats(null)).toBe(false);
   });
 });

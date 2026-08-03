@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { getPlayerCustomMatches } from "@/lib/henrikdev";
+import { getCustomMatchById, getPlayerCustomMatches } from "@/lib/henrikdev";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -46,5 +46,43 @@ describe("getPlayerCustomMatches", () => {
     vi.stubEnv("HENRIKDEV_API_KEY", "k");
     vi.stubGlobal("fetch", mockFetch(429, {}));
     await expect(getPlayerCustomMatches("eu", "x", "yyy")).rejects.toMatchObject({ code: "RATE_LIMITED" });
+  });
+});
+
+describe("getCustomMatchById", () => {
+  it("mappe une partie unique renvoyée en objet", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    const fetchMock = mockFetch(200, { data: rawMatch });
+    vi.stubGlobal("fetch", fetchMock);
+    const out = await getCustomMatchById("eu", "0e3a1f2b-1111-2222-3333-444455556666");
+    expect(out).toMatchObject({ matchId: "m1", map: "Ascent", teamRounds: { Red: 13, Blue: 9 } });
+    expect(out.players).toHaveLength(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain(
+      "/valorant/v4/match/eu/0e3a1f2b-1111-2222-3333-444455556666"
+    );
+  });
+  it("accepte aussi une réponse enveloppée dans un tableau", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    vi.stubGlobal("fetch", mockFetch(200, { data: [rawMatch] }));
+    expect((await getCustomMatchById("eu", "m1")).matchId).toBe("m1");
+  });
+  it("404 -> NOT_FOUND", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    vi.stubGlobal("fetch", mockFetch(404, {}));
+    await expect(getCustomMatchById("eu", "m1")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+  it("data absent -> NOT_FOUND", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    vi.stubGlobal("fetch", mockFetch(200, {}));
+    await expect(getCustomMatchById("eu", "m1")).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+  it("429 -> RATE_LIMITED", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    vi.stubGlobal("fetch", mockFetch(429, {}));
+    await expect(getCustomMatchById("eu", "m1")).rejects.toMatchObject({ code: "RATE_LIMITED" });
+  });
+  it("sans clé API -> API_ERROR", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "");
+    await expect(getCustomMatchById("eu", "m1")).rejects.toMatchObject({ code: "API_ERROR" });
   });
 });

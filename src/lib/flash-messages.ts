@@ -30,6 +30,10 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
     title: "Statut LFT désactivé",
     message: "Tu n'apparais plus sur la page LFT.",
   },
+  "map-imported": {
+    title: "Map importée",
+    message: "Le scoreboard a été récupéré depuis Riot.",
+  },
   "team-registered": {
     title: "Inscription enregistrée",
     message: "Ton équipe est inscrite au tournoi.",
@@ -56,6 +60,18 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   riottaken: { title: "Riot ID déjà utilisé", message: "Ce Riot ID est déjà associé à un autre joueur." },
   ratelimited: { title: "Trop de requêtes", message: "Réessaie dans un instant." },
   riotapi: { title: "Service indisponible", message: "Vérification Riot momentanément indisponible." },
+  riotmatchformat: {
+    title: "Identifiant de partie invalide",
+    message: "Colle l'identifiant Riot complet, au format 8-4-4-4-12 caractères.",
+  },
+  riotmatchnotfound: {
+    title: "Partie introuvable",
+    message: "Riot ne connaît pas cet identifiant. Vérifie qu'il vient bien d'une partie custom.",
+  },
+  riotmatchduplicate: {
+    title: "Partie déjà importée",
+    message: "Cette partie est déjà rattachée à une map de ce match.",
+  },
   notupcoming: {
     title: "Inscriptions fermées",
     message: "Ce tournoi n'est plus en phase « À venir ».",
