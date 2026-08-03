@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { Children, Fragment, isValidElement } from "react";
 import { ImageResponse } from "next/og";
 import { ogFonts } from "@/lib/og/fonts";
 import { size } from "@/lib/og/size";
@@ -18,6 +19,21 @@ function wordmark(): Promise<string> {
 }
 
 /**
+ * Aplatit les fragments en une liste d'éléments.
+ *
+ * Satori ne connaît pas `React.Fragment` : un `<>…</>` reçu comme enfant unique
+ * n'est pas mis en page par le conteneur flex, et les blocs se superposent.
+ * Les routes peuvent donc écrire du JSX naturel, le cadre normalise.
+ */
+function flattenFragments(node: React.ReactNode): React.ReactNode[] {
+  if (Array.isArray(node)) return node.flatMap(flattenFragments);
+  if (isValidElement(node) && node.type === Fragment) {
+    return flattenFragments((node.props as { children?: React.ReactNode }).children);
+  }
+  return node === null || node === undefined || typeof node === "boolean" ? [] : [node];
+}
+
+/**
  * Cadre commun à toutes les cartes : halo, bandeau de marque, badge de type,
  * pied de page. Le contenu propre à chaque page passe par `children`.
  */
@@ -31,23 +47,12 @@ async function Frame({ badge, children }: { badge: string; children: React.React
         width: "100%",
         height: "100%",
         backgroundColor: OG.bg,
+        backgroundImage: `radial-gradient(circle at 16% 12%, ${OG.glow} 0%, rgba(237,94,41,0) 42%)`,
         padding: 56,
         position: "relative",
         fontFamily: DISPLAY,
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          position: "absolute",
-          top: -200,
-          left: -160,
-          width: 700,
-          height: 700,
-          background: `radial-gradient(circle, ${OG.glow} 0%, rgba(237,94,41,0) 70%)`,
-        }}
-      />
-
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={logo} alt="" width={48} height={48} style={{ borderRadius: 10 }} />
@@ -65,7 +70,7 @@ async function Frame({ badge, children }: { badge: string; children: React.React
           gap: 18,
         }}
       >
-        {children}
+        {Children.toArray(flattenFragments(children))}
       </div>
 
       <div style={{ fontFamily: MONO, fontSize: 24, color: OG.accent }}>{SITE_HOST}</div>
