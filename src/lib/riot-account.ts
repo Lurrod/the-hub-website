@@ -1,6 +1,6 @@
 import { parseRiotId } from "@/lib/validation/riot";
 import { verifyRiotId, RiotIdError, type RiotAccount } from "@/lib/henrikdev";
-import { isPuuidTakenByOther } from "@/lib/data/players";
+import { findPlayerByPuuid, isPuuidTakenByOther } from "@/lib/data/players";
 
 /**
  * Parse un Riot ID saisi, le vérifie via l'API, contrôle l'unicité du puuid.
@@ -16,6 +16,26 @@ export async function resolveRiotAccount(
     throw new RiotIdError("TAKEN");
   }
   return account;
+}
+
+/**
+ * Variante pour l'inscription : au lieu de refuser en bloc un puuid déjà porté,
+ * distingue les deux cas.
+ *
+ * Une fiche **sans compte rattaché** est une fiche d'archive, créée par un admin
+ * pour importer un tournoi joué hors du site : son propriétaire légitime peut la
+ * revendiquer. Une fiche **déjà rattachée à un compte** reste intouchable, sinon
+ * n'importe qui prendrait le contrôle d'un profil en saisissant son Riot ID.
+ */
+export async function resolveRiotAccountForClaim(
+  input: string,
+  currentPlayerId: string
+): Promise<{ account: RiotAccount; claimableId: string | null }> {
+  const { name, tag } = parseRiotId(input); // -> Error("RIOT_FORMAT")
+  const account = await verifyRiotId(name, tag); // -> RiotIdError
+  const other = await findPlayerByPuuid(account.puuid, currentPlayerId);
+  if (other && other.userId !== null) throw new RiotIdError("TAKEN");
+  return { account, claimableId: other?.id ?? null };
 }
 
 /** Traduit une erreur de résolution en code de flash toast. */

@@ -22,6 +22,10 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "player-saved": { title: "Joueur enregistré", message: "La fiche joueur a été mise à jour." },
   "left-team": { title: "Équipe quittée", message: "Tu as quitté ton équipe." },
   "riot-saved": { title: "Riot ID enregistré", message: "Ton compte Valorant est bien lié." },
+  "fiche-claimed": {
+    title: "Fiche récupérée",
+    message: "Tes stats et tes équipes des tournois déjà archivés sont sur ton profil.",
+  },
   "lft-on": {
     title: "Statut LFT activé",
     message: "Tu apparais maintenant sur la page LFT.",
@@ -58,6 +62,10 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   riotformat: { title: "Riot ID invalide", message: "Format attendu : Nom#Tag." },
   riotnotfound: { title: "Riot ID introuvable", message: "Ce Riot ID n'existe pas côté Riot." },
   riottaken: { title: "Riot ID déjà utilisé", message: "Ce Riot ID est déjà associé à un autre joueur." },
+  claimfailed: {
+    title: "Récupération impossible",
+    message: "Une fiche existe déjà pour ce Riot ID mais n'a pas pu t'être rattachée. Contacte un admin.",
+  },
   ratelimited: { title: "Trop de requêtes", message: "Réessaie dans un instant." },
   riotapi: { title: "Service indisponible", message: "Vérification Riot momentanément indisponible." },
   riotmatchformat: {

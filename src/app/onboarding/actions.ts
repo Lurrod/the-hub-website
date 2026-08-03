@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/server-auth";
 import {
+  claimPlayerFiche,
   getPlayerByUserId,
   setPlayerRiotAccount,
   setPlayerLft,
@@ -12,7 +13,8 @@ import {
 import { playerInputSchema } from "@/lib/validation/player";
 import { flashCodeFromError } from "@/lib/form-errors";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
-import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
+import { resolveRiotAccountForClaim, riotFlashCode } from "@/lib/riot-account";
+import { logger, describeError } from "@/lib/logger";
 
 /**
  * Inscription : profil complet + Riot ID obligatoire, en un seul formulaire.
@@ -46,12 +48,30 @@ export async function submitOnboarding(formData: FormData) {
 
   const input = String(formData.get("riotId") ?? "").trim();
   if (!input) redirect("/onboarding?error=riotformat");
+
+  let resolved: Awaited<ReturnType<typeof resolveRiotAccountForClaim>>;
   try {
-    const account = await resolveRiotAccount(input, { excludePlayerId: player.id });
-    await setPlayerRiotAccount(player.id, account);
+    resolved = await resolveRiotAccountForClaim(input, player.id);
   } catch (e) {
     redirect(`/onboarding?error=${riotFlashCode(e)}`);
   }
+
+  // Une fiche d'archive porte déjà ce Riot ID : elle revient à son propriétaire
+  // avec son historique, plutôt que de le bloquer sur « Riot ID déjà utilisé ».
+  const { account, claimableId } = resolved;
+  if (claimableId) {
+    try {
+      await claimPlayerFiche(claimableId, player.id);
+    } catch (e) {
+      logger.error("player.claim_failed", {
+        claimedId: claimableId,
+        temporaryId: player.id,
+        ...describeError(e),
+      });
+      redirect("/onboarding?error=claimfailed");
+    }
+  }
+  await setPlayerRiotAccount(claimableId ?? player.id, account);
 
   const store = await cookies();
   store.set("onboarded", "1", {
@@ -60,5 +80,5 @@ export async function submitOnboarding(formData: FormData) {
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365,
   });
-  redirect("/?ok=riot-saved");
+  redirect(`/?ok=${claimableId ? "fiche-claimed" : "riot-saved"}`);
 }
