@@ -2,8 +2,17 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { TournamentFormat, TournamentStatus } from "@/lib/constants";
 import type { TournamentInput } from "@/lib/validation/tournament";
+import { isTournamentOver, syncFinishedTournaments } from "@/lib/tournament-status";
 
-export function listTournaments(filters?: { region?: string; status?: string }) {
+/** Le statut saisi, forcé à "FINISHED" si la date de fin est déjà dépassée. */
+function effectiveStatus(data: TournamentInput): TournamentStatus {
+  const endDate = data.endDate ?? null;
+  return isTournamentOver({ endDate }) ? "FINISHED" : (data.status as TournamentStatus);
+}
+
+export async function listTournaments(filters?: { region?: string; status?: string }) {
+  await syncFinishedTournaments();
+
   return db.tournament.findMany({
     where: {
       ...(filters?.region ? { region: filters.region } : {}),
@@ -15,7 +24,9 @@ export function listTournaments(filters?: { region?: string; status?: string }) 
 }
 
 /** Tournois auxquels une équipe est (ou a été) inscrite, plus récents d'abord. */
-export function getTeamTournaments(teamId: string) {
+export async function getTeamTournaments(teamId: string) {
+  await syncFinishedTournaments();
+
   return db.tournament.findMany({
     where: { participants: { some: { teamId } } },
     include: { _count: { select: { participants: true } } },
@@ -23,7 +34,9 @@ export function getTeamTournaments(teamId: string) {
   });
 }
 
-export function getTournament(id: string) {
+export async function getTournament(id: string) {
+  await syncFinishedTournaments();
+
   return db.tournament.findUnique({
     where: { id },
     include: {
@@ -58,7 +71,7 @@ export function createTournament(data: TournamentInput, createdById: string) {
       name: data.name,
       region: data.region,
       format: data.format as TournamentFormat,
-      status: data.status as TournamentStatus,
+      status: effectiveStatus(data),
       startDate: data.startDate,
       endDate: data.endDate,
       prizePool: data.prizePool,
@@ -80,7 +93,7 @@ export function updateTournament(id: string, data: TournamentInput) {
       name: data.name,
       region: data.region,
       format: data.format as TournamentFormat,
-      status: data.status as TournamentStatus,
+      status: effectiveStatus(data),
       startDate: data.startDate ?? null,
       endDate: data.endDate ?? null,
       prizePool: data.prizePool ?? null,
