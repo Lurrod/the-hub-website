@@ -126,6 +126,10 @@ export default function TournamentForm({
             );
           })}
         </div>
+        <p className="text-xs text-[var(--text-muted)]">
+          Le format que vous cherchez n&apos;est pas dans la liste ? Contactez un administrateur
+          pour qu&apos;on l&apos;ajoute.
+        </p>
       </Section>
 
       <Section title="Configuration">
