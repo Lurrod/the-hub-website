@@ -1,0 +1,105 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { ImageResponse } from "next/og";
+import { ogFonts } from "@/lib/og/fonts";
+import { size } from "@/lib/og/size";
+import { DISPLAY, MONO, OG } from "@/lib/og/theme";
+
+const SITE_HOST = "the-hub-vrc.fr";
+
+let wordmarkCache: Promise<string> | null = null;
+
+/** `public/logo.png` en data URI. Déjà en PNG : aucune conversion nécessaire. */
+function wordmark(): Promise<string> {
+  wordmarkCache ??= readFile(path.join(process.cwd(), "public", "logo.png")).then(
+    (buf) => `data:image/png;base64,${buf.toString("base64")}`
+  );
+  return wordmarkCache;
+}
+
+/**
+ * Cadre commun à toutes les cartes : halo, bandeau de marque, badge de type,
+ * pied de page. Le contenu propre à chaque page passe par `children`.
+ */
+async function Frame({ badge, children }: { badge: string; children: React.ReactNode }) {
+  const logo = await wordmark();
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        backgroundColor: OG.bg,
+        padding: 56,
+        position: "relative",
+        fontFamily: DISPLAY,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          position: "absolute",
+          top: -200,
+          left: -160,
+          width: 700,
+          height: 700,
+          background: `radial-gradient(circle, ${OG.glow} 0%, rgba(237,94,41,0) 70%)`,
+        }}
+      />
+
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logo} alt="" width={48} height={48} style={{ borderRadius: 10 }} />
+        <div style={{ fontFamily: MONO, fontSize: 24, letterSpacing: 3, color: OG.accent }}>
+          {badge}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          justifyContent: "center",
+          gap: 18,
+        }}
+      >
+        {children}
+      </div>
+
+      <div style={{ fontFamily: MONO, fontSize: 24, color: OG.accent }}>{SITE_HOST}</div>
+    </div>
+  );
+}
+
+/**
+ * Rend une carte de partage.
+ *
+ * Toute exception retombe sur le cadre nu portant le seul badge : une erreur
+ * non rattrapée renverrait une 500 à Discord, donc *aucun* aperçu, là où
+ * l'image de marque aurait fait l'affaire.
+ *
+ * L'en-tête de cache est court parce que les cartes portent des chiffres :
+ * inutile d'ajouter notre propre cache à celui des plateformes, qui gardent
+ * déjà l'image par URL.
+ */
+export async function renderOg(
+  badge: string,
+  build: () => Promise<React.ReactNode> | React.ReactNode
+): Promise<ImageResponse> {
+  let body: React.ReactNode;
+  try {
+    body = await build();
+  } catch {
+    body = null;
+  }
+
+  return new ImageResponse(await Frame({ badge, children: body }), {
+    ...size,
+    fonts: await ogFonts(),
+    headers: {
+      "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=600",
+    },
+  });
+}
