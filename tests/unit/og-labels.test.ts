@@ -53,6 +53,15 @@ describe("teamCountLabel", () => {
   it("accorde le singulier", () => {
     expect(teamCountLabel(1, null)).toBe("1 équipe");
   });
+
+  it("accorde sur la limite, pas sur le nombre d'inscrits", () => {
+    expect(teamCountLabel(0, 16)).toBe("0/16 équipes");
+    expect(teamCountLabel(1, 16)).toBe("1/16 équipes");
+  });
+
+  it("accorde le singulier sur zéro sans limite", () => {
+    expect(teamCountLabel(0, null)).toBe("0 équipe");
+  });
 });
 
 describe("bestOfLabel", () => {

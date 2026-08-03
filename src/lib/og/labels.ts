@@ -1,5 +1,11 @@
 import type { MatchStatus, TournamentStatus } from "@/lib/constants";
 
+/*
+ * Les dates de tournoi viennent d'un `<input type="date">` : elles sont donc
+ * fixées à minuit UTC. Le fuseau est forcé à UTC au formatage, sinon un serveur
+ * situé derrière UTC affiche la veille — « 12 août » deviendrait « 11 août ».
+ */
+
 /** Jour et mois en toutes lettres, sans année : « 12 août ». */
 function dayMonth(date: Date): string {
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -37,9 +43,14 @@ export function dateRangeLabel(start: Date | null, end: Date | null): string {
   return `${fullDate(start)} – ${fullDate(end)}`;
 }
 
-/** « 12/16 équipes », ou « 12 équipes » quand le tournoi n'a pas de limite. */
+/**
+ * « 12/16 équipes », ou « 12 équipes » quand le tournoi n'a pas de limite.
+ * Dans un rapport, le nom s'accorde sur la limite et non sur le nombre
+ * d'inscrits : un tournoi encore vide affiche « 0/16 équipes ».
+ */
 export function teamCountLabel(count: number, max: number | null): string {
-  const noun = count > 1 ? "équipes" : "équipe";
+  const shown = max ?? count;
+  const noun = shown > 1 ? "équipes" : "équipe";
   return max != null ? `${count}/${max} ${noun}` : `${count} ${noun}`;
 }
 
