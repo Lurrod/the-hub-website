@@ -14,7 +14,7 @@ import { canManageTeam } from "@/lib/permissions";
 import TeamMatchGroups from "@/components/team-match-groups";
 import TournamentTabs from "@/components/tournament-tabs";
 import TournamentCard from "@/components/tournament-card";
-import MatchMiniList from "@/components/match-mini-list";
+import MatchSideColumn from "@/components/match-side-column";
 import TeamPlayerCard from "@/components/team-player-card";
 
 import { teamTitle } from "@/lib/data/titles";
@@ -97,27 +97,10 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-6 self-start">
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-              Matchs à venir
-            </h2>
-            <MatchMiniList
-              empty="Aucun match à venir."
-              matches={upcoming.map((m) => miniMatch(m, false))}
-            />
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-              Derniers résultats
-            </h2>
-            <MatchMiniList
-              empty="Aucun match joué."
-              matches={recent.map((m) => miniMatch(m, true))}
-            />
-          </section>
-        </div>
+        <MatchSideColumn
+          upcoming={upcoming.map((m) => miniMatch(m, false))}
+          recent={recent.map((m) => miniMatch(m, true))}
+        />
 
         <div className="flex flex-col gap-8">
           <section>

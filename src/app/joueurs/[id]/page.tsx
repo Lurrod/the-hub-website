@@ -8,6 +8,14 @@ import { notFound } from "next/navigation";
 import { getPlayer } from "@/lib/data/players";
 import { getPlayerMatches } from "@/lib/data/player-matches";
 import { getPlayerCareer } from "@/lib/data/player-career";
+import { getPlayerOverview } from "@/lib/data/player-overview";
+import { listTeamUpcomingMatches, listTeamRecentMatches } from "@/lib/data/matches";
+import MatchSideColumn from "@/components/match-side-column";
+import AgentIcon from "@/components/agent-icon";
+import StatTile from "@/components/charts/stat-tile";
+import BarList from "@/components/charts/bar-list";
+import Meter from "@/components/charts/meter";
+import RatingTrend from "@/components/charts/rating-trend";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
 
 import { playerTitle } from "@/lib/data/titles";
@@ -41,20 +49,171 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const player = await getPlayer(id);
   if (!player) notFound();
 
-  const [matches, career] = await Promise.all([
+  const [matches, career, overview] = await Promise.all([
     getPlayerMatches(player.id),
     getPlayerCareer(player.id),
+    getPlayerOverview(player.id),
   ]);
+
+  // La colonne de matchs suit l'équipe actuelle du joueur : un joueur n'a pas de
+  // calendrier propre, ses échéances sont celles de son équipe.
+  const teamId = player.memberships.find((m) => m.leaveDate === null)?.teamId ?? null;
+  const [upcoming, recent] = teamId
+    ? await Promise.all([listTeamUpcomingMatches(teamId), listTeamRecentMatches(teamId)])
+    : [[], []];
+  const miniMatch = (m: (typeof upcoming)[number], played: boolean) => ({
+    id: m.id,
+    date: m.date,
+    teamA: { tag: m.teamA.tag, logo: m.teamA.logo },
+    teamB: { tag: m.teamB.tag, logo: m.teamB.logo },
+    scoreA: played ? m.scoreA : undefined,
+    scoreB: played ? m.scoreB : undefined,
+  });
 
   const socials = (player.socials ?? {}) as Record<string, string | undefined>;
   const age = computeAge(player.birthdate);
   const roleIcon = roleIconUrl(player.valorantRole);
   const currentTeam = player.memberships.find((m) => m.leaveDate === null);
 
-  // --- Onglet Aperçu (vide pour le moment) ---
+  // --- Onglet Aperçu ---
+  // Colonne de matchs à gauche (comme sur une fiche équipe), chiffres clés à
+  // droite, puis les lectures visuelles en dessous.
+  const entryDuels = overview.firstKills + overview.firstDeaths;
+  const hasStats = overview.maps > 0;
+
   const apercu = (
-    <div className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
-      Bientôt disponible.
+    <div className="flex flex-col gap-10">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+        <MatchSideColumn
+          upcoming={upcoming.map((m) => miniMatch(m, false))}
+          recent={recent.map((m) => miniMatch(m, true))}
+        />
+
+        {/* self-start : sans ça les tuiles s'étirent sur la hauteur de la colonne
+            de matchs et se retrouvent à moitié vides. */}
+        <div className="grid gap-3 self-start sm:grid-cols-3">
+          <StatTile
+            label="Agent le plus joué"
+            value={overview.topAgent?.agent ?? "-"}
+            sub={
+              overview.topAgent
+                ? `${overview.topAgent.maps} carte${overview.topAgent.maps > 1 ? "s" : ""} · ${overview.topAgent.pct} % du temps de jeu`
+                : "Aucune carte jouée"
+            }
+            icon={overview.topAgent && <AgentIcon agent={overview.topAgent.agent} />}
+          />
+          <StatTile
+            label="K/D"
+            value={hasStats ? overview.kd.toFixed(2) : "-"}
+            sub={hasStats ? `${overview.kills} kills · ${overview.deaths} morts` : "Aucune carte jouée"}
+          />
+          <StatTile
+            label="Meilleure partie"
+            value={overview.bestGame ? `${overview.bestGame.kills} kills` : "-"}
+            sub={
+              overview.bestGame
+                ? `${overview.bestGame.mapName}${overview.bestGame.opponentTag ? ` vs ${overview.bestGame.opponentTag}` : ""} · ${overview.bestGame.kills}/${overview.bestGame.deaths}/${overview.bestGame.assists}`
+                : "Aucune carte jouée"
+            }
+            href={overview.bestGame ? `/matchs/${overview.bestGame.matchId}` : undefined}
+          />
+        </div>
+      </div>
+
+      {!hasStats ? (
+        <p className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
+          Aucune statistique pour l&apos;instant. Les graphiques apparaîtront dès la
+          première carte jouée avec un scoreboard importé.
+        </p>
+      ) : (
+        <>
+          <section>
+            <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+              Rating sur les {overview.trend.length} dernières cartes
+            </h2>
+            <p className="mb-4 text-xs text-[var(--text-muted)]">
+              Moyenne sur la période : {overview.avgRating.toFixed(2)}
+            </p>
+            <RatingTrend points={overview.trend} />
+          </section>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            <section>
+              <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+                Agents joués
+              </h2>
+              <p className="mb-4 text-xs text-[var(--text-muted)]">
+                Part des cartes jouées, sur {overview.maps} carte
+                {overview.maps > 1 ? "s" : ""}.
+              </p>
+              <BarList
+                max={100}
+                items={overview.agents.map((a) => ({
+                  key: a.agent,
+                  label: a.agent,
+                  value: a.pct,
+                  valueLabel: `${a.pct} %`,
+                  note: `${a.maps} c.`,
+                  icon: <AgentIcon agent={a.agent} className="h-5 w-5" />,
+                  title: `${a.agent} — ${a.maps} carte(s), ${a.pct} % du temps de jeu`,
+                }))}
+              />
+            </section>
+
+            <section>
+              <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+                Winrate par map
+              </h2>
+              <p className="mb-4 text-xs text-[var(--text-muted)]">
+                Le repère en pointillé marque 50 %.
+              </p>
+              <BarList
+                max={100}
+                reference={50}
+                referenceLabel="50 %"
+                items={overview.mapRecords.map((m) => ({
+                  key: m.mapName,
+                  label: m.mapName,
+                  value: m.winratePct,
+                  valueLabel: `${m.winratePct} %`,
+                  note: `${m.wins}/${m.maps}`,
+                  title: `${m.mapName} — ${m.wins} victoire(s) sur ${m.maps} carte(s)`,
+                }))}
+              />
+            </section>
+          </div>
+
+          <section>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+              Profil de performance
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Meter
+                label="KAST"
+                value={overview.avgKast}
+                valueLabel={`${overview.avgKast} %`}
+                sub="Rounds où il tue, assiste, survit ou est échangé."
+              />
+              <Meter
+                label="Tirs à la tête"
+                value={overview.avgHs}
+                valueLabel={`${overview.avgHs} %`}
+                sub={`ACS moyen ${overview.avgAcs}.`}
+              />
+              <Meter
+                label="Duels d'entrée gagnés"
+                value={entryDuels > 0 ? (overview.firstKills / entryDuels) * 100 : 0}
+                valueLabel={
+                  entryDuels > 0
+                    ? `${Math.round((overview.firstKills / entryDuels) * 100)} %`
+                    : "-"
+                }
+                sub={`${overview.firstKills} first kills · ${overview.firstDeaths} first deaths.`}
+              />
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 
