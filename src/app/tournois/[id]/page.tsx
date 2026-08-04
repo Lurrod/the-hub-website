@@ -228,6 +228,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       records={stats.records}
       averages={stats.averages}
       totals={stats.totals}
+      players={stats.players}
     />
   ) : (
     <div className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
