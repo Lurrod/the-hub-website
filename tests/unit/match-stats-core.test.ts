@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   countExpected, assignSides, assignSidesFromCamp, computeDerivedStats, hasRiotStats,
-  indexPlayerIdsByPuuid, selectSeries, seriesScore,
+  indexPlayerIdsByPuuid, selectSeries, seriesScore, computeImpact, computeRating, roundTimeline,
 } from "@/lib/match-stats-core";
 import type { CustomMatch, CustomMatchPlayer } from "@/lib/henrikdev";
 
@@ -9,7 +9,7 @@ function player(puuid: string, teamId: string): CustomMatchPlayer {
   return {
     puuid, name: puuid, tag: "EUW", teamId, agent: "Jett",
     kills: 0, deaths: 0, assists: 0, score: 0,
-    headshots: 0, bodyshots: 0, legshots: 0, damageMade: 0, firstKills: 0,
+    headshots: 0, bodyshots: 0, legshots: 0, damageMade: 0,
   };
 }
 function match(id: string, startedAt: string, puuidsRed: string[], puuidsBlue: string[]): CustomMatch {
@@ -17,6 +17,8 @@ function match(id: string, startedAt: string, puuidsRed: string[], puuidsBlue: s
     matchId: id, map: "Ascent", startedAt, durationSec: 2400,
     teamRounds: { Red: 13, Blue: 9 },
     players: [...puuidsRed.map((p) => player(p, "Red")), ...puuidsBlue.map((p) => player(p, "Blue"))],
+    rounds: [],
+    kills: [],
   };
 }
 
@@ -143,5 +145,80 @@ describe("seriesScore", () => {
   it("recalcule bien après retrait d'une map d'une série 1-1", () => {
     const maps = [{ scoreA: 13, scoreB: 9 }, { scoreA: 7, scoreB: 13 }];
     expect(seriesScore(maps.slice(0, 1))).toEqual({ scoreA: 1, scoreB: 0 });
+  });
+});
+
+function kill(round: number, t: number, killer: string, victim: string, assists: string[] = []) {
+  return { round, timeInRoundMs: t, killerPuuid: killer, victimPuuid: victim, assistantPuuids: assists };
+}
+
+describe("computeImpact", () => {
+  it("attribue first kill et first death au premier duel du round", () => {
+    const i = computeImpact([kill(0, 8000, "a", "f"), kill(0, 3000, "b", "g")], ["a", "b", "f", "g"], 1);
+    expect(i.get("b")!.firstKills).toBe(1);
+    expect(i.get("g")!.firstDeaths).toBe(1);
+    expect(i.get("a")!.firstKills).toBe(0);
+    expect(i.get("f")!.firstDeaths).toBe(0);
+  });
+
+  it("compte le round pour qui tue, assiste ou survit", () => {
+    const i = computeImpact([kill(0, 5000, "a", "f", ["b"])], ["a", "b", "c", "f"], 1);
+    expect(i.get("a")!.kastRounds).toBe(1); // kill
+    expect(i.get("b")!.kastRounds).toBe(1); // assist
+    expect(i.get("c")!.kastRounds).toBe(1); // survie
+    expect(i.get("f")!.kastRounds).toBe(0); // mort, sans trade
+  });
+
+  it("compte le round pour un joueur vengé dans la fenêtre de trade", () => {
+    const i = computeImpact([kill(0, 5000, "a", "f"), kill(0, 7500, "g", "a")], ["a", "f", "g"], 1);
+    expect(i.get("f")!.kastRounds).toBe(1); // tué à 5 s, vengé à 7.5 s
+  });
+
+  it("ne compte pas un joueur vengé trop tard", () => {
+    const i = computeImpact([kill(0, 5000, "a", "f"), kill(0, 9000, "g", "a")], ["a", "f", "g"], 1);
+    expect(i.get("f")!.kastRounds).toBe(0); // 4 s > fenêtre de 3 s
+  });
+
+  it("ignore les duels de joueurs hors partie et le cas sans round", () => {
+    const i = computeImpact([kill(0, 1000, "inconnu", "a")], ["a"], 0);
+    expect(i.get("a")!.kastRounds).toBe(0);
+    expect(i.size).toBe(1);
+  });
+});
+
+describe("computeRating", () => {
+  it("place une performance moyenne autour de 1.00", () => {
+    const r = computeRating({ rounds: 20, kills: 15, deaths: 15, assists: 4, kastPct: 72, adr: 140 });
+    expect(r).toBeGreaterThan(0.85);
+    expect(r).toBeLessThan(1.15);
+  });
+  it("monte sur un gros match et descend sur un mauvais", () => {
+    const bon = computeRating({ rounds: 20, kills: 25, deaths: 10, assists: 6, kastPct: 85, adr: 200 });
+    const mauvais = computeRating({ rounds: 20, kills: 7, deaths: 18, assists: 2, kastPct: 55, adr: 80 });
+    expect(bon).toBeGreaterThan(1.3);
+    expect(mauvais).toBeLessThan(0.8);
+  });
+  it("ne descend jamais à zéro ni en négatif", () => {
+    expect(computeRating({ rounds: 20, kills: 0, deaths: 20, assists: 0, kastPct: 0, adr: 0 })).toBe(0.01);
+  });
+  it("renvoie 0 sans round joué", () => {
+    expect(computeRating({ rounds: 0, kills: 5, deaths: 2, assists: 1, kastPct: 70, adr: 150 })).toBe(0);
+  });
+});
+
+describe("roundTimeline", () => {
+  it("ramène le vainqueur de chaque round au côté A/B", () => {
+    const t = roundTimeline(
+      [
+        { winningTeamId: "Red", outcome: "elim" },
+        { winningTeamId: "Blue", outcome: "defuse" },
+      ],
+      { Red: "A", Blue: "B" }
+    );
+    expect(t).toEqual([{ w: "A", o: "elim" }, { w: "B", o: "defuse" }]);
+  });
+  it("écarte un round dont le camp vainqueur est inconnu", () => {
+    const t = roundTimeline([{ winningTeamId: "", outcome: "elim" }], { Red: "A", Blue: "B" });
+    expect(t).toEqual([]);
   });
 });

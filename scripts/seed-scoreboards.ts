@@ -9,6 +9,7 @@
  * Usage : npm run db:seed:scoreboards   (après db:seed:vlr)
  */
 import { PrismaClient } from "@prisma/client";
+import { computeRating } from "../src/lib/match-stats-core";
 
 const db = new PrismaClient();
 const TID = "vlr-emea-s1";
@@ -35,33 +36,6 @@ const AGENTS_BY_ROLE: Record<string, string[]> = {
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-/**
- * Rating 2.0 - portage de la formule HLTV 2.0 adaptée à Valorant utilisée sur le site flhub
- * (services/rating.py). Le coefficient ADR est rescalé de CS (0.0032) à Valorant (0.00171)
- * pour recentrer le joueur moyen autour de ~1.00. Plancher à 0.01, jamais négatif ni nul.
- */
-function computeRating2(s: {
-  rounds: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  kastPct: number;
-  adr: number;
-}): number {
-  if (s.rounds <= 0) return 0;
-  const kpr = s.kills / s.rounds;
-  const dpr = s.deaths / s.rounds;
-  const apr = s.assists / s.rounds;
-  const impact = 2.13 * kpr + 0.42 * apr - 0.41;
-  const rating =
-    0.0073 * s.kastPct +
-    0.3591 * kpr -
-    0.5329 * dpr +
-    0.2372 * impact +
-    0.00171 * s.adr -
-    0.001;
-  return Math.round(Math.max(0.01, rating) * 100) / 100;
-}
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -115,7 +89,7 @@ function baseRow(
   const hsPct = rand(14, 38);
   const kast = clamp(Math.round((won ? 74 : 66) + rand(-8, 12)), 45, 95);
   // Rating 2.0 flhub - dérivé des stats réelles du joueur (formule HLTV 2.0 Valorant).
-  const rating = computeRating2({ rounds, kills, deaths, assists, kastPct: kast, adr });
+  const rating = computeRating({ rounds, kills, deaths, assists, kastPct: kast, adr });
   return {
     riotName: pseudo, playerId, teamSide: side, agent,
     kills, deaths, assists, acs, adr, hsPct, kast, rating,
