@@ -34,9 +34,12 @@ function StatItem({ label, value, mono }: { label: string; value: string; mono?:
 export default function TournamentCard({ tournament }: { tournament: TournamentCardData }) {
   const teamCount = tournament._count?.participants ?? 0;
   return (
+    // min-w-0 : sans lui la carte est un élément de grille en `min-width: auto`,
+    // impose sa largeur de contenu à la piste, et la piste déborde du conteneur
+    // — les `truncate` internes ne servent alors à rien.
     <Link
       href={`/tournois/${tournament.id}`}
-      className="card card-interactive flex flex-col gap-4 p-5"
+      className="card card-interactive flex min-w-0 flex-col gap-4 p-5"
     >
       <div className="flex items-center gap-3">
         {tournament.logo ? (

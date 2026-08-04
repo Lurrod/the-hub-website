@@ -125,8 +125,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     "Dates à définir";
 
   const apercu = (
+    // min-w-0 sur les deux colonnes : sous `lg` la grille n'a qu'une colonne
+    // implicite en `min-width: auto`, donc l'arbre imposait sa largeur a la
+    // piste et faisait defiler la PAGE entiere au lieu de defiler lui-meme.
     <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
-      <section className="self-start">
+      <section className="min-w-0 self-start">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
           Matchs à venir
         </h2>
@@ -141,7 +144,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         />
       </section>
 
-      <div className="space-y-8">
+      <div className="min-w-0 space-y-8">
         {stageDefs.length > 0 && (
           <section>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
