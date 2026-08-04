@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMatch } from "@/lib/data/matches";
+import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
+import { canManageTournament } from "@/lib/permissions";
 import { MATCH_STAGE_LABELS } from "@/lib/constants";
 import { hasRiotStats } from "@/lib/match-stats-core";
 import MatchScoreboard, { type ScoreboardMap, type RoundEntry } from "@/components/match-scoreboard";
@@ -24,6 +26,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const match = await getMatch(id);
   if (!match) notFound();
+
+  const sessionUser = await getSessionUser();
+  const canManage = canManageTournament(
+    sessionUser,
+    await getTournamentManagerIds(match.tournamentId)
+  );
 
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
@@ -174,6 +182,14 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             )}
           </span>
           <span className="stat rounded bg-[var(--bg)] px-1.5 py-0.5 text-[10px] font-medium">BO{match.bestOf}</span>
+          {canManage && (
+            <Link
+              href={`/tournois/${match.tournamentId}/gestion/matchs/${match.id}`}
+              className="rounded bg-[var(--accent)] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+            >
+              Gérer
+            </Link>
+          )}
         </div>
       </div>
       </div>

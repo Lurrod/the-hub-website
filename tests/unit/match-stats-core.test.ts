@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   countExpected, assignSides, assignSidesFromCamp, computeDerivedStats, hasRiotStats,
-  indexPlayerIdsByPuuid, selectSeries,
+  indexPlayerIdsByPuuid, selectSeries, seriesScore,
 } from "@/lib/match-stats-core";
 import type { CustomMatch, CustomMatchPlayer } from "@/lib/henrikdev";
 
@@ -124,5 +124,24 @@ describe("indexPlayerIdsByPuuid", () => {
   });
   it("renvoie un index vide sans fiche", () => {
     expect(indexPlayerIdsByPuuid([]).size).toBe(0);
+  });
+});
+
+describe("seriesScore", () => {
+  it("compte une map gagnée comme un point", () => {
+    expect(seriesScore([{ scoreA: 13, scoreB: 9 }, { scoreA: 7, scoreB: 13 }])).toEqual({
+      scoreA: 1,
+      scoreB: 1,
+    });
+  });
+  it("retombe à 0-0 quand toutes les maps sont retirées", () => {
+    expect(seriesScore([])).toEqual({ scoreA: 0, scoreB: 0 });
+  });
+  it("ne donne de point à personne sur une map nulle", () => {
+    expect(seriesScore([{ scoreA: 12, scoreB: 12 }])).toEqual({ scoreA: 0, scoreB: 0 });
+  });
+  it("recalcule bien après retrait d'une map d'une série 1-1", () => {
+    const maps = [{ scoreA: 13, scoreB: 9 }, { scoreA: 7, scoreB: 13 }];
+    expect(seriesScore(maps.slice(0, 1))).toEqual({ scoreA: 1, scoreB: 0 });
   });
 });

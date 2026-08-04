@@ -21,6 +21,7 @@ import {
   deleteMatch,
   addMatchMap,
   removeMatchMap,
+  syncMatchScoreFromMaps,
   getMatch,
 } from "@/lib/data/matches";
 import {
@@ -60,6 +61,16 @@ function parseMatchForm(formData: FormData) {
 function revalidateCompetition(tournamentId: string) {
   revalidatePath(`/tournois/${tournamentId}/gestion/competition`);
   revalidatePath(`/tournois/${tournamentId}`);
+}
+
+/**
+ * Toucher aux maps change le score de la série : le tournoi (classement,
+ * arbre) doit être rafraîchi au même titre que la fiche du match.
+ */
+function revalidateMatch(tournamentId: string, matchId: string) {
+  revalidatePath(`/matchs/${matchId}`);
+  revalidatePath(`/tournois/${tournamentId}/gestion/matchs/${matchId}`);
+  revalidateCompetition(tournamentId);
 }
 
 export async function createGroupAction(tournamentId: string, formData: FormData) {
@@ -147,8 +158,8 @@ export async function addMatchMapAction(tournamentId: string, matchId: string, f
     order: formData.get("order") || 0,
   });
   await addMatchMap(matchId, data);
-  revalidatePath(`/matchs/${matchId}`);
-  revalidatePath(`/tournois/${tournamentId}/gestion/matchs/${matchId}`);
+  await syncMatchScoreFromMaps(matchId);
+  revalidateMatch(tournamentId, matchId);
 }
 
 /** Code de retour d'URL pour chaque issue d'un import manuel. */
@@ -202,6 +213,6 @@ export async function removeMatchMapAction(tournamentId: string, matchId: string
   await assertCanManageTournament(tournamentId);
   await assertMatchInTournament(matchId, tournamentId);
   await removeMatchMap(mapId, matchId);
-  revalidatePath(`/matchs/${matchId}`);
-  revalidatePath(`/tournois/${tournamentId}/gestion/matchs/${matchId}`);
+  await syncMatchScoreFromMaps(matchId);
+  revalidateMatch(tournamentId, matchId);
 }

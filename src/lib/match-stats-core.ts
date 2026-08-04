@@ -89,6 +89,24 @@ export function assignSides(
   return { sideOfTeam, ...roundsBySide(match, sideOfTeam) };
 }
 
+/**
+ * Score de la série déduit des maps : une map gagnée vaut un point, une map
+ * nulle n'en donne à personne. C'est la seule source de vérité du score dès
+ * qu'un match a des maps, que celles-ci viennent de Riot ou de la saisie
+ * manuelle — sinon retirer une map laisserait le score figé sur l'ancien.
+ */
+export function seriesScore(
+  maps: readonly { scoreA: number; scoreB: number }[]
+): { scoreA: number; scoreB: number } {
+  let scoreA = 0;
+  let scoreB = 0;
+  for (const m of maps) {
+    if (m.scoreA > m.scoreB) scoreA += 1;
+    else if (m.scoreB > m.scoreA) scoreB += 1;
+  }
+  return { scoreA, scoreB };
+}
+
 /** ACS = score/rounds, ADR = damage/rounds, HS% = hs/(hs+bs+ls). Arrondis, 0 si div/0. */
 export function computeDerivedStats(
   p: CustomMatchPlayer,
