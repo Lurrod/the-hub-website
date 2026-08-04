@@ -11,6 +11,7 @@ import {
   computeDerivedStats,
   indexPlayerIdsByPuuid,
   selectSeries,
+  seriesScore,
   type Side,
 } from "@/lib/match-stats-core";
 import type { MatchMapImportInput } from "@/lib/validation/match";
@@ -237,18 +238,13 @@ export async function importMatchMapFromRiotId(
       where: { matchId: match.id },
       select: { scoreA: true, scoreB: true },
     });
-    let mapsA = 0;
-    let mapsB = 0;
-    for (const m of maps) {
-      if (m.scoreA > m.scoreB) mapsA += 1;
-      else if (m.scoreB > m.scoreA) mapsB += 1;
-    }
+    const { scoreA, scoreB } = seriesScore(maps);
     await tx.match.update({
       where: { id: match.id },
       data: {
-        scoreA: mapsA,
-        scoreB: mapsB,
-        winnerId: mapsA > mapsB ? match.teamAId : mapsB > mapsA ? match.teamBId : null,
+        scoreA,
+        scoreB,
+        winnerId: scoreA > scoreB ? match.teamAId : scoreB > scoreA ? match.teamBId : null,
         statsStatus: "MANUAL",
         statsFetchedAt: new Date(),
       },

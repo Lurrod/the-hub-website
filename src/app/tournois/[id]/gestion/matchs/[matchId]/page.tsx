@@ -98,7 +98,10 @@ export default async function EditMatchPage({
       />
 
       <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold text-white">Détail des maps</h2>
+        <h2 className="mb-1 text-lg font-semibold text-white">Détail des maps</h2>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">
+          Ajouter ou retirer une map recalcule le score du match : une map gagnée vaut un point.
+        </p>
         <ul className="mb-4 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
           {match.maps.length === 0 && (
             <li className="p-3 text-[var(--text-muted)]">Aucune map saisie.</li>

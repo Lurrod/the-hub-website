@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import type { MatchStage, MatchStatus } from "@/lib/constants";
 import type { MatchInput, MatchMapInput } from "@/lib/validation/match";
 import { syncFinishedTournaments } from "@/lib/tournament-status";
+import { seriesScore } from "@/lib/match-stats-core";
 
 function deriveWinnerId(data: {
   status: string;
@@ -157,6 +158,30 @@ export function addMatchMap(matchId: string, data: MatchMapInput) {
 
 export function removeMatchMap(id: string, matchId: string) {
   return db.matchMap.deleteMany({ where: { id, matchId } });
+}
+
+/**
+ * Réaligne le score du match sur ses maps. À appeler après chaque ajout ou
+ * retrait de map : sans ça, retirer une map laissait le score de la série figé
+ * sur sa valeur d'avant (un 1-1 restait 1-1).
+ */
+export async function syncMatchScoreFromMaps(matchId: string): Promise<void> {
+  const match = await db.match.findUnique({
+    where: { id: matchId },
+    select: {
+      status: true,
+      teamAId: true,
+      teamBId: true,
+      maps: { select: { scoreA: true, scoreB: true } },
+    },
+  });
+  if (!match) return;
+
+  const { scoreA, scoreB } = seriesScore(match.maps);
+  await db.match.update({
+    where: { id: matchId },
+    data: { scoreA, scoreB, winnerId: deriveWinnerId({ ...match, scoreA, scoreB }) },
+  });
 }
 
 // ---- Feed d'accueil ----
