@@ -1,6 +1,9 @@
 import Link from "next/link";
+import PlayerScatter from "@/components/charts/player-scatter";
+import EntryDuels from "@/components/charts/entry-duels";
 import { agentIconUrl } from "@/lib/agents";
 import type {
+  PlayerPoint,
   StatRecord,
   StatLeaderboard,
   TournamentFact,
@@ -248,11 +251,13 @@ export default function TournamentStats({
   records,
   averages,
   totals,
+  players,
 }: {
   tournamentRecords: TournamentFact[];
   records: StatRecord[];
   averages: StatRecord[];
   totals: StatLeaderboard[];
+  players: PlayerPoint[];
 }) {
   return (
     <div className="space-y-8">
@@ -266,6 +271,28 @@ export default function TournamentStats({
           </div>
         </section>
       )}
+
+      <section>
+        <h2 className={SECTION}>Carte des joueurs</h2>
+        <p className="mb-4 text-xs text-[var(--text-muted)]">
+          Deux axes séparent des profils qu&apos;un classement confond : qui frague en
+          restant en vie, qui fait du dégât en se mettant en danger, qui joue l&apos;appui.
+        </p>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+          <PlayerScatter players={players} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className={SECTION}>Duels d&apos;entrée</h2>
+        <p className="mb-4 text-xs text-[var(--text-muted)]">
+          Qui ouvre les rounds et qui les perd d&apos;entrée, de part et d&apos;autre de
+          l&apos;axe.
+        </p>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+          <EntryDuels players={players} />
+        </div>
+      </section>
 
       <section>
         <h2 className={SECTION}>Records d&apos;une game</h2>

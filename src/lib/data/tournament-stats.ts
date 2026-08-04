@@ -32,11 +32,26 @@ export type TournamentFact = {
   image?: string | null;
 };
 
+/** Un joueur du tournoi, agrege. Sert aux graphiques (nuage, duels d'entree). */
+export type PlayerPoint = {
+  playerId: string | null;
+  name: string;
+  teamTag: string | null;
+  maps: number;
+  acs: number;
+  kd: number;
+  rating: number;
+  kast: number;
+  firstKills: number;
+  firstDeaths: number;
+};
+
 export type TournamentStats = {
   tournamentRecords: TournamentFact[]; // records du tournoi (perso, map, partie…)
   records: StatRecord[]; // exploit sur une seule game (top 1, visuel)
   averages: StatRecord[]; // meilleures moyennes du tournoi (top 1, visuel)
   totals: StatLeaderboard[]; // cumuls du tournoi (top 3)
+  players: PlayerPoint[]; // agregats par joueur, pour les graphiques
   hasData: boolean;
 };
 
@@ -103,7 +118,7 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
   ]);
 
   if (rows.length === 0) {
-    return { tournamentRecords: [], records: [], averages: [], totals: [], hasData: false };
+    return { tournamentRecords: [], records: [], averages: [], totals: [], players: [], hasData: false };
   }
 
   // Contexte par ligne : équipe du joueur et adversaire (selon le côté A/B).
@@ -288,5 +303,18 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     totalBoard("Joueur le plus flex", (a) => a.agents.size, (v) => `${v} perso${v > 1 ? "s" : ""}`),
   ];
 
-  return { tournamentRecords, records, averages, totals, hasData: true };
+  const playerPoints: PlayerPoint[] = players.map((a) => ({
+    playerId: a.playerId,
+    name: a.name,
+    teamTag: a.teamTag,
+    maps: a.maps,
+    acs: Math.round(a.acsSum / a.maps),
+    kd: Math.round(kd(a) * 100) / 100,
+    rating: Math.round((a.ratingSum / a.maps) * 100) / 100,
+    kast: Math.round(a.kastSum / a.maps),
+    firstKills: a.firstKills,
+    firstDeaths: a.firstDeaths,
+  }));
+
+  return { tournamentRecords, records, averages, totals, players: playerPoints, hasData: true };
 }
