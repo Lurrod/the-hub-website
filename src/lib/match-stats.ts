@@ -9,7 +9,10 @@ import {
   assignSides,
   assignSidesFromCamp,
   computeDerivedStats,
+  computeImpact,
+  computeRating,
   indexPlayerIdsByPuuid,
+  roundTimeline,
   selectSeries,
   seriesScore,
   type Side,
@@ -70,8 +73,15 @@ function gameStatRows(
   playerIdByPuuid: Map<string, string>,
   rounds: number
 ) {
+  // Le nombre de rounds joués fait foi pour le KAST : les duels ne portent que
+  // les rounds où quelqu'un est mort, un round « sec » compterait sinon en moins.
+  const roundCount = cm.rounds.length > 0 ? cm.rounds.length : rounds;
+  const impact = computeImpact(cm.kills, cm.players.map((p) => p.puuid), roundCount);
+
   return cm.players.map((p) => {
     const d = computeDerivedStats(p, rounds);
+    const i = impact.get(p.puuid);
+    const kast = roundCount > 0 ? Math.round(((i?.kastRounds ?? 0) / roundCount) * 100) : 0;
     return {
       matchMapId,
       playerId: playerIdByPuuid.get(p.puuid) ?? null,
@@ -86,7 +96,17 @@ function gameStatRows(
       acs: d.acs,
       adr: d.adr,
       hsPct: d.hsPct,
-      firstKills: p.firstKills,
+      kast,
+      firstKills: i?.firstKills ?? 0,
+      firstDeaths: i?.firstDeaths ?? 0,
+      rating: computeRating({
+        rounds: roundCount,
+        kills: p.kills,
+        deaths: p.deaths,
+        assists: p.assists,
+        kastPct: kast,
+        adr: d.adr,
+      }),
     };
   });
 }
@@ -148,6 +168,7 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
           matchId: match.id, mapName: cm.map || "?", scoreA: roundsA, scoreB: roundsB,
           order: i, riotMatchId: cm.matchId, startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
           durationSec: cm.durationSec,
+          roundTimeline: roundTimeline(cm.rounds, sideOfTeam),
         },
       });
       await tx.playerGameStat.createMany({
@@ -225,6 +246,7 @@ export async function importMatchMapFromRiotId(
         riotMatchId: cm.matchId || input.riotMatchId,
         startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
         durationSec: cm.durationSec,
+        roundTimeline: roundTimeline(cm.rounds, sideOfTeam),
       },
     });
     await tx.playerGameStat.createMany({

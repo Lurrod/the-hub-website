@@ -14,6 +14,20 @@ const rawMatch = {
     { team_id: "Red", rounds: { won: 13, lost: 9 } },
     { team_id: "Blue", rounds: { won: 9, lost: 13 } },
   ],
+  rounds: [
+    { winning_team: "Red", result: "Elimination" },
+    { winning_team: "Blue", result: "Detonate" },
+    { winning_team: "Red", result: "Defuse" },
+    { winning_team: "Blue", result: "Round timer expired" },
+  ],
+  kills: [
+    {
+      round: 0, time_in_round_in_ms: 9000,
+      killer: { puuid: "p1" }, victim: { puuid: "p2" }, assistants: [{ puuid: "p3" }],
+    },
+    { round: 0, time_in_round_in_ms: 4000, killer: { puuid: "p2" }, victim: { puuid: "p4" }, assistants: [] },
+    { round: 1, time_in_round_in_ms: 5000, killer: { puuid: "p1" }, victim: {}, assistants: [] },
+  ],
   players: [
     {
       puuid: "p1", name: "Zed", tag: "EUW", team_id: "Red", agent: { name: "Jett" },
@@ -34,7 +48,7 @@ describe("getPlayerCustomMatches", () => {
     });
     expect(out[0].players[0]).toMatchObject({
       puuid: "p1", teamId: "Red", agent: "Jett", kills: 20, deaths: 12, assists: 5,
-      score: 4400, headshots: 30, bodyshots: 60, legshots: 10, damageMade: 3300, firstKills: 0,
+      score: 4400, headshots: 30, bodyshots: 60, legshots: 10, damageMade: 3300,
     });
   });
   it("retourne [] si data absent", async () => {
@@ -84,5 +98,30 @@ describe("getCustomMatchById", () => {
   it("sans clé API -> API_ERROR", async () => {
     vi.stubEnv("HENRIKDEV_API_KEY", "");
     await expect(getCustomMatchById("eu", "m1")).rejects.toMatchObject({ code: "API_ERROR" });
+  });
+});
+
+describe("mapRawCustomMatch - rounds et duels", () => {
+  it("mappe les issues de round vers les codes de la frise", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    vi.stubGlobal("fetch", mockFetch(200, { data: [rawMatch] }));
+    const [m] = await getPlayerCustomMatches("eu", "Zed", "EUW");
+    expect(m.rounds).toEqual([
+      { winningTeamId: "Red", outcome: "elim" },
+      { winningTeamId: "Blue", outcome: "detonate" },
+      { winningTeamId: "Red", outcome: "defuse" },
+      // Tout ce qui n'est ni élimination ni action sur le spike retombe sur « time ».
+      { winningTeamId: "Blue", outcome: "time" },
+    ]);
+  });
+  it("normalise les duels et écarte ceux sans tueur ou sans victime", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    vi.stubGlobal("fetch", mockFetch(200, { data: [rawMatch] }));
+    const [m] = await getPlayerCustomMatches("eu", "Zed", "EUW");
+    expect(m.kills).toHaveLength(2);
+    expect(m.kills[0]).toEqual({
+      round: 0, timeInRoundMs: 9000,
+      killerPuuid: "p1", victimPuuid: "p2", assistantPuuids: ["p3"],
+    });
   });
 });

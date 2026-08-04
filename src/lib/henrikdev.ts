@@ -60,7 +60,30 @@ export type CustomMatchPlayer = {
   bodyshots: number;
   legshots: number;
   damageMade: number;
-  firstKills: number;
+};
+
+/** Issue d'un round, dans les codes courts qu'attend la frise du scoreboard. */
+export type RoundOutcome = "elim" | "detonate" | "defuse" | "time";
+
+/**
+ * Un round joué. `winningTeamId` est le team_id brut Riot ("Red"/"Blue") :
+ * le rattachement au côté A/B se fait plus haut, une fois les camps résolus.
+ */
+export type CustomMatchRound = {
+  winningTeamId: string;
+  outcome: RoundOutcome;
+};
+
+/**
+ * Un duel. Les puuid suffisent : c'est la seule clé stable pour recouper avec
+ * les joueurs de la partie (KAST, first kills, first deaths).
+ */
+export type CustomMatchKill = {
+  round: number;
+  timeInRoundMs: number;
+  killerPuuid: string;
+  victimPuuid: string;
+  assistantPuuids: string[];
 };
 
 export type CustomMatch = {
@@ -70,9 +93,27 @@ export type CustomMatch = {
   durationSec: number | null;
   teamRounds: Record<string, number>; // team_id -> rounds gagnés
   players: CustomMatchPlayer[];
+  rounds: CustomMatchRound[];
+  kills: CustomMatchKill[];
 };
 
 const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
+/**
+ * `result` renvoyé par Riot -> code court de la frise. Tout ce qui n'est ni une
+ * élimination ni une action sur le spike est un round mené au bout du temps
+ * (temps écoulé, abandon) : « time » est le repli, jamais une perte de donnée
+ * silencieuse puisque les trois issues nommées couvrent le jeu normal.
+ */
+const ROUND_OUTCOMES: Record<string, RoundOutcome> = {
+  elimination: "elim",
+  detonate: "detonate",
+  defuse: "defuse",
+};
+
+function roundOutcome(result: unknown): RoundOutcome {
+  return ROUND_OUTCOMES[String(result ?? "").toLowerCase()] ?? "time";
+}
 
 /**
  * Historique des parties CUSTOM d'un joueur, mappé vers CustomMatch normalisé.
@@ -149,6 +190,14 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       game_length_in_ms?: number;
     };
     teams?: { team_id?: string; rounds?: { won?: number } }[];
+    rounds?: { winning_team?: string; result?: string }[];
+    kills?: {
+      round?: number;
+      time_in_round_in_ms?: number;
+      killer?: { puuid?: string };
+      victim?: { puuid?: string };
+      assistants?: { puuid?: string }[];
+    }[];
     players?: {
       puuid?: string; name?: string; tag?: string; team_id?: string;
       agent?: { name?: string };
@@ -177,10 +226,20 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
     bodyshots: num(p.stats?.bodyshots),
     legshots: num(p.stats?.legshots),
     damageMade: num(p.stats?.damage?.dealt),
-    // Volontairement 0 en Phase B : les first kills ne sont pas exposés simplement
-    // par joueur dans l'API v4 (nécessitent l'analyse round-par-round). Extensible.
-    firstKills: 0,
   }));
+  const rounds: CustomMatchRound[] = (m.rounds ?? []).map((r) => ({
+    winningTeamId: r.winning_team ?? "",
+    outcome: roundOutcome(r.result),
+  }));
+  const kills: CustomMatchKill[] = (m.kills ?? [])
+    .filter((k) => k.killer?.puuid && k.victim?.puuid)
+    .map((k) => ({
+      round: num(k.round),
+      timeInRoundMs: num(k.time_in_round_in_ms),
+      killerPuuid: k.killer!.puuid!,
+      victimPuuid: k.victim!.puuid!,
+      assistantPuuids: (k.assistants ?? []).map((a) => a.puuid ?? "").filter(Boolean),
+    }));
   return {
     matchId: m.metadata?.match_id ?? "",
     map: m.metadata?.map?.name ?? "",
@@ -191,5 +250,7 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
         : null,
     teamRounds,
     players,
+    rounds,
+    kills,
   };
 }
