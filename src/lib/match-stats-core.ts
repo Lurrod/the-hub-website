@@ -129,7 +129,7 @@ export function computeDerivedStats(
 
 /**
  * Fenêtre de trade du KAST : un joueur dont le tueur meurt dans les 3 s qui
- * suivent est considéré comme échangé, donc son round « compte » quand même.
+ * suivent est considéré comme tradé, donc son round « compte » quand même.
  * 3 s est la fenêtre retenue par les stats Valorant grand public.
  */
 export const TRADE_WINDOW_MS = 3000;
@@ -141,7 +141,7 @@ export type PlayerImpact = { kastRounds: number; firstKills: number; firstDeaths
  * Riot n'expose aucun de ces trois chiffres tel quel.
  *
  * Un round compte dans le KAST d'un joueur s'il y a tué (K), assisté (A),
- * survécu (S) ou été échangé (T). Le premier duel de chaque round donne son
+ * survécu (S) ou été tradé (T). Le premier duel de chaque round donne son
  * first kill au tueur et son first death à la victime.
  */
 export function computeImpact(
