@@ -287,3 +287,36 @@ export function listTeamRecentMatches(teamId: string, limit = 4) {
     take: limit,
   });
 }
+
+/**
+ * Derniers matchs qu'un joueur a réellement joués — on part de ses lignes de
+ * scoreboard, pas de son équipe. Un joueur sans équipe actuelle, ou qui a
+ * changé d'équipe depuis, garde ainsi tout son historique.
+ */
+export function listPlayerRecentMatches(playerId: string, limit = 4) {
+  return db.match.findMany({
+    where: { maps: { some: { stats: { some: { playerId } } } } },
+    include: { teamA: true, teamB: true },
+    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+  });
+}
+
+/**
+ * Prochains matchs d'un joueur : ceux des équipes dont il est membre
+ * aujourd'hui. Un match à venir n'engage que des équipes, c'est donc le seul
+ * rattachement possible — mais il passe par ses adhésions actives, pas par une
+ * équipe « principale » choisie arbitrairement.
+ */
+export function listPlayerUpcomingMatches(playerId: string, limit = 4) {
+  const onRoster = { memberships: { some: { playerId, leaveDate: null } } };
+  return db.match.findMany({
+    where: {
+      status: { in: ["SCHEDULED", "LIVE"] },
+      OR: [{ teamA: onRoster }, { teamB: onRoster }],
+    },
+    include: { teamA: true, teamB: true },
+    orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+    take: limit,
+  });
+}

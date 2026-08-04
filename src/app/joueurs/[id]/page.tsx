@@ -9,7 +9,7 @@ import { getPlayer } from "@/lib/data/players";
 import { getPlayerMatches } from "@/lib/data/player-matches";
 import { getPlayerCareer } from "@/lib/data/player-career";
 import { getPlayerOverview } from "@/lib/data/player-overview";
-import { listTeamUpcomingMatches, listTeamRecentMatches } from "@/lib/data/matches";
+import { listPlayerUpcomingMatches, listPlayerRecentMatches } from "@/lib/data/matches";
 import MatchSideColumn from "@/components/match-side-column";
 import AgentDonut from "@/components/charts/agent-donut";
 import AgentIcon from "@/components/agent-icon";
@@ -50,18 +50,16 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const player = await getPlayer(id);
   if (!player) notFound();
 
-  const [matches, career, overview] = await Promise.all([
+  // La colonne de matchs est individuelle : les résultats sont ceux que le
+  // joueur a joués, pas ceux de son équipe. Sans ça, un joueur sans équipe
+  // actuelle affichait « aucun match » alors qu'il en avait à son actif.
+  const [matches, career, overview, upcoming, recent] = await Promise.all([
     getPlayerMatches(player.id),
     getPlayerCareer(player.id),
     getPlayerOverview(player.id),
+    listPlayerUpcomingMatches(player.id),
+    listPlayerRecentMatches(player.id),
   ]);
-
-  // La colonne de matchs suit l'équipe actuelle du joueur : un joueur n'a pas de
-  // calendrier propre, ses échéances sont celles de son équipe.
-  const teamId = player.memberships.find((m) => m.leaveDate === null)?.teamId ?? null;
-  const [upcoming, recent] = teamId
-    ? await Promise.all([listTeamUpcomingMatches(teamId), listTeamRecentMatches(teamId)])
-    : [[], []];
   const miniMatch = (m: (typeof upcoming)[number], played: boolean) => ({
     id: m.id,
     date: m.date,
@@ -77,8 +75,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const currentTeam = player.memberships.find((m) => m.leaveDate === null);
 
   // --- Onglet Aperçu ---
-  // Colonne de matchs à gauche (comme sur une fiche équipe), chiffres clés à
-  // droite, puis les lectures visuelles en dessous.
+  // Matchs du joueur à gauche, chiffres clés à droite, puis les lectures
+  // visuelles en dessous.
   const entryDuels = overview.firstKills + overview.firstDeaths;
   const agentSlices = overview.agentsOther
     ? [...overview.agents, overview.agentsOther]
