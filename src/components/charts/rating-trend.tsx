@@ -1,7 +1,10 @@
 import type { TrendPoint } from "@/lib/player-overview-core";
 
-const W = 600;
-const H = 170;
+// Format volontairement peu allonge : a 600x170 la courbe tombait a ~90px de
+// haut sur un mobile de 360px et devenait illisible. Le SVG garde son ratio,
+// c'est donc le ratio lui-meme qu'il faut regler.
+const W = 460;
+const H = 175;
 // La marge droite loge l'étiquette de fin de courbe sans qu'elle déborde.
 const PAD = { top: 14, right: 42, bottom: 18, left: 30 };
 
@@ -74,7 +77,7 @@ export default function RatingTrend({ points }: { points: TrendPoint[] }) {
               y={y(t) + 3}
               textAnchor="end"
               className="fill-[var(--text-subtle)]"
-              style={{ fontSize: "9px" }}
+              style={{ fontSize: "10px" }}
             >
               {t.toFixed(1)}
             </text>
@@ -122,7 +125,7 @@ export default function RatingTrend({ points }: { points: TrendPoint[] }) {
           y={y(points[lastIdx].rating) + 3}
           textAnchor="start"
           className="fill-[var(--text)]"
-          style={{ fontSize: "10px", fontWeight: 600 }}
+          style={{ fontSize: "11px", fontWeight: 600 }}
         >
           {points[lastIdx].rating.toFixed(2)}
         </text>

@@ -18,7 +18,7 @@ export default function PlayerCareerTable({ stints }: { stints: CareerStint[] })
   }
   return (
     <div
-      className="overflow-x-auto rounded-lg border border-[var(--border)]"
+      className="scroll-x rounded-lg border border-[var(--border)]"
       style={{ backgroundColor: "#191c22" }}
     >
       <table className="w-full min-w-[760px] border-collapse text-sm">

@@ -1422,3 +1422,30 @@ body :is(h1, h2, h3, h4, h5, h6) {
   transition-timing-function: var(--tt-in-ease);
   transition-delay: var(--tt-delay);
 }
+
+/* ---------------------------------------------------------------------------
+   Défilement horizontal signalé
+
+   Un tableau large (scoreboard, carrière) reste lisible en mobile parce qu'il
+   défile — encore faut-il que le lecteur le devine. Ces ombres apparaissent
+   uniquement quand du contenu dépasse, et s'effacent une fois arrivé au bout.
+
+   Le mécanisme est en CSS seul : les deux dégradés « couvre-bord » sont en
+   background-attachment: local (ils suivent le contenu), les deux ombres sont
+   en scroll (elles restent collées au cadre). Quand il n'y a rien à faire
+   défiler, les couvre-bords masquent exactement les ombres.
+   -------------------------------------------------------------------------- */
+.scroll-x {
+  overflow-x: auto;
+  background-image:
+    linear-gradient(to right, var(--surface) 70%, transparent),
+    linear-gradient(to left, var(--surface) 70%, transparent),
+    linear-gradient(to right, rgba(0, 0, 0, 0.6), transparent),
+    linear-gradient(to left, rgba(0, 0, 0, 0.6), transparent);
+  background-position: left center, right center, left center, right center;
+  /* Le couvre-bord doit rester opaque sur TOUTE la largeur de l'ombre (70 % de
+     24px = 16.8px > 14px), sinon une bande sombre subsiste en début de course. */
+  background-size: 24px 100%, 24px 100%, 14px 100%, 14px 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}

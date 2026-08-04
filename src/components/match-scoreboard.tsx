@@ -163,7 +163,7 @@ function RoundTimeline({
       </div>
 
       {/* Timeline en deux pistes, une par équipe, centrée */}
-      <div className="overflow-x-auto">
+      <div className="scroll-x">
         <div className="mx-auto w-max space-y-1">
           <TrackRow rounds={rounds} side="A" label={teamATag} logo={teamALogo} />
           <TrackRow rounds={rounds} side="B" label={teamBTag} logo={teamBLogo} />
@@ -184,7 +184,7 @@ function Diff({ value }: { value: number }) {
 function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
   const sorted = [...rows].sort((a, b) => b.rating - a.rating);
   return (
-    <div className="overflow-x-auto">
+    <div className="scroll-x">
       <table className="w-full min-w-[720px] table-fixed border-collapse">
         <colgroup>
           <col className="w-8" />
