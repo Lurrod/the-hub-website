@@ -183,7 +183,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   label="KAST"
                   value={overview.avgKast}
                   valueLabel={`${overview.avgKast} %`}
-                  sub="Rounds où il tue, assiste, survit ou est tradé."
+                  sub="Rounds où il tue, assiste, survit ou est trade."
                 />
                 <Meter
                   label="Tirs à la tête"

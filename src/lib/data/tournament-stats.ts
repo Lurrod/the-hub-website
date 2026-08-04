@@ -15,6 +15,8 @@ export type StatEntry = {
   teamTag: string | null;
   agent?: string | null;
   valueLabel: string;
+  /** Valeur brute, pour dimensionner une barre. Absente hors classements. */
+  value?: number;
   detail?: string;
 };
 
@@ -34,14 +36,14 @@ export type TournamentStats = {
   tournamentRecords: TournamentFact[]; // records du tournoi (perso, map, partie…)
   records: StatRecord[]; // exploit sur une seule game (top 1, visuel)
   averages: StatRecord[]; // meilleures moyennes du tournoi (top 1, visuel)
-  totals: StatLeaderboard[]; // cumuls du tournoi (top 5)
+  totals: StatLeaderboard[]; // cumuls du tournoi (top 3)
   hasData: boolean;
 };
 
 /** Nombre minimum de cartes jouées pour figurer dans les classements de moyenne. */
 const MIN_MAPS_FOR_AVG = 2;
 /** Nombre d'entrées affichées par classement cumulé. */
-const TOP_N = 5;
+const TOP_N = 3;
 
 type Agg = {
   playerId: string | null;
@@ -230,11 +232,12 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
   }
   const players = [...byPlayer.values()];
 
-  const toEntry = (a: Agg, valueLabel: string): StatEntry => ({
+  const toEntry = (a: Agg, valueLabel: string, value?: number): StatEntry => ({
     playerId: a.playerId,
     name: a.name,
     teamTag: a.teamTag,
     valueLabel,
+    value,
     detail: `${a.maps} carte${a.maps > 1 ? "s" : ""}`,
   });
 
@@ -262,7 +265,7 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     avgRecord("Meilleur KAST", (a) => a.kastSum / a.maps, (v) => `${Math.round(v)}%`),
   ];
 
-  // Cumul : top 5, aucun seuil de cartes.
+  // Cumul : top 3, aucun seuil de cartes.
   const totalBoard = (
     label: string,
     value: (a: Agg) => number,
@@ -273,7 +276,7 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     entries: [...players]
       .sort((x, y) => value(y) - value(x))
       .slice(0, TOP_N)
-      .map((a) => toEntry(a, fmt(value(a)))),
+      .map((a) => toEntry(a, fmt(value(a)), value(a))),
   });
 
   const totals: StatLeaderboard[] = [
@@ -282,7 +285,7 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     totalBoard("Plus de morts (total)", (a) => a.deaths, (v) => `${v}`),
     totalBoard("Plus de first kills (total)", (a) => a.firstKills, (v) => `${v}`),
     totalBoard("Plus de first deaths (total)", (a) => a.firstDeaths, (v) => `${v}`),
-    totalBoard("Joueur le plus flex", (a) => a.agents.size, (v) => `${v} persos`),
+    totalBoard("Joueur le plus flex", (a) => a.agents.size, (v) => `${v} perso${v > 1 ? "s" : ""}`),
   ];
 
   return { tournamentRecords, records, averages, totals, hasData: true };

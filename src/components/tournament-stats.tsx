@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { agentIconUrl } from "@/lib/agents";
 import type {
-  StatEntry,
   StatRecord,
   StatLeaderboard,
   TournamentFact,
@@ -53,27 +52,6 @@ function Stopwatch() {
   );
 }
 
-function PlayerName({ entry }: { entry: StatEntry }) {
-  const inner = (
-    <>
-      {entry.name}
-      {entry.teamTag && (
-        <>
-          <span className="dot-sep">·</span>
-          <span className="text-[var(--text-muted)]">{entry.teamTag}</span>
-        </>
-      )}
-    </>
-  );
-  return entry.playerId ? (
-    <Link href={`/joueurs/${entry.playerId}`} className="truncate hover:text-[var(--accent)]">
-      {inner}
-    </Link>
-  ) : (
-    <span className="truncate">{inner}</span>
-  );
-}
-
 /** Rend une chaîne « a · b » avec des séparateurs « · » espacés. */
 function Detail({ text }: { text: string }) {
   const parts = text.split(" · ");
@@ -89,26 +67,53 @@ function Detail({ text }: { text: string }) {
   );
 }
 
-/** Carte stat compacte : valeur mise en avant + (option) vignette d'agent. */
+/**
+ * Carte stat compacte : valeur mise en avant + (option) vignette d'agent.
+ *
+ * La carte entière mène à la fiche du joueur quand il en a une : viser le seul
+ * pseudo était une cible minuscule, surtout au doigt.
+ */
 function BigStatCard({ record, showAgent }: { record: StatRecord; showAgent?: boolean }) {
   if (!record.entry) return null;
   const e = record.entry;
-  return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3">
-      <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{record.label}</div>
+  const body = (
+    <>
+      <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+        {record.label}
+      </div>
       <div className="mt-1.5 flex items-center gap-2">
         {showAgent && <AgentThumb agent={e.agent} size="h-8 w-8" />}
-        <span className="stat text-2xl font-bold leading-none text-[var(--accent)]">{e.valueLabel}</span>
+        <span className="stat text-2xl font-bold leading-none text-[var(--accent)]">
+          {e.valueLabel}
+        </span>
       </div>
       <div className="mt-2 truncate text-sm font-semibold text-white">
-        <PlayerName entry={e} />
+        {e.name}
+        {e.teamTag && (
+          <>
+            <span className="dot-sep">·</span>
+            <span className="text-[var(--text-muted)]">{e.teamTag}</span>
+          </>
+        )}
       </div>
       {e.detail && (
         <div className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">
           <Detail text={e.detail} />
         </div>
       )}
-    </div>
+    </>
+  );
+
+  const shell = "block rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3";
+  return e.playerId ? (
+    <Link
+      href={`/joueurs/${e.playerId}`}
+      className={`${shell} transition-colors hover:border-[var(--accent)]`}
+    >
+      {body}
+    </Link>
+  ) : (
+    <div className={shell}>{body}</div>
   );
 }
 
@@ -117,7 +122,7 @@ function FactCard({ fact }: { fact: TournamentFact }) {
   const hasImg = !!fact.image;
   return (
     <div
-      className={`relative overflow-hidden rounded-lg border border-[var(--border)] p-3 ${
+      className={`group/fact relative overflow-hidden rounded-lg border border-[var(--border)] p-3 transition-colors hover:border-[var(--border-strong)] ${
         hasImg ? "" : "bg-[var(--surface)]"
       }`}
     >
@@ -129,7 +134,7 @@ function FactCard({ fact }: { fact: TournamentFact }) {
             decoding="async"
             src={fact.image!}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-30"
+            className="absolute inset-0 h-full w-full scale-100 object-cover opacity-30 transition duration-300 group-hover/fact:scale-105 group-hover/fact:opacity-40"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/70 to-transparent" />
         </>
@@ -151,22 +156,85 @@ function FactCard({ fact }: { fact: TournamentFact }) {
   );
 }
 
-/** Carte classement cumulé : top 5. */
+/**
+ * Ligne de classement : cliquable sur toute sa surface quand le joueur a une
+ * fiche. Viser le seul pseudo faisait une cible minuscule, surtout au doigt.
+ */
+function EntryShell({
+  playerId,
+  title,
+  children,
+}: {
+  playerId: string | null;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const cls =
+    "group/entry -mx-1.5 block rounded px-1.5 py-1 transition-colors hover:bg-[var(--table-row-hover)]";
+  return playerId ? (
+    <Link href={`/joueurs/${playerId}`} className={cls} title={title}>
+      {children}
+    </Link>
+  ) : (
+    <div className={cls} title={title}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Carte classement cumulé : top 3, chaque entrée doublée d'une barre.
+ *
+ * La barre ne dit rien de neuf — elle ré-encode la valeur déjà écrite à droite,
+ * mais en longueur : on voit d'un coup d'œil si le premier écrase le classement
+ * ou si les trois se tiennent. Les joueurs sont des catégories nominales, donc
+ * une seule teinte pour toutes les barres : les colorer par rang doublerait ce
+ * que le numéro et la longueur disent déjà.
+ */
 function LeaderboardCard({ board }: { board: StatLeaderboard }) {
   if (board.entries.length === 0) return null;
+  const max = Math.max(...board.entries.map((e) => e.value ?? 0), 0);
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3">
-      <div className="mb-2 text-[10px] uppercase tracking-wide text-[var(--accent)]">{board.label}</div>
-      <ol className="flex flex-col gap-1">
-        {board.entries.map((e, i) => (
-          <li key={`${e.playerId ?? e.name}-${i}`} className="flex items-center gap-2 text-sm">
-            <span className="stat w-4 shrink-0 text-right text-xs text-[var(--text-subtle)]">{i + 1}</span>
-            <div className="min-w-0 flex-1 text-white">
-              <PlayerName entry={e} />
-            </div>
-            <span className="stat shrink-0 font-semibold text-white">{e.valueLabel}</span>
-          </li>
-        ))}
+      <div className="mb-2.5 text-[10px] uppercase tracking-wide text-[var(--accent)]">
+        {board.label}
+      </div>
+      <ol className="flex flex-col gap-2.5">
+        {board.entries.map((e, i) => {
+          const pct = max > 0 && e.value != null ? Math.max((e.value / max) * 100, 2) : 0;
+          return (
+            <li key={`${e.playerId ?? e.name}-${i}`}>
+              <EntryShell
+                playerId={e.playerId}
+                title={e.detail ? `${e.name} — ${e.valueLabel} · ${e.detail}` : undefined}
+              >
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="stat w-4 shrink-0 text-right text-xs text-[var(--text-subtle)]">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1 truncate text-white">
+                    {e.name}
+                    {e.teamTag && (
+                      <>
+                        <span className="dot-sep">·</span>
+                        <span className="text-[var(--text-muted)]">{e.teamTag}</span>
+                      </>
+                    )}
+                  </div>
+                  <span className="stat shrink-0 font-semibold text-white">{e.valueLabel}</span>
+                </div>
+                {pct > 0 && (
+                  <div className="mt-1 ml-6 h-1.5 rounded bg-[var(--bg)]">
+                    <div
+                      className="h-full rounded bg-[var(--accent)] opacity-80 transition-opacity group-hover/entry:opacity-100"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                )}
+              </EntryShell>
+            </li>
+          );
+        })}
       </ol>
     </div>
   );
