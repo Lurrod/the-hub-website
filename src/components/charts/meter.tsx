@@ -20,10 +20,14 @@ export default function Meter({
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+        <span className="min-w-0 text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
           {label}
         </span>
-        <span style={{ fontSize: "18px" }} className="stat font-bold leading-none text-white">
+        {/* La valeur ne se coupe jamais : c'est le libellé qui cède la place. */}
+        <span
+          style={{ fontSize: "18px" }}
+          className="stat shrink-0 whitespace-nowrap font-bold leading-none text-white"
+        >
           {valueLabel}
         </span>
       </div>

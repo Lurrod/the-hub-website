@@ -32,6 +32,55 @@ export const AGENT_ICONS: Record<string, string> = {
   "Yoru": "https://media.valorant-api.com/agents/7f94d92c-4234-0a36-9646-3a87eb8b5c89/displayicon.png",
 };
 
+// Table nom d'agent -> couleur principale, figee (pas de fetch runtime), generee
+// depuis valorant-api.com : on reprend backgroundGradientColors[0], la couleur
+// que Riot donne a chaque agent (fond de son portrait en jeu), et on remonte sa
+// clarte en OKLCH (L = 0.62, teinte conservee) pour qu'elle soit lisible sur le
+// fond sombre du site. Les couleurs officielles brutes sont trop sombres.
+//
+// ATTENTION : cette palette est SEMANTIQUE, pas libre. Riot donne des teintes
+// tres proches a plusieurs agents (Omen et Killjoy sont a un delta E de 5.7 en
+// vision normale, Omen et Jett a 1.5 en deuteranopie). Elle ne peut donc jamais
+// porter seule l'identite d'une part de graphique : le portrait de l'agent et
+// son libelle doivent toujours l'accompagner.
+export const AGENT_COLORS: Record<string, string> = {
+  "Astra": "#7b79d8",
+  "Breach": "#c76749",
+  "Brimstone": "#6a80d4",
+  "Chamber": "#278ecc",
+  "Clove": "#956dd5",
+  "Cypher": "#4a88d2",
+  "Deadlock": "#6880d4",
+  "Fade": "#6482d4",
+  "Gekko": "#9273c9",
+  "Harbor": "#009f81",
+  "Iso": "#747dd3",
+  "Jett": "#0093c5",
+  "KAY/O": "#6781d4",
+  "Killjoy": "#a56bba",
+  "Miks": "#8f74cb",
+  "Neon": "#8577cf",
+  "Omen": "#8876ce",
+  "Phoenix": "#c76748",
+  "Raze": "#c8664f",
+  "Reyna": "#b167ab",
+  "Sage": "#009f89",
+  "Skye": "#339d63",
+  "Sova": "#5885d4",
+  "Tejo": "#c26d31",
+  "Veto": "#009bad",
+  "Viper": "#049e72",
+  "Vyse": "#9170d3",
+  "Waylay": "#9a70c4",
+  "Yoru": "#6c7fd4",
+};
+
+/** Couleur principale d'un agent, repli neutre si inconnu. */
+export function agentColor(agent: string | null | undefined): string {
+  if (!agent) return "var(--text-subtle)";
+  return AGENT_COLORS[agent] ?? "var(--text-subtle)";
+}
+
 /** URL d'icone d'un agent par son nom, ou undefined si inconnu. */
 export function agentIconUrl(agent: string | null | undefined): string | undefined {
   if (!agent) return undefined;

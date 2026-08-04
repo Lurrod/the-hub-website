@@ -128,3 +128,18 @@ describe("buildPlayerOverview", () => {
     expect(buildPlayerOverview(many).agents).toHaveLength(6);
   });
 });
+
+describe("agentsOther", () => {
+  it("agrège les agents au-delà du sixième pour que le disque fasse 100 %", () => {
+    const many = ["a", "b", "c", "d", "e", "f", "g", "h"].map((agent) => row({ agent }));
+    const o = buildPlayerOverview(many);
+    expect(o.agents).toHaveLength(6);
+    expect(o.agentsOther).toMatchObject({ agent: "Autres", maps: 2 });
+    const total = o.agents.reduce((n, a) => n + a.maps, 0) + o.agentsOther!.maps;
+    expect(total).toBe(8);
+  });
+  it("reste nul quand le joueur tient dans six agents", () => {
+    const few = ["a", "b", "c"].map((agent) => row({ agent }));
+    expect(buildPlayerOverview(few).agentsOther).toBeNull();
+  });
+});

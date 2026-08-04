@@ -45,6 +45,8 @@ export type PlayerOverview = {
   topAgent: AgentShare | null;
   bestGame: BestGame | null;
   agents: AgentShare[];
+  /** Reste des agents au-delà des 6 premiers, pour que le disque fasse 100 %. */
+  agentsOther: AgentShare | null;
   mapRecords: MapRecord[];
   trend: TrendPoint[];
   avgRating: number;
@@ -139,6 +141,15 @@ export function buildPlayerOverview(rows: readonly PlayerStatRow[]): PlayerOverv
   const kills = rows.reduce((n, r) => n + r.kills, 0);
   const deaths = rows.reduce((n, r) => n + r.deaths, 0);
   const agents = agentShares(rows);
+  const tail = agents.slice(6);
+  const agentsOther =
+    tail.length > 0
+      ? {
+          agent: "Autres",
+          maps: tail.reduce((n, a) => n + a.maps, 0),
+          pct: tail.reduce((n, a) => n + a.pct, 0),
+        }
+      : null;
   return {
     maps: rows.length,
     kills,
@@ -149,6 +160,7 @@ export function buildPlayerOverview(rows: readonly PlayerStatRow[]): PlayerOverv
     topAgent: agents[0] ?? null,
     bestGame: bestGame(rows),
     agents: agents.slice(0, 6),
+    agentsOther,
     mapRecords: mapRecords(rows),
     trend: ratingTrend(rows),
     avgRating: round2(avg(rows, (r) => r.rating)),
