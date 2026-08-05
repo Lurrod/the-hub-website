@@ -1,3 +1,5 @@
+import { formatSite, toDateInput } from "@/lib/timezone";
+
 const DAY_MS = 86_400_000;
 
 /** Nombre de jours (arrondi) entre aujourd'hui et `date` (négatif si passé). */
@@ -34,34 +36,39 @@ export function monthLabel(date: Date | null): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Clé de regroupement par jour (AAAA-MM-JJ), "no-date" si absente. */
+/**
+ * Clé de regroupement par jour (AAAA-MM-JJ), "no-date" si absente.
+ *
+ * Le jour est celui de Paris, pas celui d'UTC : un match à 00h30 heure de
+ * Paris tombe la veille en UTC et se retrouverait rangé sous le mauvais jour.
+ */
 export function dayKey(date: Date | null): string {
-  if (!date) return "no-date";
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return date ? toDateInput(new Date(date)) : "no-date";
 }
 
 /** Libellé de jour (« lundi 27 juillet »), capitalisé, "Date à définir" si absente. */
 export function dayLabel(date: Date | null): string {
   if (!date) return "Date à définir";
-  const s = new Date(date).toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const s = formatSite(new Date(date), { weekday: "long", day: "numeric", month: "long" });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /** Date courte numérique (« 27/07 »), "--/--" si absente. */
 export function shortDate(date: Date | null): string {
   if (!date) return "--/--";
-  return new Date(date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+  return formatSite(new Date(date), { day: "2-digit", month: "2-digit" });
 }
 
-/** Heure (« 18:30 »), "--:--" si absente. */
-export function timeLabel(date: Date | null): string {
-  if (!date) return "--:--";
-  return new Date(date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+/**
+ * Heure de coup d'envoi (« 18:30 »), heure de Paris.
+ *
+ * `hasTime` distingue un créneau réellement fixé d'une simple date : afficher
+ * l'heure d'un match dont seule la date est connue reviendrait à inventer un
+ * coup d'envoi à minuit.
+ */
+export function timeLabel(date: Date | null, hasTime = true): string {
+  if (!date || !hasTime) return "--:--";
+  return formatSite(new Date(date), { hour: "2-digit", minute: "2-digit" });
 }
 
 /** Âge en années révolues, null si la date de naissance est inconnue. */

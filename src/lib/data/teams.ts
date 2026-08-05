@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { isLastOwner } from "@/lib/permissions";
 import { clampPage, pageOffset } from "@/lib/pagination";
 import { attachRosterPlayer } from "@/lib/data/players";
+import type { LfpFilters, LfpState } from "@/lib/lfp";
 import type { TeamInput, RosterEntry } from "@/lib/validation/team";
 import { INVITE_TTL_DAYS } from "@/lib/invite";
 
@@ -94,6 +95,72 @@ export async function findTeamConflict(
   });
   if (!clash) return null;
   return clash.name.toLowerCase() === data.name.toLowerCase() ? "name" : "tag";
+}
+
+/** Équipes en recherche de joueur affichées par page. */
+export const LFP_PER_PAGE = 24;
+
+/**
+ * Équipes qui recrutent, les annonces les plus fraîches d'abord.
+ *
+ * Un filtre par poste retient aussi les équipes ouvertes à tous les rôles :
+ * elles recrutent bel et bien à ce poste, elles ne l'ont simplement pas
+ * restreint. Les exclure priverait le joueur de la moitié des annonces.
+ */
+export async function listLfpTeams(filters: LfpFilters, page = 1) {
+  const where = {
+    lfp: true,
+    ...(filters.role
+      ? { OR: [{ lfpRoles: { has: filters.role } }, { lfpRoles: { isEmpty: true } }] }
+      : {}),
+    ...(filters.q
+      ? {
+          AND: [
+            {
+              OR: [
+                { name: { contains: filters.q, mode: "insensitive" as const } },
+                { tag: { contains: filters.q, mode: "insensitive" as const } },
+              ],
+            },
+          ],
+        }
+      : {}),
+  };
+
+  const total = await db.team.count({ where });
+  const current = clampPage(page, total, LFP_PER_PAGE);
+
+  const teams = await db.team.findMany({
+    where,
+    orderBy: [{ lfpSince: "desc" }, { name: "asc" }],
+    skip: pageOffset(current, LFP_PER_PAGE),
+    take: LFP_PER_PAGE,
+    select: {
+      id: true,
+      name: true,
+      tag: true,
+      logo: true,
+      region: true,
+      lfpRoles: true,
+      lfpMessage: true,
+      _count: { select: { memberships: { where: { leaveDate: null } } } },
+    },
+  });
+
+  return { teams, total, page: current, pageSize: LFP_PER_PAGE };
+}
+
+/** Applique un statut LFP calculé par `nextLfpState`. */
+export function setTeamLfp(teamId: string, state: LfpState) {
+  return db.team.update({
+    where: { id: teamId },
+    data: {
+      lfp: state.lfp,
+      lfpSince: state.lfpSince,
+      lfpRoles: state.lfpRoles,
+      lfpMessage: state.lfpMessage,
+    },
+  });
 }
 
 export function getTeam(id: string) {

@@ -4,6 +4,7 @@ import { getMatch } from "@/lib/data/matches";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { MATCH_STAGE_LABELS } from "@/lib/constants";
+import { dayLabel, timeLabel } from "@/lib/dates";
 import { hasRiotStats } from "@/lib/match-stats-core";
 import MatchScoreboard, { type ScoreboardMap, type RoundEntry } from "@/components/match-scoreboard";
 
@@ -172,6 +173,17 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </span>
         </Link>
         <div className="flex shrink-0 items-center gap-2 text-xs text-[var(--text-muted)]">
+          {match.date && (
+            <span className="flex items-center">
+              {dayLabel(match.date)}
+              {match.hasTime && (
+                <>
+                  <span className="dot-sep">·</span>
+                  <span className="stat">{timeLabel(match.date, true)}</span>
+                </>
+              )}
+            </span>
+          )}
           <span className="flex items-center">
             {stageLabel}
             {stageExtra && (

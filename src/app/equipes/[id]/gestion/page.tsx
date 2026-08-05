@@ -3,6 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { getSessionUser, getTeamManagerIds } from "@/lib/server-auth";
 import { canManageTeam } from "@/lib/permissions";
 import { getTeam } from "@/lib/data/teams";
+import { toggleTeamLfpAction } from "@/app/equipes/actions";
+import { VALORANT_ROLES, ROLE_LABELS } from "@/lib/roles";
+import { LFP_MESSAGE_MAX } from "@/lib/lfp";
 import TeamForm from "@/components/team-form";
 import ConfirmDeleteButton from "@/components/confirm-delete-button";
 import { updateTeamAction, deleteTeamAction } from "@/app/admin/actions/teams";
@@ -37,6 +40,7 @@ export default async function TeamGestionPage({
 
   const updateWithId = updateTeamAction.bind(null, id);
   const deleteWithId = deleteTeamAction.bind(null, id);
+  const toggleLfpWithId = toggleTeamLfpAction.bind(null, id);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
@@ -75,6 +79,57 @@ export default async function TeamGestionPage({
           socials: (team.socials ?? {}) as { twitter?: string; twitch?: string; website?: string },
         }}
       />
+
+      <section className="mt-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <h2 className="mb-1 text-lg font-semibold text-white">Recrutement</h2>
+        <p className="mb-4 text-sm text-[var(--text-muted)]">
+          {team.lfp
+            ? "Ton équipe apparaît dans l'onglet Équipes de la page LFT / LFP."
+            : "Publie une annonce pour apparaître dans l'onglet Équipes de la page LFT / LFP."}
+        </p>
+
+        <form action={toggleLfpWithId} className="grid gap-4">
+          {/* Les champs ne servent qu'à l'allumage : éteindre efface l'annonce,
+              inutile de renvoyer des postes qu'on s'apprête à effacer. */}
+          {!team.lfp && (
+            <>
+              <fieldset className="grid gap-2">
+                <legend className="text-sm text-[var(--text-muted)]">
+                  Postes recherchés <span className="text-[var(--text-subtle)]">(aucun coché = ouvert à tous)</span>
+                </legend>
+                <div className="flex flex-wrap gap-3">
+                  {VALORANT_ROLES.map((r) => (
+                    <label key={r} className="flex items-center gap-1.5 text-sm text-white">
+                      <input type="checkbox" name="lfpRole" value={r} className="accent-[var(--accent)]" />
+                      {ROLE_LABELS[r]}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label className="grid gap-1 text-sm text-[var(--text-muted)]">
+                Précisions (optionnel)
+                <input
+                  name="lfpMessage"
+                  maxLength={LFP_MESSAGE_MAX}
+                  placeholder="Niveau attendu, disponibilités, comment postuler…"
+                  className="rounded border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--accent)]"
+                />
+              </label>
+            </>
+          )}
+
+          <button
+            className={
+              team.lfp
+                ? "justify-self-start rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
+                : "justify-self-start rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            }
+          >
+            {team.lfp ? "Retirer l'annonce" : "Publier l'annonce"}
+          </button>
+        </form>
+      </section>
 
       <section className="mt-10 rounded-lg border border-[var(--destructive)] p-4">
         <h2 className="mb-2 text-lg font-semibold text-[var(--destructive)]">Zone danger</h2>

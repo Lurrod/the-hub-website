@@ -12,6 +12,7 @@ const STATIC_ROUTES: Array<{
   { path: "/tournois", changeFrequency: "daily", priority: 0.9 },
   { path: "/matchs", changeFrequency: "daily", priority: 0.9 },
   { path: "/equipes", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/joueurs", changeFrequency: "daily", priority: 0.8 },
   { path: "/lft", changeFrequency: "daily", priority: 0.7 },
   { path: "/recherche", changeFrequency: "monthly", priority: 0.3 },
   { path: "/mentions-legales", changeFrequency: "yearly", priority: 0.2 },

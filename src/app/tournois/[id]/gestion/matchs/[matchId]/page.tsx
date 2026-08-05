@@ -14,6 +14,7 @@ import {
 } from "@/app/admin/actions/matches";
 import ConfirmDeleteButton from "@/components/confirm-delete-button";
 import { hasRiotStats } from "@/lib/match-stats-core";
+import { toDateInput, toDateTimeInput } from "@/lib/timezone";
 
 import { tournamentTitle } from "@/lib/data/titles";
 
@@ -27,8 +28,10 @@ export async function generateMetadata({
   return { title: name ? `Éditer un match · ${name}` : "Éditer un match" };
 }
 
-function toDateInput(d: Date | null): string {
-  return d ? new Date(d).toISOString().slice(0, 10) : "";
+/** Valeur du champ : avec l'heure si elle a été renseignée, sinon la date seule. */
+function toMatchDateInput(d: Date | null, hasTime: boolean): string {
+  if (!d) return "";
+  return hasTime ? toDateTimeInput(d) : toDateInput(d);
 }
 
 export default async function EditMatchPage({
@@ -117,7 +120,7 @@ export default async function EditMatchPage({
           groupId: match.groupId ?? undefined,
           round: match.round ?? undefined,
           bracketPosition: match.bracketPosition ?? undefined,
-          date: toDateInput(match.date),
+          date: toMatchDateInput(match.date, match.hasTime),
           vodUrl: match.vodUrl ?? undefined,
         }}
       />

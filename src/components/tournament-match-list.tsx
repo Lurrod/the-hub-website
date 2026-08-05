@@ -5,6 +5,7 @@ type Team = { name: string; logo: string | null } | null;
 export type MatchEntry = {
   id: string;
   date: Date | null;
+  hasTime?: boolean;
   status: string;
   scoreA: number;
   scoreB: number;
@@ -38,7 +39,7 @@ export function MatchListItem({ m }: { m: MatchEntry }) {
         href={`/matchs/${m.id}`}
         className="flex items-center gap-3 rounded px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
       >
-        <div className="stat w-12 shrink-0 text-center text-sm text-white">{timeLabel(m.date)}</div>
+        <div className="stat w-12 shrink-0 text-center text-sm text-white">{timeLabel(m.date, m.hasTime ?? false)}</div>
         <div className="min-w-0 max-w-[55%] space-y-1">
           <TeamRow team={m.teamA} />
           <TeamRow team={m.teamB} />

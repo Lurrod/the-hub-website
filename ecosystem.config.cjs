@@ -14,6 +14,12 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 3200,
+        // Les dates saisies et affichées sont ancrées sur Paris par le code
+        // (voir src/lib/timezone.ts), qui ne dépend donc pas de ce réglage.
+        // On le pose quand même pour que les horodatages des journaux et tout
+        // appel à `Date` non passé par ces aides parlent la même langue que
+        // l'audience du site.
+        TZ: "Europe/Paris",
         // Écoute en local uniquement : nginx est le seul exposé sur Internet.
         HOSTNAME: "127.0.0.1",
       },

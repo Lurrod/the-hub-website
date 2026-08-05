@@ -31,6 +31,14 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
     title: "Statut LFT activé",
     message: "Tu apparais maintenant sur la page LFT.",
   },
+  "lfp-on": {
+    title: "Annonce publiée",
+    message: "Ton équipe apparaît maintenant dans l'onglet Équipes de la page LFT / LFP.",
+  },
+  "lfp-off": {
+    title: "Annonce retirée",
+    message: "Ton équipe n'apparaît plus parmi celles qui recrutent.",
+  },
   "lft-off": {
     title: "Statut LFT désactivé",
     message: "Tu n'apparais plus sur la page LFT.",

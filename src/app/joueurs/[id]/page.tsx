@@ -63,6 +63,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
   const miniMatch = (m: (typeof upcoming)[number], played: boolean) => ({
     id: m.id,
     date: m.date,
+    hasTime: m.hasTime,
     teamA: { tag: m.teamA.tag, logo: m.teamA.logo },
     teamB: { tag: m.teamB.tag, logo: m.teamB.logo },
     scoreA: played ? m.scoreA : undefined,

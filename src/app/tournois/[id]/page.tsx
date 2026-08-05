@@ -156,6 +156,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           matches={upcoming.map((m) => ({
             id: m.id,
             date: m.date,
+            hasTime: m.hasTime,
             teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
             teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
           }))}
@@ -222,6 +223,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       matches={allMatches.map((m) => ({
         id: m.id,
         date: m.date,
+        hasTime: m.hasTime,
         status: m.status,
         scoreA: m.scoreA,
         scoreB: m.scoreB,

@@ -1,12 +1,25 @@
 import { z } from "zod";
 import { MATCH_STAGES, MATCH_STATUSES, BEST_OF_OPTIONS } from "@/lib/constants";
 import { RIOT_CAMPS } from "@/lib/match-stats-core";
+import { hasTimePart, parseSiteDateTime } from "@/lib/timezone";
 
-const optionalDate = z
+/**
+ * Date et heure de coup d'envoi, saisies dans un `<input type="datetime-local">`.
+ *
+ * La valeur n'a pas de fuseau : elle est comprise comme une heure de Paris,
+ * jamais comme une heure UTC — voir `lib/timezone`. `hasTime` retient si
+ * l'organisateur a réellement renseigné une heure, pour ne pas afficher un
+ * minuit par défaut comme s'il s'agissait du coup d'envoi.
+ */
+const optionalDateTime = z
   .string()
   .optional()
-  .transform((v) => (v && v.trim() !== "" ? new Date(v) : undefined))
-  .refine((d) => d === undefined || !Number.isNaN(d.getTime()), { message: "Date invalide" });
+  .transform((v) => {
+    const raw = v?.trim() ?? "";
+    if (raw === "") return { date: undefined, hasTime: false };
+    return { date: parseSiteDateTime(raw) ?? undefined, hasTime: hasTimePart(raw), raw };
+  })
+  .refine((v) => v.raw === undefined || v.date !== undefined, { message: "Date invalide" });
 
 export const matchInputSchema = z
   .object({
@@ -24,7 +37,7 @@ export const matchInputSchema = z
     groupId: z.string().trim().optional(),
     round: z.string().trim().max(60).optional(),
     bracketPosition: z.coerce.number().int().min(0).optional(),
-    date: optionalDate,
+    date: optionalDateTime,
     vodUrl: z
       .string()
       .trim()

@@ -83,6 +83,14 @@ model Team {
   description String?
   socials     Json?
   status          TeamStatus   @default(ACTIVE)
+  /// Pendant du LFT côté équipe : « on recrute ». Même paire drapeau +
+  /// horodatage que `Player.lft`, pour trier les annonces les plus fraîches.
+  lfp             Boolean      @default(false)
+  lfpSince        DateTime?
+  /// Postes recherchés. Vide = ouvert à tous les rôles.
+  lfpRoles        ValorantRole[] @default([])
+  /// Précision libre de l'annonce (niveau attendu, disponibilités…).
+  lfpMessage      String?
   inviteToken     String?      @unique
   inviteExpiresAt DateTime?
   createdById String?
@@ -285,6 +293,10 @@ model Match {
   bestOf          Int         @default(1)
   status          MatchStatus @default(SCHEDULED)
   date            DateTime?
+  /// L'heure de `date` est-elle significative ? Les matchs saisis avant
+  /// l'ajout du champ horaire portent minuit, qui ne veut rien dire : sans ce
+  /// drapeau ils afficheraient une heure de coup d'envoi inventée.
+  hasTime         Boolean     @default(false)
   vodUrl          String?
   statsStatus     String?
   statsFetchedAt  DateTime?

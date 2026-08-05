@@ -171,8 +171,16 @@ export default function MatchForm({
         </label>
       </div>
       <label className={lbl}>
-        Date (optionnel)
-        <input type="date" name="date" defaultValue={values?.date ?? ""} className={input} />
+        Date et heure (optionnel)
+        <input
+          type="datetime-local"
+          name="date"
+          defaultValue={values?.date ?? ""}
+          className={input}
+        />
+        <span className="text-xs text-[var(--text-subtle)]">
+          Heure de Paris. Laisser l&apos;heure vide si le créneau n&apos;est pas fixé.
+        </span>
       </label>
       <label className={lbl}>
         Lien VOD/stream (optionnel)

@@ -7,7 +7,8 @@ const LINKS = [
   { href: "/tournois", label: "Tournois" },
   { href: "/matchs", label: "Matchs" },
   { href: "/equipes", label: "Équipes" },
-  { href: "/lft", label: "LFT" },
+  { href: "/joueurs", label: "Joueurs" },
+  { href: "/lft", label: "LFT / LFP" },
 ];
 
 export default function NavLinks({ isAdmin = false }: { isAdmin?: boolean }) {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatSite } from "@/lib/timezone";
 
 export type MatchRowData = {
   id: string;
@@ -9,6 +10,7 @@ export type MatchRowData = {
   winnerId: string | null;
   status: string;
   date?: Date | string | null;
+  hasTime?: boolean;
   bestOf?: number;
   vodUrl?: string | null;
   teamA: { name: string; tag: string; logo: string | null } | null;
@@ -16,13 +18,21 @@ export type MatchRowData = {
   contextLabel?: string;
 };
 
-function formatSchedule(date: Date | string | null | undefined): { day: string; time: string } | null {
+/**
+ * Jour et heure du coup d'envoi, en heure de Paris. `time` est vide quand
+ * seule la date est connue : mieux vaut n'afficher aucune heure qu'un minuit
+ * qui n'a jamais été saisi.
+ */
+function formatSchedule(
+  date: Date | string | null | undefined,
+  hasTime: boolean
+): { day: string; time: string } | null {
   if (!date) return null;
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return null;
   return {
-    day: d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
-    time: d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+    day: formatSite(d, { day: "2-digit", month: "short" }),
+    time: hasTime ? formatSite(d, { hour: "2-digit", minute: "2-digit" }) : "",
   };
 }
 
@@ -64,7 +74,7 @@ export default function MatchRow({
 }) {
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
-  const schedule = formatSchedule(match.date);
+  const schedule = formatSchedule(match.date, match.hasTime ?? false);
   return (
     <Link
       href={`/matchs/${match.id}`}
