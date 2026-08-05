@@ -1,9 +1,10 @@
 /**
  * Construction de la Content-Security-Policy.
  *
- * Elle est publiée en **Report-Only** : le navigateur signale les violations
- * dans sa console sans rien bloquer. C'est l'étape d'observation avant de
- * passer à l'application réelle — voir la marche à suivre en bas de fichier.
+ * Elle est **appliquée** : le navigateur bloque ce qui n'y figure pas. La
+ * phase d'observation en Report-Only a été menée sur un parcours complet
+ * (accueil, tournoi, match, profil, upload d'image, pages de gestion) sans
+ * relever de violation.
  *
  * La policy ne peut pas être statique (donc pas dans `next.config.ts`) : Next
  * pose des scripts inline pour l'hydratation, qui n'échappent à `script-src`
@@ -17,14 +18,19 @@ export const EXTERNAL_IMAGE_HOSTS = [
   "https://media.valorant-api.com",
   // Drapeaux de nationalité — src/components/flag.tsx
   "https://flagcdn.com",
+  // Avatars Discord : `ensurePlayerForUser` reprend `user.image` comme photo
+  // par défaut à la création du compte, et la session en porte une copie pour
+  // le menu utilisateur. Tant que ces URL ne sont pas recopiées dans
+  // `uploads/`, tout nouveau compte a une photo servie depuis ce domaine.
+  "https://cdn.discordapp.com",
 ] as const;
 
 /**
- * En-tête utilisé. Tant qu'il vaut la variante Report-Only, aucune ressource
- * n'est bloquée. Passer à "Content-Security-Policy" une fois la console vierge
- * sur un parcours complet (accueil, tournoi, match, profil, upload d'image).
+ * En-tête utilisé. En cas de régression sur une page, repasser
+ * temporairement à "Content-Security-Policy-Report-Only" fait réapparaître les
+ * violations en console sans casser le site, le temps d'ajuster la policy.
  */
-export const CSP_HEADER = "Content-Security-Policy-Report-Only";
+export const CSP_HEADER = "Content-Security-Policy";
 
 /**
  * @param nonce   valeur unique de la requête, injectée dans script-src

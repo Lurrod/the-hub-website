@@ -16,6 +16,7 @@ import {
 import { nextLftState } from "@/lib/lft";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
+import { allow } from "@/lib/rate-limit";
 
 /**
  * Fiche joueur du visiteur, ou redirection.
@@ -61,6 +62,9 @@ export async function updateMyRiotIdAction(formData: FormData) {
 
   const input = String(formData.get("riotId") ?? "").trim();
   if (!input) redirect("/profil?error=riotformat");
+  // Chaque soumission part vers HenrikDev : sans plafond, un seul compte
+  // pouvait épuiser le quota de la clé API en boucle.
+  if (!allow(`riot:${player.id}`)) redirect("/profil?error=ratelimited");
   try {
     const account = await resolveRiotAccount(input, { excludePlayerId: player.id });
     await setPlayerRiotAccount(player.id, account);

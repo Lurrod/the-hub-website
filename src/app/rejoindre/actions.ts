@@ -12,6 +12,7 @@ import {
 } from "@/lib/data/players";
 import { isInviteValid, isInviteTokenFormat } from "@/lib/invite";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
+import { allow } from "@/lib/rate-limit";
 
 export async function joinTeamViaInviteAction(token: string, formData: FormData) {
   // Un lien périmé ou un compte déconnecté entre l'affichage et l'envoi du
@@ -36,6 +37,7 @@ export async function joinTeamViaInviteAction(token: string, formData: FormData)
   const submitted = String(formData.get("riotId") ?? "").trim();
   const currentRiotId = current?.riotName ? `${current.riotName}#${current.riotTag}` : "";
   if (submitted && submitted !== currentRiotId) {
+    if (!allow(`riot:${player.id}`)) redirect(`/rejoindre/${token}?error=ratelimited`);
     try {
       const account = await resolveRiotAccount(submitted, { excludePlayerId: player.id });
       await setPlayerRiotAccount(player.id, account);

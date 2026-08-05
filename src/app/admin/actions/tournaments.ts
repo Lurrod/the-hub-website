@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, assertCanManageTournament } from "@/lib/server-auth";
+import {
+  requireAdmin,
+  assertCanManageTournament,
+  assertCanAdministerTournament,
+} from "@/lib/server-auth";
+import { parseManagerRole } from "@/lib/manager-roles";
 import { db } from "@/lib/db";
 import { tournamentInputSchema, participantAddSchema } from "@/lib/validation/tournament";
 import {
@@ -15,6 +20,7 @@ import {
   removeParticipant,
   addTournamentManager,
   removeTournamentManagerIfNotLast,
+  setTournamentManagerRole,
 } from "@/lib/data/tournaments";
 import { validateImageUpload, processAndStoreImage } from "@/lib/images";
 
@@ -90,7 +96,9 @@ export async function updateTournamentAction(tournamentId: string, formData: For
 }
 
 export async function deleteTournamentAction(tournamentId: string) {
-  await assertCanManageTournament(tournamentId);
+  // Supprimer le tournoi efface en cascade poules, participants et matchs :
+  // réservé au propriétaire.
+  await assertCanAdministerTournament(tournamentId);
   await deleteTournament(tournamentId);
   revalidatePath("/tournois");
   revalidatePath("/admin/tournois");
@@ -126,22 +134,40 @@ export async function removeParticipantAction(tournamentId: string, teamId: stri
   revalidatePath(`/tournois/${tournamentId}`);
 }
 
+/** Administrer les managers, c'est distribuer les droits : réservé au propriétaire. */
 export async function addTournamentManagerAction(tournamentId: string, formData: FormData) {
-  await assertCanManageTournament(tournamentId);
+  await assertCanAdministerTournament(tournamentId);
   const base = `/tournois/${tournamentId}/gestion/managers`;
   const discordId = String(formData.get("discordId") ?? "").trim();
   if (!discordId) redirect(`${base}?error=empty`);
   const user = await db.user.findUnique({ where: { discordId }, select: { id: true } });
   if (!user) redirect(`${base}?error=notfound`);
-  await addTournamentManager(tournamentId, user.id);
+  await addTournamentManager(tournamentId, user.id, parseManagerRole(formData.get("role")));
   revalidatePath(base);
   redirect(`${base}?ok=manager-added`);
 }
 
 export async function removeTournamentManagerAction(tournamentId: string, userId: string) {
-  await assertCanManageTournament(tournamentId);
+  await assertCanAdministerTournament(tournamentId);
   const base = `/tournois/${tournamentId}/gestion/managers`;
   const removed = await removeTournamentManagerIfNotLast(tournamentId, userId);
-  if (!removed) redirect(`${base}?error=lastmanager`);
+  if (!removed) redirect(`${base}?error=lastowner`);
   revalidatePath(base);
+}
+
+export async function setTournamentManagerRoleAction(
+  tournamentId: string,
+  userId: string,
+  formData: FormData
+) {
+  await assertCanAdministerTournament(tournamentId);
+  const base = `/tournois/${tournamentId}/gestion/managers`;
+  const changed = await setTournamentManagerRole(
+    tournamentId,
+    userId,
+    parseManagerRole(formData.get("role"))
+  );
+  if (!changed) redirect(`${base}?error=lastowner`);
+  revalidatePath(base);
+  redirect(`${base}?ok=manager-role`);
 }

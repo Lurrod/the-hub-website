@@ -1,6 +1,14 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isAdmin, canManageTeam, canManageTournament, type SessionUser } from "@/lib/permissions";
+import {
+  isAdmin,
+  canManageTeam,
+  canManageTournament,
+  canAdminister,
+  managerUserIds,
+  type ManagerEntry,
+  type SessionUser,
+} from "@/lib/permissions";
 import { logger } from "@/lib/logger";
 
 export async function getSessionUser(): Promise<SessionUser> {
@@ -30,12 +38,24 @@ function forbidden(scope: string, resourceId: string | null, user: SessionUser):
   return new Error("FORBIDDEN");
 }
 
+/** Managers de l'équipe avec leur niveau (OWNER / MANAGER). */
+export function getTeamManagers(teamId: string): Promise<ManagerEntry[]> {
+  return db.teamManager.findMany({ where: { teamId }, select: { userId: true, role: true } });
+}
+
 export async function getTeamManagerIds(teamId: string): Promise<string[]> {
-  const rows = await db.teamManager.findMany({
-    where: { teamId },
-    select: { userId: true },
-  });
-  return rows.map((r) => r.userId);
+  return managerUserIds(await getTeamManagers(teamId));
+}
+
+/**
+ * Autorise si admin OU **propriétaire** de cette équipe. Réservé aux actions
+ * qui engagent l'équipe entière : suppression, gestion des managers.
+ */
+export async function assertCanAdministerTeam(teamId: string): Promise<SessionUser & object> {
+  const user = await getSessionUser();
+  const managers = await getTeamManagers(teamId);
+  if (!canAdminister(user, managers)) throw forbidden("team.admin", teamId, user);
+  return user!;
 }
 
 /** Autorise si admin OU manager de cette équipe. Lève "FORBIDDEN" sinon. */
@@ -46,12 +66,26 @@ export async function assertCanManageTeam(teamId: string): Promise<SessionUser &
   return user!;
 }
 
-export async function getTournamentManagerIds(tournamentId: string): Promise<string[]> {
-  const rows = await db.tournamentManager.findMany({
+/** Managers du tournoi avec leur niveau (OWNER / MANAGER). */
+export function getTournamentManagers(tournamentId: string): Promise<ManagerEntry[]> {
+  return db.tournamentManager.findMany({
     where: { tournamentId },
-    select: { userId: true },
+    select: { userId: true, role: true },
   });
-  return rows.map((r) => r.userId);
+}
+
+export async function getTournamentManagerIds(tournamentId: string): Promise<string[]> {
+  return managerUserIds(await getTournamentManagers(tournamentId));
+}
+
+/** Autorise si admin OU **propriétaire** de ce tournoi. */
+export async function assertCanAdministerTournament(
+  tournamentId: string
+): Promise<SessionUser & object> {
+  const user = await getSessionUser();
+  const managers = await getTournamentManagers(tournamentId);
+  if (!canAdminister(user, managers)) throw forbidden("tournament.admin", tournamentId, user);
+  return user!;
 }
 
 /** Autorise si admin OU manager de ce tournoi. Lève "FORBIDDEN" sinon. */

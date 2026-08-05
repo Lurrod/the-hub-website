@@ -16,6 +16,7 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "team-deleted": { title: "Équipe supprimée", message: "L'équipe a bien été supprimée." },
   "participant-added": { title: "Équipe inscrite", message: "L'équipe a été ajoutée au tournoi." },
   "manager-added": { title: "Manager ajouté", message: "Le manager a bien été ajouté." },
+  "manager-role": { title: "Niveau modifié", message: "Le niveau du manager a été mis à jour." },
   "member-added": { title: "Joueur ajouté", message: "Le joueur a été ajouté au roster." },
   "profile-saved": { title: "Profil enregistré", message: "Tes informations ont été mises à jour." },
   "player-created": { title: "Joueur créé", message: "La fiche joueur a bien été créée." },
@@ -61,6 +62,11 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   empty: { title: "Champ vide", message: "Renseigne l'identifiant Discord." },
   notfound: { title: "Utilisateur introuvable", message: "Aucun compte ne correspond à cet identifiant Discord." },
   lastmanager: { title: "Action refusée", message: "Impossible de retirer le dernier manager." },
+  lastowner: {
+    title: "Action refusée",
+    message:
+      "Il doit rester au moins un propriétaire. Promeus quelqu'un d'autre avant de retirer ou rétrograder celui-ci.",
+  },
   nogroups: { title: "Format sans poules", message: "Ce tournoi n'a pas de phase de poules." },
   stage: { title: "Phase invalide", message: "Cette phase n'est pas autorisée pour ce format." },
   score: {

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { allow } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { assertCanManageTournament } from "@/lib/server-auth";
 import { logger, describeError } from "@/lib/logger";
@@ -141,7 +143,15 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
   // `refetchMatchStatsAction`.
   const becomesFinished = data.status === "FINISHED" && before.status !== "FINISHED";
   if (becomesFinished && !hasRiotStats(before.statsStatus)) {
-    await tryFetchStats(matchId);
+    // `after` : la recherche interroge HenrikDev jusqu'à quatre fois, avec un
+    // délai d'attente de 8 s chacune. La faire dans le cycle de requête
+    // ajoutait jusqu'à une demi-minute au simple fait d'enregistrer un match.
+    // Elle tourne donc une fois la réponse envoyée ; le scoreboard apparaît à
+    // la navigation suivante.
+    after(async () => {
+      await tryFetchStats(matchId);
+      revalidateMatch(tournamentId, matchId);
+    });
   }
   revalidateCompetition(tournamentId);
   revalidatePath(`/matchs/${matchId}`);
@@ -164,8 +174,10 @@ async function tryFetchStats(matchId: string): Promise<void> {
  * remplacées par celles trouvées côté Riot, d'où la confirmation côté UI.
  */
 export async function refetchMatchStatsAction(tournamentId: string, matchId: string) {
-  await assertCanManageTournament(tournamentId);
+  const user = await assertCanManageTournament(tournamentId);
   await assertMatchInTournament(matchId, tournamentId);
+  const editBase = `/tournois/${tournamentId}/gestion/matchs/${matchId}`;
+  if (!allow(`riotmatch:${user.id}`)) redirect(`${editBase}?error=ratelimited`);
   await tryFetchStats(matchId);
   revalidateMatch(tournamentId, matchId);
   redirect(`/tournois/${tournamentId}/gestion/matchs/${matchId}?ok=stats-refetched`);

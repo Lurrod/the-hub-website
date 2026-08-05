@@ -95,12 +95,23 @@ model Team {
   @@index([region])
 }
 
+/**
+ * Deux niveaux de gestion, pour que l'ajout d'un manager ne revienne pas à
+ * céder l'équipe : un MANAGER gère le quotidien (fiche, roster, inscriptions),
+ * un OWNER peut en plus supprimer l'équipe et administrer les managers.
+ */
+enum ManagerRole {
+  OWNER
+  MANAGER
+}
+
 model TeamManager {
-  id     String @id @default(cuid())
+  id     String      @id @default(cuid())
   teamId String
   userId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   ManagerRole @default(MANAGER)
+  team   Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
 }
@@ -206,11 +217,12 @@ model Tournament {
 }
 
 model TournamentManager {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   tournamentId String
   userId       String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         ManagerRole @default(MANAGER)
+  tournament   Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, userId])
 }

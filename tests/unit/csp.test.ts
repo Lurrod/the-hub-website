@@ -66,9 +66,9 @@ describe("buildCsp", () => {
     expect(policy).not.toMatch(/\s{2,}/);
   });
 
-  it("est publiée en Report-Only tant que la CSP n'est pas éprouvée", () => {
-    // Report-Only observe sans jamais bloquer : basculer sur
-    // "Content-Security-Policy" est un choix explicite, pas un effet de bord.
-    expect(CSP_HEADER).toBe("Content-Security-Policy-Report-Only");
+  it("est appliquée, pas seulement observée", () => {
+    // Report-Only n'a jamais rien bloqué : la phase d'observation terminée,
+    // repasser dessus doit rester un choix explicite, pas un effet de bord.
+    expect(CSP_HEADER).toBe("Content-Security-Policy");
   });
 });

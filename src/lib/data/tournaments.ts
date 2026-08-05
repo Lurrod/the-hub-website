@@ -1,5 +1,6 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type ManagerRole } from "@prisma/client";
 import { db } from "@/lib/db";
+import { isLastOwner } from "@/lib/permissions";
 import type { TournamentFormat, TournamentStatus } from "@/lib/constants";
 import type { TournamentInput } from "@/lib/validation/tournament";
 import { nextTournamentStatus, syncTournamentStatuses } from "@/lib/tournament-status";
@@ -85,6 +86,10 @@ export function createTournament(data: TournamentInput, createdById: string) {
       bestOf: data.bestOf,
       seeding: data.seeding,
       createdById,
+      // Le créateur est propriétaire d'emblée : sans ça un tournoi naissait
+      // sans aucun manager, et personne ne pouvait en administrer la gestion
+      // hors administrateur du site.
+      managers: { create: { userId: createdById, role: "OWNER" } },
     },
   });
 }
@@ -141,10 +146,15 @@ export function removeParticipant(tournamentId: string, teamId: string) {
   ]);
 }
 
-export function addTournamentManager(tournamentId: string, userId: string) {
+/** Ajoute (ou conserve) un manager. Le niveau par défaut est le plus bas. */
+export function addTournamentManager(
+  tournamentId: string,
+  userId: string,
+  role: ManagerRole = "MANAGER"
+) {
   return db.tournamentManager.upsert({
     where: { tournamentId_userId: { tournamentId, userId } },
-    create: { tournamentId, userId },
+    create: { tournamentId, userId, role },
     update: {},
   });
 }
@@ -154,9 +164,11 @@ export function removeTournamentManager(tournamentId: string, userId: string) {
 }
 
 /**
- * Retire un manager UNIQUEMENT s'il n'est pas le dernier du tournoi.
- * Comptage + suppression dans une transaction Serializable → pas de course
- * possible menant à un tournoi orphelin. Retourne false si c'était le dernier.
+ * Retire un manager, sauf s'il est le dernier propriétaire (ou le dernier
+ * manager tout court). Transaction Serializable → pas de course menant à un
+ * tournoi orphelin.
+ *
+ * @returns false si le retrait a été refusé.
  */
 export function removeTournamentManagerIfNotLast(
   tournamentId: string,
@@ -164,9 +176,37 @@ export function removeTournamentManagerIfNotLast(
 ): Promise<boolean> {
   return db.$transaction(
     async (tx) => {
-      const count = await tx.tournamentManager.count({ where: { tournamentId } });
-      if (count <= 1) return false;
+      const managers = await tx.tournamentManager.findMany({
+        where: { tournamentId },
+        select: { userId: true, role: true },
+      });
+      if (managers.length <= 1 || isLastOwner(managers, userId)) return false;
       await tx.tournamentManager.deleteMany({ where: { tournamentId, userId } });
+      return true;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
+}
+
+/**
+ * Change le niveau d'un manager. Rétrograder le dernier propriétaire est
+ * refusé, pour la même raison que le retirer.
+ *
+ * @returns false si le changement a été refusé.
+ */
+export function setTournamentManagerRole(
+  tournamentId: string,
+  userId: string,
+  role: ManagerRole
+): Promise<boolean> {
+  return db.$transaction(
+    async (tx) => {
+      const managers = await tx.tournamentManager.findMany({
+        where: { tournamentId },
+        select: { userId: true, role: true },
+      });
+      if (role !== "OWNER" && isLastOwner(managers, userId)) return false;
+      await tx.tournamentManager.updateMany({ where: { tournamentId, userId }, data: { role } });
       return true;
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }

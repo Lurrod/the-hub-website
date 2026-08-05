@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, assertCanManageTeam } from "@/lib/server-auth";
+import { requireAdmin, assertCanManageTeam, assertCanAdministerTeam } from "@/lib/server-auth";
+import { parseManagerRole } from "@/lib/manager-roles";
 import { db } from "@/lib/db";
 import { teamInputSchema, rosterEntrySchema } from "@/lib/validation/team";
 import {
@@ -12,6 +13,7 @@ import {
   setTeamLogo,
   addTeamManager,
   removeTeamManagerIfNotLast,
+  setTeamManagerRole,
   addInitialRoster,
 } from "@/lib/data/teams";
 import { validateImageUpload, processAndStoreImage } from "@/lib/images";
@@ -93,7 +95,8 @@ export async function updateTeamAction(teamId: string, formData: FormData) {
 }
 
 export async function deleteTeamAction(teamId: string) {
-  await assertCanManageTeam(teamId);
+  // Supprimer l'équipe engage tout son historique : réservé au propriétaire.
+  await assertCanAdministerTeam(teamId);
   // Garde anti-cascade : supprimer une équipe efface en cascade ses matchs dans
   // TOUS les tournois. On bloque tant qu'elle a des participations pour ne pas
   // détruire l'historique de tournois gérés par d'autres (seul un admin peut
@@ -106,22 +109,32 @@ export async function deleteTeamAction(teamId: string) {
   redirect("/equipes?ok=team-deleted");
 }
 
+/** Administrer les managers, c'est distribuer les droits : réservé au propriétaire. */
 export async function addManagerAction(teamId: string, formData: FormData) {
-  await assertCanManageTeam(teamId);
+  await assertCanAdministerTeam(teamId);
   const base = `/equipes/${teamId}/gestion/managers`;
   const discordId = String(formData.get("discordId") ?? "").trim();
   if (!discordId) redirect(`${base}?error=empty`);
   const user = await db.user.findUnique({ where: { discordId }, select: { id: true } });
   if (!user) redirect(`${base}?error=notfound`);
-  await addTeamManager(teamId, user.id);
+  await addTeamManager(teamId, user.id, parseManagerRole(formData.get("role")));
   revalidatePath(base);
   redirect(`${base}?ok=manager-added`);
 }
 
 export async function removeManagerAction(teamId: string, userId: string) {
-  await assertCanManageTeam(teamId);
+  await assertCanAdministerTeam(teamId);
   const base = `/equipes/${teamId}/gestion/managers`;
   const removed = await removeTeamManagerIfNotLast(teamId, userId);
-  if (!removed) redirect(`${base}?error=lastmanager`);
+  if (!removed) redirect(`${base}?error=lastowner`);
   revalidatePath(base);
+}
+
+export async function setManagerRoleAction(teamId: string, userId: string, formData: FormData) {
+  await assertCanAdministerTeam(teamId);
+  const base = `/equipes/${teamId}/gestion/managers`;
+  const changed = await setTeamManagerRole(teamId, userId, parseManagerRole(formData.get("role")));
+  if (!changed) redirect(`${base}?error=lastowner`);
+  revalidatePath(base);
+  redirect(`${base}?ok=manager-role`);
 }

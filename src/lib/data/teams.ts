@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
-import { Prisma, type MembershipRole } from "@prisma/client";
+import { Prisma, type ManagerRole, type MembershipRole } from "@prisma/client";
 import { db } from "@/lib/db";
+import { isLastOwner } from "@/lib/permissions";
 import type { TeamInput, RosterEntry } from "@/lib/validation/team";
 import { INVITE_TTL_DAYS } from "@/lib/invite";
 
@@ -67,6 +68,10 @@ export function createTeam(data: TeamInput, createdById: string) {
       status: data.status,
       socials: data.socials ?? undefined,
       createdById,
+      // Le créateur est propriétaire d'emblée : sans ça une équipe naissait
+      // sans aucun manager, et personne ne pouvait en administrer la gestion
+      // hors administrateur du site.
+      managers: { create: { userId: createdById, role: "OWNER" } },
     },
   });
 }
@@ -93,10 +98,11 @@ export function deleteTeam(id: string) {
   return db.team.delete({ where: { id } });
 }
 
-export function addTeamManager(teamId: string, userId: string) {
+/** Ajoute (ou conserve) un manager. Le niveau par défaut est le plus bas. */
+export function addTeamManager(teamId: string, userId: string, role: ManagerRole = "MANAGER") {
   return db.teamManager.upsert({
     where: { teamId_userId: { teamId, userId } },
-    create: { teamId, userId },
+    create: { teamId, userId, role },
     update: {},
   });
 }
@@ -106,16 +112,46 @@ export function removeTeamManager(teamId: string, userId: string) {
 }
 
 /**
- * Retire un manager UNIQUEMENT s'il n'est pas le dernier de l'équipe.
- * Comptage + suppression dans une transaction Serializable → pas de course
- * possible menant à une équipe orpheline. Retourne false si c'était le dernier.
+ * Retire un manager, sauf s'il est le dernier propriétaire (ou le dernier
+ * manager tout court). Lecture + suppression dans une transaction Serializable
+ * → pas de course possible menant à une équipe orpheline.
+ *
+ * @returns false si le retrait a été refusé.
  */
 export function removeTeamManagerIfNotLast(teamId: string, userId: string): Promise<boolean> {
   return db.$transaction(
     async (tx) => {
-      const count = await tx.teamManager.count({ where: { teamId } });
-      if (count <= 1) return false;
+      const managers = await tx.teamManager.findMany({
+        where: { teamId },
+        select: { userId: true, role: true },
+      });
+      if (managers.length <= 1 || isLastOwner(managers, userId)) return false;
       await tx.teamManager.deleteMany({ where: { teamId, userId } });
+      return true;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
+}
+
+/**
+ * Change le niveau d'un manager. Rétrograder le dernier propriétaire est
+ * refusé, pour la même raison que le retirer.
+ *
+ * @returns false si le changement a été refusé.
+ */
+export function setTeamManagerRole(
+  teamId: string,
+  userId: string,
+  role: ManagerRole
+): Promise<boolean> {
+  return db.$transaction(
+    async (tx) => {
+      const managers = await tx.teamManager.findMany({
+        where: { teamId },
+        select: { userId: true, role: true },
+      });
+      if (role !== "OWNER" && isLastOwner(managers, userId)) return false;
+      await tx.teamManager.updateMany({ where: { teamId, userId }, data: { role } });
       return true;
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }

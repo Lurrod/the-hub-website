@@ -3,10 +3,16 @@
  * vlr.gg) - 8 équipes avec logos + rosters, 2 poules, classements, et un bracket
  * de playoffs. Idempotent : supprime puis recrée les entrées préfixées « vlr- ».
  *
- * Profils joueurs : pseudo, nationalité et photo viennent de vlr.gg (les photos
- * restent hébergées chez eux, rien n'est copié dans le dépôt). Le rôle Valorant,
- * la date de naissance et la date d'arrivée sont des valeurs plausibles de
- * démonstration, pas des données importées.
+ * Profils joueurs : pseudo, nationalité et photo viennent de vlr.gg. Le rôle
+ * Valorant, la date de naissance et la date d'arrivée sont des valeurs
+ * plausibles de démonstration, pas des données importées.
+ *
+ * Les visuels sont RECOPIÉS dans `uploads/` au lieu d'être pointés chez vlr.gg :
+ * la Content-Security-Policy du site n'autorise pas ce domaine en `img-src`, et
+ * l'élargir pour des données de démonstration affaiblirait la policy de
+ * production. Le jeu de démonstration se comporte donc comme de vraies données,
+ * qui passent toutes par `/api/images`. Rien n'est copié dans le dépôt :
+ * `uploads/` est ignoré par git.
  *
  * Réseaux des équipes : uniquement ceux listés par vlr.gg (site officiel et X,
  * parfois Instagram). Pour voir le bandeau avec les six réseaux, utiliser
@@ -15,11 +21,36 @@
  * Lancer :  npx tsx scripts/seed-vlr-emea.ts
  */
 import { PrismaClient, type MatchStage, type MatchStatus, type ValorantRole } from "@prisma/client";
+import { processAndStoreImage, type ImageCategory } from "../src/lib/images";
 
 const db = new PrismaClient();
 
 const TID = "vlr-emea-s1";
 const img = (h: string) => `https://owcdn.net/img/${h}.png`;
+
+/**
+ * Recopie un visuel vlr.gg dans `uploads/` via le même traitement que les
+ * envois d'images du site, et renvoie sa clé `/api/images/...`.
+ *
+ * Best-effort : un seed ne doit pas échouer parce qu'un CDN tiers est
+ * indisponible. En cas d'échec la fiche part sans visuel et on le signale.
+ */
+async function mirror(
+  url: string | null,
+  category: ImageCategory,
+  id: string
+): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = Buffer.from(await res.arrayBuffer());
+    return await processAndStoreImage(buffer, category, id);
+  } catch (e) {
+    console.warn(`visuel ignoré (${category}/${id}) :`, e instanceof Error ? e.message : e);
+    return null;
+  }
+}
 
 type PersonSeed = {
   pseudo: string;
@@ -224,7 +255,7 @@ async function main() {
   for (const t of TEAMS) {
     await db.team.create({
       data: {
-        id: t.id, name: t.name, tag: t.tag, logo: t.logo,
+        id: t.id, name: t.name, tag: t.tag, logo: await mirror(t.logo, "teams", t.id),
         socials: t.socials, region: "EMEA", status: "ACTIVE",
       },
     });
@@ -232,12 +263,15 @@ async function main() {
       ...t.players.map((p, i): [string, PersonSeed] => [`vlr-p-${t.id}-${i}`, p]),
       [`vlr-p-${t.id}-c`, t.coach],
     ];
+    const photos = await Promise.all(
+      squad.map(([id, p]) => mirror(p.photo ? img(p.photo) : null, "players", id))
+    );
     await db.player.createMany({
-      data: squad.map(([id, p]) => ({
+      data: squad.map(([id, p], i) => ({
         id,
         pseudo: p.pseudo,
         nationality: p.country,
-        photo: p.photo ? img(p.photo) : null,
+        photo: photos[i],
         valorantRole: p.role,
         birthdate: p.born ? new Date(`${p.born}T00:00:00Z`) : null,
       })),

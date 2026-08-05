@@ -15,6 +15,7 @@ import { flashCodeFromError } from "@/lib/form-errors";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
 import { resolveRiotAccountForClaim, riotFlashCode } from "@/lib/riot-account";
 import { logger, describeError } from "@/lib/logger";
+import { allow } from "@/lib/rate-limit";
 
 /**
  * Inscription : profil complet + Riot ID obligatoire, en un seul formulaire.
@@ -48,6 +49,7 @@ export async function submitOnboarding(formData: FormData) {
 
   const input = String(formData.get("riotId") ?? "").trim();
   if (!input) redirect("/onboarding?error=riotformat");
+  if (!allow(`riot:${player.id}`)) redirect("/onboarding?error=ratelimited");
 
   let resolved: Awaited<ReturnType<typeof resolveRiotAccountForClaim>>;
   try {
