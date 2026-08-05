@@ -1,3 +1,4 @@
+import ErrorShake from "@/components/error-shake";
 import {
   MATCH_STAGES,
   MATCH_STAGE_LABELS,
@@ -80,16 +81,22 @@ export default function MatchForm({
         </label>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <label className={lbl}>
-          Phase
-          <select name="stage" defaultValue={values?.stage ?? stages[0]} className={input}>
-            {stages.map((s) => (
-              <option key={s} value={s}>
-                {MATCH_STAGE_LABELS[s]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ErrorShake codes={["stage"]}>
+          <label className={lbl}>
+            Phase
+            <select
+              name="stage"
+              defaultValue={values?.stage ?? stages[0]}
+              className={`t-input ${input}`}
+            >
+              {stages.map((s) => (
+                <option key={s} value={s}>
+                  {MATCH_STAGE_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </ErrorShake>
         <label className={lbl}>
           Statut
           <select name="status" defaultValue={values?.status ?? "SCHEDULED"} className={input}>
@@ -111,17 +118,23 @@ export default function MatchForm({
           </select>
         </label>
       </div>
-      <label className={lbl}>
-        Poule (si phase = Poule)
-        <select name="groupId" defaultValue={values?.groupId ?? ""} className={input}>
-          <option value="">- Aucune -</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ErrorShake codes={["nogroups"]}>
+        <label className={lbl}>
+          Poule (si phase = Poule)
+          <select
+            name="groupId"
+            defaultValue={values?.groupId ?? ""}
+            className={`t-input ${input}`}
+          >
+            <option value="">- Aucune -</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </ErrorShake>
       <div className="grid grid-cols-2 gap-4">
         <label className={lbl}>
           Tour (si Playoffs, ex. « Finale »)

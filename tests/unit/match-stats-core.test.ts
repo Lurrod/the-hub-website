@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   countExpected, assignSides, assignSidesFromCamp, computeDerivedStats, hasRiotStats,
   indexPlayerIdsByPuuid, selectSeries, seriesScore, computeImpact, computeRating, roundTimeline,
+  attackingTeamByRound,
 } from "@/lib/match-stats-core";
 import type { CustomMatch, CustomMatchPlayer } from "@/lib/henrikdev";
 
@@ -210,15 +211,64 @@ describe("roundTimeline", () => {
   it("ramène le vainqueur de chaque round au côté A/B", () => {
     const t = roundTimeline(
       [
-        { winningTeamId: "Red", outcome: "elim" },
-        { winningTeamId: "Blue", outcome: "defuse" },
+        { winningTeamId: "Red", outcome: "elim", plantedByTeamId: null, loadoutByTeam: {} },
+        { winningTeamId: "Blue", outcome: "defuse", plantedByTeamId: null, loadoutByTeam: {} },
       ],
       { Red: "A", Blue: "B" }
     );
     expect(t).toEqual([{ w: "A", o: "elim" }, { w: "B", o: "defuse" }]);
   });
   it("écarte un round dont le camp vainqueur est inconnu", () => {
-    const t = roundTimeline([{ winningTeamId: "", outcome: "elim" }], { Red: "A", Blue: "B" });
+    const t = roundTimeline([{ winningTeamId: "", outcome: "elim", plantedByTeamId: null, loadoutByTeam: {} }], { Red: "A", Blue: "B" });
     expect(t).toEqual([]);
+  });
+});
+
+function rnd(win: string, planted: string | null) {
+  return { winningTeamId: win, outcome: "elim" as const, plantedByTeamId: planted, loadoutByTeam: {} };
+}
+
+describe("attackingTeamByRound", () => {
+  it("étend l'attaquant constaté aux rounds sans pose de la même mi-temps", () => {
+    const rounds = [rnd("Red", "Red"), rnd("Blue", null), rnd("Red", null)];
+    expect(attackingTeamByRound(rounds)).toEqual(["Red", "Red", "Red"]);
+  });
+
+  it("inverse les camps au round 12", () => {
+    const rounds = [
+      ...Array.from({ length: 12 }, () => rnd("Red", "Red")),
+      rnd("Blue", "Blue"),
+    ];
+    const out = attackingTeamByRound(rounds);
+    expect(out[11]).toBe("Red");
+    expect(out[12]).toBe("Blue");
+  });
+
+  it("déduit une mi-temps entièrement sans pose depuis la précédente", () => {
+    const rounds = [
+      ...Array.from({ length: 12 }, () => rnd("Red", "Red")),
+      ...Array.from({ length: 3 }, () => rnd("Blue", null)),
+    ];
+    const out = attackingTeamByRound(rounds);
+    expect(out[12]).toBe("Blue"); // camps inversés, deduit sans aucune pose
+  });
+
+  it("renvoie null quand aucune pose n'a eu lieu de tout le match", () => {
+    expect(attackingTeamByRound([rnd("Red", null), rnd("Blue", null)])).toEqual([null, null]);
+  });
+});
+
+describe("roundTimeline enrichie", () => {
+  it("porte le camp attaquant et l'équipement de chaque côté", () => {
+    const rounds = [
+      { winningTeamId: "Red", outcome: "elim" as const, plantedByTeamId: "Red", loadoutByTeam: { Red: 20000, Blue: 4000 } },
+    ];
+    expect(roundTimeline(rounds, { Red: "A", Blue: "B" })).toEqual([
+      { w: "A", o: "elim", s: "A", ea: 20000, eb: 4000 },
+    ]);
+  });
+  it("omet les champs optionnels quand la donnée manque", () => {
+    const rounds = [{ winningTeamId: "Red", outcome: "elim" as const, plantedByTeamId: null, loadoutByTeam: {} }];
+    expect(roundTimeline(rounds, { Red: "A", Blue: "B" })).toEqual([{ w: "A", o: "elim" }]);
   });
 });

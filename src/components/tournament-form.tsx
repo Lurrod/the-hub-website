@@ -1,5 +1,6 @@
 "use client";
 
+import ErrorShake from "@/components/error-shake";
 import { useState } from "react";
 import {
   REGIONS,
@@ -66,10 +67,17 @@ export default function TournamentForm({
   return (
     <form action={action} className="grid gap-6">
       <Section title="Identité">
-        <label className={lbl}>
-          Nom du tournoi
-          <input name="name" defaultValue={values?.name ?? ""} required className={input} />
-        </label>
+        <ErrorShake codes={["empty"]}>
+          <label className={lbl}>
+            Nom du tournoi
+            <input
+              name="name"
+              defaultValue={values?.name ?? ""}
+              required
+              className={`t-input ${input}`}
+            />
+          </label>
+        </ErrorShake>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={lbl}>
             Région
@@ -172,17 +180,23 @@ export default function TournamentForm({
               ))}
             </select>
           </label>
-          <label className={lbl}>
-            Seeding
-            <select name="seeding" defaultValue={values?.seeding ?? ""} className={input}>
-              <option value="">Non défini</option>
-              {SEEDING_TYPES.map((s) => (
-                <option key={s} value={s}>
-                  {SEEDING_TYPE_LABELS[s]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ErrorShake codes={["seedtaken"]}>
+            <label className={lbl}>
+              Seeding
+              <select
+                name="seeding"
+                defaultValue={values?.seeding ?? ""}
+                className={`t-input ${input}`}
+              >
+                <option value="">Non défini</option>
+                {SEEDING_TYPES.map((s) => (
+                  <option key={s} value={s}>
+                    {SEEDING_TYPE_LABELS[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </ErrorShake>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={lbl}>

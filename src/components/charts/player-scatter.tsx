@@ -1,13 +1,10 @@
 import type { PlayerPoint } from "@/lib/data/tournament-stats";
 
-// Ratio volontairement peu allonge : a 640x320 le nuage tombait sous 180px de
-// haut sur un mobile de 390px, graduations illisibles. Le SVG garde son ratio,
-// c'est donc le ratio qu'il faut regler.
 const W = 480;
 const H = 330;
-const PAD = { top: 18, right: 20, bottom: 34, left: 44 };
+const PAD = { top: 18, right: 20, bottom: 26, left: 38 };
 
-/** Bornes d'un axe, arrondies et toujours un peu plus larges que les données. */
+/** Bornes d'un axe, toujours un peu plus larges que les données. */
 function axis(values: number[], pad: number) {
   const lo = Math.min(...values);
   const hi = Math.max(...values);
@@ -20,13 +17,17 @@ function axis(values: number[], pad: number) {
  * point = cartes jouées.
  *
  * Deux axes valent mieux qu'un classement ici : ils séparent des profils que
- * des listes ne distinguent pas. En haut à droite les joueurs qui fraguent
- * beaucoup en mourant peu ; en bas à droite ceux qui font du dégât mais se
- * mettent en danger ; à gauche les profils d'appui.
+ * des listes confondent. En haut à droite ceux qui fraguent en restant en vie ;
+ * en bas à droite ceux qui font du dégât en se mettant en danger ; à gauche les
+ * profils d'appui.
  *
- * Une seule série, donc pas de boîte de légende, et une seule teinte : les
- * points ne portent pas d'identité de catégorie. Seuls les trois meilleurs
- * ratings sont étiquetés — un nom sur chaque point serait illisible.
+ * Le SVG ne porte QUE les marques et les axes. Tous les textes sont posés en
+ * HTML par-dessus : un `font-size` défini dans un SVG suit la mise à l'échelle
+ * du viewBox, si bien que le même réglage donnait un texte énorme en desktop
+ * (×2.25) et minuscule en mobile (×0.73). En HTML, 11px valent 11px partout.
+ *
+ * Une seule série, donc pas de boîte de légende et une seule teinte. Seuls les
+ * trois meilleurs ratings sont nommés — un nom par point serait illisible.
  */
 export default function PlayerScatter({ players }: { players: PlayerPoint[] }) {
   const pts = players.filter((p) => p.maps > 0);
@@ -44,6 +45,9 @@ export default function PlayerScatter({ players }: { players: PlayerPoint[] }) {
   const plotH = H - PAD.top - PAD.bottom;
   const x = (v: number) => PAD.left + ((v - xa.min) / (xa.max - xa.min)) * plotW;
   const y = (v: number) => PAD.top + (1 - (v - ya.min) / (ya.max - ya.min)) * plotH;
+  /** Coordonnée du viewBox → pourcentage, pour poser le HTML au bon endroit. */
+  const pctX = (v: number) => (x(v) / W) * 100;
+  const pctY = (v: number) => (y(v) / H) * 100;
 
   const maxMaps = Math.max(...pts.map((p) => p.maps));
   const r = (maps: number) => 4 + (maxMaps > 1 ? (maps / maxMaps) * 4 : 4);
@@ -52,20 +56,38 @@ export default function PlayerScatter({ players }: { players: PlayerPoint[] }) {
   const named = [...pts].sort((a, b) => b.rating - a.rating).slice(0, 3);
   const isNamed = new Set(named.map((p) => p.playerId ?? p.name));
 
+  // Noms poses SOUS leur point, avec un decalage cumule pour ceux qui se
+  // suivent de pres en abscisse. Sous le point plutot que dessus : les trois
+  // meilleurs ratings sont par construction en haut du graphe, ou une etiquette
+  // au-dessus sortirait du cadre. Le decalage se calcule de proche en proche,
+  // sinon un troisieme nom retomberait sur la ligne du premier.
+  const byX = [...named].sort((a, b) => a.acs - b.acs);
+  const tier = new Map<string, number>();
+  byX.forEach((p, i) => {
+    const prev = byX[i - 1];
+    const close = prev != null && Math.abs(pctX(p.acs) - pctX(prev.acs)) < 22;
+    const prevTier = prev ? (tier.get(prev.playerId ?? prev.name) ?? 0) : 0;
+    tier.set(p.playerId ?? p.name, close ? prevTier + 1 : 0);
+  });
+
   const xTicks = [xa.min, (xa.min + xa.max) / 2, xa.max].map((v) => Math.round(v));
   const yTicks = [ya.min, (ya.min + ya.max) / 2, ya.max].map((v) => Math.round(v * 10) / 10);
 
+  const TICK =
+    "pointer-events-none absolute text-[9px] leading-none text-[var(--text-subtle)] sm:text-[10px]";
+
   return (
     <figure className="m-0">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="h-auto w-full"
-        role="img"
-        aria-label={`Nuage de ${pts.length} joueurs, ACS en abscisse de ${xTicks[0]} à ${xTicks[2]}, K/D en ordonnée de ${yTicks[0]} à ${yTicks[2]}`}
-      >
-        {yTicks.map((t) => (
-          <g key={`y${t}`}>
+      <div className="relative">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="h-auto w-full"
+          role="img"
+          aria-label={`Nuage de ${pts.length} joueurs, ACS de ${xTicks[0]} à ${xTicks[2]} en abscisse, K/D de ${yTicks[0]} à ${yTicks[2]} en ordonnée`}
+        >
+          {yTicks.map((t) => (
             <line
+              key={`y${t}`}
               x1={PAD.left}
               x2={W - PAD.right}
               y1={y(t)}
@@ -74,114 +96,97 @@ export default function PlayerScatter({ players }: { players: PlayerPoint[] }) {
               strokeWidth={1}
               vectorEffect="non-scaling-stroke"
             />
-            <text
-              x={PAD.left - 7}
-              y={y(t) + 3}
-              textAnchor="end"
-              className="fill-[var(--text-subtle)]"
-              style={{ fontSize: "11px" }}
-            >
-              {t.toFixed(1)}
-            </text>
-          </g>
-        ))}
-        {xTicks.map((t) => (
-          <text
-            key={`x${t}`}
-            x={x(t)}
-            y={H - PAD.bottom + 15}
-            textAnchor="middle"
-            className="fill-[var(--text-subtle)]"
-            style={{ fontSize: "11px" }}
-          >
-            {t}
-          </text>
-        ))}
+          ))}
 
-        {/* Repères : K/D 1.00 et ACS moyen du tournoi. Ce sont des seuils, pas
-            une grille — d'où le pointillé. */}
-        {ya.min < 1 && ya.max > 1 && (
+          {/* Seuils : K/D 1.00 et ACS moyen du tournoi. Le pointillé leur est
+              réservé — la grille reste en trait plein. */}
+          {ya.min < 1 && ya.max > 1 && (
+            <line
+              x1={PAD.left}
+              x2={W - PAD.right}
+              y1={y(1)}
+              y2={y(1)}
+              stroke="var(--text-subtle)"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
           <line
-            x1={PAD.left}
-            x2={W - PAD.right}
-            y1={y(1)}
-            y2={y(1)}
+            x1={x(avgAcs)}
+            x2={x(avgAcs)}
+            y1={PAD.top}
+            y2={PAD.top + plotH}
             stroke="var(--text-subtle)"
             strokeWidth={1}
             strokeDasharray="4 4"
             vectorEffect="non-scaling-stroke"
           />
-        )}
-        <line
-          x1={x(avgAcs)}
-          x2={x(avgAcs)}
-          y1={PAD.top}
-          y2={PAD.top + plotH}
-          stroke="var(--text-subtle)"
-          strokeWidth={1}
-          strokeDasharray="4 4"
-          vectorEffect="non-scaling-stroke"
-        />
 
-        {pts.map((p, i) => {
-          const key = `${p.playerId ?? p.name}-${i}`;
-          const cx = x(p.acs);
-          const cy = y(p.kd);
-          const big = isNamed.has(p.playerId ?? p.name);
-          return (
-            <g key={key}>
-              <circle
-                cx={cx}
-                cy={cy}
-                r={r(p.maps)}
-                fill="var(--accent)"
-                fillOpacity={big ? 1 : 0.55}
-                stroke="var(--surface)"
-                strokeWidth={2}
-              />
+          {pts.map((p, i) => (
+            <circle
+              key={`${p.playerId ?? p.name}-${i}`}
+              cx={x(p.acs)}
+              cy={y(p.kd)}
+              r={r(p.maps)}
+              fill="var(--accent)"
+              fillOpacity={isNamed.has(p.playerId ?? p.name) ? 1 : 0.55}
+              stroke="var(--surface)"
+              strokeWidth={2}
+            >
               <title>
                 {`${p.name}${p.teamTag ? ` · ${p.teamTag}` : ""} — ACS ${p.acs}, K/D ${p.kd.toFixed(2)}, rating ${p.rating.toFixed(2)} · ${p.maps} carte${p.maps > 1 ? "s" : ""}`}
               </title>
-            </g>
-          );
-        })}
+            </circle>
+          ))}
+        </svg>
 
-        {named.map((p, i) => (
-          <text
-            key={`n${p.playerId ?? p.name}-${i}`}
-            /* Ramene dans le cadre : un joueur a l'extreme droite verrait sinon
-               son nom deborder du SVG. */
-            x={Math.min(Math.max(x(p.acs), PAD.left + 24), W - PAD.right - 24)}
-            y={y(p.kd) - r(p.maps) - 5}
-            textAnchor="middle"
-            className="fill-[var(--text)]"
-            style={{ fontSize: "12px", fontWeight: 600 }}
+        {/* Couche de texte : tailles CSS réelles, constantes à toutes les largeurs. */}
+        {yTicks.map((t) => (
+          <span
+            key={`ly${t}`}
+            className={`${TICK} -translate-y-1/2 text-right`}
+            style={{ top: `${pctY(t)}%`, right: `${100 - (PAD.left / W) * 100 + 1.5}%` }}
           >
-            {p.name}
-          </text>
+            {t.toFixed(1)}
+          </span>
+        ))}
+        {xTicks.map((t) => (
+          <span
+            key={`lx${t}`}
+            className={`${TICK} -translate-x-1/2`}
+            style={{ left: `${pctX(t)}%`, top: `${((PAD.top + plotH + 8) / H) * 100}%` }}
+          >
+            {t}
+          </span>
         ))}
 
-        <text
-          x={PAD.left + plotW / 2}
-          y={H - 2}
-          textAnchor="middle"
-          className="fill-[var(--text-muted)]"
-          style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em" }}
-        >
+        {named.map((p, i) => (
+          <span
+            key={`ln${p.playerId ?? p.name}-${i}`}
+            className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold leading-none text-[var(--text)] sm:text-[11px]"
+            style={{
+              // Ramené dans le cadre : un joueur à l'extrême droite verrait
+              // sinon son nom déborder.
+              left: `${Math.min(Math.max(pctX(p.acs), 8), 92)}%`,
+              top: `calc(${pctY(p.kd)}% + ${r(p.maps) + 6 + (tier.get(p.playerId ?? p.name) ?? 0) * 13}px)`,
+            }}
+          >
+            {p.name}
+          </span>
+        ))}
+
+        {/* Titres d'axes poses aux extremites : au centre ils mordaient sur la
+            graduation mediane des le format mobile. */}
+        <span className="pointer-events-none absolute bottom-0 right-0 text-[9px] uppercase tracking-[0.08em] text-[var(--text-muted)]">
           ACS
-        </text>
-        <text
-          x={12}
-          y={PAD.top + plotH / 2}
-          textAnchor="middle"
-          transform={`rotate(-90 12 ${PAD.top + plotH / 2})`}
-          className="fill-[var(--text-muted)]"
-          style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em" }}
-        >
+        </span>
+        <span className="pointer-events-none absolute left-0 top-0 text-[9px] uppercase tracking-[0.08em] text-[var(--text-muted)]">
           K/D
-        </text>
-      </svg>
-      <figcaption className="mt-1 text-[11px] text-[var(--text-muted)]">
+        </span>
+      </div>
+
+      <figcaption className="mt-2 text-[11px] text-[var(--text-muted)]">
         Un point par joueur, taille selon les cartes jouées. Les pointillés marquent le K/D
         de 1.00 et l&apos;ACS moyen du tournoi. Les trois meilleurs ratings sont nommés ;
         survolez un point pour le reste.

@@ -51,11 +51,11 @@ export default function TeamMatchGroups({
           <details
             key={g.tournamentId}
             open={i === 0}
-            className="disclosure overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]"
+            className="disclosure t-resize-details overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]"
           >
             {/* --card-hover vaut #242832 : la ligne du tournoi se détache du
                 corps de la zone, qui reste sur --surface. */}
-            <summary className="flex items-center gap-3 bg-[var(--card-hover)] px-3 py-2.5 transition-all hover:brightness-110">
+            <summary className="flex items-center gap-3 bg-[var(--card-hover)] px-3 py-2.5 transition-[filter] duration-150 hover:brightness-110">
               {/* Seuls le logo et le nom mènent au tournoi. Le reste de la ligne,
                   espace vide compris, sert à replier la zone. */}
               <SummaryLink

@@ -82,19 +82,66 @@ function baseRow(
   const boost = won ? 1.12 : 0.92;
   const star = 1.15 - starTier * 0.06;
   const acs = Math.round(rand(150, 270) * boost * star);
-  const kills = Math.max(4, Math.round(acs / 12 + rand(-2, 3)));
-  const deaths = Math.max(4, Math.round((rounds * (won ? rand(45, 62) : rand(55, 75))) / 100));
   const assists = rand(2, 9);
   const adr = Math.round(acs * (rand(55, 66) / 100));
   const hsPct = rand(14, 38);
   const kast = clamp(Math.round((won ? 74 : 66) + rand(-8, 12)), 45, 95);
-  // Rating 2.0 flhub - dérivé des stats réelles du joueur (formule HLTV 2.0 Valorant).
-  const rating = computeRating({ rounds, kills, deaths, assists, kastPct: kast, adr });
+  // kills et deaths sont posés plus tard par balanceDuels() : dans un match
+  // fermé, les kills d'un camp SONT les morts de l'autre. Les tirer chacun de
+  // leur côté donnait un tournoi où plus personne n'avait un K/D sous 1.
   return {
     riotName: pseudo, playerId, teamSide: side, agent,
-    kills, deaths, assists, acs, adr, hsPct, kast, rating,
+    kills: 0, deaths: 0, assists, acs, adr, hsPct, kast, rating: 0,
     firstKills: 0, firstDeaths: 0,
   };
+}
+
+/**
+ * Répartit kills et morts sur une carte en respectant la seule contrainte qui
+ * ne se négocie pas : les kills d'un camp sont les morts de l'autre.
+ *
+ * Le volume total suit le nombre de rounds (~3.6 kills par round pour le
+ * vainqueur, ~3.0 pour le perdant), et la répartition interne suit l'ACS déjà
+ * tiré, pour que la meilleure carte du scoreboard reste le meilleur fragger.
+ * Le rating est recalculé ensuite, une fois les vrais chiffres connus.
+ */
+function balanceDuels(rows: Row[], rounds: number, aWon: boolean) {
+  const sides = ["A", "B"] as const;
+  const teamKills: Record<"A" | "B", number> = {
+    A: Math.round(rounds * (aWon ? 3.6 : 3.0)),
+    B: Math.round(rounds * (aWon ? 3.0 : 3.6)),
+  };
+
+  /** Répartit `total` sur les joueurs d'un camp, au prorata de `weightOf`. */
+  const spread = (side: "A" | "B", total: number, weightOf: (r: Row) => number) => {
+    const team = rows.filter((r) => r.teamSide === side);
+    const sum = team.reduce((n, r) => n + weightOf(r), 0);
+    const parts = team.map((r) => Math.max(2, Math.round((weightOf(r) / sum) * total)));
+    // L'arrondi fait dériver la somme : on recale sur le joueur le plus exposé.
+    const drift = total - parts.reduce((n, v) => n + v, 0);
+    parts[0] += drift;
+    return { team, parts };
+  };
+
+  for (const side of sides) {
+    const opp = side === "A" ? "B" : "A";
+    const k = spread(side, teamKills[side], (r) => r.acs);
+    k.team.forEach((r, i) => (r.kills = Math.max(2, k.parts[i])));
+    // Les meilleurs joueurs meurent moins : on inverse le poids de l'ACS.
+    const d = spread(side, teamKills[opp], (r) => 1 / Math.max(1, r.acs));
+    d.team.forEach((r, i) => (r.deaths = Math.max(2, d.parts[i])));
+  }
+
+  for (const r of rows) {
+    r.rating = computeRating({
+      rounds,
+      kills: r.kills,
+      deaths: r.deaths,
+      assists: r.assists,
+      kastPct: r.kast,
+      adr: r.adr,
+    });
+  }
 }
 
 /** Somme des codes de caractères : sert à donner un main stable à chaque joueur. */
@@ -186,13 +233,41 @@ async function main() {
           ...rosterA.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, rounds, idx)),
           ...rosterB.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, rounds, idx)),
         ];
+        balanceDuels(rows, rounds, aWon);
         distributeFirsts(rows, rounds);
 
-        // Timeline : roundsA rounds gagnés par A, roundsB par B, mélangés, avec une raison.
+        // Timeline : roundsA rounds gagnés par A, roundsB par B, mélangés, avec
+        // une raison, le camp attaquant et l'équipement des deux côtés.
+        //
+        // Les camps s'inversent au round 12, comme en jeu. L'économie suit une
+        // règle simple mais crédible : pistolet à 2 400, achat complet après une
+        // victoire, et rechargement à vide après deux défaites d'affilée —
+        // c'est ce qui produit de vrais rounds « eco » à analyser.
+        const attackerFirstHalf: "A" | "B" = Math.random() > 0.5 ? "A" : "B";
+        const flip = (s: "A" | "B") => (s === "A" ? "B" : "A");
+        const lossStreak: Record<"A" | "B", number> = { A: 0, B: 0 };
+        const buy = (side: "A" | "B", roundIndex: number) => {
+          if (roundIndex === 0 || roundIndex === 12) return 2400;
+          if (lossStreak[side] >= 2) return rand(2900, 6200);
+          if (lossStreak[side] === 1) return rand(9000, 15000);
+          return rand(16500, 24000);
+        };
+
         const timeline = shuffle([
           ...Array(roundsA).fill("A"),
           ...Array(roundsB).fill("B"),
-        ]).map((w) => ({ w, o: OUTCOMES[rand(0, OUTCOMES.length - 1)] }));
+        ]).map((w: "A" | "B", idx: number) => {
+          const entry = {
+            w,
+            o: OUTCOMES[rand(0, OUTCOMES.length - 1)],
+            s: idx < 12 ? attackerFirstHalf : flip(attackerFirstHalf),
+            ea: buy("A", idx),
+            eb: buy("B", idx),
+          };
+          lossStreak[w] = 0;
+          lossStreak[flip(w)] += 1;
+          return entry;
+        });
 
         const map = await tx.matchMap.create({
           data: {

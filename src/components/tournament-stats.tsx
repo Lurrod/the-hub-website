@@ -284,9 +284,9 @@ export default function TournamentStats({
       </section>
 
       <section>
-        <h2 className={SECTION}>Duels d&apos;entrée</h2>
+        <h2 className={SECTION}>Duels d&apos;entry</h2>
         <p className="mb-4 text-xs text-[var(--text-muted)]">
-          Qui ouvre les rounds et qui les perd d&apos;entrée, de part et d&apos;autre de
+          Qui ouvre les rounds et qui les perd d&apos;entry, de part et d&apos;autre de
           l&apos;axe.
         </p>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">

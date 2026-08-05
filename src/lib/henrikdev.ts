@@ -72,6 +72,13 @@ export type RoundOutcome = "elim" | "detonate" | "defuse" | "time";
 export type CustomMatchRound = {
   winningTeamId: string;
   outcome: RoundOutcome;
+  /**
+   * Equipe qui a pose le spike, donc l'attaquant de ce round. Null quand le
+   * round s'est joue sans pose — le camp se deduit alors de la mi-temps.
+   */
+  plantedByTeamId: string | null;
+  /** Valeur d'equipement cumulee par equipe, pour classer le type d'achat. */
+  loadoutByTeam: Record<string, number>;
 };
 
 /**
@@ -190,7 +197,12 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       game_length_in_ms?: number;
     };
     teams?: { team_id?: string; rounds?: { won?: number } }[];
-    rounds?: { winning_team?: string; result?: string }[];
+    rounds?: {
+      winning_team?: string;
+      result?: string;
+      plant?: { player?: { team?: string } };
+      stats?: { player?: { team?: string }; economy?: { loadout_value?: number } }[];
+    }[];
     kills?: {
       round?: number;
       time_in_round_in_ms?: number;
@@ -227,10 +239,20 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
     legshots: num(p.stats?.legshots),
     damageMade: num(p.stats?.damage?.dealt),
   }));
-  const rounds: CustomMatchRound[] = (m.rounds ?? []).map((r) => ({
-    winningTeamId: r.winning_team ?? "",
-    outcome: roundOutcome(r.result),
-  }));
+  const rounds: CustomMatchRound[] = (m.rounds ?? []).map((r) => {
+    const loadoutByTeam: Record<string, number> = {};
+    for (const st of r.stats ?? []) {
+      const team = st.player?.team;
+      if (!team) continue;
+      loadoutByTeam[team] = (loadoutByTeam[team] ?? 0) + num(st.economy?.loadout_value);
+    }
+    return {
+      winningTeamId: r.winning_team ?? "",
+      outcome: roundOutcome(r.result),
+      plantedByTeamId: r.plant?.player?.team ?? null,
+      loadoutByTeam,
+    };
+  });
   const kills: CustomMatchKill[] = (m.kills ?? [])
     .filter((k) => k.killer?.puuid && k.victim?.puuid)
     .map((k) => ({
