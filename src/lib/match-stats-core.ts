@@ -315,15 +315,49 @@ export function roundTimeline(
   return timeline;
 }
 
-/** Filtre les parties >= seuil de puuid attendus, trie par date croissante, plafonne. */
+/**
+ * Tolérance autour de la date programmée d'un match.
+ *
+ * La date vient d'un `<input type="date">`, donc de minuit UTC, alors que les
+ * matchs se jouent le soir : la fenêtre doit couvrir la soirée du jour dit et
+ * déborder sur la nuit suivante, sans mordre sur la veille ni le surlendemain.
+ */
+export const SERIES_WINDOW_MS = 36 * 60 * 60 * 1000;
+
+/** La partie s'est-elle jouée dans la fenêtre autour de la date du match ? */
+function withinWindow(match: CustomMatch, around: Date): boolean {
+  if (!match.startedAt) return false;
+  const started = new Date(match.startedAt).getTime();
+  if (Number.isNaN(started)) return false;
+  const delta = started - around.getTime();
+  // Asymétrique : la date de référence est minuit, le match est plus tard.
+  return delta >= -SERIES_WINDOW_MS / 3 && delta <= SERIES_WINDOW_MS;
+}
+
+/**
+ * Parties correspondant à la série, triées chronologiquement et plafonnées.
+ *
+ * `around` restreint aux parties jouées autour de la date programmée du match.
+ * Sans cette borne, deux équipes ayant scrimmé le même jour voyaient leurs
+ * scrims importés à la place du match officiel — le filtre par puuid ne les
+ * distingue pas. Une date de match absente désactive la borne : mieux vaut un
+ * import approximatif que pas d'import du tout.
+ *
+ * Au-delà du plafond, ce sont les parties les PLUS RÉCENTES qui sont retenues :
+ * échauffements et scrims précèdent le match officiel bien plus souvent
+ * qu'ils ne le suivent.
+ */
 export function selectSeries(
   candidates: CustomMatch[],
   expected: Set<string>,
   threshold: number,
-  cap: number
+  cap: number,
+  around?: Date | null
 ): CustomMatch[] {
-  return candidates
+  const matching = candidates
     .filter((m) => countExpected(m, expected) >= threshold)
-    .sort((a, b) => (a.startedAt ?? "").localeCompare(b.startedAt ?? ""))
-    .slice(0, Math.max(1, cap));
+    .filter((m) => !around || withinWindow(m, around))
+    .sort((a, b) => (a.startedAt ?? "").localeCompare(b.startedAt ?? ""));
+
+  return matching.slice(-Math.max(1, cap));
 }

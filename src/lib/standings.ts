@@ -9,6 +9,8 @@ export type StandingRow = {
   teamId: string;
   played: number;
   wins: number;
+  /** Séries terminées à égalité de maps. */
+  draws: number;
   losses: number;
   mapsWon: number;
   mapsLost: number;
@@ -28,6 +30,7 @@ export function computeStandings(teamIds: string[], matches: FinishedMatch[]): S
       teamId: id,
       played: 0,
       wins: 0,
+      draws: 0,
       losses: 0,
       mapsWon: 0,
       mapsLost: 0,
@@ -51,6 +54,11 @@ export function computeStandings(teamIds: string[], matches: FinishedMatch[]): S
     } else if (m.scoreB > m.scoreA) {
       b.wins++;
       a.losses++;
+    } else {
+      // Une série à égalité de maps compte comme jouée sans vainqueur : sans
+      // cette colonne, une équipe à un nul affichait « J1 V0 D0 ».
+      a.draws++;
+      b.draws++;
     }
   }
 
@@ -74,6 +82,7 @@ export type StandingDisplayRow = {
   teamTag: string;
   played: number;
   wins: number;
+  draws: number;
   losses: number;
   mapDiff: number;
 };
@@ -100,6 +109,7 @@ export function buildStandingRows(
       teamTag: team?.tag ?? "?",
       played: s.played,
       wins: s.wins,
+      draws: s.draws,
       losses: s.losses,
       mapDiff: s.mapDiff,
     };

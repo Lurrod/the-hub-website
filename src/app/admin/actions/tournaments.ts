@@ -22,7 +22,7 @@ import {
   removeTournamentManagerIfNotLast,
   setTournamentManagerRole,
 } from "@/lib/data/tournaments";
-import { validateImageUpload, processAndStoreImage } from "@/lib/images";
+import { readUploadedImage, processAndStoreImage } from "@/lib/images";
 
 function parseTournamentForm(formData: FormData) {
   const raw = {
@@ -48,11 +48,8 @@ async function maybeStoreImage(
   field: "logo" | "banner",
   tournamentId: string
 ): Promise<void> {
-  const file = formData.get(field);
-  if (!(file instanceof File) || file.size === 0) return;
-  const check = validateImageUpload({ type: file.type, size: file.size });
-  if (!check.ok) throw new Error(check.error);
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = await readUploadedImage(formData.get(field));
+  if (!buffer) return;
   if (field === "banner") {
     const key = await processAndStoreImage(buffer, "tournaments", tournamentId, "banner");
     await setTournamentBanner(tournamentId, key);
@@ -114,14 +111,11 @@ export async function addParticipantAction(tournamentId: string, formData: FormD
   });
   if (!parsed.success) redirect(`${base}?error=invalid`);
   const { teamId, seed } = parsed.data;
-  if (seed != null) {
-    const clash = await db.tournamentParticipant.findFirst({
-      where: { tournamentId, seed, NOT: { teamId } },
-      select: { id: true },
-    });
-    if (clash) redirect(`${base}?error=seedtaken`);
+  // Le contrôle du seed vit dans la transaction d'insertion : le faire ici
+  // laissait deux ajouts simultanés passer tous les deux.
+  if (!(await addParticipant(tournamentId, teamId, seed))) {
+    redirect(`${base}?error=seedtaken`);
   }
-  await addParticipant(tournamentId, teamId, seed);
   revalidatePath(base);
   revalidatePath(`/tournois/${tournamentId}`);
   redirect(`${base}?ok=participant-added`);

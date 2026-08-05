@@ -45,6 +45,25 @@ async function assertGroupInTournament(groupId: string, tournamentId: string) {
   if (!group || group.tournamentId !== tournamentId) throw new Error("INVALID_GROUP");
 }
 
+/**
+ * Les deux équipes d'un match doivent être inscrites au tournoi.
+ *
+ * Sans ce contrôle, un match entre équipes non inscrites s'affichait dans
+ * `/matchs` et dans l'historique des deux équipes, mais restait invisible du
+ * classement — `computeStandings` ne connaît que les participants. Une
+ * incohérence sans message d'erreur, donc indiagnosticable.
+ */
+async function areBothRegistered(
+  tournamentId: string,
+  teamAId: string,
+  teamBId: string
+): Promise<boolean> {
+  const count = await db.tournamentParticipant.count({
+    where: { tournamentId, teamId: { in: [teamAId, teamBId] } },
+  });
+  return count === 2;
+}
+
 function parseMatchForm(formData: FormData) {
   return matchInputSchema.parse({
     teamAId: formData.get("teamAId"),
@@ -115,6 +134,9 @@ export async function createMatchAction(tournamentId: string, formData: FormData
   }
   const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
   if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
+  if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
+    redirect(`${base}?error=notregistered`);
+  }
   if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
   await createMatch(tournamentId, data);
   revalidateCompetition(tournamentId);
@@ -133,6 +155,9 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
   }
   const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
   if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
+  if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
+    redirect(`${editBase}?error=notregistered`);
+  }
   if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
   await updateMatch(matchId, tournamentId, data);
 

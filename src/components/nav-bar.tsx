@@ -1,22 +1,23 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import { auth, signIn, signOut } from "@/lib/auth";
-import { getPlayerByUserId } from "@/lib/data/players";
 import NavLinks from "@/components/nav-links";
-import UserMenu from "@/components/user-menu";
-import { DiscordIcon, SearchIcon } from "@/components/icons";
+import {
+  NavSessionLinks,
+  NavSessionUser,
+  NavSessionUserFallback,
+} from "@/components/nav-session";
+import { SearchIcon } from "@/components/icons";
 
-export default async function NavBar() {
-  const session = await auth();
-  const isAdmin = session?.user?.globalRole === "ADMIN";
-  const player = session?.user ? await getPlayerByUserId(session.user.id) : null;
-  const pseudo = player?.pseudo ?? session?.user?.name ?? "Joueur";
-  const photo = player?.photo ?? session?.user?.image ?? null;
-  const profilHref = player ? `/joueurs/${player.id}` : "/profil";
-
-  async function signOutAction() {
-    "use server";
-    await signOut();
-  }
+/**
+ * Barre de navigation.
+ *
+ * Volontairement synchrone : les deux morceaux qui dépendent de la session
+ * sont suspendus. Auparavant la barre entière était `async` et attendait la
+ * session PUIS la fiche joueur — deux allers-retours en base avant le premier
+ * octet de HTML, sur toutes les pages, y compris publiques. Le squelette part
+ * maintenant tout de suite et ces morceaux le rejoignent.
+ */
+export default function NavBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-strong)] bg-[var(--shell)]/90 backdrop-blur-md">
       {/* Sous 640px, la barre est trop étroite pour le champ de recherche et le
@@ -37,7 +38,11 @@ export default async function NavBar() {
             className="h-8 w-auto object-contain"
           />
         </Link>
-        <NavLinks isAdmin={isAdmin} />
+        {/* Repli sans le lien Admin : il ne concerne qu'une poignée de comptes,
+            et l'attendre retarderait l'affichage de tous les autres. */}
+        <Suspense fallback={<NavLinks isAdmin={false} />}>
+          <NavSessionLinks />
+        </Suspense>
 
         <Link
           href="/recherche"
@@ -60,29 +65,9 @@ export default async function NavBar() {
             className="w-full rounded border border-[var(--border)] bg-[var(--card)] py-1.5 pl-8 pr-3 text-sm text-white transition-colors duration-[130ms] placeholder:text-[var(--text-muted)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] focus:outline-none sm:w-52"
           />
         </form>
-        {session?.user ? (
-          <UserMenu
-            pseudo={pseudo}
-            photo={photo}
-            profilHref={profilHref}
-            signOutAction={signOutAction}
-          />
-        ) : (
-          <form
-            action={async () => {
-              "use server";
-              await signIn("discord");
-            }}
-          >
-            <button
-              aria-label="Connexion Discord"
-              className="flex shrink-0 items-center gap-2 rounded bg-[var(--accent)] px-2.5 py-1.5 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)] sm:px-3"
-            >
-              <DiscordIcon className="h-4 w-4 sm:hidden" />
-              <span className="hidden sm:inline">Connexion Discord</span>
-            </button>
-          </form>
-        )}
+        <Suspense fallback={<NavSessionUserFallback />}>
+          <NavSessionUser />
+        </Suspense>
       </nav>
     </header>
   );

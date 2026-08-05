@@ -36,15 +36,13 @@ export async function searchAll(query: string): Promise<SearchResults> {
       select: { id: true, name: true, tag: true, region: true, logo: true },
     }),
     db.player.findMany({
+      // Pas de filtre sur l'appartenance à une équipe : il rendait invisibles
+      // les joueurs sans équipe, alors que la page /lft existe précisément
+      // pour eux — un joueur cherchant une équipe était introuvable.
       where: {
-        AND: [
-          { memberships: { some: {} } },
-          {
-            OR: [
-              { pseudo: { contains: q, mode: "insensitive" } },
-              { realName: { contains: q, mode: "insensitive" } },
-            ],
-          },
+        OR: [
+          { pseudo: { contains: q, mode: "insensitive" } },
+          { realName: { contains: q, mode: "insensitive" } },
         ],
       },
       orderBy: { pseudo: "asc" },

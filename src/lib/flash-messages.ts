@@ -54,6 +54,19 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   twitter: { title: "Lien Twitter invalide", message: "Le lien Twitter doit être un lien x.com." },
   twitch: { title: "Lien Twitch invalide", message: "Le lien Twitch doit être un lien twitch.tv." },
   seedtaken: { title: "Seed déjà utilisé", message: "Un autre participant occupe déjà ce seed." },
+  teamnametaken: {
+    title: "Nom déjà pris",
+    message: "Une autre équipe porte déjà ce nom. Choisis-en un autre pour éviter la confusion.",
+  },
+  teamtagtaken: {
+    title: "Tag déjà pris",
+    message:
+      "Une autre équipe utilise déjà ce tag. Les brackets n'affichent que le tag : deux identiques seraient indiscernables.",
+  },
+  notregistered: {
+    title: "Équipe non inscrite",
+    message: "Les deux équipes d'un match doivent être inscrites au tournoi.",
+  },
   hasparticipations: {
     title: "Suppression impossible",
     message:

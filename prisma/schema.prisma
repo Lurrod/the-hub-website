@@ -72,6 +72,10 @@ enum TeamStatus {
 
 model Team {
   id          String       @id @default(cuid())
+  // Pas de contrainte SQL sur name/tag : les jeux de démonstration importent
+  // les mêmes équipes réelles depuis deux sources (`seed-dev` et
+  // `seed-vlr-emea`), et la CI joue les deux. L'unicité est vérifiée à la
+  // saisie — voir `findTeamConflict` — là où elle a un sens pour l'utilisateur.
   name        String
   tag         String
   logo        String?
@@ -238,6 +242,10 @@ model TournamentParticipant {
   group        Group?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
   @@unique([tournamentId, teamId])
+  // Pas de contrainte unique sur (tournamentId, seed) : les jeux de
+  // démonstration importés numérotent les seeds PAR POULE, donc en double au
+  // sein d'un même tournoi. L'unicité par tournoi reste la règle des
+  // formulaires, appliquée transactionnellement dans `addParticipantAction`.
 }
 
 enum MatchStage {

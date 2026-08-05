@@ -4,6 +4,24 @@ import { buildCsp, generateNonce, CSP_HEADER } from "@/lib/csp";
 
 const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
 
+/**
+ * Chemins que le gate d'onboarding laisse passer.
+ *
+ * Les mentions légales, les CGU et la politique de confidentialité doivent
+ * rester atteignables à tout moment : ce sont précisément les documents qu'on
+ * veut pouvoir lire AVANT de terminer son inscription.
+ */
+const ONBOARDING_EXEMPT = new Set([
+  "/onboarding",
+  "/cgu",
+  "/confidentialite",
+  "/mentions-legales",
+]);
+
+export function isOnboardingExempt(path: string): boolean {
+  return ONBOARDING_EXEMPT.has(path);
+}
+
 export function proxy(request: NextRequest) {
   const hasSession = SESSION_COOKIES.some((name) => request.cookies.has(name));
   const path = request.nextUrl.pathname;
@@ -25,7 +43,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Gate onboarding : connecté mais pas de cookie `onboarded` -> /onboarding.
-  if (hasSession && !request.cookies.has("onboarded") && path !== "/onboarding") {
+  if (hasSession && !request.cookies.has("onboarded") && !isOnboardingExempt(path)) {
     return withCsp(NextResponse.redirect(new URL("/onboarding", request.url)), csp);
   }
 
