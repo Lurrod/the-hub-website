@@ -90,3 +90,28 @@ describe("buildStandingRows", () => {
     expect(buildStandingRows([], [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 0 }])).toEqual([]);
   });
 });
+
+describe("matchs nuls", () => {
+  it("compte une série à égalité de maps comme un nul des deux côtés", () => {
+    const rows = computeStandings(["a", "b"], [{ teamAId: "a", teamBId: "b", scoreA: 1, scoreB: 1 }]);
+    for (const r of rows) {
+      expect(r.played).toBe(1);
+      expect(r.draws).toBe(1);
+      expect(r.wins).toBe(0);
+      expect(r.losses).toBe(0);
+    }
+  });
+
+  it("n'incrémente pas les nuls sur une série décidée", () => {
+    const rows = computeStandings(["a", "b"], [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 0 }]);
+    expect(rows.every((r) => r.draws === 0)).toBe(true);
+  });
+
+  it("remonte les nuls jusqu'à la ligne d'affichage", () => {
+    const rows = buildStandingRows(
+      [{ teamId: "a", name: "A", tag: "A" }, { teamId: "b", name: "B", tag: "B" }],
+      [{ teamAId: "a", teamBId: "b", scoreA: 1, scoreB: 1 }]
+    );
+    expect(rows[0].draws).toBe(1);
+  });
+});

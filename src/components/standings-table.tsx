@@ -6,6 +6,9 @@ export default function StandingsTable({ rows }: { rows: StandingDisplayRow[] })
   if (rows.length === 0) {
     return <p className="text-[var(--text-muted)]">Aucune équipe dans cette poule.</p>;
   }
+  // La colonne des nuls n'apparaît que s'il y en a : en élimination directe et
+  // dans la plupart des poules, elle ne serait qu'une colonne de zéros.
+  const showDraws = rows.some((r) => r.draws > 0);
   return (
     <table className="w-full text-sm">
       <thead>
@@ -14,6 +17,11 @@ export default function StandingsTable({ rows }: { rows: StandingDisplayRow[] })
           <th className="py-2 pr-2 font-medium">Équipe</th>
           <th className="py-2 pr-3 text-center font-medium">J</th>
           <th className="py-2 pr-3 text-center font-medium">V</th>
+          {showDraws && (
+            <th className="py-2 pr-3 text-center font-medium" title="Matchs nuls">
+              N
+            </th>
+          )}
           <th className="py-2 pr-3 text-center font-medium">D</th>
           <th className="py-2 pr-3 text-center font-medium">Diff</th>
         </tr>
@@ -30,6 +38,9 @@ export default function StandingsTable({ rows }: { rows: StandingDisplayRow[] })
             <td className="py-2.5 pr-2 font-medium text-white">{r.teamName}</td>
             <td className="stat py-2.5 pr-3 text-center text-[var(--text-muted)]">{r.played}</td>
             <td className="stat py-2.5 pr-3 text-center text-white">{r.wins}</td>
+            {showDraws && (
+              <td className="stat py-2.5 pr-3 text-center text-[var(--text-muted)]">{r.draws}</td>
+            )}
             <td className="stat py-2.5 pr-3 text-center text-[var(--text-muted)]">{r.losses}</td>
             <td
               className={`stat py-2.5 pr-3 text-center ${

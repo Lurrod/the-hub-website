@@ -9,9 +9,15 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text-summary", "html", "lcov"],
       reportsDirectory: "coverage",
-      // Seule la logique testable sans navigateur ni base est mesurée : les
-      // composants React, les server actions et les pages relèvent des tests
-      // end-to-end Playwright, pas de vitest (environnement "node").
+      // Seule la logique testable sans navigateur ni base est MESURÉE ici.
+      //
+      // Les server actions ne sont pas dans ce périmètre, mais elles sont
+      // désormais testées : `tests/unit/actions-authorization.test.ts` verrouille
+      // la matrice d'autorisation (qui peut supprimer, qui peut distribuer les
+      // droits), la seule partie où une erreur est silencieuse. Les inclure
+      // dans le calcul ferait tomber le total à ~59 % — l'essentiel de leur
+      // corps est de la plomberie de redirection, couverte par les parcours
+      // Playwright. Mélanger les deux rendrait le cliquet illisible.
       include: ["src/lib/**/*.ts"],
       exclude: ["src/lib/db.ts", "src/lib/auth.ts", "src/lib/data/**"],
       // Seuils calés sur le niveau réellement atteint, pas sur un objectif :
@@ -19,7 +25,7 @@ export default defineConfig({
       // faire échouer la CI. À relever au fur et à mesure ; la cible reste
       // 80 %, elle demande de couvrir bracket.ts, standings.ts et
       // match-stats.ts plus finement.
-      thresholds: { statements: 68, branches: 63, functions: 71, lines: 69 },
+      thresholds: { statements: 71, branches: 67, functions: 72, lines: 73 },
     },
   },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },

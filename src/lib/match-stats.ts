@@ -118,7 +118,7 @@ function gameStatRows(
 export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED" | "NOT_FOUND"> {
   const match = await db.match.findUnique({
     where: { id: matchId },
-    select: { id: true, teamAId: true, teamBId: true, bestOf: true },
+    select: { id: true, teamAId: true, teamBId: true, bestOf: true, date: true },
   });
   if (!match) return "NOT_FOUND";
 
@@ -139,11 +139,11 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
       continue;
     }
     for (const m of list) if (m.matchId) byId.set(m.matchId, m);
-    const found = selectSeries([...byId.values()], expected, MATCH_THRESHOLD, match.bestOf);
+    const found = selectSeries([...byId.values()], expected, MATCH_THRESHOLD, match.bestOf, match.date);
     if (found.length > 0) break;
   }
 
-  const series = selectSeries([...byId.values()], expected, MATCH_THRESHOLD, match.bestOf);
+  const series = selectSeries([...byId.values()], expected, MATCH_THRESHOLD, match.bestOf, match.date);
   if (series.length === 0) {
     await setStatus(match.id, "NOT_FOUND");
     return "NOT_FOUND";

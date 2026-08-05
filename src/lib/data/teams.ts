@@ -2,28 +2,26 @@ import { randomBytes } from "node:crypto";
 import { Prisma, type ManagerRole, type MembershipRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { isLastOwner } from "@/lib/permissions";
+import { clampPage, pageOffset } from "@/lib/pagination";
+import { attachRosterPlayer } from "@/lib/data/players";
 import type { TeamInput, RosterEntry } from "@/lib/validation/team";
 import { INVITE_TTL_DAYS } from "@/lib/invite";
 
 /**
- * Crée un roster initial (nouveaux joueurs + adhésions) pour une équipe.
- * Chaque joueur est créé de zéro, donc aucun conflit avec l'invariant
- * « une seule adhésion active par joueur ».
+ * Crée un roster initial pour une équipe.
+ *
+ * Chaque ligne réutilise une fiche d'archive du même pseudo si elle est libre,
+ * plutôt que d'empiler une fiche de plus. L'invariant « une seule adhésion
+ * active par joueur » tient : `findReusablePlayer` écarte les fiches déjà
+ * engagées dans une équipe.
  */
 export async function addInitialRoster(teamId: string, roster: RosterEntry[]): Promise<void> {
   if (roster.length === 0) return;
-  await db.$transaction(
-    roster.map((entry) =>
-      db.player.create({
-        data: {
-          pseudo: entry.pseudo,
-          memberships: {
-            create: { teamId, role: entry.role as MembershipRole },
-          },
-        },
-      })
-    )
-  );
+  await db.$transaction(async (tx) => {
+    for (const entry of roster) {
+      await attachRosterPlayer(tx, teamId, entry.pseudo, undefined, entry.role as MembershipRole);
+    }
+  });
 }
 
 export function listTeams(filters?: { region?: string }) {
@@ -33,22 +31,69 @@ export function listTeams(filters?: { region?: string }) {
   });
 }
 
+/** Équipes affichées par page sur /equipes. */
+export const TEAMS_PER_PAGE = 24;
+
 /**
  * Comme listTeams, mais avec le roster actif (hors staff) pour l'affichage
  * en cartes façon page tournoi (survol → joueurs).
+ *
+ * Paginée : chaque carte tire cinq joueurs, donc la version non bornée
+ * chargeait tout l'annuaire des rosters du site à chaque affichage.
  */
-export function listTeamsWithRoster(filters?: { region?: string }) {
-  return db.team.findMany({
-    where: filters?.region ? { region: filters.region } : undefined,
+export async function listTeamsWithRoster(filters?: { region?: string }, page = 1) {
+  const where = filters?.region ? { region: filters.region } : undefined;
+
+  const total = await db.team.count({ where });
+  const current = clampPage(page, total, TEAMS_PER_PAGE);
+
+  const teams = await db.team.findMany({
+    where,
     orderBy: { name: "asc" },
+    skip: pageOffset(current, TEAMS_PER_PAGE),
+    take: TEAMS_PER_PAGE,
     include: {
       memberships: {
         where: { leaveDate: null, role: { in: ["JOUEUR", "SUB"] } },
         orderBy: { role: "asc" },
+        // Les cartes n'affichent que cinq joueurs : inutile de remonter les
+        // remplaçants au-delà.
+        take: 5,
         include: { player: true },
       },
     },
   });
+
+  return { teams, total, page: current, pageSize: TEAMS_PER_PAGE };
+}
+
+/**
+ * Une autre équipe porte-t-elle déjà ce nom ou ce tag ? Comparaison insensible
+ * à la casse : « FUT » et « fut » sont le même tag pour un lecteur.
+ *
+ * L'unicité est vérifiée ici plutôt que par une contrainte SQL : les jeux de
+ * démonstration importent les mêmes équipes réelles depuis deux sources, et la
+ * CI les joue tous les deux. Le besoin réel est d'avertir à la saisie, pas
+ * d'interdire une donnée déjà en base.
+ *
+ * @returns le champ en conflit, ou null.
+ */
+export async function findTeamConflict(
+  data: { name: string; tag: string },
+  excludeTeamId?: string
+): Promise<"name" | "tag" | null> {
+  const clash = await db.team.findFirst({
+    where: {
+      ...(excludeTeamId ? { NOT: { id: excludeTeamId } } : {}),
+      OR: [
+        { name: { equals: data.name, mode: "insensitive" } },
+        { tag: { equals: data.tag, mode: "insensitive" } },
+      ],
+    },
+    select: { name: true, tag: true },
+  });
+  if (!clash) return null;
+  return clash.name.toLowerCase() === data.name.toLowerCase() ? "name" : "tag";
 }
 
 export function getTeam(id: string) {

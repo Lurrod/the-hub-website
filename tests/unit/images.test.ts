@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
+import sharp from "sharp";
 import {
   validateImageUpload,
+  assertRealImage,
+  readUploadedImage,
   imageKeyFor,
   resolveUploadPath,
   imageEtag,
@@ -76,5 +79,72 @@ describe("imageEtag", () => {
   it("est stable pour un même fichier", () => {
     const s = { size: 42, mtimeMs: 99 };
     expect(imageEtag(s)).toBe(imageEtag(s));
+  });
+});
+
+describe("assertRealImage", () => {
+  // Le type MIME vient du client et ne prouve rien : seul le contenu fait foi.
+  it("accepte un vrai PNG", async () => {
+    const png = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    })
+      .png()
+      .toBuffer();
+    expect(await assertRealImage(png)).toEqual({ ok: true });
+  });
+
+  it("accepte un vrai webp", async () => {
+    const webp = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: { r: 1, g: 2, b: 3 } },
+    })
+      .webp()
+      .toBuffer();
+    expect(await assertRealImage(webp)).toEqual({ ok: true });
+  });
+
+  it("refuse un SVG, même renommé en .png", async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4"/></svg>');
+    const r = await assertRealImage(svg);
+    expect(r.ok).toBe(false);
+  });
+
+  it("refuse un fichier qui n'est pas une image", async () => {
+    const r = await assertRealImage(Buffer.from("ceci n'est pas une image"));
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("readUploadedImage", () => {
+  async function pngFile(name = "logo.png", type = "image/png") {
+    const buf = await sharp({
+      create: { width: 4, height: 4, channels: 3, background: { r: 9, g: 9, b: 9 } },
+    })
+      .png()
+      .toBuffer();
+    return new File([new Uint8Array(buf)], name, { type });
+  }
+
+  it("rend null quand le champ est vide (upload facultatif)", async () => {
+    expect(await readUploadedImage(null)).toBeNull();
+    expect(await readUploadedImage(new File([], "vide.png", { type: "image/png" }))).toBeNull();
+    expect(await readUploadedImage("pas-un-fichier")).toBeNull();
+  });
+
+  it("rend le contenu d'une image valide", async () => {
+    const buffer = await readUploadedImage(await pngFile());
+    expect(buffer).toBeInstanceOf(Buffer);
+    expect((await sharp(buffer!).metadata()).format).toBe("png");
+  });
+
+  it("refuse un type déclaré hors liste", async () => {
+    const f = new File([new Uint8Array([1, 2, 3])], "x.gif", { type: "image/gif" });
+    await expect(readUploadedImage(f)).rejects.toThrow(/non autorisé/i);
+  });
+
+  it("refuse un fichier dont le contenu n'est pas une image, malgré son type déclaré", async () => {
+    const f = new File([new Uint8Array(Buffer.from("<svg/>"))], "piege.png", {
+      type: "image/png",
+    });
+    await expect(readUploadedImage(f)).rejects.toThrow();
   });
 });

@@ -297,3 +297,43 @@ describe("roundTimeline enrichie", () => {
     expect(roundTimeline(rounds, { Red: "A", Blue: "B" })).toEqual([{ w: "A", o: "elim" }]);
   });
 });
+
+describe("selectSeries : fenêtre autour de la date du match", () => {
+  const DATE = new Date("2026-07-27T00:00:00Z"); // date d'un <input type="date">
+
+  it("garde les parties jouées le soir du match", () => {
+    const m = match("m", "2026-07-27T20:30:00Z", red, blue);
+    expect(selectSeries([m], expected, 8, 3, DATE).map((x) => x.matchId)).toEqual(["m"]);
+  });
+
+  it("garde une partie qui déborde sur la nuit suivante", () => {
+    const m = match("m", "2026-07-28T00:45:00Z", red, blue);
+    expect(selectSeries([m], expected, 8, 3, DATE)).toHaveLength(1);
+  });
+
+  it("écarte les scrims de la veille et du surlendemain", () => {
+    const veille = match("v", "2026-07-25T20:00:00Z", red, blue);
+    const apres = match("a", "2026-07-29T20:00:00Z", red, blue);
+    expect(selectSeries([veille, apres], expected, 8, 3, DATE)).toEqual([]);
+  });
+
+  it("écarte une partie sans horodatage quand une date est fournie", () => {
+    const m = match("m", "", red, blue);
+    expect(selectSeries([m], expected, 8, 3, DATE)).toEqual([]);
+  });
+
+  it("sans date de match, la borne est désactivée", () => {
+    // Mieux vaut un import approximatif que pas d'import du tout.
+    const vieux = match("m", "2020-01-01T20:00:00Z", red, blue);
+    expect(selectSeries([vieux], expected, 8, 3, null)).toHaveLength(1);
+  });
+
+  it("au-delà du plafond, retient les parties les plus récentes", () => {
+    // Échauffements et scrims précèdent le match officiel.
+    const scrim = match("scrim", "2026-07-27T18:00:00Z", red, blue);
+    const map1 = match("map1", "2026-07-27T20:00:00Z", red, blue);
+    const map2 = match("map2", "2026-07-27T21:00:00Z", red, blue);
+    const out = selectSeries([scrim, map1, map2], expected, 8, 2, DATE);
+    expect(out.map((m) => m.matchId)).toEqual(["map1", "map2"]);
+  });
+});

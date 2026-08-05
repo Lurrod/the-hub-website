@@ -2,6 +2,8 @@ import { listTeamsWithRoster } from "@/lib/data/teams";
 import { REGIONS } from "@/lib/constants";
 import ParticipantCard from "@/components/participant-card";
 import RegionFilter from "@/components/region-filter";
+import Pagination from "@/components/pagination";
+import { parsePage } from "@/lib/pagination";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata({
@@ -14,12 +16,12 @@ export const metadata = pageMetadata({
 export default async function TeamsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ region?: string }>;
+  searchParams: Promise<{ region?: string; p?: string }>;
 }) {
-  const { region: rawRegion } = await searchParams;
+  const { region: rawRegion, p } = await searchParams;
   // On n'accepte que les régions connues (rejette toute valeur d'URL arbitraire).
   const region = (REGIONS as readonly string[]).includes(rawRegion ?? "") ? rawRegion : undefined;
-  const teams = await listTeamsWithRoster({ region });
+  const { teams, total, page, pageSize } = await listTeamsWithRoster({ region }, parsePage(p));
 
   // Regroupe par région. On n'exclut aucune équipe : les régions connues (REGIONS)
   // passent en premier, puis toute autre région réellement présente dans les données.
@@ -76,6 +78,15 @@ export default async function TeamsPage({
             ))}
           </div>
         )}
+
+        <Pagination
+          basePath="/equipes"
+          params={{ region }}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          label="équipes"
+        />
       </div>
     </main>
   );

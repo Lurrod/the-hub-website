@@ -222,18 +222,60 @@ export function getMembership(id: string) {
   return db.teamMembership.findUnique({ where: { id } });
 }
 
-/** Crée un joueur ET l'ajoute au roster de l'équipe (transaction). */
+/** Client Prisma ou client de transaction : les deux exposent ce dont on a besoin. */
+type PrismaLike = Pick<typeof db, "player">;
+
+/**
+ * Fiche réutilisable pour ce pseudo, ou null.
+ *
+ * Une fiche est réutilisable si elle n'appartient à personne (`userId` nul) et
+ * n'a aucune adhésion active : c'est une fiche d'archive, créée pour importer
+ * un tournoi joué hors du site. La rattacher évite d'empiler une fiche de plus
+ * à chaque fois qu'un pseudo est saisi dans un roster — sans quoi un même
+ * joueur finissait avec N fiches dont une seule récupérable par Riot ID.
+ *
+ * On ne touche jamais à une fiche déjà rattachée à un compte ou à une équipe :
+ * l'homonymie existe, et voler la fiche de quelqu'un serait pire que le
+ * doublon qu'on cherche à éviter.
+ */
+export function findReusablePlayer(client: PrismaLike, pseudo: string) {
+  return client.player.findFirst({
+    where: {
+      pseudo: { equals: pseudo, mode: "insensitive" },
+      userId: null,
+      memberships: { none: { leaveDate: null } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+/**
+ * Rattache un joueur au roster : réutilise une fiche d'archive du même pseudo
+ * si elle existe, en crée une sinon.
+ */
+export async function attachRosterPlayer(
+  tx: PrismaLike & { teamMembership: typeof db.teamMembership },
+  teamId: string,
+  pseudo: string,
+  nationality: string | undefined,
+  role: MembershipRole
+) {
+  const existing = await findReusablePlayer(tx, pseudo);
+  const player =
+    existing ??
+    (await tx.player.create({ data: { pseudo, nationality } }));
+  await tx.teamMembership.create({ data: { teamId, playerId: player.id, role } });
+  return player;
+}
+
+/** Crée ou réutilise un joueur ET l'ajoute au roster de l'équipe (transaction). */
 export function createPlayerAndAddToRoster(
   teamId: string,
   pseudo: string,
   nationality: string | undefined,
   role: MembershipRole
 ) {
-  return db.$transaction(async (tx) => {
-    const player = await tx.player.create({ data: { pseudo, nationality } });
-    await tx.teamMembership.create({ data: { teamId, playerId: player.id, role } });
-    return player;
-  });
+  return db.$transaction((tx) => attachRosterPlayer(tx, teamId, pseudo, nationality, role));
 }
 
 export function setMembershipRole(id: string, role: MembershipRole) {

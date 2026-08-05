@@ -15,8 +15,9 @@ import {
   removeTeamManagerIfNotLast,
   setTeamManagerRole,
   addInitialRoster,
+  findTeamConflict,
 } from "@/lib/data/teams";
-import { validateImageUpload, processAndStoreImage } from "@/lib/images";
+import { readUploadedImage, processAndStoreImage } from "@/lib/images";
 import { flashCodeFromError } from "@/lib/form-errors";
 
 function parseTeamForm(formData: FormData) {
@@ -52,11 +53,8 @@ function parseRoster(formData: FormData) {
 }
 
 async function maybeStoreLogo(formData: FormData, teamId: string): Promise<void> {
-  const file = formData.get("logo");
-  if (!(file instanceof File) || file.size === 0) return;
-  const check = validateImageUpload({ type: file.type, size: file.size });
-  if (!check.ok) throw new Error(check.error);
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = await readUploadedImage(formData.get("logo"));
+  if (!buffer) return;
   const key = await processAndStoreImage(buffer, "teams", teamId);
   await setTeamLogo(teamId, key);
 }
@@ -69,6 +67,8 @@ export async function createTeamAction(formData: FormData) {
   } catch (e) {
     redirect(`/admin/equipes/nouvelle?error=${flashCodeFromError(e)}`);
   }
+  const conflict = await findTeamConflict(data);
+  if (conflict) redirect(`/admin/equipes/nouvelle?error=team${conflict}taken`);
   const roster = parseRoster(formData);
   const team = await createTeam(data, admin.id);
   await maybeStoreLogo(formData, team.id);
@@ -86,6 +86,8 @@ export async function updateTeamAction(teamId: string, formData: FormData) {
   } catch (e) {
     redirect(`/equipes/${teamId}/gestion?error=${flashCodeFromError(e)}`);
   }
+  const conflict = await findTeamConflict(data, teamId);
+  if (conflict) redirect(`/equipes/${teamId}/gestion?error=team${conflict}taken`);
   await updateTeam(teamId, data);
   await maybeStoreLogo(formData, teamId);
   revalidatePath("/equipes");

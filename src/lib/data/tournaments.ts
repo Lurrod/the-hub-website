@@ -127,12 +127,40 @@ export function deleteTournament(id: string) {
   return db.tournament.delete({ where: { id } });
 }
 
-export function addParticipant(tournamentId: string, teamId: string, seed?: number) {
-  return db.tournamentParticipant.upsert({
-    where: { tournamentId_teamId: { tournamentId, teamId } },
-    create: { tournamentId, teamId, seed },
-    update: { seed },
-  });
+/**
+ * Inscrit (ou met à jour) un participant, en refusant un seed déjà occupé.
+ *
+ * Vérification et écriture dans la même transaction Serializable : la version
+ * précédente lisait puis écrivait sans transaction, et deux ajouts simultanés
+ * pouvaient attribuer le même seed à deux équipes. Il n'y a pas de contrainte
+ * SQL pour rattraper ça — les jeux de démonstration numérotent les seeds par
+ * poule, donc en double au sein d'un tournoi.
+ *
+ * @returns false si le seed est déjà pris par une autre équipe.
+ */
+export function addParticipant(
+  tournamentId: string,
+  teamId: string,
+  seed?: number
+): Promise<boolean> {
+  return db.$transaction(
+    async (tx) => {
+      if (seed != null) {
+        const clash = await tx.tournamentParticipant.findFirst({
+          where: { tournamentId, seed, NOT: { teamId } },
+          select: { id: true },
+        });
+        if (clash) return false;
+      }
+      await tx.tournamentParticipant.upsert({
+        where: { tournamentId_teamId: { tournamentId, teamId } },
+        create: { tournamentId, teamId, seed },
+        update: { seed },
+      });
+      return true;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
 }
 
 export function removeParticipant(tournamentId: string, teamId: string) {
