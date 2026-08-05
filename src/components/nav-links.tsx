@@ -11,11 +11,24 @@ const LINKS = [
   { href: "/lft", label: "LFT / LFP" },
 ];
 
-export default function NavLinks({ isAdmin = false }: { isAdmin?: boolean }) {
+/**
+ * Liens de navigation principaux.
+ *
+ * `className` est laissé à l'appelant : les mêmes liens habitent la barre du
+ * haut sur grand écran et une seconde rangée sur mobile, deux contextes qui
+ * n'ont pas la même hauteur ni les mêmes marges.
+ */
+export default function NavLinks({
+  isAdmin = false,
+  className = "",
+}: {
+  isAdmin?: boolean;
+  className?: string;
+}) {
   const pathname = usePathname();
   const links = [...LINKS, ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : [])];
   return (
-    <div className="flex items-stretch self-stretch gap-0.5 text-sm sm:gap-1">
+    <div className={`flex items-stretch gap-0.5 text-sm sm:gap-1 ${className}`}>
       {links.map((l) => {
         const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
         return (
@@ -23,7 +36,10 @@ export default function NavLinks({ isAdmin = false }: { isAdmin?: boolean }) {
             key={l.href}
             href={l.href}
             data-active={active}
-            className="nav-link flex items-center px-1.5 sm:px-2.5"
+            // `whitespace-nowrap` : sans lui « LFT / LFP » se coupait sur trois
+            // lignes dès que la barre manquait de place, et faisait déborder
+            // toute l'en-tête.
+            className="nav-link flex shrink-0 items-center whitespace-nowrap px-2 sm:px-2.5"
           >
             {l.label}
           </Link>

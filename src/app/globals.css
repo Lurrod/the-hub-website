@@ -1463,6 +1463,11 @@ body :is(h1, h2, h3, h4, h5, h6) {
   --scroll-x-bg: var(--bg);
 }
 
+/** Conteneur posé sur la barre de navigation (seconde rangée d'onglets). */
+.scroll-x-on-shell {
+  --scroll-x-bg: var(--shell);
+}
+
 
 /* ---------------------------------------------------------------------------
    Card resize (snippet 01) — tween de la hauteur d'un conteneur qui change

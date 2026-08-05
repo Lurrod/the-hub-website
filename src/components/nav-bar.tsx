@@ -23,7 +23,7 @@ export default function NavBar() {
       {/* Sous 640px, la barre est trop étroite pour le champ de recherche et le
           libellé complet du bouton : le champ devient une icône vers /recherche
           et le bouton se réduit à l'icône Discord. */}
-      <nav className="mx-auto flex h-[47px] max-w-6xl items-center gap-x-2 px-4 sm:gap-x-6">
+      <nav className="mx-auto flex h-[47px] max-w-6xl items-center gap-x-2 px-4 md:gap-x-6">
         <Link href="/" aria-label="The Hub - accueil" className="flex shrink-0 items-center">
           {/* Rendu à 32 px de haut : le PNG source de 1125 px (98 Ko) était
               téléchargé sur chaque page. Le webp fait 3,7 Ko pour un rendu
@@ -40,14 +40,16 @@ export default function NavBar() {
         </Link>
         {/* Repli sans le lien Admin : il ne concerne qu'une poignée de comptes,
             et l'attendre retarderait l'affichage de tous les autres. */}
-        <Suspense fallback={<NavLinks isAdmin={false} />}>
-          <NavSessionLinks />
-        </Suspense>
+        <div className="hidden self-stretch md:flex">
+          <Suspense fallback={<NavLinks isAdmin={false} className="self-stretch" />}>
+            <NavSessionLinks className="self-stretch" />
+          </Suspense>
+        </div>
 
         <Link
           href="/recherche"
           aria-label="Rechercher"
-          className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--border)] bg-[var(--card)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-white sm:hidden"
+          className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--border)] bg-[var(--card)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-white md:hidden"
         >
           <SearchIcon />
         </Link>
@@ -55,20 +57,35 @@ export default function NavBar() {
         <form
           action="/recherche"
           method="get"
-          className="relative ml-auto hidden sm:block"
+          className="relative ml-auto hidden md:block"
         >
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
           <input
             name="q"
             placeholder="Rechercher…"
             aria-label="Rechercher"
-            className="w-full rounded border border-[var(--border)] bg-[var(--card)] py-1.5 pl-8 pr-3 text-sm text-white transition-colors duration-[130ms] placeholder:text-[var(--text-muted)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] focus:outline-none sm:w-52"
+            className="w-40 rounded border border-[var(--border)] bg-[var(--card)] py-1.5 pl-8 pr-3 text-sm text-white transition-colors duration-[130ms] placeholder:text-[var(--text-muted)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] focus:outline-none lg:w-52"
           />
         </form>
         <Suspense fallback={<NavSessionUserFallback />}>
           <NavSessionUser />
         </Suspense>
       </nav>
+
+      {/* Sous 768px, cinq onglets ne tiennent pas à côté du logo, de la
+          recherche et du bouton de connexion : ils passent sur une seconde
+          rangée. Un menu déroulant les aurait cachés derrière un tap, alors
+          que ce sont les cinq portes d'entrée du site — et sa difficulté du
+          moment est justement de se faire découvrir. La rangée défile
+          horizontalement au cas où : lien Admin, ou police agrandie par le
+          système. */}
+      <div className="border-t border-[var(--border)] md:hidden">
+        <div className="scroll-x scroll-x-on-shell mx-auto h-[38px] max-w-6xl px-2">
+          <Suspense fallback={<NavLinks isAdmin={false} className="h-full" />}>
+            <NavSessionLinks className="h-full" />
+          </Suspense>
+        </div>
+      </div>
     </header>
   );
 }

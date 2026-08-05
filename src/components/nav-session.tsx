@@ -14,12 +14,17 @@ import { DiscordIcon } from "@/components/icons";
  * aller-retour malgré les deux composants.
  */
 
+/**
+ * `whitespace-nowrap` + `shrink-0` : le libellé se cassait en deux lignes et
+ * déformait la barre dès que la place manquait. Il n'apparaît donc qu'à partir
+ * de `lg`, l'icône seule suffisant en dessous.
+ */
 const AUTH_BUTTON =
-  "flex shrink-0 items-center gap-2 rounded bg-[var(--accent)] px-2.5 py-1.5 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)] sm:px-3";
+  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded bg-[var(--accent)] px-2.5 py-1.5 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)] lg:px-3";
 
-export async function NavSessionLinks() {
+export async function NavSessionLinks({ className }: { className?: string }) {
   const session = await getCachedSession();
-  return <NavLinks isAdmin={session?.user?.globalRole === "ADMIN"} />;
+  return <NavLinks isAdmin={session?.user?.globalRole === "ADMIN"} className={className} />;
 }
 
 export async function NavSessionUser() {
@@ -34,8 +39,8 @@ export async function NavSessionUser() {
         }}
       >
         <button aria-label="Connexion Discord" className={AUTH_BUTTON}>
-          <DiscordIcon className="h-4 w-4 sm:hidden" />
-          <span className="hidden sm:inline">Connexion Discord</span>
+          <DiscordIcon className="h-4 w-4 lg:hidden" />
+          <span className="hidden lg:inline">Connexion Discord</span>
         </button>
       </form>
     );

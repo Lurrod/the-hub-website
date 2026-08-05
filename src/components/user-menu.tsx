@@ -77,7 +77,9 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
         onClick={() => (open ? close() : (setClosing(false), setOpen(true)))}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] py-1 pl-1 pr-2.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--border-strong)]"
+        // `shrink-0` : entre 768 et 1024 px la barre est serrée (liens +
+        // recherche + menu) et le bouton se faisait écraser.
+        className="flex shrink-0 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] py-1 pl-1 pr-2.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--border-strong)]"
       >
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -87,7 +89,7 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
             {pseudo.slice(0, 2).toUpperCase()}
           </span>
         )}
-        <span className="max-w-[9rem] truncate">{pseudo}</span>
+        <span className="max-w-[6rem] truncate lg:max-w-[9rem]">{pseudo}</span>
         <svg
           viewBox="0 0 24 24"
           fill="none"
