@@ -66,3 +66,42 @@ export function computeStandings(teamIds: string[], matches: FinishedMatch[]): S
       x.teamId.localeCompare(y.teamId)
   );
 }
+
+export type StandingTeam = { teamId: string; name: string; tag: string };
+export type StandingDisplayRow = {
+  teamId: string;
+  teamName: string;
+  teamTag: string;
+  played: number;
+  wins: number;
+  losses: number;
+  mapDiff: number;
+};
+
+/**
+ * Classement prêt à afficher : `computeStandings` suivi de la résolution des
+ * noms d'équipe. Factorisé parce que deux appelants en ont besoin — une poule,
+ * et le classement global des formats qui n'en ont pas (suisse, ligue,
+ * round robin).
+ */
+export function buildStandingRows(
+  teams: readonly StandingTeam[],
+  matches: readonly FinishedMatch[]
+): StandingDisplayRow[] {
+  const byId = new Map(teams.map((t) => [t.teamId, t]));
+  return computeStandings(
+    teams.map((t) => t.teamId),
+    [...matches]
+  ).map((s) => {
+    const team = byId.get(s.teamId);
+    return {
+      teamId: s.teamId,
+      teamName: team?.name ?? s.teamId,
+      teamTag: team?.tag ?? "?",
+      played: s.played,
+      wins: s.wins,
+      losses: s.losses,
+      mapDiff: s.mapDiff,
+    };
+  });
+}

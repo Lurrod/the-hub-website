@@ -13,10 +13,14 @@ interface ConfirmDeleteButtonProps {
   title: string;
   /** Message d'avertissement affiché dans la boîte de dialogue. */
   message: string;
+  /** Libellé du bouton de confirmation. Défaut : « Supprimer ». */
+  confirmLabel?: string;
+  /** Libellé pendant l'exécution. Défaut : « Suppression… ». */
+  pendingLabel?: string;
 }
 
 /** Bouton de confirmation interne, avec état « en cours » via useFormStatus. */
-function ConfirmButton() {
+function ConfirmButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
   const { pending } = useFormStatus();
   return (
     <button
@@ -24,7 +28,7 @@ function ConfirmButton() {
       disabled={pending}
       className="rounded-lg bg-[var(--destructive)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition-opacity hover:opacity-90 disabled:opacity-60"
     >
-      {pending ? "Suppression…" : "Supprimer"}
+      {pending ? pendingLabel : label}
     </button>
   );
 }
@@ -38,6 +42,8 @@ export default function ConfirmDeleteButton({
   label,
   title,
   message,
+  confirmLabel = "Supprimer",
+  pendingLabel = "Suppression…",
 }: ConfirmDeleteButtonProps) {
   // `open` = portail monté, `shown` = .is-open, `closing` = .is-closing.
   // Trois états et non un seul : la modale doit rester montée le temps de son
@@ -132,7 +138,7 @@ export default function ConfirmDeleteButton({
                 Annuler
               </button>
               <form action={action}>
-                <ConfirmButton />
+                <ConfirmButton label={confirmLabel} pendingLabel={pendingLabel} />
               </form>
             </div>
           </div>

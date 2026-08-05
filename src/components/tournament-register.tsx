@@ -15,13 +15,14 @@ export type RegistrableTeam = {
  */
 export default function TournamentRegister({
   tournamentId,
-  status,
+  open,
   teams,
   teamCount,
   maxTeams,
 }: {
   tournamentId: string;
-  status: string;
+  /** Calculé par `isRegistrationOpen` : dates ET statut, pas le statut seul. */
+  open: boolean;
   teams: RegistrableTeam[];
   teamCount: number;
   maxTeams: number | null;
@@ -31,7 +32,7 @@ export default function TournamentRegister({
   const box =
     "rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-sm text-[var(--text-muted)]";
 
-  if (status !== "UPCOMING") {
+  if (!open) {
     return <p className={box}>Les inscriptions sont fermées : le tournoi a déjà commencé.</p>;
   }
 

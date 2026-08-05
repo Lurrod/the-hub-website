@@ -10,7 +10,10 @@ import {
   addMatchMapAction,
   importMatchMapAction,
   removeMatchMapAction,
+  refetchMatchStatsAction,
 } from "@/app/admin/actions/matches";
+import ConfirmDeleteButton from "@/components/confirm-delete-button";
+import { hasRiotStats } from "@/lib/match-stats-core";
 
 import { tournamentTitle } from "@/lib/data/titles";
 
@@ -53,6 +56,7 @@ export default async function EditMatchPage({
   const updateWith = updateMatchAction.bind(null, id, matchId);
   const addMapWith = addMatchMapAction.bind(null, id, matchId);
   const importMapWith = importMatchMapAction.bind(null, id, matchId);
+  const refetchWith = refetchMatchStatsAction.bind(null, id, matchId);
   const input =
     "rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
 
@@ -62,18 +66,39 @@ export default async function EditMatchPage({
         Éditer le match - {match.teamA.name} vs {match.teamB.name}
       </h1>
 
-      {match.statsStatus === "MATCHED" || match.statsStatus === "MANUAL" ? (
-        <p className="mb-4 text-xs text-[var(--success)]">
-          Stats récupérées depuis Riot
-          {match.statsStatus === "MANUAL" ? " (import manuel)" : " (recherche automatique)"}
-          {match.statsFetchedAt ? ` le ${new Date(match.statsFetchedAt).toLocaleString("fr-FR")}` : ""}.
-        </p>
-      ) : match.statsStatus === "NOT_FOUND" ? (
-        <p className="mb-4 text-xs text-[var(--text-muted)]">
-          Aucune partie custom correspondante trouvée. Ré-enregistre le match une fois la partie
-          disponible dans l&apos;historique Riot, ou importe-la plus bas par son identifiant.
-        </p>
-      ) : null}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {hasRiotStats(match.statsStatus) ? (
+          <p className="text-xs text-[var(--success)]">
+            Stats récupérées depuis Riot
+            {match.statsStatus === "MANUAL" ? " (import manuel)" : " (recherche automatique)"}
+            {match.statsFetchedAt
+              ? ` le ${new Date(match.statsFetchedAt).toLocaleString("fr-FR")}`
+              : ""}
+            .
+          </p>
+        ) : match.statsStatus === "NOT_FOUND" ? (
+          <p className="text-xs text-[var(--text-muted)]">
+            Aucune partie custom correspondante trouvée. Relance la recherche une fois la partie
+            disponible dans l&apos;historique Riot, ou importe-la plus bas par son identifiant.
+          </p>
+        ) : null}
+
+        {/* La recherche automatique remplace TOUTES les maps du match : elle ne
+            part plus toute seule à chaque enregistrement, mais reste
+            déclenchable ici, après confirmation. */}
+        <ConfirmDeleteButton
+          action={refetchWith}
+          label="Relancer la recherche Riot"
+          title="Relancer la recherche automatique ?"
+          message={
+            match.maps.length > 0
+              ? `Les ${match.maps.length} map(s) actuelles de ce match, imports manuels compris, seront remplacées par celles trouvées dans l'historique Riot.`
+              : "Les maps trouvées dans l'historique Riot seront rattachées à ce match."
+          }
+          confirmLabel="Relancer"
+          pendingLabel="Recherche…"
+        />
+      </div>
 
       <MatchForm
         action={updateWith}

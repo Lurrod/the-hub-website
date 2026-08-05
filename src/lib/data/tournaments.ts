@@ -2,16 +2,19 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { TournamentFormat, TournamentStatus } from "@/lib/constants";
 import type { TournamentInput } from "@/lib/validation/tournament";
-import { isTournamentOver, syncFinishedTournaments } from "@/lib/tournament-status";
+import { nextTournamentStatus, syncTournamentStatuses } from "@/lib/tournament-status";
 
-/** Le statut saisi, forcé à "FINISHED" si la date de fin est déjà dépassée. */
+/** Le statut saisi, recalé sur les dates (démarré → en cours, fini → terminé). */
 function effectiveStatus(data: TournamentInput): TournamentStatus {
-  const endDate = data.endDate ?? null;
-  return isTournamentOver({ endDate }) ? "FINISHED" : (data.status as TournamentStatus);
+  return nextTournamentStatus({
+    status: data.status as TournamentStatus,
+    startDate: data.startDate ?? null,
+    endDate: data.endDate ?? null,
+  });
 }
 
 export async function listTournaments(filters?: { region?: string; status?: string }) {
-  await syncFinishedTournaments();
+  await syncTournamentStatuses();
 
   return db.tournament.findMany({
     where: {
@@ -25,7 +28,7 @@ export async function listTournaments(filters?: { region?: string; status?: stri
 
 /** Tournois auxquels une équipe est (ou a été) inscrite, plus récents d'abord. */
 export async function getTeamTournaments(teamId: string) {
-  await syncFinishedTournaments();
+  await syncTournamentStatuses();
 
   return db.tournament.findMany({
     where: { participants: { some: { teamId } } },
@@ -35,7 +38,7 @@ export async function getTeamTournaments(teamId: string) {
 }
 
 export async function getTournament(id: string) {
-  await syncFinishedTournaments();
+  await syncTournamentStatuses();
 
   return db.tournament.findUnique({
     where: { id },

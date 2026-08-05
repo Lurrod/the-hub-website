@@ -35,7 +35,16 @@ export const matchInputSchema = z
   .refine((v) => v.teamAId !== v.teamBId, {
     message: "Les deux équipes doivent être différentes",
     path: ["teamBId"],
+  })
+  .refine((v) => v.scoreA <= mapsToWin(v.bestOf) && v.scoreB <= mapsToWin(v.bestOf), {
+    message: "Le score se compte en maps gagnées, pas en rounds",
+    path: ["scoreA"],
   });
+
+/** Maps nécessaires pour remporter la série : BO1 → 1, BO3 → 2, BO5 → 3. */
+export function mapsToWin(bestOf: number): number {
+  return Math.ceil(bestOf / 2);
+}
 
 export type MatchInput = z.infer<typeof matchInputSchema>;
 

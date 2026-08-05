@@ -17,7 +17,9 @@ import TournamentRegister, { type RegistrableTeam } from "@/components/tournamen
 import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import TournamentTeams from "@/components/tournament-teams";
-import { computeStandings } from "@/lib/standings";
+import { buildStandingRows } from "@/lib/standings";
+import { formatAllowsGroups } from "@/lib/constants";
+import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
 
 import { tournamentTitle } from "@/lib/data/titles";
@@ -55,9 +57,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   // Étapes : chaque poule → son classement ; les playoffs → l'arbre du bracket.
   const stageDefs: { key: string; label: string; content: ReactNode }[] = [];
   for (const g of groups) {
-    const teamById = new Map(g.participants.map((p) => [p.teamId, p.team]));
-    const standings = computeStandings(
-      g.participants.map((p) => p.teamId),
+    const rows = buildStandingRows(
+      g.participants.map((p) => ({ teamId: p.teamId, name: p.team.name, tag: p.team.tag })),
       g.matches.map((m) => ({
         teamAId: m.teamAId,
         teamBId: m.teamBId,
@@ -65,19 +66,33 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         scoreB: m.scoreB,
       }))
     );
-    const rows = standings.map((s) => {
-      const team = teamById.get(s.teamId);
-      return {
-        teamId: s.teamId,
-        teamName: team?.name ?? s.teamId,
-        teamTag: team?.tag ?? "?",
-        played: s.played,
-        wins: s.wins,
-        losses: s.losses,
-        mapDiff: s.mapDiff,
-      };
-    });
     stageDefs.push({ key: `g-${g.id}`, label: g.name, content: <StandingsTable rows={rows} /> });
+  }
+
+  // Suisse, ligue et round robin se jouent en phase « poule » sans qu'aucune
+  // poule ne soit créée : sans ce classement global, ces trois formats
+  // affichaient leurs matchs mais aucun classement — leur raison d'être.
+  // Couvre aussi une phase de poules dont l'organisateur n'a pas encore
+  // découpé les groupes.
+  if (groups.length === 0 && formatAllowsGroups(tournament.format)) {
+    const rows = buildStandingRows(
+      tournament.participants.map((p) => ({
+        teamId: p.teamId,
+        name: p.team.name,
+        tag: p.team.tag,
+      })),
+      allMatches
+        .filter((m) => m.stage === "GROUP" && m.status === "FINISHED")
+        .map((m) => ({
+          teamAId: m.teamAId,
+          teamBId: m.teamBId,
+          scoreA: m.scoreA,
+          scoreB: m.scoreB,
+        }))
+    );
+    if (rows.length > 0) {
+      stageDefs.push({ key: "classement", label: "Classement", content: <StandingsTable rows={rows} /> });
+    }
   }
   if (bracket.length > 0) {
     stageDefs.push({
@@ -166,7 +181,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           <div className="mb-4">
             <TournamentRegister
               tournamentId={id}
-              status={tournament.status}
+              open={isRegistrationOpen(tournament)}
               teams={myTeams}
               teamCount={teamCount}
               maxTeams={tournament.maxTeams}

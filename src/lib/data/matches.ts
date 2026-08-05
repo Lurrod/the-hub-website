@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import type { MatchStage, MatchStatus } from "@/lib/constants";
 import type { MatchInput, MatchMapInput } from "@/lib/validation/match";
-import { syncFinishedTournaments } from "@/lib/tournament-status";
+import { syncTournamentStatuses } from "@/lib/tournament-status";
 import { seriesScore } from "@/lib/match-stats-core";
 
 function deriveWinnerId(data: {
@@ -228,7 +228,7 @@ export async function getTeamRecord(teamId: string) {
 
 /** Tournois ayant au moins un match, avec leurs matchs (pour l'index /matchs). */
 export async function listTournamentsWithMatches() {
-  await syncFinishedTournaments();
+  await syncTournamentStatuses();
 
   return db.tournament.findMany({
     where: { matches: { some: {} } },

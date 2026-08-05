@@ -34,6 +34,10 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
     title: "Statut LFT désactivé",
     message: "Tu n'apparais plus sur la page LFT.",
   },
+  "stats-refetched": {
+    title: "Recherche relancée",
+    message: "Les maps du match ont été resynchronisées avec l'historique Riot.",
+  },
   "map-imported": {
     title: "Map importée",
     message: "Le scoreboard a été récupéré depuis Riot.",
@@ -59,6 +63,11 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   lastmanager: { title: "Action refusée", message: "Impossible de retirer le dernier manager." },
   nogroups: { title: "Format sans poules", message: "Ce tournoi n'a pas de phase de poules." },
   stage: { title: "Phase invalide", message: "Cette phase n'est pas autorisée pour ce format." },
+  score: {
+    title: "Score invalide",
+    message:
+      "Le score du match se compte en maps gagnées, pas en rounds. Saisis le détail des rounds dans « Détail des maps ».",
+  },
   riotformat: { title: "Riot ID invalide", message: "Format attendu : Nom#Tag." },
   riotnotfound: { title: "Riot ID introuvable", message: "Ce Riot ID n'existe pas côté Riot." },
   riottaken: { title: "Riot ID déjà utilisé", message: "Ce Riot ID est déjà associé à un autre joueur." },
@@ -82,7 +91,7 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   },
   notupcoming: {
     title: "Inscriptions fermées",
-    message: "Ce tournoi n'est plus en phase « À venir ».",
+    message: "Ce tournoi a déjà commencé ou est terminé.",
   },
   tournamentfull: {
     title: "Tournoi complet",
@@ -91,6 +100,14 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   alreadyregistered: {
     title: "Déjà inscrite",
     message: "Cette équipe est déjà inscrite à ce tournoi.",
+  },
+  invalidinvite: {
+    title: "Lien d'invitation invalide",
+    message: "Ce lien n'est plus valable. Demande un nouveau lien au manager de l'équipe.",
+  },
+  alreadyinteam: {
+    title: "Déjà dans une équipe",
+    message: "Quitte ton équipe actuelle avant d'en rejoindre une autre.",
   },
   rosterincomplete: {
     title: "Effectif incomplet",

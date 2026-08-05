@@ -14,13 +14,16 @@ import { isInviteValid, isInviteTokenFormat } from "@/lib/invite";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 
 export async function joinTeamViaInviteAction(token: string, formData: FormData) {
-  if (!isInviteTokenFormat(token)) throw new Error("INVALID_INVITE");
+  // Un lien périmé ou un compte déconnecté entre l'affichage et l'envoi du
+  // formulaire est un cas de figure ordinaire : il mérite un message lisible,
+  // pas la page d'erreur générique.
+  if (!isInviteTokenFormat(token)) redirect("/?error=invalidinvite");
 
   const session = await auth();
-  if (!session?.user) throw new Error("UNAUTHENTICATED");
+  if (!session?.user) redirect("/api/auth/signin");
 
   const team = await getTeamByInviteToken(token);
-  if (!isInviteValid(team, new Date())) throw new Error("INVALID_INVITE");
+  if (!isInviteValid(team, new Date())) redirect("/?error=invalidinvite");
 
   // La fiche joueur n'est créée qu'au moment du join (pas à la simple vue du lien).
   const player = await ensurePlayerForUser(session.user.id, {
@@ -46,7 +49,7 @@ export async function joinTeamViaInviteAction(token: string, formData: FormData)
   if (!result.ok) {
     // Déjà dans cette équipe → simple redirection ; autre équipe → refus.
     if (result.activeTeamId === team.id) redirect(`/equipes/${team.id}`);
-    throw new Error("ALREADY_IN_TEAM");
+    redirect("/profil?error=alreadyinteam");
   }
 
   revalidatePath(`/equipes/${team.id}`);
