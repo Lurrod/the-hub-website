@@ -4,6 +4,7 @@ import type { PlayerInput } from "@/lib/validation/player";
 import type { MembershipRole, ValorantRole } from "@prisma/client";
 import type { RiotAccount } from "@/lib/henrikdev";
 import type { LftState } from "@/lib/lft";
+import { clampPage, pageOffset } from "@/lib/pagination";
 
 export function listPlayers() {
   return db.player.findMany({ orderBy: { pseudo: "asc" } });
@@ -36,19 +37,33 @@ export type LftQuery = {
  * Le filtre d'âge passe par la date de naissance (seule colonne stockée), donc
  * les joueurs qui n'ont pas renseigné la leur en sortent — c'est voulu.
  */
-export function listLftPlayers(filters?: LftQuery) {
-  return db.player.findMany({
-    where: {
-      lft: true,
-      ...(filters?.role ? { valorantRole: filters.role as ValorantRole } : {}),
-      ...(filters?.country ? { nationality: filters.country } : {}),
-      ...(filters?.birthdate ? { birthdate: filters.birthdate } : {}),
-      ...(filters?.team === "free" ? { memberships: { none: { leaveDate: null } } } : {}),
-      ...(filters?.team === "team" ? { memberships: { some: { leaveDate: null } } } : {}),
-      ...(filters?.q ? { pseudo: { contains: filters.q, mode: "insensitive" as const } } : {}),
-    },
+/** Joueurs LFT affichés par page (grille de 4 colonnes, 6 rangées). */
+export const LFT_PER_PAGE = 24;
+
+export async function listLftPlayers(filters?: LftQuery, page = 1) {
+  const where = {
+    lft: true,
+    ...(filters?.role ? { valorantRole: filters.role as ValorantRole } : {}),
+    ...(filters?.country ? { nationality: filters.country } : {}),
+    ...(filters?.birthdate ? { birthdate: filters.birthdate } : {}),
+    ...(filters?.team === "free" ? { memberships: { none: { leaveDate: null } } } : {}),
+    ...(filters?.team === "team" ? { memberships: { some: { leaveDate: null } } } : {}),
+    ...(filters?.q ? { pseudo: { contains: filters.q, mode: "insensitive" as const } } : {}),
+  };
+
+  // Total d'abord, pour borner la page demandée : un `?p=99` saisi à la main
+  // affiche la dernière page, pas une liste vide.
+  const total = await db.player.count({ where });
+  const current = clampPage(page, total, LFT_PER_PAGE);
+
+  const players = await db.player.findMany({
+    where,
     orderBy: [{ lftSince: "desc" }, { pseudo: "asc" }],
+    skip: pageOffset(current, LFT_PER_PAGE),
+    take: LFT_PER_PAGE,
   });
+
+  return { players, total, page: current, pageSize: LFT_PER_PAGE };
 }
 
 /** Applique un statut LFT calculé par `nextLftState`. */
@@ -86,68 +101,63 @@ export function createPlayer(data: PlayerInput) {
  */
 export async function listTopPlayers(limit = 6) {
   const MIN_MAPS = 3;
-  const rows = await db.playerGameStat.findMany({
+
+  // L'agrégation se fait en base : la version précédente rapatriait TOUTES les
+  // lignes de scoreboard du site — une par joueur et par carte — pour n'en
+  // afficher que six, à chaque affichage de l'accueil. Le `groupBy` ne rend
+  // plus qu'une ligne par joueur.
+  const groups = await db.playerGameStat.groupBy({
+    by: ["playerId"],
     where: { playerId: { not: null } },
+    _avg: { rating: true },
+    _count: { _all: true },
+    orderBy: { _avg: { rating: "desc" } },
+  });
+
+  const ranked = groups.map((g) => ({
+    id: g.playerId!,
+    rating: Math.round((g._avg.rating ?? 0) * 100) / 100,
+    games: g._count._all,
+  }));
+
+  // Seuil de cartes pour éviter qu'un joueur à une seule partie monopolise le
+  // haut du tableau ; repli sur tous les joueurs si trop peu se qualifient.
+  const qualified = ranked.filter((p) => p.games >= MIN_MAPS);
+  const top = (qualified.length >= limit ? qualified : ranked).slice(0, limit);
+  if (top.length === 0) return [];
+
+  const profiles = await db.player.findMany({
+    where: { id: { in: top.map((p) => p.id) } },
     select: {
-      rating: true,
-      player: {
-        select: {
-          id: true,
-          pseudo: true,
-          photo: true,
-          nationality: true,
-          memberships: {
-            where: { leaveDate: null },
-            take: 1,
-            select: { team: { select: { tag: true } } },
-          },
-        },
+      id: true,
+      pseudo: true,
+      photo: true,
+      nationality: true,
+      memberships: {
+        where: { leaveDate: null },
+        take: 1,
+        select: { team: { select: { tag: true } } },
       },
     },
   });
+  const byId = new Map(profiles.map((p) => [p.id, p]));
 
-  type Agg = {
-    id: string;
-    pseudo: string;
-    photo: string | null;
-    nationality: string | null;
-    teamTag: string | null;
-    sum: number;
-    games: number;
-  };
-  const byId = new Map<string, Agg>();
-  for (const r of rows) {
-    const p = r.player;
-    if (!p) continue;
-    const a =
-      byId.get(p.id) ??
+  // `findMany` ne garantit pas l'ordre du `in` : on repart de `top`, déjà trié.
+  return top.flatMap((p) => {
+    const profile = byId.get(p.id);
+    if (!profile) return [];
+    return [
       {
         id: p.id,
-        pseudo: p.pseudo,
-        photo: p.photo,
-        nationality: p.nationality,
-        teamTag: p.memberships[0]?.team.tag ?? null,
-        sum: 0,
-        games: 0,
-      };
-    a.sum += r.rating;
-    a.games += 1;
-    byId.set(p.id, a);
-  }
-
-  const all = [...byId.values()].map((a) => ({
-    id: a.id,
-    pseudo: a.pseudo,
-    photo: a.photo,
-    nationality: a.nationality,
-    teamTag: a.teamTag,
-    rating: Math.round((a.sum / a.games) * 100) / 100,
-    games: a.games,
-  }));
-
-  const qualified = all.filter((p) => p.games >= MIN_MAPS);
-  const pool = qualified.length >= limit ? qualified : all;
-  return pool.sort((x, y) => y.rating - x.rating).slice(0, limit);
+        pseudo: profile.pseudo,
+        photo: profile.photo,
+        nationality: profile.nationality,
+        teamTag: profile.memberships[0]?.team.tag ?? null,
+        rating: p.rating,
+        games: p.games,
+      },
+    ];
+  });
 }
 
 /** Persos les plus joués par un joueur + total de parties (pour la carrière). */

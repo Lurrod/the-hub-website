@@ -187,6 +187,18 @@ cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
 
 - **Sauvegardes** : rien n'est sauvegardé pour l'instant. Prévoir un `pg_dump`
   quotidien et une copie de `shared/uploads/`.
+- **Statut des tournois** : les bascules « à venir → en cours → terminé » se
+  déduisent des dates. Elles sont recalculées au fil des consultations, au plus
+  une fois toutes les cinq minutes. Pour qu'un site sans visite ne prenne pas
+  de retard, ajouter une tâche planifiée quotidienne sur la release active :
+
+  ```bash
+  # crontab -e, à 00h05 UTC
+  5 0 * * * cd /srv/the-hub/current && npm run db:sync:tournaments >> /srv/the-hub/shared/logs/cron.log 2>&1
+  ```
+
+  Rien de critique n'en dépend : l'ouverture des inscriptions est décidée à
+  partir des dates, pas du statut stocké.
 - **Migrations destructives** : `prisma migrate deploy` tourne avant la bascule.
   Une migration qui supprime une colonne cassera l'ancienne version pendant le
   rechargement.

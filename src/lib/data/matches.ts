@@ -1,8 +1,10 @@
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import type { MatchStage, MatchStatus } from "@/lib/constants";
 import type { MatchInput, MatchMapInput } from "@/lib/validation/match";
-import { syncFinishedTournaments } from "@/lib/tournament-status";
+import { syncTournamentStatusesIfStale } from "@/lib/tournament-status";
 import { seriesScore } from "@/lib/match-stats-core";
+import { clampPage, pageOffset } from "@/lib/pagination";
 
 function deriveWinnerId(data: {
   status: string;
@@ -226,20 +228,62 @@ export async function getTeamRecord(teamId: string) {
   return { played, wins, losses, mapDiff, winrate };
 }
 
-/** Tournois ayant au moins un match, avec leurs matchs (pour l'index /matchs). */
-export async function listTournamentsWithMatches() {
-  await syncFinishedTournaments();
+export type MatchStatusFilter = "all" | "upcoming" | "finished";
 
-  return db.tournament.findMany({
-    where: { matches: { some: {} } },
+const MATCH_STATUS_WHERE: Record<MatchStatusFilter, Prisma.MatchWhereInput> = {
+  all: {},
+  upcoming: { status: { not: "FINISHED" } },
+  finished: { status: "FINISHED" },
+};
+
+/** Tournois par page sur l'index /matchs. */
+export const TOURNAMENTS_PER_PAGE = 10;
+/**
+ * Matchs affichés par tournoi sur l'index. Au-delà, la fiche du tournoi prend
+ * le relais — l'index n'a pas vocation à rendre une saison entière d'un coup.
+ */
+export const MATCHES_PER_TOURNAMENT = 60;
+
+/**
+ * Tournois ayant au moins un match, avec leurs matchs (index /matchs).
+ *
+ * Le filtre de statut est appliqué EN BASE et non après coup : cette fonction
+ * chargeait auparavant tous les matchs de tous les tournois du site à chaque
+ * affichage de la page, pour n'en garder qu'une partie.
+ */
+export async function listTournamentsWithMatches(options?: {
+  filter?: MatchStatusFilter;
+  page?: number;
+}) {
+  await syncTournamentStatusesIfStale();
+
+  const matchWhere = MATCH_STATUS_WHERE[options?.filter ?? "all"];
+  const where = { matches: { some: matchWhere } };
+
+  // Le total est lu d'abord pour borner la page demandée : un `?p=99` saisi à
+  // la main affiche la dernière page, pas une liste vide.
+  const total = await db.tournament.count({ where });
+  const page = clampPage(options?.page ?? 1, total, TOURNAMENTS_PER_PAGE);
+
+  const tournaments = await db.tournament.findMany({
+    where,
     orderBy: [{ status: "asc" }, { name: "asc" }],
+    skip: pageOffset(page, TOURNAMENTS_PER_PAGE),
+    take: TOURNAMENTS_PER_PAGE,
     include: {
+      // `_count` porte le total réel : la liste étant plafonnée, c'est lui qui
+      // permet d'annoncer honnêtement ce qui n'est pas affiché.
+      _count: { select: { matches: { where: matchWhere } } },
       matches: {
+        where: matchWhere,
         include: { teamA: true, teamB: true, group: true },
         orderBy: [{ stage: "asc" }, { date: "asc" }],
+        take: MATCHES_PER_TOURNAMENT,
       },
     },
   });
+
+  return { tournaments, total, page, pageSize: TOURNAMENTS_PER_PAGE };
 }
 
 /**

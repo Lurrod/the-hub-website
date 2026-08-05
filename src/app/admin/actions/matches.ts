@@ -2,10 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { allow } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
 import { assertCanManageTournament } from "@/lib/server-auth";
 import { logger, describeError } from "@/lib/logger";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
+import { flashCodeFromError } from "@/lib/form-errors";
+import { hasRiotStats } from "@/lib/match-stats-core";
 import {
   matchInputSchema,
   matchMapImportSchema,
@@ -93,6 +97,9 @@ export async function deleteGroupAction(tournamentId: string, groupId: string) {
 export async function assignParticipantGroupAction(tournamentId: string, teamId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
   const raw = String(formData.get("groupId") ?? "").trim();
+  // Même garde que pour les matchs : sans elle, un organisateur pouvait
+  // rattacher un participant à la poule d'un tournoi qu'il ne gère pas.
+  if (raw !== "") await assertGroupInTournament(raw, tournamentId);
   await assignParticipantGroup(tournamentId, teamId, raw === "" ? null : raw);
   revalidateCompetition(tournamentId);
 }
@@ -103,8 +110,8 @@ export async function createMatchAction(tournamentId: string, formData: FormData
   let data: ReturnType<typeof parseMatchForm>;
   try {
     data = parseMatchForm(formData);
-  } catch {
-    redirect(`${base}?error=invalid`);
+  } catch (e) {
+    redirect(`${base}?error=${flashCodeFromError(e)}`);
   }
   const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
   if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
@@ -116,30 +123,64 @@ export async function createMatchAction(tournamentId: string, formData: FormData
 
 export async function updateMatchAction(tournamentId: string, matchId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
-  await assertMatchInTournament(matchId, tournamentId);
+  const before = await assertMatchInTournament(matchId, tournamentId);
   const editBase = `/tournois/${tournamentId}/gestion/matchs/${matchId}`;
   let data: ReturnType<typeof parseMatchForm>;
   try {
     data = parseMatchForm(formData);
-  } catch {
-    redirect(`${editBase}?error=invalid`);
+  } catch (e) {
+    redirect(`${editBase}?error=${flashCodeFromError(e)}`);
   }
   const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
   if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
   if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
   await updateMatch(matchId, tournamentId, data);
-  if (data.status === "FINISHED") {
-    try {
-      await fetchAndStoreMatchStats(matchId);
-    } catch (e) {
-      // Ne jamais casser la validation du match sur une erreur de récupération :
-      // l'appel sortant vers HenrikDev est le point le plus fragile du flux.
-      logger.error("match.stats.fetch_failed", { matchId, ...describeError(e) });
-    }
+
+  // La recherche automatique REMPLACE toutes les maps du match. On ne la
+  // déclenche donc que sur la bascule vers « Terminé », et jamais quand un
+  // scoreboard Riot est déjà rattaché : sans ça, corriger une date effaçait
+  // les maps importées à la main. La relance reste possible à la demande via
+  // `refetchMatchStatsAction`.
+  const becomesFinished = data.status === "FINISHED" && before.status !== "FINISHED";
+  if (becomesFinished && !hasRiotStats(before.statsStatus)) {
+    // `after` : la recherche interroge HenrikDev jusqu'à quatre fois, avec un
+    // délai d'attente de 8 s chacune. La faire dans le cycle de requête
+    // ajoutait jusqu'à une demi-minute au simple fait d'enregistrer un match.
+    // Elle tourne donc une fois la réponse envoyée ; le scoreboard apparaît à
+    // la navigation suivante.
+    after(async () => {
+      await tryFetchStats(matchId);
+      revalidateMatch(tournamentId, matchId);
+    });
   }
   revalidateCompetition(tournamentId);
   revalidatePath(`/matchs/${matchId}`);
   revalidatePath(editBase);
+}
+
+/** Ne jamais casser l'action sur une erreur de récupération : l'appel sortant
+ *  vers HenrikDev est le point le plus fragile du flux. */
+async function tryFetchStats(matchId: string): Promise<void> {
+  try {
+    await fetchAndStoreMatchStats(matchId);
+  } catch (e) {
+    logger.error("match.stats.fetch_failed", { matchId, ...describeError(e) });
+  }
+}
+
+/**
+ * Relance explicite de la recherche automatique, à la demande d'un
+ * organisateur. Destructif par nature : toutes les maps du match sont
+ * remplacées par celles trouvées côté Riot, d'où la confirmation côté UI.
+ */
+export async function refetchMatchStatsAction(tournamentId: string, matchId: string) {
+  const user = await assertCanManageTournament(tournamentId);
+  await assertMatchInTournament(matchId, tournamentId);
+  const editBase = `/tournois/${tournamentId}/gestion/matchs/${matchId}`;
+  if (!allow(`riotmatch:${user.id}`)) redirect(`${editBase}?error=ratelimited`);
+  await tryFetchStats(matchId);
+  revalidateMatch(tournamentId, matchId);
+  redirect(`/tournois/${tournamentId}/gestion/matchs/${matchId}?ok=stats-refetched`);
 }
 
 export async function deleteMatchAction(tournamentId: string, matchId: string) {

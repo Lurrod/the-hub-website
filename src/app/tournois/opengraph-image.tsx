@@ -19,12 +19,21 @@ export default async function Image() {
   return renderOg("TOURNOIS", async () => {
     const [total, ongoing] = await Promise.all([
       db.tournament.count(),
-      // Même règle que `syncFinishedTournaments`, sans l'écriture : une carte
-      // de partage ne doit pas modifier la base pour afficher un chiffre.
+      // Même règle que `syncTournamentStatuses`, sans l'écriture : une carte
+      // de partage ne doit pas modifier la base pour afficher un chiffre. D'où
+      // le rattrapage des tournois commencés dont le statut n'a pas encore été
+      // recalé, au même titre que ceux déjà marqués « en cours ».
       db.tournament.count({
         where: {
-          status: "ONGOING",
           OR: [{ endDate: null }, { endDate: { gte: finishedCutoff() } }],
+          AND: [
+            {
+              OR: [
+                { status: "ONGOING" },
+                { status: "UPCOMING", startDate: { lte: finishedCutoff() } },
+              ],
+            },
+          ],
         },
       }),
     ]);

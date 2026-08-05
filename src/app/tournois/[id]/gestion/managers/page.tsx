@@ -1,11 +1,14 @@
 import { notFound, redirect } from "next/navigation";
-import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
-import { canManageTournament } from "@/lib/permissions";
+import { getSessionUser, getTournamentManagers } from "@/lib/server-auth";
+import { canAdminister, canManageTournament, managerUserIds } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
 import {
   addTournamentManagerAction,
   removeTournamentManagerAction,
+  setTournamentManagerRoleAction,
 } from "@/app/admin/actions/tournaments";
+import ManagerList from "@/components/manager-list";
+import type { ManagerRoleKey } from "@/lib/manager-roles";
 
 import { tournamentTitle } from "@/lib/data/titles";
 
@@ -26,51 +29,30 @@ export default async function TournamentManagersPage({
 }) {
   const { id } = await params;
   const user = await getSessionUser();
-  const managerIds = await getTournamentManagerIds(id);
-  if (!canManageTournament(user, managerIds)) redirect("/");
+  const managers = await getTournamentManagers(id);
+  if (!canManageTournament(user, managerUserIds(managers))) redirect("/");
   const tournament = await getTournament(id);
   if (!tournament) notFound();
 
-  const addWithId = addTournamentManagerAction.bind(null, id);
-  const input =
-    "rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
-
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-white">Managers<span className="dot-sep">·</span>{tournament.name}</h1>
+      <h1 className="mb-6 text-2xl font-bold text-white">
+        Managers<span className="dot-sep">·</span>
+        {tournament.name}
+      </h1>
 
-      <ul className="mb-6 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
-        {tournament.managers.length === 0 && (
-          <li className="p-3 text-[var(--text-muted)]">Aucun manager.</li>
-        )}
-        {tournament.managers.map((m) => {
-          const removeWith = removeTournamentManagerAction.bind(null, id, m.userId);
-          return (
-            <li key={m.id} className="flex items-center justify-between p-3">
-              <span className="text-white">{m.user.name ?? m.user.discordId ?? m.userId}</span>
-              <form action={removeWith}>
-                <button className="text-sm text-[var(--accent)]">Retirer</button>
-              </form>
-            </li>
-          );
-        })}
-      </ul>
-
-      <form action={addWithId} className="flex gap-2">
-        <input
-          name="discordId"
-          placeholder="ID Discord (ex. 123456789012345678)"
-          required
-          className={`${input} flex-1`}
-        />
-        <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white">
-          Ajouter
-        </button>
-      </form>
-      <p className="mt-2 text-xs text-[var(--text-muted)]">
-        L&apos;utilisateur doit s&apos;être déjà connecté au moins une fois (via Discord) pour exister en base.
-        Utilise son ID Discord (Discord → Paramètres → Avancés → Mode développeur, puis clic droit sur le profil → «&nbsp;Copier l&apos;identifiant&nbsp;»).
-      </p>
+      <ManagerList
+        managers={tournament.managers.map((m) => ({
+          id: m.id,
+          userId: m.userId,
+          role: m.role as ManagerRoleKey,
+          label: m.user.name ?? m.user.discordId ?? m.userId,
+        }))}
+        canAdminister={canAdminister(user, managers)}
+        setRoleAction={(userId) => setTournamentManagerRoleAction.bind(null, id, userId)}
+        removeAction={(userId) => removeTournamentManagerAction.bind(null, id, userId)}
+        addAction={addTournamentManagerAction.bind(null, id)}
+      />
     </main>
   );
 }

@@ -70,16 +70,35 @@ export default function MatchForm({
           </select>
         </label>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <label className={lbl}>
-          Score A (maps)
-          <input type="number" min="0" name="scoreA" defaultValue={values?.scoreA ?? 0} className={input} />
-        </label>
-        <label className={lbl}>
-          Score B (maps)
-          <input type="number" min="0" name="scoreB" defaultValue={values?.scoreB ?? 0} className={input} />
-        </label>
-      </div>
+      {/* Le score de la série se compte en MAPS gagnées (0-3), jamais en
+          rounds : `max` le rappelle côté navigateur, le schéma Zod le refuse
+          côté serveur. Le détail des rounds se saisit dans « Détail des maps ». */}
+      <ErrorShake codes={["score"]}>
+        <div className="grid grid-cols-2 gap-4">
+          <label className={lbl}>
+            Score A (maps gagnées)
+            <input
+              type="number"
+              min="0"
+              max="3"
+              name="scoreA"
+              defaultValue={values?.scoreA ?? 0}
+              className={`t-input ${input}`}
+            />
+          </label>
+          <label className={lbl}>
+            Score B (maps gagnées)
+            <input
+              type="number"
+              min="0"
+              max="3"
+              name="scoreB"
+              defaultValue={values?.scoreB ?? 0}
+              className={`t-input ${input}`}
+            />
+          </label>
+        </div>
+      </ErrorShake>
       <div className="grid grid-cols-3 gap-4">
         <ErrorShake codes={["stage"]}>
           <label className={lbl}>

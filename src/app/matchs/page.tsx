@@ -2,6 +2,8 @@ import Link from "next/link";
 import Segmented from "@/components/segmented";
 import { listTournamentsWithMatches } from "@/lib/data/matches";
 import { MatchListItem } from "@/components/tournament-match-list";
+import Pagination from "@/components/pagination";
+import { parsePage } from "@/lib/pagination";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata({
@@ -19,24 +21,20 @@ const FILTERS = [
 
 type FilterKey = (typeof FILTERS)[number]["key"];
 
-function matchMatchesFilter(status: string, filter: FilterKey): boolean {
-  if (filter === "finished") return status === "FINISHED";
-  if (filter === "upcoming") return status !== "FINISHED";
-  return true;
-}
-
 export default async function MatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ f?: string }>;
+  searchParams: Promise<{ f?: string; p?: string }>;
 }) {
-  const { f } = await searchParams;
+  const { f, p } = await searchParams;
   const filter: FilterKey = FILTERS.some((x) => x.key === f) ? (f as FilterKey) : "all";
 
-  const allTournaments = await listTournamentsWithMatches();
-  const tournaments = allTournaments
-    .map((t) => ({ ...t, matches: t.matches.filter((m) => matchMatchesFilter(m.status, filter)) }))
-    .filter((t) => t.matches.length > 0);
+  // Le filtre et la pagination descendent jusqu'à la requête : la page ne
+  // charge plus tous les matchs du site pour n'en afficher qu'une poignée.
+  const { tournaments, total, page, pageSize } = await listTournamentsWithMatches({
+    filter,
+    page: parsePage(p),
+  });
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -68,7 +66,10 @@ export default async function MatchesPage({
                     {t.name}
                   </span>
                   <span className="flex shrink-0 items-center gap-2 text-xs text-[var(--text-muted)]">
-                    {t.matches.length} match{t.matches.length > 1 ? "s" : ""}
+                    {/* Le compte annoncé est le total réel, pas la longueur de
+                        la liste : au-delà du plafond par tournoi, on le dit
+                        plutôt que de laisser croire à un affichage complet. */}
+                    {t._count.matches} match{t._count.matches > 1 ? "s" : ""}
                     <svg
                       className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180"
                       viewBox="0 0 24 24"
@@ -101,10 +102,27 @@ export default async function MatchesPage({
                     />
                   ))}
                 </ul>
+                {t._count.matches > t.matches.length && (
+                  <p className="px-3 py-2 text-xs text-[var(--text-muted)]">
+                    {t.matches.length} matchs sur {t._count.matches} affichés.{" "}
+                    <Link href={`/tournois/${t.id}`} className="text-[var(--accent)]">
+                      Voir tout le tournoi
+                    </Link>
+                  </p>
+                )}
               </details>
             ))}
           </div>
         )}
+
+        <Pagination
+          basePath="/matchs"
+          params={{ f: filter === "all" ? undefined : filter }}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          label="tournois"
+        />
       </div>
     </main>
   );

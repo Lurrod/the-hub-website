@@ -256,6 +256,31 @@ describe("attackingTeamByRound", () => {
   it("renvoie null quand aucune pose n'a eu lieu de tout le match", () => {
     expect(attackingTeamByRound([rnd("Red", null), rnd("Blue", null)])).toEqual([null, null]);
   });
+
+  it("inverse les camps à CHAQUE round de prolongation", () => {
+    // 24 rounds réglementaires (Red attaque, puis Blue), puis 4 rounds de
+    // prolongation : chaque prolongation Valorant vaut deux rounds, un par
+    // camp, donc les côtés s'échangent à chaque round.
+    const rounds = [
+      ...Array.from({ length: 12 }, () => rnd("Red", "Red")),
+      ...Array.from({ length: 12 }, () => rnd("Blue", "Blue")),
+      ...Array.from({ length: 4 }, () => rnd("Red", null)),
+    ];
+    const out = attackingTeamByRound(rounds);
+    expect(out.slice(24)).toEqual(["Red", "Blue", "Red", "Blue"]);
+  });
+
+  it("respecte la pose constatée en prolongation plutôt que la déduction", () => {
+    const rounds = [
+      ...Array.from({ length: 12 }, () => rnd("Red", "Red")),
+      ...Array.from({ length: 12 }, () => rnd("Blue", "Blue")),
+      rnd("Red", "Blue"),
+      rnd("Blue", null),
+    ];
+    const out = attackingTeamByRound(rounds);
+    expect(out[24]).toBe("Blue");
+    expect(out[25]).toBe("Red");
+  });
 });
 
 describe("roundTimeline enrichie", () => {

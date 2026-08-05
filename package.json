@@ -1,6 +1,6 @@
 {
   "name": "the-hub-website",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,7 +19,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:coverage": "vitest run --coverage",
-    "db:seed:formats": "tsx prisma/seed-formats.ts"
+    "db:seed:formats": "tsx prisma/seed-formats.ts",
+    "db:sync:tournaments": "tsx scripts/sync-tournament-statuses.ts"
   },
   "overrides": {
     "sharp": "^0.35.3",

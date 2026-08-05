@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { assertCanManageTeam } from "@/lib/server-auth";
 import { countActiveRosterPlayers } from "@/lib/data/teams";
 import { MIN_ROSTER_FOR_TOURNAMENT } from "@/lib/constants";
-import { isTournamentOver } from "@/lib/tournament-status";
+import { isRegistrationOpen } from "@/lib/tournament-status";
 
 /** Levée dans la transaction quand la limite d'équipes est atteinte. */
 const FULL = "TOURNAMENT_FULL";
@@ -28,12 +28,13 @@ export async function registerTeamAction(tournamentId: string, formData: FormDat
 
   const tournament = await db.tournament.findUnique({
     where: { id: tournamentId },
-    select: { status: true, maxTeams: true, endDate: true },
+    select: { status: true, maxTeams: true, startDate: true, endDate: true },
   });
   if (!tournament) redirect(`${base}?error=invalid`);
-  if (tournament.status !== "UPCOMING" || isTournamentOver(tournament)) {
-    redirect(`${base}?error=notupcoming`);
-  }
+  // La règle porte sur les dates, pas seulement sur le statut : un tournoi dont
+  // personne n'a basculé le statut à la main restait ouvert aux inscriptions
+  // pendant toute sa durée.
+  if (!isRegistrationOpen(tournament)) redirect(`${base}?error=notupcoming`);
 
   const existing = await db.tournamentParticipant.findUnique({
     where: { tournamentId_teamId: { tournamentId, teamId } },

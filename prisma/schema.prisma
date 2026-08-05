@@ -95,12 +95,23 @@ model Team {
   @@index([region])
 }
 
+/**
+ * Deux niveaux de gestion, pour que l'ajout d'un manager ne revienne pas à
+ * céder l'équipe : un MANAGER gère le quotidien (fiche, roster, inscriptions),
+ * un OWNER peut en plus supprimer l'équipe et administrer les managers.
+ */
+enum ManagerRole {
+  OWNER
+  MANAGER
+}
+
 model TeamManager {
-  id     String @id @default(cuid())
+  id     String      @id @default(cuid())
   teamId String
   userId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   ManagerRole @default(MANAGER)
+  team   Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
 }
@@ -206,11 +217,12 @@ model Tournament {
 }
 
 model TournamentManager {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   tournamentId String
   userId       String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         ManagerRole @default(MANAGER)
+  tournament   Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, userId])
 }
@@ -280,6 +292,12 @@ model Match {
   @@index([tournamentId])
   @@index([groupId])
   @@index([status])
+  // Toutes les vues « équipe » filtrent sur OR: [teamAId, teamBId] : sans ces
+  // deux index, chaque fiche d'équipe balayait la table des matchs.
+  @@index([teamAId])
+  @@index([teamBId])
+  // Les listes de matchs (accueil, index, fiche équipe) trient toutes par date.
+  @@index([date])
 }
 
 model MatchMap {
@@ -323,4 +341,7 @@ model PlayerGameStat {
 
   @@index([matchMapId])
   @@index([playerId])
+  // `setPlayerRiotAccount` recale les lignes d'un puuid à chaque liaison de
+  // compte Riot, et le rattachement à l'import se fait par ce même champ.
+  @@index([puuid])
 }

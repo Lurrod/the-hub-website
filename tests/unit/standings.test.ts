@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeStandings } from "@/lib/standings";
+import { buildStandingRows, computeStandings } from "@/lib/standings";
 
 describe("computeStandings", () => {
   it("initialise chaque équipe à zéro sans match", () => {
@@ -61,5 +61,32 @@ describe("computeStandings", () => {
     const rows = computeStandings(["a", "b"], [{ teamAId: "a", teamBId: "z", scoreA: 2, scoreB: 0 }]);
     const a = rows.find((r) => r.teamId === "a")!;
     expect(a.played).toBe(0);
+  });
+});
+
+describe("buildStandingRows", () => {
+  const teams = [
+    { teamId: "a", name: "Alpha", tag: "ALP" },
+    { teamId: "b", name: "Bravo", tag: "BRV" },
+  ];
+
+  it("résout le nom et le tag de chaque équipe, dans l'ordre du classement", () => {
+    const rows = buildStandingRows(teams, [
+      { teamAId: "a", teamBId: "b", scoreA: 0, scoreB: 2 },
+    ]);
+    expect(rows.map((r) => r.teamTag)).toEqual(["BRV", "ALP"]);
+    expect(rows[0].teamName).toBe("Bravo");
+    expect(rows[0].wins).toBe(1);
+    expect(rows[1].losses).toBe(1);
+  });
+
+  it("retombe sur l'identifiant quand l'équipe est inconnue", () => {
+    const rows = buildStandingRows([{ teamId: "x", name: "X", tag: "X" }], []);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].played).toBe(0);
+  });
+
+  it("rend un classement vide sans équipe", () => {
+    expect(buildStandingRows([], [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 0 }])).toEqual([]);
   });
 });

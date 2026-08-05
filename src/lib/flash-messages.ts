@@ -16,6 +16,7 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "team-deleted": { title: "Équipe supprimée", message: "L'équipe a bien été supprimée." },
   "participant-added": { title: "Équipe inscrite", message: "L'équipe a été ajoutée au tournoi." },
   "manager-added": { title: "Manager ajouté", message: "Le manager a bien été ajouté." },
+  "manager-role": { title: "Niveau modifié", message: "Le niveau du manager a été mis à jour." },
   "member-added": { title: "Joueur ajouté", message: "Le joueur a été ajouté au roster." },
   "profile-saved": { title: "Profil enregistré", message: "Tes informations ont été mises à jour." },
   "player-created": { title: "Joueur créé", message: "La fiche joueur a bien été créée." },
@@ -33,6 +34,10 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "lft-off": {
     title: "Statut LFT désactivé",
     message: "Tu n'apparais plus sur la page LFT.",
+  },
+  "stats-refetched": {
+    title: "Recherche relancée",
+    message: "Les maps du match ont été resynchronisées avec l'historique Riot.",
   },
   "map-imported": {
     title: "Map importée",
@@ -57,8 +62,18 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   empty: { title: "Champ vide", message: "Renseigne l'identifiant Discord." },
   notfound: { title: "Utilisateur introuvable", message: "Aucun compte ne correspond à cet identifiant Discord." },
   lastmanager: { title: "Action refusée", message: "Impossible de retirer le dernier manager." },
+  lastowner: {
+    title: "Action refusée",
+    message:
+      "Il doit rester au moins un propriétaire. Promeus quelqu'un d'autre avant de retirer ou rétrograder celui-ci.",
+  },
   nogroups: { title: "Format sans poules", message: "Ce tournoi n'a pas de phase de poules." },
   stage: { title: "Phase invalide", message: "Cette phase n'est pas autorisée pour ce format." },
+  score: {
+    title: "Score invalide",
+    message:
+      "Le score du match se compte en maps gagnées, pas en rounds. Saisis le détail des rounds dans « Détail des maps ».",
+  },
   riotformat: { title: "Riot ID invalide", message: "Format attendu : Nom#Tag." },
   riotnotfound: { title: "Riot ID introuvable", message: "Ce Riot ID n'existe pas côté Riot." },
   riottaken: { title: "Riot ID déjà utilisé", message: "Ce Riot ID est déjà associé à un autre joueur." },
@@ -82,7 +97,7 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   },
   notupcoming: {
     title: "Inscriptions fermées",
-    message: "Ce tournoi n'est plus en phase « À venir ».",
+    message: "Ce tournoi a déjà commencé ou est terminé.",
   },
   tournamentfull: {
     title: "Tournoi complet",
@@ -91,6 +106,14 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   alreadyregistered: {
     title: "Déjà inscrite",
     message: "Cette équipe est déjà inscrite à ce tournoi.",
+  },
+  invalidinvite: {
+    title: "Lien d'invitation invalide",
+    message: "Ce lien n'est plus valable. Demande un nouveau lien au manager de l'équipe.",
+  },
+  alreadyinteam: {
+    title: "Déjà dans une équipe",
+    message: "Quitte ton équipe actuelle avant d'en rejoindre une autre.",
   },
   rosterincomplete: {
     title: "Effectif incomplet",

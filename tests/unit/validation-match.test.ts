@@ -37,6 +37,28 @@ describe("matchInputSchema", () => {
     expect(() => matchInputSchema.parse({ teamAId: "a", teamBId: "b", scoreA: "-1" })).toThrow();
   });
 
+  it("refuse un score de série qui dépasse le format (rounds saisis à la place des maps)", () => {
+    // 13-11 est un score de rounds : sur un BO1 il gonflerait le classement.
+    expect(() =>
+      matchInputSchema.parse({ teamAId: "a", teamBId: "b", bestOf: "1", scoreA: "13", scoreB: "11" })
+    ).toThrow();
+  });
+
+  it("plafonne le score au nombre de maps nécessaires pour gagner", () => {
+    const bo3 = matchInputSchema.parse({
+      teamAId: "a", teamBId: "b", bestOf: "3", scoreA: "2", scoreB: "1",
+    });
+    expect(bo3.scoreA).toBe(2);
+    expect(() =>
+      matchInputSchema.parse({ teamAId: "a", teamBId: "b", bestOf: "3", scoreA: "3" })
+    ).toThrow();
+    const bo5 = matchInputSchema.parse({ teamAId: "a", teamBId: "b", bestOf: "5", scoreA: "3" });
+    expect(bo5.scoreA).toBe(3);
+    expect(() =>
+      matchInputSchema.parse({ teamAId: "a", teamBId: "b", bestOf: "5", scoreB: "4" })
+    ).toThrow();
+  });
+
   it("convertit une date fournie en Date", () => {
     const r = matchInputSchema.parse({ teamAId: "a", teamBId: "b", date: "2026-08-01" });
     expect(r.date instanceof Date).toBe(true);

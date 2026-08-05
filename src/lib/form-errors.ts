@@ -11,6 +11,7 @@ export function flashCodeFromError(error: unknown): string {
       const field = issue.path[issue.path.length - 1];
       if (field === "twitter") return "twitter";
       if (field === "twitch") return "twitch";
+      if (field === "scoreA" || field === "scoreB") return "score";
     }
   }
   return "invalid";

@@ -251,16 +251,18 @@ export type TimelineEntry = {
  * Riot ne dit nulle part « cette équipe attaque » : seule la pose du spike le
  * trahit, et un round peut se terminer sans pose. On identifie donc l'attaquant
  * de chaque mi-temps à partir des rounds où quelqu'un a posé, puis on l'étend
- * aux rounds muets de la même mi-temps. Les camps s'inversent au round 12, et
- * de nouveau tous les 6 rounds en prolongation.
+ * aux rounds muets de la même mi-temps.
+ *
+ * Une « mi-temps » vaut 12 rounds en temps réglementaire, mais **un seul round
+ * en prolongation** : chaque prolongation Valorant compte deux rounds, un par
+ * camp, les côtés s'échangent donc à chaque round passé le 24e.
  */
 export function attackingTeamByRound(rounds: readonly CustomMatchRound[]): (string | null)[] {
   const REGULATION_HALF = 12;
-  /** Numéro de mi-temps d'un round : 0 et 1 en temps réglementaire, puis les OT. */
+  const REGULATION_ROUNDS = REGULATION_HALF * 2;
+  /** Numéro de mi-temps d'un round : 0 et 1 en temps réglementaire, puis 1 par round d'OT. */
   const halfOf = (i: number) =>
-    i < REGULATION_HALF * 2
-      ? Math.floor(i / REGULATION_HALF)
-      : 2 + Math.floor((i - REGULATION_HALF * 2) / 3);
+    i < REGULATION_ROUNDS ? Math.floor(i / REGULATION_HALF) : 2 + (i - REGULATION_ROUNDS);
 
   // Attaquant constaté pour chaque mi-temps où au moins un spike a été posé.
   const attackerOfHalf = new Map<number, string>();

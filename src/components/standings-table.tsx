@@ -1,12 +1,6 @@
-export type StandingDisplayRow = {
-  teamId: string;
-  teamName: string;
-  teamTag: string;
-  played: number;
-  wins: number;
-  losses: number;
-  mapDiff: number;
-};
+import type { StandingDisplayRow } from "@/lib/standings";
+
+export type { StandingDisplayRow };
 
 export default function StandingsTable({ rows }: { rows: StandingDisplayRow[] }) {
   if (rows.length === 0) {
