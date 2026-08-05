@@ -88,3 +88,38 @@ export async function syncTournamentStatuses(): Promise<number> {
 
   return finished.count + ongoing.count;
 }
+
+/** Fréquence maximale du recalage déclenché par une lecture. */
+export const SYNC_INTERVAL_MS = 5 * 60 * 1000;
+
+/**
+ * Faut-il relancer le recalage ? Les bascules dépendent de dates à la journée :
+ * les espacer de quelques minutes ne change rien à ce qui s'affiche, et évite
+ * un UPDATE sur chaque consultation d'une liste de tournois.
+ */
+export function shouldSync(lastSyncAt: number, now: number, intervalMs = SYNC_INTERVAL_MS): boolean {
+  return now - lastSyncAt >= intervalMs;
+}
+
+let lastSyncAt = 0;
+
+/**
+ * Recalage paresseux, appelé par les lectures de tournoi.
+ *
+ * Le compteur est en mémoire du process : au pire un redémarrage relance une
+ * synchronisation, ce qui est sans conséquence. Rien de critique n'en dépend —
+ * l'ouverture des inscriptions est décidée par `isRegistrationOpen`, qui lit
+ * les dates et non le statut stocké. Pour un recalage garanti hors trafic, le
+ * script `npm run db:sync:tournaments` est fait pour une tâche planifiée.
+ */
+export async function syncTournamentStatusesIfStale(): Promise<void> {
+  const now = Date.now();
+  if (!shouldSync(lastSyncAt, now)) return;
+  lastSyncAt = now;
+  await syncTournamentStatuses();
+}
+
+/** Force le prochain appel paresseux à retravailler. Réservé aux tests. */
+export function resetSyncThrottle(): void {
+  lastSyncAt = 0;
+}

@@ -19,7 +19,7 @@ export default defineConfig({
       // faire échouer la CI. À relever au fur et à mesure ; la cible reste
       // 80 %, elle demande de couvrir bracket.ts, standings.ts et
       // match-stats.ts plus finement.
-      thresholds: { statements: 65, branches: 59, functions: 68, lines: 67 },
+      thresholds: { statements: 68, branches: 63, functions: 71, lines: 69 },
     },
   },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },

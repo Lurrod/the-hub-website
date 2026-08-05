@@ -61,6 +61,7 @@ Toutes sont décrites dans `.env.example`.
 | `npm run db:seed:vlr` | Import de données VCT EMEA réalistes |
 | `npm run db:seed:scoreboards` | Scoreboards de démonstration |
 | `npm run db:studio` | Prisma Studio |
+| `npm run db:sync:tournaments` | Recale le statut des tournois d'après leurs dates (tâche planifiée) |
 
 ## Organisation
 

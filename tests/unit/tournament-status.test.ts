@@ -5,6 +5,8 @@ import {
   isRegistrationOpen,
   isTournamentOver,
   nextTournamentStatus,
+  shouldSync,
+  SYNC_INTERVAL_MS,
 } from "@/lib/tournament-status";
 
 const NOW = new Date("2026-08-03T14:30:00.000Z");
@@ -118,5 +120,19 @@ describe("nextTournamentStatus", () => {
     expect(
       nextTournamentStatus({ status: "FINISHED", startDate: null, endDate: null }, NOW)
     ).toBe("FINISHED");
+  });
+});
+
+describe("shouldSync", () => {
+  it("synchronise au tout premier appel", () => {
+    expect(shouldSync(0, 1_000_000, SYNC_INTERVAL_MS)).toBe(true);
+  });
+
+  it("ne resynchronise pas dans l'intervalle", () => {
+    expect(shouldSync(1_000_000, 1_000_000 + SYNC_INTERVAL_MS - 1, SYNC_INTERVAL_MS)).toBe(false);
+  });
+
+  it("resynchronise une fois l'intervalle écoulé", () => {
+    expect(shouldSync(1_000_000, 1_000_000 + SYNC_INTERVAL_MS, SYNC_INTERVAL_MS)).toBe(true);
   });
 });

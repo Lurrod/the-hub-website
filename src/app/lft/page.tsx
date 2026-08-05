@@ -10,6 +10,8 @@ import {
 } from "@/lib/lft";
 import LftCard from "@/components/lft-card";
 import LftFiltersBar from "@/components/lft-filters";
+import Pagination from "@/components/pagination";
+import { parsePage } from "@/lib/pagination";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata({
@@ -28,6 +30,7 @@ export default async function LftPage({
     age?: string;
     team?: string;
     q?: string;
+    p?: string;
   }>;
 }) {
   const raw = await searchParams;
@@ -44,10 +47,10 @@ export default async function LftPage({
     q: normalizeLftSearch(raw.q),
   };
 
-  const players = await listLftPlayers({
-    ...filters,
-    birthdate: birthdateRangeForAge(filters.age),
-  });
+  const { players, total, page, pageSize } = await listLftPlayers(
+    { ...filters, birthdate: birthdateRangeForAge(filters.age) },
+    parsePage(raw.p)
+  );
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -58,7 +61,8 @@ export default async function LftPage({
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="mb-4">
-          <LftFiltersBar filters={filters} countries={countries} total={players.length} />
+          {/* Le compteur annonce le total filtré, pas la page courante. */}
+          <LftFiltersBar filters={filters} countries={countries} total={total} />
         </div>
 
         {players.length === 0 ? (
@@ -81,6 +85,21 @@ export default async function LftPage({
             ))}
           </div>
         )}
+
+        <Pagination
+          basePath="/lft"
+          params={{
+            role: filters.role,
+            country: filters.country,
+            age: filters.age,
+            team: filters.team,
+            q: filters.q,
+          }}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          label="joueurs"
+        />
       </div>
     </main>
   );

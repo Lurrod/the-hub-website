@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { isLastOwner } from "@/lib/permissions";
 import type { TournamentFormat, TournamentStatus } from "@/lib/constants";
 import type { TournamentInput } from "@/lib/validation/tournament";
-import { nextTournamentStatus, syncTournamentStatuses } from "@/lib/tournament-status";
+import { nextTournamentStatus, syncTournamentStatusesIfStale } from "@/lib/tournament-status";
 
 /** Le statut saisi, recalé sur les dates (démarré → en cours, fini → terminé). */
 function effectiveStatus(data: TournamentInput): TournamentStatus {
@@ -15,7 +15,7 @@ function effectiveStatus(data: TournamentInput): TournamentStatus {
 }
 
 export async function listTournaments(filters?: { region?: string; status?: string }) {
-  await syncTournamentStatuses();
+  await syncTournamentStatusesIfStale();
 
   return db.tournament.findMany({
     where: {
@@ -29,7 +29,7 @@ export async function listTournaments(filters?: { region?: string; status?: stri
 
 /** Tournois auxquels une équipe est (ou a été) inscrite, plus récents d'abord. */
 export async function getTeamTournaments(teamId: string) {
-  await syncTournamentStatuses();
+  await syncTournamentStatusesIfStale();
 
   return db.tournament.findMany({
     where: { participants: { some: { teamId } } },
@@ -39,7 +39,7 @@ export async function getTeamTournaments(teamId: string) {
 }
 
 export async function getTournament(id: string) {
-  await syncTournamentStatuses();
+  await syncTournamentStatusesIfStale();
 
   return db.tournament.findUnique({
     where: { id },
