@@ -6,6 +6,7 @@ type Side = { tag: string; logo: string | null } | null;
 export type MiniMatch = {
   id: string;
   date: Date | null;
+  hasTime?: boolean;
   teamA: Side;
   teamB: Side;
   /** Scores : présents pour un match terminé, absents pour un match à venir. */
@@ -65,7 +66,7 @@ export default function MatchMiniList({
                 className="absolute inset-0 -z-10 bg-[radial-gradient(55%_75%_at_100%_100%,var(--accent-glow),transparent_60%)]"
               />
               <div className="mb-1.5 flex items-center gap-2 text-[10px]">
-                <span className="text-white">{timeLabel(m.date)}</span>
+                <span className="text-white">{timeLabel(m.date, m.hasTime ?? false)}</span>
                 <span className="text-[var(--text-muted)]">{shortDate(m.date)}</span>
               </div>
               <div className="space-y-1">

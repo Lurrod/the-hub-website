@@ -79,6 +79,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const miniMatch = (m: (typeof upcoming)[number], played: boolean) => ({
     id: m.id,
     date: m.date,
+    hasTime: m.hasTime,
     teamA: { tag: m.teamA.tag, logo: m.teamA.logo },
     teamB: { tag: m.teamB.tag, logo: m.teamB.logo },
     scoreA: played ? m.scoreA : undefined,
@@ -173,6 +174,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           winnerId: m.winnerId,
           status: m.status,
           date: m.date,
+          hasTime: m.hasTime,
           bestOf: m.bestOf,
           vodUrl: m.vodUrl,
           teamA: m.teamA ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo } : null,

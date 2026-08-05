@@ -49,9 +49,27 @@ describe("monthKey / monthLabel", () => {
 });
 
 describe("dayKey", () => {
-  it("groupe par jour", () => {
-    expect(dayKey(new Date("2026-07-25T23:59:00"))).toBe("2026-07-25");
+  // Instants notés en UTC, attentes exprimées en jour de PARIS : c'est ce
+  // jour-là que le lecteur français voit. Le fixture précédent
+  // (« 2026-07-25T23:59:00 », sans fuseau) était interprété dans le fuseau du
+  // process : il donnait un résultat sur une machine en heure de Paris et un
+  // autre sur le runner d'intégration en UTC.
+  it("groupe sur le jour de Paris", () => {
+    expect(dayKey(new Date("2026-07-25T21:59:00Z"))).toBe("2026-07-25");
     expect(dayKey(null)).toBe("no-date");
+  });
+
+  it("range un match de fin de soirée au bon jour", () => {
+    // 22h30 UTC en juillet, c'est déjà 00h30 le lendemain à Paris : le match
+    // appartient au 26, pas au 25.
+    expect(dayKey(new Date("2026-07-25T22:30:00Z"))).toBe("2026-07-26");
+  });
+
+  it("ne dépend pas du fuseau du process", () => {
+    // Même instant, deux écritures : la clé doit être identique.
+    expect(dayKey(new Date("2026-07-25T18:00:00Z"))).toBe(
+      dayKey(new Date(Date.UTC(2026, 6, 25, 18, 0, 0)))
+    );
   });
 });
 

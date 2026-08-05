@@ -59,9 +59,30 @@ describe("matchInputSchema", () => {
     ).toThrow();
   });
 
-  it("convertit une date fournie en Date", () => {
+  it("convertit une date seule, sans heure de coup d'envoi", () => {
     const r = matchInputSchema.parse({ teamAId: "a", teamBId: "b", date: "2026-08-01" });
-    expect(r.date instanceof Date).toBe(true);
+    expect(r.date.date instanceof Date).toBe(true);
+    expect(r.date.hasTime).toBe(false);
+    // Minuit heure de Paris, pas minuit UTC.
+    expect(r.date.date?.toISOString()).toBe("2026-07-31T22:00:00.000Z");
+  });
+
+  it("retient l'heure quand elle est saisie", () => {
+    const r = matchInputSchema.parse({ teamAId: "a", teamBId: "b", date: "2026-08-01T20:30" });
+    expect(r.date.hasTime).toBe(true);
+    expect(r.date.date?.toISOString()).toBe("2026-08-01T18:30:00.000Z");
+  });
+
+  it("sans date, ni date ni heure", () => {
+    const r = matchInputSchema.parse({ teamAId: "a", teamBId: "b" });
+    expect(r.date.date).toBeUndefined();
+    expect(r.date.hasTime).toBe(false);
+  });
+
+  it("refuse une date invalide", () => {
+    expect(() =>
+      matchInputSchema.parse({ teamAId: "a", teamBId: "b", date: "pas-une-date" })
+    ).toThrow();
   });
 });
 

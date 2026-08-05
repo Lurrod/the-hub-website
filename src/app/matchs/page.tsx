@@ -89,6 +89,7 @@ export default async function MatchesPage({
                       m={{
                         id: m.id,
                         date: m.date,
+                        hasTime: m.hasTime,
                         status: m.status,
                         scoreA: m.scoreA,
                         scoreB: m.scoreB,
