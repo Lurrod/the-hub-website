@@ -1,5 +1,6 @@
 "use client";
 
+import ErrorShake from "@/components/error-shake";
 import { useState } from "react";
 import { REGIONS } from "@/lib/constants";
 import ImageUpload from "@/components/image-upload";
@@ -74,10 +75,17 @@ export default function TeamForm({
     <form action={action} className="grid gap-6">
       <Section title="Identité">
         <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-          <label className={lbl}>
-            Nom de l&apos;équipe
-            <input name="name" defaultValue={values?.name ?? ""} required className={input} />
-          </label>
+          <ErrorShake codes={["empty"]}>
+            <label className={lbl}>
+              Nom de l&apos;équipe
+              <input
+                name="name"
+                defaultValue={values?.name ?? ""}
+                required
+                className={`t-input ${input}`}
+              />
+            </label>
+          </ErrorShake>
           <label className={lbl}>
             Tag
             <input

@@ -107,11 +107,11 @@ describe("mapRawCustomMatch - rounds et duels", () => {
     vi.stubGlobal("fetch", mockFetch(200, { data: [rawMatch] }));
     const [m] = await getPlayerCustomMatches("eu", "Zed", "EUW");
     expect(m.rounds).toEqual([
-      { winningTeamId: "Red", outcome: "elim" },
-      { winningTeamId: "Blue", outcome: "detonate" },
-      { winningTeamId: "Red", outcome: "defuse" },
+      { winningTeamId: "Red", outcome: "elim", plantedByTeamId: null, loadoutByTeam: {} },
+      { winningTeamId: "Blue", outcome: "detonate", plantedByTeamId: null, loadoutByTeam: {} },
+      { winningTeamId: "Red", outcome: "defuse", plantedByTeamId: null, loadoutByTeam: {} },
       // Tout ce qui n'est ni élimination ni action sur le spike retombe sur « time ».
-      { winningTeamId: "Blue", outcome: "time" },
+      { winningTeamId: "Blue", outcome: "time", plantedByTeamId: null, loadoutByTeam: {} },
     ]);
   });
   it("normalise les duels et écarte ceux sans tueur ou sans victime", async () => {
@@ -122,6 +122,41 @@ describe("mapRawCustomMatch - rounds et duels", () => {
     expect(m.kills[0]).toEqual({
       round: 0, timeInRoundMs: 9000,
       killerPuuid: "p1", victimPuuid: "p2", assistantPuuids: ["p3"],
+    });
+  });
+});
+
+describe("mapRawCustomMatch - camp et économie", () => {
+  it("relève l'équipe qui a posé le spike et l'équipement par équipe", async () => {
+    vi.stubEnv("HENRIKDEV_API_KEY", "k");
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(200, {
+        data: [
+          {
+            ...rawMatch,
+            rounds: [
+              {
+                winning_team: "Red",
+                result: "Detonate",
+                plant: { player: { team: "Red" } },
+                stats: [
+                  { player: { team: "Red" }, economy: { loadout_value: 12000 } },
+                  { player: { team: "Red" }, economy: { loadout_value: 8000 } },
+                  { player: { team: "Blue" }, economy: { loadout_value: 3000 } },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    );
+    const [m] = await getPlayerCustomMatches("eu", "Zed", "EUW");
+    expect(m.rounds[0]).toEqual({
+      winningTeamId: "Red",
+      outcome: "detonate",
+      plantedByTeamId: "Red",
+      loadoutByTeam: { Red: 20000, Blue: 3000 },
     });
   });
 });

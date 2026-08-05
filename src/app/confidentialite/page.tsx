@@ -70,7 +70,7 @@ export default function ConfidentialitePage() {
       </Section>
 
       <Section title="Finalités et bases légales">
-        <div className="scroll-x">
+        <div className="scroll-x scroll-x-on-bg">
           <table className="w-full min-w-[520px] border-collapse">
             <thead>
               <tr>

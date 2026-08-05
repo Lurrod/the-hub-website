@@ -229,15 +229,87 @@ export function computeRating(s: {
  * round. Les rounds dont le camp vainqueur est inconnu sont écartés plutôt que
  * rattachés au hasard à une équipe.
  */
+/**
+ * Une entrée de la frise des rounds, telle qu'elle est stockée en base.
+ * `s`, `ea` et `eb` sont optionnels : les maps importées avant leur ajout ne
+ * les portent pas, et l'affichage doit s'en passer sans casser.
+ */
+export type TimelineEntry = {
+  /** Côté vainqueur du round. */
+  w: Side;
+  o: RoundOutcome;
+  /** Côté qui attaquait ce round. */
+  s?: Side;
+  /** Valeur d'équipement du côté A, puis du côté B. */
+  ea?: number;
+  eb?: number;
+};
+
+/**
+ * Camp attaquant de chaque round, déduit des poses de spike.
+ *
+ * Riot ne dit nulle part « cette équipe attaque » : seule la pose du spike le
+ * trahit, et un round peut se terminer sans pose. On identifie donc l'attaquant
+ * de chaque mi-temps à partir des rounds où quelqu'un a posé, puis on l'étend
+ * aux rounds muets de la même mi-temps. Les camps s'inversent au round 12, et
+ * de nouveau tous les 6 rounds en prolongation.
+ */
+export function attackingTeamByRound(rounds: readonly CustomMatchRound[]): (string | null)[] {
+  const REGULATION_HALF = 12;
+  /** Numéro de mi-temps d'un round : 0 et 1 en temps réglementaire, puis les OT. */
+  const halfOf = (i: number) =>
+    i < REGULATION_HALF * 2
+      ? Math.floor(i / REGULATION_HALF)
+      : 2 + Math.floor((i - REGULATION_HALF * 2) / 3);
+
+  // Attaquant constaté pour chaque mi-temps où au moins un spike a été posé.
+  const attackerOfHalf = new Map<number, string>();
+  rounds.forEach((r, i) => {
+    if (r.plantedByTeamId && !attackerOfHalf.has(halfOf(i))) {
+      attackerOfHalf.set(halfOf(i), r.plantedByTeamId);
+    }
+  });
+
+  const teamIds = [...new Set(rounds.map((r) => r.winningTeamId).filter(Boolean))];
+  const other = (id: string) => teamIds.find((t) => t !== id) ?? null;
+
+  return rounds.map((r, i) => {
+    const half = halfOf(i);
+    const known = attackerOfHalf.get(half);
+    if (known) return known;
+    // Mi-temps sans aucune pose : on la deduit de la mi-temps precedente,
+    // puisque les camps s'inversent a chaque changement.
+    for (let h = half - 1; h >= 0; h--) {
+      const prev = attackerOfHalf.get(h);
+      if (prev) return (half - h) % 2 === 0 ? prev : other(prev);
+    }
+    return null;
+  });
+}
+
+/**
+ * Frise des rounds du scoreboard : vainqueur ramené au côté A/B, issue du
+ * round, camp attaquant et valeur d'équipement de chaque côté. Les rounds dont
+ * le camp vainqueur est inconnu sont écartés plutôt que rattachés au hasard.
+ */
 export function roundTimeline(
   rounds: readonly CustomMatchRound[],
   sideOfTeam: Record<string, Side>
-): { w: Side; o: RoundOutcome }[] {
-  const timeline: { w: Side; o: RoundOutcome }[] = [];
-  for (const r of rounds) {
+): TimelineEntry[] {
+  const attackers = attackingTeamByRound(rounds);
+  const timeline: TimelineEntry[] = [];
+  rounds.forEach((r, i) => {
     const w = sideOfTeam[r.winningTeamId];
-    if (w) timeline.push({ w, o: r.outcome });
-  }
+    if (!w) return;
+    const attacker = attackers[i];
+    const entry: TimelineEntry = { w, o: r.outcome };
+    if (attacker && sideOfTeam[attacker]) entry.s = sideOfTeam[attacker];
+    for (const [teamId, value] of Object.entries(r.loadoutByTeam)) {
+      if (sideOfTeam[teamId] === "A") entry.ea = value;
+      else if (sideOfTeam[teamId] === "B") entry.eb = value;
+    }
+    timeline.push(entry);
+  });
   return timeline;
 }
 

@@ -176,13 +176,15 @@ const GROUP_MATCHES: [string, string, number, number, number][] = [
 // Vrai bracket double-élimination à 4 équipes (qualifiés : 2 premiers de chaque
 // poule). Perdants des demis UB → LB Round 1, puis LB Finale contre le perdant
 // de la finale UB, puis Grande Finale.
-const BRACKET_MATCHES: [string, string, number, number, string, number, number, boolean][] = [
-  ["vlr-fnc", "vlr-fut", 2, 0, "UB Demi-finale", 1, 7, true], // fut → LB
-  ["vlr-vit", "vlr-tl", 2, 1, "UB Demi-finale", 2, 8, true], // tl → LB
-  ["vlr-fut", "vlr-tl", 0, 0, "LB Round 1", 3, 9, false], // perdants des demis UB
-  ["vlr-fnc", "vlr-vit", 0, 0, "UB Finale", 4, 12, false], // perdant → LB Finale
-  ["vlr-tl", "vlr-vit", 0, 0, "LB Finale", 5, 14, false], // vainqueur LB R1 vs perdant UB Finale
-  ["vlr-fnc", "vlr-vit", 0, 0, "Grande Finale", 6, 17, false],
+// Le split est joué jusqu'au bout : chaque match a un score, donc chaque match
+// peut recevoir un scoreboard simulé. Le BO5 est réservé à la grande finale.
+const BRACKET_MATCHES: [string, string, number, number, string, number, number, number][] = [
+  ["vlr-fnc", "vlr-fut", 2, 0, "UB Demi-finale", 1, 7, 3], // fut → LB
+  ["vlr-vit", "vlr-tl", 2, 1, "UB Demi-finale", 2, 8, 3], // tl → LB
+  ["vlr-fut", "vlr-tl", 1, 2, "LB Round 1", 3, 9, 3], // tl survit
+  ["vlr-fnc", "vlr-vit", 2, 1, "UB Finale", 4, 12, 3], // vit → LB Finale
+  ["vlr-tl", "vlr-vit", 0, 2, "LB Finale", 5, 14, 3], // vit revient
+  ["vlr-fnc", "vlr-vit", 3, 2, "Grande Finale", 6, 17, 5],
 ];
 
 const groupOf = (t: TeamSeed) => (t.group === "alpha" ? GRP_ALPHA : GRP_OMEGA);
@@ -274,7 +276,7 @@ async function main() {
   }
 
   // --- Matchs de playoffs ---
-  for (const [a, b, sa, sb, round, pos, day, done] of BRACKET_MATCHES) {
+  for (const [a, b, sa, sb, round, pos, day, bestOf] of BRACKET_MATCHES) {
     await db.match.create({
       data: {
         tournamentId: TID,
@@ -283,12 +285,12 @@ async function main() {
         scoreA: sa,
         scoreB: sb,
         stage: "BRACKET" as MatchStage,
-        status: (done ? "FINISHED" : "SCHEDULED") as MatchStatus,
-        bestOf: 3,
+        status: "FINISHED" as MatchStatus,
+        bestOf,
         round,
         bracketPosition: pos,
         date: new Date(`2026-05-${String(day).padStart(2, "0")}T18:00:00Z`),
-        winnerId: done ? winner(a, b, sa, sb) : null,
+        winnerId: winner(a, b, sa, sb),
       },
     });
   }

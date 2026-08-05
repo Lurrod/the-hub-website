@@ -13,7 +13,7 @@ const WON = "var(--accent)";
 const LOST = "#3b9ad6";
 
 /**
- * Duels d'entrée : premiers kills à droite, premières morts à gauche, de part
+ * Duels d'entry : premiers kills à droite, premières morts à gauche, de part
  * et d'autre d'un axe commun.
  *
  * La polarité est le sujet — gagner ou perdre l'ouverture — donc deux teintes
@@ -32,7 +32,7 @@ export default function EntryDuels({ players }: { players: PlayerPoint[] }) {
   const hidden = ranked.length - shown.length;
 
   if (shown.length === 0) {
-    return <p className="text-sm text-[var(--text-muted)]">Aucun duel d&apos;entrée enregistré.</p>;
+    return <p className="text-sm text-[var(--text-muted)]">Aucun duel d&apos;entry enregistré.</p>;
   }
 
   const max = Math.max(...shown.map((p) => Math.max(p.firstKills, p.firstDeaths)), 1);

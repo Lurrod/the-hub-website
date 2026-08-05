@@ -46,9 +46,13 @@ function arc(from: number, to: number): string {
 export default function AgentDonut({
   agents,
   totalMaps,
+  stacked = false,
 }: {
   agents: AgentShare[];
   totalMaps: number;
+  /** Force l'anneau au-dessus de la légende, pour les colonnes étroites où le
+      point de rupture du viewport ne dit rien de la place réellement disponible. */
+  stacked?: boolean;
 }) {
   const total = agents.reduce((n, a) => n + a.maps, 0);
   if (total === 0) {
@@ -84,7 +88,11 @@ export default function AgentDonut({
   });
 
   return (
-    <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8">
+    <div
+      className={`flex flex-col items-center gap-6 ${
+        stacked ? "" : "sm:flex-row sm:items-center sm:gap-8"
+      }`}
+    >
       <svg
         viewBox={`0 0 ${SIZE} ${SIZE}`}
         className="h-auto w-full max-w-[260px] shrink-0"

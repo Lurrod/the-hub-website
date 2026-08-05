@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Segmented from "@/components/segmented";
 import Link from "next/link";
 import AgentIcon from "@/components/agent-icon";
 
@@ -162,7 +163,9 @@ function RoundTimeline({
         </span>
       </div>
 
-      {/* Timeline en deux pistes, une par équipe, centrée */}
+      {/* Timeline en deux pistes, une par équipe, centrée. Elle est posée sur
+          la surface de la carte, contrairement aux tableaux plus bas : elle
+          garde donc le masque par défaut. */}
       <div className="scroll-x">
         <div className="mx-auto w-max space-y-1">
           <TrackRow rounds={rounds} side="A" label={teamATag} logo={teamALogo} />
@@ -184,7 +187,7 @@ function Diff({ value }: { value: number }) {
 function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
   const sorted = [...rows].sort((a, b) => b.rating - a.rating);
   return (
-    <div className="scroll-x">
+    <div className="scroll-x scroll-x-on-bg">
       <table className="w-full min-w-[720px] table-fixed border-collapse">
         <colgroup>
           <col className="w-8" />
@@ -270,35 +273,60 @@ export default function MatchScoreboard({
   teamBLogo: string | null;
 }) {
   const [active, setActive] = useState(0);
+  // Le panneau doit repasser par « fermé » avant de se rouvrir, sinon rien ne
+  // transitionne au changement de carte.
+  //
+  // La remise à zéro se fait transition suspendue : sans ça, passer à
+  // data-open="false" lance une transition VERS l'état fermé au lieu d'y sauter,
+  // et la réouverture immédiate repart d'une valeur quasi inchangée — donc
+  // aucune animation visible. Même précaution que la pastille de `Segmented`.
+  const panelRef = useRef<HTMLDivElement>(null);
+  // La page a déjà son animation d'entrée (`t-skel-in`) : rejouer le panneau au
+  // premier paint superposerait deux entrées sur le même contenu. Il ne doit
+  // s'animer qu'au CHANGEMENT de carte.
+  const settled = useRef(false);
+  useEffect(() => {
+    if (!settled.current) {
+      settled.current = true;
+      return;
+    }
+    const el = panelRef.current;
+    if (!el) return;
+    const prev = el.style.transition;
+    el.style.transition = "none";
+    el.dataset.open = "false";
+    void el.offsetWidth;
+    el.style.transition = prev;
+    el.dataset.open = "true";
+  }, [active]);
+
   if (maps.length === 0) return null;
   const map = maps[Math.min(active, maps.length - 1)];
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+    // overflow-hidden : le panneau entre depuis 100px plus bas, il doit être
+    // rogné par la carte pendant sa course au lieu de déborder sous sa bordure.
+    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
       {maps.length > 1 && (
-        <div className="flex flex-wrap gap-1 border-b border-[var(--border)] px-2">
-          {maps.map((m, i) => {
-            const on = i === active;
-            return (
+        <div className="border-b border-[var(--border)] px-2">
+          <Segmented activeKey={String(active)} variant="underline">
+            {maps.map((m, i) => (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => setActive(i)}
-                aria-pressed={on}
-                className={`-mb-px shrink-0 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  on
-                    ? "border-[var(--accent)] text-white"
-                    : "border-transparent text-[var(--text-muted)] hover:text-white"
-                }`}
+                role="tab"
+                aria-selected={i === active}
+                className="t-tab shrink-0"
               >
                 {m.mapName}
               </button>
-            );
-          })}
+            ))}
+          </Segmented>
         </div>
       )}
 
-      <div className="p-4">
+      <div ref={panelRef} data-open="true" className="t-panel-slide p-4">
         <RoundTimeline
           rounds={map.rounds}
           teamAName={teamAName}

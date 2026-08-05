@@ -102,7 +102,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 ? `${overview.topAgent.maps} carte${overview.topAgent.maps > 1 ? "s" : ""} · ${overview.topAgent.pct} % du temps de jeu`
                 : "Aucune carte jouée"
             }
-            icon={overview.topAgent && <AgentIcon agent={overview.topAgent.agent} />}
+            icon={overview.topAgent && <AgentIcon agent={overview.topAgent.agent} size="h-7 w-7" />}
           />
           <StatTile
             label="K/D"
@@ -192,7 +192,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   sub={`ACS moyen ${overview.avgAcs}.`}
                 />
                 <Meter
-                  label="Duels d'entrée gagnés"
+                  label="Duels d'entry gagnés"
                   value={entryDuels > 0 ? (overview.firstKills / entryDuels) * 100 : 0}
                   valueLabel={
                     entryDuels > 0

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTournament, getTournamentTeamsWithPlayers } from "@/lib/data/tournaments";
 import { listTournamentMatches, getGroupsWithMatches, listBracketMatches } from "@/lib/data/matches";
 import { getTournamentStats } from "@/lib/data/tournament-stats";
+import { getTournamentTeamStats } from "@/lib/data/tournament-teams";
 import TournamentTabs from "@/components/tournament-tabs";
 import TournamentStats from "@/components/tournament-stats";
 import MatchMiniList from "@/components/match-mini-list";
@@ -15,6 +16,7 @@ import { listTeamsManagedBy, countActiveRosterPlayers } from "@/lib/data/teams";
 import TournamentRegister, { type RegistrableTeam } from "@/components/tournament-register";
 import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
+import TournamentTeams from "@/components/tournament-teams";
 import { computeStandings } from "@/lib/standings";
 import type { ReactNode } from "react";
 
@@ -41,12 +43,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const sessionUser = await getSessionUser();
   const canManage = canManageTournament(sessionUser, await getTournamentManagerIds(id));
 
-  const [participants, allMatches, groups, bracket, stats] = await Promise.all([
+  const [participants, allMatches, groups, bracket, stats, teamStats] = await Promise.all([
     getTournamentTeamsWithPlayers(id),
     listTournamentMatches(id),
     getGroupsWithMatches(id),
     listBracketMatches(id),
     getTournamentStats(id),
+    getTournamentTeamStats(id),
   ]);
 
   // Étapes : chaque poule → son classement ; les playoffs → l'arbre du bracket.
@@ -216,11 +219,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     </div>
   );
 
-  const equipesTab = (
-    <div className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
-      En cours de développement.
-    </div>
-  );
+  const equipesTab = <TournamentTeams teams={teamStats} />;
 
   const statsTab = stats.hasData ? (
     <TournamentStats

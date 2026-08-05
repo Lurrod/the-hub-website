@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  /* Rend `auto` interpolable : requis par .t-resize-details. */
+  interpolate-size: allow-keywords;
   /* Fond & élévation (palette rft.gg) */
   --bg: #131619;
   --shell: #0d0f10;
@@ -1434,12 +1436,18 @@ body :is(h1, h2, h3, h4, h5, h6) {
    background-attachment: local (ils suivent le contenu), les deux ombres sont
    en scroll (elles restent collées au cadre). Quand il n'y a rien à faire
    défiler, les couvre-bords masquent exactement les ombres.
+
+   IMPORTANT : le couvre-bord doit être de la couleur du fond RÉELLEMENT visible
+   derrière le conteneur. Sinon il ne masque rien et laisse une bande colorée aux
+   deux bords, même sur un tableau qui tient entièrement — c'est réglé par
+   --scroll-x-bg, à passer à chaque usage dont le fond n'est pas --surface.
    -------------------------------------------------------------------------- */
 .scroll-x {
+  --scroll-x-bg: var(--surface);
   overflow-x: auto;
   background-image:
-    linear-gradient(to right, var(--surface) 70%, transparent),
-    linear-gradient(to left, var(--surface) 70%, transparent),
+    linear-gradient(to right, var(--scroll-x-bg) 70%, transparent),
+    linear-gradient(to left, var(--scroll-x-bg) 70%, transparent),
     linear-gradient(to right, rgba(0, 0, 0, 0.6), transparent),
     linear-gradient(to left, rgba(0, 0, 0, 0.6), transparent);
   background-position: left center, right center, left center, right center;
@@ -1448,4 +1456,75 @@ body :is(h1, h2, h3, h4, h5, h6) {
   background-size: 24px 100%, 24px 100%, 14px 100%, 14px 100%;
   background-repeat: no-repeat;
   background-attachment: local, local, scroll, scroll;
+}
+
+/** Conteneur posé sur le fond de page plutôt que sur une surface de carte. */
+.scroll-x-on-bg {
+  --scroll-x-bg: var(--bg);
+}
+
+
+/* ---------------------------------------------------------------------------
+   Card resize (snippet 01) — tween de la hauteur d'un conteneur qui change
+   d'état. Les variables --resize-* sont déjà dans le bloc :root plus haut.
+   -------------------------------------------------------------------------- */
+.t-resize {
+  transition:
+    width  var(--resize-dur) var(--resize-ease),
+    height var(--resize-dur) var(--resize-ease);
+  will-change: width, height;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-resize { transition: none !important; }
+}
+
+/* `<details>` n'expose aucune hauteur animable : c'est ::details-content, avec
+   interpolate-size pour rendre `auto` interpolable, qui produit le changement
+   de taille que .t-resize sait ensuite tweener. Les navigateurs sans
+   interpolate-size (Firefox à ce jour) ouvrent d'un coup — le contenu reste
+   accessible, seule l'animation manque. */
+.t-resize-details::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size var(--resize-dur) var(--resize-ease),
+    content-visibility var(--resize-dur) var(--resize-ease) allow-discrete;
+}
+.t-resize-details[open]::details-content {
+  block-size: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-resize-details::details-content { transition: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Panel reveal (snippet 07) — le contenu glisse dans la zone avec un
+   cross-blur. Les variables --panel-* sont déjà dans le bloc :root plus haut.
+   -------------------------------------------------------------------------- */
+.t-panel-slide {
+  transform: translateY(var(--panel-translate-y));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity   var(--panel-close-dur) var(--panel-ease),
+    filter    var(--panel-close-dur) var(--panel-ease);
+  will-change: transform, opacity, filter;
+}
+.t-panel-slide[data-open="true"] {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity   var(--panel-open-dur) var(--panel-ease),
+    filter    var(--panel-open-dur) var(--panel-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-panel-slide { transition: none !important; }
 }
