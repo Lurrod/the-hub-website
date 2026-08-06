@@ -7,6 +7,7 @@ import {
   NavSessionUserFallback,
 } from "@/components/nav-session";
 import { SearchIcon } from "@/components/icons";
+import NavDrawer from "@/components/nav-drawer";
 
 /**
  * Barre de navigation.
@@ -20,10 +21,21 @@ import { SearchIcon } from "@/components/icons";
 export default function NavBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-strong)] bg-[var(--shell)]/90 backdrop-blur-md">
-      {/* Sous 640px, la barre est trop étroite pour le champ de recherche et le
-          libellé complet du bouton : le champ devient une icône vers /recherche
-          et le bouton se réduit à l'icône Discord. */}
+      {/* Sous 768px, la barre est trop étroite pour le champ de recherche et
+          les onglets : le champ devient une icône vers /recherche et les
+          onglets passent dans le tiroir. Le libellé du bouton de connexion
+          n'apparaît qu'à partir de 1024px. */}
       <nav className="mx-auto flex h-[47px] max-w-6xl items-center gap-x-2 px-4 md:gap-x-6">
+        {/* Sous 768 px, cinq onglets ne tiennent pas à côté du logo, de la
+            recherche et du bouton de connexion. Ils passent dans un tiroir :
+            l'en-tête garde une seule rangée de 47 px, et un sixième onglet
+            n'y changera rien. */}
+        <NavDrawer>
+          <Suspense fallback={<NavLinks isAdmin={false} variant="drawer" />}>
+            <NavSessionLinks variant="drawer" />
+          </Suspense>
+        </NavDrawer>
+
         <Link href="/" aria-label="The Hub - accueil" className="flex shrink-0 items-center">
           {/* Rendu à 32 px de haut : le PNG source de 1125 px (98 Ko) était
               téléchargé sur chaque page. Le webp fait 3,7 Ko pour un rendu
@@ -40,9 +52,11 @@ export default function NavBar() {
         </Link>
         {/* Repli sans le lien Admin : il ne concerne qu'une poignée de comptes,
             et l'attendre retarderait l'affichage de tous les autres. */}
+        {/* Repli sans le lien Admin : il ne concerne qu'une poignée de comptes,
+            et l'attendre retarderait l'affichage de tous les autres. */}
         <div className="hidden self-stretch md:flex">
-          <Suspense fallback={<NavLinks isAdmin={false} className="self-stretch" />}>
-            <NavSessionLinks className="self-stretch" />
+          <Suspense fallback={<NavLinks isAdmin={false} />}>
+            <NavSessionLinks />
           </Suspense>
         </div>
 
@@ -71,21 +85,6 @@ export default function NavBar() {
           <NavSessionUser />
         </Suspense>
       </nav>
-
-      {/* Sous 768px, cinq onglets ne tiennent pas à côté du logo, de la
-          recherche et du bouton de connexion : ils passent sur une seconde
-          rangée. Un menu déroulant les aurait cachés derrière un tap, alors
-          que ce sont les cinq portes d'entrée du site — et sa difficulté du
-          moment est justement de se faire découvrir. La rangée défile
-          horizontalement au cas où : lien Admin, ou police agrandie par le
-          système. */}
-      <div className="border-t border-[var(--border)] md:hidden">
-        <div className="scroll-x scroll-x-on-shell mx-auto h-[38px] max-w-6xl px-2">
-          <Suspense fallback={<NavLinks isAdmin={false} className="h-full" />}>
-            <NavSessionLinks className="h-full" />
-          </Suspense>
-        </div>
-      </div>
     </header>
   );
 }

@@ -93,6 +93,10 @@
   --dropdown-pre-scale: 0.97;
   --dropdown-closing-scale: 0.99;
   --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Tiroir de navigation (mobile) */
+  --drawer-open-dur: 250ms;
+  --drawer-close-dur: 150ms;
+  --drawer-ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* Modal open / close */
   --modal-open-dur: 250ms;
   --modal-close-dur: 150ms;
@@ -299,6 +303,25 @@ body {
   .nav-link[data-active="true"] {
     color: var(--text);
     border-bottom-color: var(--accent);
+  }
+
+  /* Variante tiroir : la marque de l'onglet actif passe du soulignement à un
+     filet à gauche, seul bord disponible dans une liste verticale. */
+  .nav-link-drawer {
+    color: var(--text-muted);
+    border-left: 2px solid transparent;
+    transition:
+      color var(--hover-fast) var(--ease),
+      background-color var(--hover-fast) var(--ease);
+  }
+  .nav-link-drawer:hover {
+    color: var(--accent);
+    background-color: var(--card-hover);
+  }
+  .nav-link-drawer[data-active="true"] {
+    color: var(--text);
+    border-left-color: var(--accent);
+    background-color: var(--accent-soft);
   }
 
   /* Séparateur « · » : un peu d'air autour et une teinte discrète, pour alléger. */
@@ -820,6 +843,27 @@ body :is(h1, h2, h3, h4, h5, h6) {
 
 @media (prefers-reduced-motion: reduce) {
   .t-modal { transition: none !important; }
+}
+
+/* --- Tiroir de navigation ------------------------------------------------- */
+/* Même contrat que .t-modal (repos / .is-open / .is-closing), mais le panneau
+   glisse depuis le bord gauche au lieu de grandir depuis le centre : il est
+   ancré à ce bord, pas flottant. */
+.t-drawer {
+  transform: translateX(-100%);
+  transition: transform var(--drawer-open-dur) var(--drawer-ease);
+  will-change: transform;
+}
+.t-drawer.is-open {
+  transform: translateX(0);
+}
+.t-drawer.is-closing {
+  transform: translateX(-100%);
+  transition: transform var(--drawer-close-dur) var(--drawer-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-drawer { transition: none !important; }
 }
 
 /* --- Success check (10) --------------------------------------------------- */
@@ -1461,11 +1505,6 @@ body :is(h1, h2, h3, h4, h5, h6) {
 /** Conteneur posé sur le fond de page plutôt que sur une surface de carte. */
 .scroll-x-on-bg {
   --scroll-x-bg: var(--bg);
-}
-
-/** Conteneur posé sur la barre de navigation (seconde rangée d'onglets). */
-.scroll-x-on-shell {
-  --scroll-x-bg: var(--shell);
 }
 
 

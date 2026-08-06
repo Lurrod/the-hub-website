@@ -14,21 +14,30 @@ const LINKS = [
 /**
  * Liens de navigation principaux.
  *
- * `className` est laissé à l'appelant : les mêmes liens habitent la barre du
- * haut sur grand écran et une seconde rangée sur mobile, deux contextes qui
- * n'ont pas la même hauteur ni les mêmes marges.
+ * Deux habitats : la barre du haut sur grand écran (`bar`), et le tiroir
+ * mobile (`drawer`). Même liste, même état actif, deux mises en forme — c'est
+ * ce qui garantit qu'un lien ajouté ici apparaît des deux côtés.
  */
 export default function NavLinks({
   isAdmin = false,
-  className = "",
+  variant = "bar",
+  onNavigate,
 }: {
   isAdmin?: boolean;
-  className?: string;
+  variant?: "bar" | "drawer";
+  /** Appelé au clic : sert au tiroir pour se refermer derrière l'utilisateur. */
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const links = [...LINKS, ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : [])];
+  const drawer = variant === "drawer";
+
   return (
-    <div className={`flex items-stretch gap-0.5 text-sm sm:gap-1 ${className}`}>
+    <div
+      className={
+        drawer ? "flex flex-col" : "flex items-stretch gap-0.5 self-stretch text-sm sm:gap-1"
+      }
+    >
       {links.map((l) => {
         const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
         return (
@@ -36,10 +45,14 @@ export default function NavLinks({
             key={l.href}
             href={l.href}
             data-active={active}
-            // `whitespace-nowrap` : sans lui « LFT / LFP » se coupait sur trois
-            // lignes dès que la barre manquait de place, et faisait déborder
-            // toute l'en-tête.
-            className="nav-link flex shrink-0 items-center whitespace-nowrap px-2 sm:px-2.5"
+            onClick={onNavigate}
+            // `whitespace-nowrap` : sans lui « LFT / LFP » se coupait sur
+            // plusieurs lignes dès que la place manquait.
+            className={
+              drawer
+                ? "nav-link-drawer flex items-center whitespace-nowrap px-5 py-3 text-[15px]"
+                : "nav-link flex shrink-0 items-center whitespace-nowrap px-2 sm:px-2.5"
+            }
           >
             {l.label}
           </Link>
