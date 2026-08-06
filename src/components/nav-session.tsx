@@ -22,9 +22,9 @@ import { DiscordIcon } from "@/components/icons";
 const AUTH_BUTTON =
   "flex shrink-0 items-center gap-2 whitespace-nowrap rounded bg-[var(--accent)] px-2.5 py-1.5 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)] lg:px-3";
 
-export async function NavSessionLinks({ className }: { className?: string }) {
+export async function NavSessionLinks({ variant }: { variant?: "bar" | "drawer" }) {
   const session = await getCachedSession();
-  return <NavLinks isAdmin={session?.user?.globalRole === "ADMIN"} className={className} />;
+  return <NavLinks isAdmin={session?.user?.globalRole === "ADMIN"} variant={variant} />;
 }
 
 export async function NavSessionUser() {
