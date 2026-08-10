@@ -5,6 +5,7 @@ import {
   TOURNAMENT_STATUSES,
   SEEDING_TYPES,
 } from "@/lib/constants";
+import { optionalUrl, optionalTwitterUrl, optionalTwitchUrl } from "@/lib/validation/common";
 
 // Entier positif optionnel : "" ou absent -> undefined.
 const optionalPositiveInt = z
@@ -39,6 +40,18 @@ export const tournamentInputSchema = z
     groupSize: optionalPositiveInt,
     bestOf: optionalPositiveInt,
     seeding: z.enum(SEEDING_TYPES).optional(),
+    // Mêmes réseaux qu'une équipe : le Discord y sert de canal d'inscription.
+    socials: z
+      .object({
+        twitter: optionalTwitterUrl,
+        twitch: optionalTwitchUrl,
+        youtube: optionalUrl,
+        instagram: optionalUrl,
+        discord: optionalUrl,
+        website: optionalUrl,
+      })
+      .partial()
+      .optional(),
   })
   .refine((v) => !(v.startDate && v.endDate) || v.startDate <= v.endDate, {
     message: "La date de fin doit suivre la date de début",

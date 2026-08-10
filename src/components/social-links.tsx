@@ -70,25 +70,32 @@ const ICONS: Record<keyof Socials, ReactNode> = {
 /** Liens réseaux affichés en boutons-icônes (logo au lieu de texte). */
 export default function SocialLinks({
   socials,
+  labels,
   className,
   size = "h-5 w-5",
 }: {
   socials: Socials;
+  /**
+   * Libellés remplaçant ceux par défaut, par réseau. Sert au Discord d'une
+   * fiche joueur, dont l'infobulle affiche le pseudo du compte.
+   */
+  labels?: Partial<Record<keyof Socials, string>>;
   className?: string;
   /** Classes de taille de l'icône, par ex. « h-4 w-4 » pour 16 px. */
   size?: string;
 }) {
   const keys = ORDER.filter((k) => socials[k]);
   if (keys.length === 0) return null;
+  const labelFor = (k: keyof Socials) => labels?.[k] ?? LABELS[k];
   return (
     <HoverGroup className={`flex gap-3 ${className ?? ""}`}>
       {keys.map((k) => (
-        <Tooltip key={k} label={LABELS[k]}>
+        <Tooltip key={k} label={labelFor(k)}>
           <a
             href={socials[k]!}
             target="_blank"
             rel="noreferrer"
-            aria-label={LABELS[k]}
+            aria-label={labelFor(k)}
             className={`t-avatar inline-flex ${size} text-[var(--text-muted)] hover:text-[var(--accent)]`}
           >
             {ICONS[k]}

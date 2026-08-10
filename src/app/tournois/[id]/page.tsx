@@ -10,6 +10,7 @@ import MatchMiniList from "@/components/match-mini-list";
 import TournamentMatchList from "@/components/tournament-match-list";
 import StageMenu from "@/components/stage-menu";
 import ParticipantCard from "@/components/participant-card";
+import SocialLinks from "@/components/social-links";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { listTeamsManagedBy, countActiveRosterPlayers } from "@/lib/data/teams";
@@ -274,6 +275,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             <div className="min-w-0">
               <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
               <p className="mt-0.5 text-xs text-[var(--text-muted)]">{dateRange}</p>
+              <SocialLinks
+                socials={(tournament.socials ?? {}) as Record<string, string | undefined>}
+                size="h-4 w-4"
+                className="mt-2"
+              />
             </div>
 
             <div className="flex items-center gap-8 sm:ml-auto">

@@ -28,6 +28,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
+    // Le pseudo Discord n'est lisible que sur le profil OAuth brut, et il peut
+    // changer entre deux connexions : on le rafraîchit à chaque passage plutôt
+    // que de le figer à la création du compte.
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== "discord" || !user.id) return;
+      const username = typeof profile?.username === "string" ? profile.username : null;
+      if (!username) return;
+      // `updateMany` conditionnel : pas d'écriture quand rien n'a bougé. Le
+      // `OR` explicite est nécessaire, un `not` seul écarterait les NULL.
+      await db.user.updateMany({
+        where: {
+          id: user.id,
+          OR: [{ discordUsername: null }, { discordUsername: { not: username } }],
+        },
+        data: { discordUsername: username },
+      });
+    },
     async linkAccount({ user, account }) {
       if (account.provider !== "discord") return;
       const isAdmin = adminIds.includes(account.providerAccountId);

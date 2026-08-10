@@ -66,6 +66,24 @@ export async function listLftPlayers(filters?: LftQuery, page = 1) {
   return { players, total, page: current, pageSize: LFT_PER_PAGE };
 }
 
+/**
+ * Compte Discord lié à un utilisateur, pour l'écran Paramètres.
+ *
+ * Requête à part plutôt qu'un `include` sur `ensurePlayerForUser` : cette
+ * dernière sert à une dizaine d'appelants qui n'ont que faire du Discord.
+ */
+export function getUserDiscord(userId: string) {
+  return db.user.findUnique({
+    where: { id: userId },
+    select: { discordId: true, discordUsername: true },
+  });
+}
+
+/** Affiche ou masque le Discord du compte lié sur la fiche publique. */
+export function setPlayerShowDiscord(playerId: string, show: boolean) {
+  return db.player.update({ where: { id: playerId }, data: { showDiscord: show } });
+}
+
 /** Applique un statut LFT calculé par `nextLftState`. */
 export function setPlayerLft(playerId: string, state: LftState) {
   return db.player.update({
@@ -79,6 +97,9 @@ export function getPlayer(id: string) {
     where: { id },
     include: {
       memberships: { include: { team: true }, orderBy: { joinDate: "desc" } },
+      // Compte lié : la fiche publique en tire le Discord (voir `lib/discord`).
+      // Sélection explicite pour ne pas exposer l'e-mail au rendu.
+      user: { select: { discordId: true, discordUsername: true } },
     },
   });
 }

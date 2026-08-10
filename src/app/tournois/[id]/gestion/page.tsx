@@ -80,6 +80,7 @@ export default async function TournamentGestionPage({ params }: { params: Promis
           groupSize: tournament.groupSize ?? undefined,
           bestOf: tournament.bestOf ?? undefined,
           seeding: tournament.seeding ?? undefined,
+          socials: (tournament.socials ?? {}) as Record<string, string | undefined>,
         }}
       />
 

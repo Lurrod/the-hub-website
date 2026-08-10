@@ -39,6 +39,14 @@ function parseTournamentForm(formData: FormData) {
     groupSize: formData.get("groupSize") || undefined,
     bestOf: formData.get("bestOf") || undefined,
     seeding: formData.get("seeding") || undefined,
+    socials: {
+      twitter: formData.get("twitter") || undefined,
+      twitch: formData.get("twitch") || undefined,
+      youtube: formData.get("youtube") || undefined,
+      instagram: formData.get("instagram") || undefined,
+      discord: formData.get("discord") || undefined,
+      website: formData.get("website") || undefined,
+    },
   };
   return tournamentInputSchema.parse(raw);
 }
