@@ -143,7 +143,9 @@ function FactCard({ fact }: { fact: TournamentFact }) {
         </>
       )}
       <div className="relative">
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{fact.label}</div>
+        <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+          {fact.label}
+        </div>
         <div className="mt-1.5 flex items-center gap-2">
           {fact.agent && <AgentThumb agent={fact.agent} size="h-8 w-8" />}
           {fact.key === "longest-game" && <Stopwatch />}
@@ -275,8 +277,8 @@ export default function TournamentStats({
       <section>
         <h2 className={SECTION}>Carte des joueurs</h2>
         <p className="mb-4 text-xs text-[var(--text-muted)]">
-          Deux axes séparent des profils qu&apos;un classement confond : qui frague en
-          restant en vie, qui fait du dégât en se mettant en danger, qui joue l&apos;appui.
+          Deux axes séparent des profils qu&apos;un classement confond : qui frague en restant en
+          vie, qui fait du dégât en se mettant en danger, qui joue l&apos;appui.
         </p>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
           <PlayerScatter players={players} />
@@ -286,8 +288,7 @@ export default function TournamentStats({
       <section>
         <h2 className={SECTION}>Duels d&apos;entry</h2>
         <p className="mb-4 text-xs text-[var(--text-muted)]">
-          Qui ouvre les rounds et qui les perd d&apos;entry, de part et d&apos;autre de
-          l&apos;axe.
+          Qui ouvre les rounds et qui les perd d&apos;entry, de part et d&apos;autre de l&apos;axe.
         </p>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
           <EntryDuels players={players} />

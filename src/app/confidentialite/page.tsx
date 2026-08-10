@@ -18,9 +18,8 @@ export default function ConfidentialitePage() {
     >
       <Section title="Responsable du traitement">
         <p>
-          Le responsable du traitement est Titouan Borde, joignable en rejoignant{" "}
-          <ContactDiscord />. Les coordonnées complètes
-          figurent dans les{" "}
+          Le responsable du traitement est Titouan Borde, joignable en rejoignant <ContactDiscord />
+          . Les coordonnées complètes figurent dans les{" "}
           <Link href="/mentions-legales" className="text-[var(--accent)] hover:underline">
             mentions légales
           </Link>
@@ -74,8 +73,12 @@ export default function ConfidentialitePage() {
           <table className="w-full min-w-[520px] border-collapse">
             <thead>
               <tr>
-                <th className={TH}>Finalité</th>
-                <th className={TH}>Base légale</th>
+                <th scope="col" className={TH}>
+                  Finalité
+                </th>
+                <th scope="col" className={TH}>
+                  Base légale
+                </th>
               </tr>
             </thead>
             <tbody className="text-[var(--text-muted)]">
@@ -84,7 +87,9 @@ export default function ConfidentialitePage() {
                 <td className={TD}>Exécution des conditions d&apos;utilisation (art. 6.1.b)</td>
               </tr>
               <tr>
-                <td className={TD}>Afficher votre fiche joueur et vos appartenances d&apos;équipe</td>
+                <td className={TD}>
+                  Afficher votre fiche joueur et vos appartenances d&apos;équipe
+                </td>
                 <td className={TD}>Exécution des conditions d&apos;utilisation (art. 6.1.b)</td>
               </tr>
               <tr>
@@ -93,9 +98,7 @@ export default function ConfidentialitePage() {
               </tr>
               <tr>
                 <td className={TD}>Publier les résultats et statistiques des tournois</td>
-                <td className={TD}>
-                  Intérêt légitime : informer sur la compétition (art. 6.1.f)
-                </td>
+                <td className={TD}>Intérêt légitime : informer sur la compétition (art. 6.1.f)</td>
               </tr>
               <tr>
                 <td className={TD}>Prévenir les abus et faire respecter les règles</td>
@@ -110,8 +113,8 @@ export default function ConfidentialitePage() {
         <p>
           The Hub est un site de référencement compétitif : votre pseudo, votre photo, votre
           nationalité, votre équipe et vos statistiques de match sont visibles par tous les
-          visiteurs et peuvent être indexés par les moteurs de recherche. Votre adresse
-          électronique n&apos;est jamais affichée publiquement.
+          visiteurs et peuvent être indexés par les moteurs de recherche. Votre adresse électronique
+          n&apos;est jamais affichée publiquement.
         </p>
         <p>
           Votre fiche joueur affiche également un lien vers votre profil Discord, afin que les
@@ -151,16 +154,13 @@ export default function ConfidentialitePage() {
           Aucune donnée n&apos;est vendue ni cédée à des fins publicitaires. La base de données et
           les fichiers sont hébergés en France, donc au sein de l&apos;Union européenne. Discord
           relevant d&apos;une société établie aux États-Unis, les données échangées lors de
-          l&apos;authentification peuvent y être transférées, sur le fondement des garanties
-          prévues au chapitre V du RGPD (décision d&apos;adéquation ou clauses contractuelles
-          types).
+          l&apos;authentification peuvent y être transférées, sur le fondement des garanties prévues
+          au chapitre V du RGPD (décision d&apos;adéquation ou clauses contractuelles types).
         </p>
       </Section>
 
       <Section title="Cookies">
-        <p>
-          Le site dépose deux cookies, tous deux strictement nécessaires à son fonctionnement :
-        </p>
+        <p>Le site dépose deux cookies, tous deux strictement nécessaires à son fonctionnement :</p>
         <Ul>
           <li>
             <span className="text-white">Cookie de session</span> - maintient votre connexion.
@@ -168,8 +168,8 @@ export default function ConfidentialitePage() {
           </li>
           <li>
             <span className="text-white">Cookie « onboarded »</span> - mémorise que vous avez
-            terminé l&apos;écran d&apos;accueil, pour ne plus vous y renvoyer. Conservé un an, il
-            ne contient aucune donnée vous concernant et subsiste après la déconnexion.
+            terminé l&apos;écran d&apos;accueil, pour ne plus vous y renvoyer. Conservé un an, il ne
+            contient aucune donnée vous concernant et subsiste après la déconnexion.
           </li>
         </Ul>
         <p>

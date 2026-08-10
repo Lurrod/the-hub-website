@@ -1,3 +1,9 @@
+# Fins de ligne normalisees en LF dans le depot ET a la sortie. Sans cette
+# ligne, `core.autocrlf` posait des CRLF sur le disque des postes Windows et
+# `prettier --check` echouait sur 222 fichiers, sans que rien ne le signale
+# (finding QUAL-01 de l'audit du 6 aout 2026).
+* text=auto eol=lf
+
 # `core.autocrlf` etant actif sur les postes Windows, git applique une
 # conversion de fins de ligne a tout fichier qu'il juge textuel. Sa detection
 # automatique s'est trompee sur le PDF de l'audit : un clone frais le recevait

@@ -13,10 +13,19 @@ export type MiniPlayer = {
 /** Carte joueur compacte pour la landing (joueurs à suivre). */
 export default function PlayerMiniCard({ player }: { player: MiniPlayer }) {
   return (
-    <Link href={`/joueurs/${player.id}`} className="card card-interactive flex items-center gap-3 p-3">
+    <Link
+      href={`/joueurs/${player.id}`}
+      className="card card-interactive flex items-center gap-3 p-3"
+    >
       {player.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" decoding="async" src={player.photo} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={player.photo}
+          alt=""
+          className="h-11 w-11 shrink-0 rounded-full object-cover"
+        />
       ) : (
         <div className="monogram grid h-11 w-11 shrink-0 place-items-center rounded-full text-xs">
           {player.pseudo.slice(0, 2).toUpperCase()}
@@ -30,7 +39,9 @@ export default function PlayerMiniCard({ player }: { player: MiniPlayer }) {
         <div className="text-xs text-[var(--text-muted)]">{player.teamTag ?? "Sans équipe"}</div>
       </div>
       <div className="shrink-0 text-right">
-        <div className="stat text-lg font-bold text-[var(--accent)]">{player.rating.toFixed(2)}</div>
+        <div className="stat text-lg font-bold text-[var(--accent)]">
+          {player.rating.toFixed(2)}
+        </div>
         <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Rating</div>
       </div>
     </Link>

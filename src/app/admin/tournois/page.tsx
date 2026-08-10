@@ -14,7 +14,9 @@ export default async function AdminTournamentsPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Admin<span className="dot-sep">·</span>Tournois</h1>
+        <h1 className="text-2xl font-bold text-white">
+          Admin<span className="dot-sep">·</span>Tournois
+        </h1>
         <Link
           href="/admin/tournois/nouvelle"
           className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"

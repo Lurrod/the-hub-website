@@ -72,6 +72,9 @@ vi.mock("@/lib/data/tournaments", () => ({
 vi.mock("@/lib/images", () => ({
   readUploadedImage: vi.fn(async () => null),
   processAndStoreImage: vi.fn(),
+  // Les actions de suppression effacent aussi les fichiers déposés (RGPD-01) :
+  // sans ce doublon, elles touchent le disque depuis un test unitaire.
+  deleteStoredImage: vi.fn(async () => undefined),
 }));
 
 /** Exécute une action en absorbant la redirection finale, qui est normale. */

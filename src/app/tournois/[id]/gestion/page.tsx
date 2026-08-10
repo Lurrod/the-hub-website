@@ -9,11 +9,7 @@ import { updateTournamentAction, deleteTournamentAction } from "@/app/admin/acti
 
 import { tournamentTitle } from "@/lib/data/titles";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await tournamentTitle(id);
   return { title: name ? `Gestion · ${name}` : "Gestion du tournoi" };
@@ -26,7 +22,11 @@ function toDateInput(d: Date | null): string {
 const TAB_LINK =
   "rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]";
 
-export default async function TournamentGestionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TournamentGestionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const tournament = await getTournament(id);
   if (!tournament) notFound();
@@ -41,7 +41,10 @@ export default async function TournamentGestionPage({ params }: { params: Promis
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Gérer<span className="dot-sep">·</span>{tournament.name}</h1>
+        <h1 className="text-2xl font-bold text-white">
+          Gérer<span className="dot-sep">·</span>
+          {tournament.name}
+        </h1>
         <Link
           href={`/tournois/${id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"

@@ -17,9 +17,15 @@ afterEach(() => {
 describe("verifyRiotId", () => {
   it("retourne puuid/region sur succès", async () => {
     vi.stubEnv("HENRIKDEV_API_KEY", "k");
-    vi.stubGlobal("fetch", mockFetch(200, { data: { puuid: "p-1", region: "eu", name: "Zed", tag: "EUW" } }));
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(200, { data: { puuid: "p-1", region: "eu", name: "Zed", tag: "EUW" } })
+    );
     await expect(verifyRiotId("Zed", "EUW")).resolves.toEqual({
-      puuid: "p-1", region: "eu", name: "Zed", tag: "EUW",
+      puuid: "p-1",
+      region: "eu",
+      name: "Zed",
+      tag: "EUW",
     });
   });
   it("404 -> NOT_FOUND", async () => {

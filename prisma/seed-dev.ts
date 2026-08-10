@@ -85,18 +85,78 @@ async function main() {
   // ---- Dataset VCT EMEA 2026 (réaliste, pour aperçu local) ----
   const TID = "vct-emea-stage1";
   const VCT_TEAMS = [
-    { tag: "HRT", name: "Team Heretics", group: "alpha", players: ["Boo", "benjyfishy", "RieNs", "Wo0t", "ComeBack"] },
-    { tag: "VIT", name: "Team Vitality", group: "alpha", players: ["Jamppi", "Derke", "Sayonara", "Chronicle", "PROFEK"] },
-    { tag: "FNC", name: "Fnatic", group: "alpha", players: ["Boaster", "Alfajer", "kaajak", "crashies", "Veqaj"] },
-    { tag: "TL", name: "Team Liquid", group: "alpha", players: ["nAts", "kamo", "MiniBoo", "purp0", "wayne"] },
-    { tag: "NAVI", name: "Natus Vincere", group: "alpha", players: ["Shao", "hiro", "Ruxic", "Filu", "sociablEE"] },
-    { tag: "KC", name: "Karmine Corp", group: "alpha", players: ["sheydos", "dos9", "SUYGETSU", "LewN", "avez"] },
-    { tag: "FUT", name: "FUT Esports", group: "omega", players: ["MrFaliN", "yetujey", "KROSTALY", "xeus", "baha"] },
-    { tag: "BBL", name: "BBL Esports", group: "omega", players: ["Rosé", "umu7", "Loita", "Lar0k", "Crewen"] },
-    { tag: "GM", name: "Gentle Mates", group: "omega", players: ["starxo", "Minny", "bipo", "GLYPH", "marteen"] },
-    { tag: "GX", name: "GIANTX", group: "omega", players: ["Cloud", "westside", "ara", "Flickless", "GRUBINHO"] },
-    { tag: "PCF", name: "PCIFIC Esports", group: "omega", players: ["NINJA", "qpert", "seven", "al0rante", "cNed"] },
-    { tag: "EF", name: "Eternal Fire", group: "omega", players: ["Izzy", "audaz", "Favian", "echo", "nekky"] },
+    {
+      tag: "HRT",
+      name: "Team Heretics",
+      group: "alpha",
+      players: ["Boo", "benjyfishy", "RieNs", "Wo0t", "ComeBack"],
+    },
+    {
+      tag: "VIT",
+      name: "Team Vitality",
+      group: "alpha",
+      players: ["Jamppi", "Derke", "Sayonara", "Chronicle", "PROFEK"],
+    },
+    {
+      tag: "FNC",
+      name: "Fnatic",
+      group: "alpha",
+      players: ["Boaster", "Alfajer", "kaajak", "crashies", "Veqaj"],
+    },
+    {
+      tag: "TL",
+      name: "Team Liquid",
+      group: "alpha",
+      players: ["nAts", "kamo", "MiniBoo", "purp0", "wayne"],
+    },
+    {
+      tag: "NAVI",
+      name: "Natus Vincere",
+      group: "alpha",
+      players: ["Shao", "hiro", "Ruxic", "Filu", "sociablEE"],
+    },
+    {
+      tag: "KC",
+      name: "Karmine Corp",
+      group: "alpha",
+      players: ["sheydos", "dos9", "SUYGETSU", "LewN", "avez"],
+    },
+    {
+      tag: "FUT",
+      name: "FUT Esports",
+      group: "omega",
+      players: ["MrFaliN", "yetujey", "KROSTALY", "xeus", "baha"],
+    },
+    {
+      tag: "BBL",
+      name: "BBL Esports",
+      group: "omega",
+      players: ["Rosé", "umu7", "Loita", "Lar0k", "Crewen"],
+    },
+    {
+      tag: "GM",
+      name: "Gentle Mates",
+      group: "omega",
+      players: ["starxo", "Minny", "bipo", "GLYPH", "marteen"],
+    },
+    {
+      tag: "GX",
+      name: "GIANTX",
+      group: "omega",
+      players: ["Cloud", "westside", "ara", "Flickless", "GRUBINHO"],
+    },
+    {
+      tag: "PCF",
+      name: "PCIFIC Esports",
+      group: "omega",
+      players: ["NINJA", "qpert", "seven", "al0rante", "cNed"],
+    },
+    {
+      tag: "EF",
+      name: "Eternal Fire",
+      group: "omega",
+      players: ["Izzy", "audaz", "Favian", "echo", "nekky"],
+    },
   ];
 
   const vctTournament = {
@@ -155,7 +215,11 @@ async function main() {
         update: { pseudo: t.players[i] },
         create: { id: playerId, pseudo: t.players[i] },
       });
-      const membership = { teamId, playerId, role: i === 4 ? ("COACH" as const) : ("JOUEUR" as const) };
+      const membership = {
+        teamId,
+        playerId,
+        role: i === 4 ? ("COACH" as const) : ("JOUEUR" as const),
+      };
       await db.teamMembership.upsert({
         where: { id: `vct-mem-${t.tag}-${i}` },
         update: membership,
@@ -178,8 +242,32 @@ async function main() {
     maps: SeedMap[];
     vod?: string;
   }[] = [
-    { id: "vct-m-1", group: "alpha", a: "HRT", b: "FNC", sa: 2, sb: 1, vod: "https://www.twitch.tv/videos/2100000001", maps: [["Ascent", 13, 10], ["Bind", 8, 13], ["Haven", 13, 9]] },
-    { id: "vct-m-2", group: "alpha", a: "VIT", b: "NAVI", sa: 2, sb: 0, maps: [["Lotus", 13, 7], ["Split", 13, 11]] },
+    {
+      id: "vct-m-1",
+      group: "alpha",
+      a: "HRT",
+      b: "FNC",
+      sa: 2,
+      sb: 1,
+      vod: "https://www.twitch.tv/videos/2100000001",
+      maps: [
+        ["Ascent", 13, 10],
+        ["Bind", 8, 13],
+        ["Haven", 13, 9],
+      ],
+    },
+    {
+      id: "vct-m-2",
+      group: "alpha",
+      a: "VIT",
+      b: "NAVI",
+      sa: 2,
+      sb: 0,
+      maps: [
+        ["Lotus", 13, 7],
+        ["Split", 13, 11],
+      ],
+    },
     { id: "vct-m-3", group: "alpha", a: "TL", b: "KC", sa: 1, sb: 2, maps: [] },
     { id: "vct-m-4", group: "omega", a: "FUT", b: "BBL", sa: 2, sb: 1, maps: [] },
     { id: "vct-m-5", group: "omega", a: "GX", b: "GM", sa: 2, sb: 0, maps: [] },
@@ -242,29 +330,165 @@ async function main() {
 
   const BRACKET_MATCHES = [
     // Huitièmes de finale
-    { id: "vct-r16-1", round: "Huitièmes de finale", a: "HRT", b: "BIG", sa: 2, sb: 0, pos: 1, status: "FINISHED" as const },
-    { id: "vct-r16-2", round: "Huitièmes de finale", a: "GX", b: "SMB", sa: 2, sb: 1, pos: 2, status: "FINISHED" as const },
-    { id: "vct-r16-3", round: "Huitièmes de finale", a: "VIT", b: "APK", sa: 2, sb: 0, pos: 3, status: "FINISHED" as const },
-    { id: "vct-r16-4", round: "Huitièmes de finale", a: "FUT", b: "EF", sa: 2, sb: 1, pos: 4, status: "FINISHED" as const },
-    { id: "vct-r16-5", round: "Huitièmes de finale", a: "KC", b: "KOI", sa: 2, sb: 0, pos: 5, status: "FINISHED" as const },
-    { id: "vct-r16-6", round: "Huitièmes de finale", a: "BBL", b: "PCF", sa: 2, sb: 1, pos: 6, status: "FINISHED" as const },
-    { id: "vct-r16-7", round: "Huitièmes de finale", a: "FNC", b: "GM", sa: 2, sb: 0, pos: 7, status: "FINISHED" as const },
-    { id: "vct-r16-8", round: "Huitièmes de finale", a: "NAVI", b: "TL", sa: 2, sb: 1, pos: 8, status: "FINISHED" as const },
+    {
+      id: "vct-r16-1",
+      round: "Huitièmes de finale",
+      a: "HRT",
+      b: "BIG",
+      sa: 2,
+      sb: 0,
+      pos: 1,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-r16-2",
+      round: "Huitièmes de finale",
+      a: "GX",
+      b: "SMB",
+      sa: 2,
+      sb: 1,
+      pos: 2,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-r16-3",
+      round: "Huitièmes de finale",
+      a: "VIT",
+      b: "APK",
+      sa: 2,
+      sb: 0,
+      pos: 3,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-r16-4",
+      round: "Huitièmes de finale",
+      a: "FUT",
+      b: "EF",
+      sa: 2,
+      sb: 1,
+      pos: 4,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-r16-5",
+      round: "Huitièmes de finale",
+      a: "KC",
+      b: "KOI",
+      sa: 2,
+      sb: 0,
+      pos: 5,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-r16-6",
+      round: "Huitièmes de finale",
+      a: "BBL",
+      b: "PCF",
+      sa: 2,
+      sb: 1,
+      pos: 6,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-r16-7",
+      round: "Huitièmes de finale",
+      a: "FNC",
+      b: "GM",
+      sa: 2,
+      sb: 0,
+      pos: 7,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-r16-8",
+      round: "Huitièmes de finale",
+      a: "NAVI",
+      b: "TL",
+      sa: 2,
+      sb: 1,
+      pos: 8,
+      status: "FINISHED" as const,
+    },
     // Quarts de finale
-    { id: "vct-qf-1", round: "Quarts de finale", a: "HRT", b: "GX", sa: 2, sb: 1, pos: 1, status: "FINISHED" as const },
-    { id: "vct-qf-2", round: "Quarts de finale", a: "VIT", b: "FUT", sa: 2, sb: 0, pos: 2, status: "FINISHED" as const },
-    { id: "vct-qf-3", round: "Quarts de finale", a: "KC", b: "BBL", sa: 2, sb: 1, pos: 3, status: "FINISHED" as const },
-    { id: "vct-qf-4", round: "Quarts de finale", a: "FNC", b: "NAVI", sa: 2, sb: 1, pos: 4, status: "FINISHED" as const },
+    {
+      id: "vct-qf-1",
+      round: "Quarts de finale",
+      a: "HRT",
+      b: "GX",
+      sa: 2,
+      sb: 1,
+      pos: 1,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-qf-2",
+      round: "Quarts de finale",
+      a: "VIT",
+      b: "FUT",
+      sa: 2,
+      sb: 0,
+      pos: 2,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-qf-3",
+      round: "Quarts de finale",
+      a: "KC",
+      b: "BBL",
+      sa: 2,
+      sb: 1,
+      pos: 3,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-qf-4",
+      round: "Quarts de finale",
+      a: "FNC",
+      b: "NAVI",
+      sa: 2,
+      sb: 1,
+      pos: 4,
+      status: "FINISHED" as const,
+    },
     // Demi-finales
-    { id: "vct-sf-1", round: "Demi-finales", a: "HRT", b: "VIT", sa: 2, sb: 1, pos: 1, status: "FINISHED" as const },
-    { id: "vct-sf-2", round: "Demi-finales", a: "KC", b: "FNC", sa: 2, sb: 0, pos: 2, status: "FINISHED" as const },
+    {
+      id: "vct-sf-1",
+      round: "Demi-finales",
+      a: "HRT",
+      b: "VIT",
+      sa: 2,
+      sb: 1,
+      pos: 1,
+      status: "FINISHED" as const,
+    },
+    {
+      id: "vct-sf-2",
+      round: "Demi-finales",
+      a: "KC",
+      b: "FNC",
+      sa: 2,
+      sb: 0,
+      pos: 2,
+      status: "FINISHED" as const,
+    },
     // Finale
-    { id: "vct-f-1", round: "Finale", a: "HRT", b: "KC", sa: 0, sb: 0, pos: 1, status: "SCHEDULED" as const },
+    {
+      id: "vct-f-1",
+      round: "Finale",
+      a: "HRT",
+      b: "KC",
+      sa: 0,
+      sb: 0,
+      pos: 1,
+      status: "SCHEDULED" as const,
+    },
   ];
 
   for (let i = 0; i < BRACKET_MATCHES.length; i++) {
     const m = BRACKET_MATCHES[i];
-    const winnerId = m.status !== "FINISHED" || m.sa === m.sb ? null : m.sa > m.sb ? tid(m.a) : tid(m.b);
+    const winnerId =
+      m.status !== "FINISHED" || m.sa === m.sb ? null : m.sa > m.sb ? tid(m.a) : tid(m.b);
     const match = {
       tournamentId: TID,
       groupId: null,
@@ -315,7 +539,9 @@ async function main() {
     });
   }
 
-  process.stdout.write("Seed dev: démo + VCT EMEA 2026 (12 équipes, poules, matchs, bracket) prêts.\n");
+  process.stdout.write(
+    "Seed dev: démo + VCT EMEA 2026 (12 équipes, poules, matchs, bracket) prêts.\n"
+  );
 }
 
 main().finally(() => db.$disconnect());

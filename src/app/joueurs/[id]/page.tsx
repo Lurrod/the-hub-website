@@ -25,11 +25,7 @@ import JsonLdScript from "@/components/json-ld";
 import { playerJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await playerTitle(id);
   return pageMetadata({ path: `/joueurs/${id}`, title: name ?? "Joueur" });
@@ -40,7 +36,10 @@ function computeAge(birthdate: Date | null): number | null {
   const b = new Date(birthdate);
   const now = new Date();
   let age = now.getFullYear() - b.getFullYear();
-  if (now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) {
+  if (
+    now.getMonth() < b.getMonth() ||
+    (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())
+  ) {
     age -= 1;
   }
   return age;
@@ -115,7 +114,9 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           <StatTile
             label="K/D"
             value={hasStats ? overview.kd.toFixed(2) : "-"}
-            sub={hasStats ? `${overview.kills} kills · ${overview.deaths} morts` : "Aucune carte jouée"}
+            sub={
+              hasStats ? `${overview.kills} kills · ${overview.deaths} morts` : "Aucune carte jouée"
+            }
           />
           <StatTile
             label="Meilleure partie"
@@ -131,8 +132,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
         {!hasStats ? (
           <p className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
-            Aucune statistique pour l&apos;instant. Les graphiques apparaîtront dès la
-            première carte jouée avec un scoreboard importé.
+            Aucune statistique pour l&apos;instant. Les graphiques apparaîtront dès la première
+            carte jouée avec un scoreboard importé.
           </p>
         ) : (
           <>
@@ -151,13 +152,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 Agents joués
               </h2>
               <p className="mb-4 text-xs text-[var(--text-muted)]">
-                Part des cartes jouées. Chaque part porte le portrait de son agent et sa
-                couleur officielle.
+                Part des cartes jouées. Chaque part porte le portrait de son agent et sa couleur
+                officielle.
               </p>
-              <AgentDonut
-                agents={agentSlices}
-                totalMaps={overview.maps}
-              />
+              <AgentDonut agents={agentSlices} totalMaps={overview.maps} />
             </section>
 
             <section>
@@ -231,7 +229,11 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
             {player.photo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={player.photo} alt="" className="h-20 w-20 shrink-0 rounded-full object-cover" />
+              <img
+                src={player.photo}
+                alt=""
+                className="h-20 w-20 shrink-0 rounded-full object-cover"
+              />
             ) : (
               <div className="monogram grid h-20 w-20 shrink-0 place-items-center rounded-full text-xl">
                 {player.pseudo.slice(0, 2).toUpperCase()}
@@ -258,7 +260,11 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                   >
                     {currentTeam.team.logo ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={currentTeam.team.logo} alt="" className="h-4 w-4 shrink-0 rounded object-cover" />
+                      <img
+                        src={currentTeam.team.logo}
+                        alt=""
+                        className="h-4 w-4 shrink-0 rounded object-cover"
+                      />
                     ) : (
                       <span className="monogram grid h-4 w-4 shrink-0 place-items-center rounded text-[8px]">
                         {currentTeam.team.tag.slice(0, 2).toUpperCase()}

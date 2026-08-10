@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  REGIONS,
-  TOURNAMENT_FORMATS,
-  TOURNAMENT_STATUSES,
-  SEEDING_TYPES,
-} from "@/lib/constants";
+import { REGIONS, TOURNAMENT_FORMATS, TOURNAMENT_STATUSES, SEEDING_TYPES } from "@/lib/constants";
 import { optionalUrl, optionalTwitterUrl, optionalTwitchUrl } from "@/lib/validation/common";
 
 // Entier positif optionnel : "" ou absent -> undefined.
@@ -57,10 +52,13 @@ export const tournamentInputSchema = z
     message: "La date de fin doit suivre la date de début",
     path: ["endDate"],
   })
-  .refine((v) => v.groupSize === undefined || v.maxTeams === undefined || v.groupSize <= v.maxTeams, {
-    message: "La taille de poule ne peut pas dépasser le nombre d'équipes",
-    path: ["groupSize"],
-  });
+  .refine(
+    (v) => v.groupSize === undefined || v.maxTeams === undefined || v.groupSize <= v.maxTeams,
+    {
+      message: "La taille de poule ne peut pas dépasser le nombre d'équipes",
+      path: ["groupSize"],
+    }
+  );
 
 export type TournamentInput = z.infer<typeof tournamentInputSchema>;
 

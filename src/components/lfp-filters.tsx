@@ -11,19 +11,18 @@ import { hasActiveLfpFilter, lfpHref, type LfpFilters } from "@/lib/lfp";
  * les équipes ouvertes à tous les rôles, d'où le libellé « recrute à ce
  * poste » plutôt qu'un simple nom de rôle.
  */
-export default function LfpFilters({
-  filters,
-  total,
-}: {
-  filters: LfpFilters;
-  total: number;
-}) {
+export default function LfpFilters({ filters, total }: { filters: LfpFilters; total: number }) {
   const { role, q } = filters;
 
   return (
     <div className="grid gap-3">
       <Segmented activeKey={role ?? "all"} className="justify-self-start">
-        <Link href={lfpHref({ ...filters, role: undefined })} className="t-tab" role="tab" aria-selected={!role}>
+        <Link
+          href={lfpHref({ ...filters, role: undefined })}
+          className="t-tab"
+          role="tab"
+          aria-selected={!role}
+        >
           Tous les postes
         </Link>
         {VALORANT_ROLES.map((r) => (

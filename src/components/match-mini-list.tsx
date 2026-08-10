@@ -27,7 +27,13 @@ function TeamLine({
     <div className={`flex items-center gap-2 ${defeated ? "opacity-60" : ""}`}>
       {team?.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" decoding="async" src={team.logo} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={team.logo}
+          alt=""
+          className="h-6 w-6 shrink-0 rounded object-cover"
+        />
       ) : (
         <div className="grid h-6 w-6 shrink-0 place-items-center rounded bg-[var(--surface)] text-[9px] text-[var(--text-muted)]">
           {team?.tag?.slice(0, 3).toUpperCase() ?? "?"}

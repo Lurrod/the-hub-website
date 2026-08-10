@@ -1,12 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  clampPage,
-  pageCount,
-  pageHref,
-  pageOffset,
-  pageRange,
-  parsePage,
-} from "@/lib/pagination";
+import { clampPage, pageCount, pageHref, pageOffset, pageRange, parsePage } from "@/lib/pagination";
 
 describe("parsePage", () => {
   it("lit un numéro de page valide", () => expect(parsePage("3")).toBe(3));

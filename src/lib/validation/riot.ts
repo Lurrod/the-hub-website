@@ -16,14 +16,17 @@ export function parseRiotId(input: string): ParsedRiotId {
   return { name, tag };
 }
 
-export const riotIdSchema = z.string().trim().refine(
-  (v) => {
-    try {
-      parseRiotId(v);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: "Format Riot ID invalide (Nom#Tag)" }
-);
+export const riotIdSchema = z
+  .string()
+  .trim()
+  .refine(
+    (v) => {
+      try {
+        parseRiotId(v);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Format Riot ID invalide (Nom#Tag)" }
+  );

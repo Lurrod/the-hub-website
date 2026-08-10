@@ -60,8 +60,8 @@ Riot à retrouver.
 - Type `HenrikMatch` (sous-ensemble utilisé) :
   - `metadata`: `{ match_id, map: { name }, started_at }`
   - `players`: `[{ puuid, name, tag, team_id ("Red"|"Blue"), agent: { name },
-    stats: { kills, deaths, assists, score, headshots, bodyshots, legshots,
-    damage_made? }, ... }]`
+stats: { kills, deaths, assists, score, headshots, bodyshots, legshots,
+damage_made? }, ... }]`
   - `teams`: `[{ team_id, rounds: { won, lost } }]`
   - `rounds`: utilisés seulement si nécessaire pour ACS/ADR (voir §4).
   - Les champs réels de l'API v4 sont validés/mappés dans le client (tolérant aux
@@ -87,6 +87,7 @@ Riot à retrouver.
 ### 4. Calcul des stats par joueur
 
 Pour chaque joueur d'une partie :
+
 - `rounds = roundsA + roundsB` (total de la carte).
 - `acs = round(stats.score / rounds)` (0 si rounds = 0).
 - `adr = round(stats.damage_made / rounds)` si `damage_made` dispo, sinon 0.

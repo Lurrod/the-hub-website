@@ -211,11 +211,19 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       assistants?: { puuid?: string }[];
     }[];
     players?: {
-      puuid?: string; name?: string; tag?: string; team_id?: string;
+      puuid?: string;
+      name?: string;
+      tag?: string;
+      team_id?: string;
       agent?: { name?: string };
       stats?: {
-        kills?: number; deaths?: number; assists?: number; score?: number;
-        headshots?: number; bodyshots?: number; legshots?: number;
+        kills?: number;
+        deaths?: number;
+        assists?: number;
+        score?: number;
+        headshots?: number;
+        bodyshots?: number;
+        legshots?: number;
         damage?: { dealt?: number };
       };
     }[];

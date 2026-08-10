@@ -13,10 +13,4 @@ export const SITE_NAME = "The Hub";
  * Les pages de gestion vivent sous /equipes/<id>/gestion et
  * /tournois/<id>/gestion, d'où le motif suffixé traité à part.
  */
-export const PRIVATE_PATHS = [
-  "/admin",
-  "/profil",
-  "/onboarding",
-  "/rejoindre",
-  "/api",
-] as const;
+export const PRIVATE_PATHS = ["/admin", "/profil", "/onboarding", "/rejoindre", "/api"] as const;

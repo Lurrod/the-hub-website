@@ -3,6 +3,8 @@ import { getPlayerByUserId } from "@/lib/data/players";
 import LandingHero from "@/components/landing-hero";
 import LandingFeed from "@/components/landing-feed";
 import { pageMetadata } from "@/lib/metadata";
+import JsonLdScript from "@/components/json-ld";
+import { siteJsonLd } from "@/lib/structured-data";
 
 export const metadata = pageMetadata({ path: "/" });
 
@@ -26,11 +28,8 @@ export default async function HomePage() {
 
   return (
     <main>
-      <LandingHero
-        isLoggedIn={isLoggedIn}
-        primaryHref={profileHref}
-        signInAction={signInDiscord}
-      />
+      <JsonLdScript data={siteJsonLd()} />
+      <LandingHero isLoggedIn={isLoggedIn} primaryHref={profileHref} signInAction={signInDiscord} />
       {SHOW_FEED && <LandingFeed isLoggedIn={isLoggedIn} />}
     </main>
   );

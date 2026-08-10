@@ -4,6 +4,8 @@ import TournamentFilters from "@/components/tournament-filters";
 import TournamentListRow from "@/components/tournament-list-row";
 import { monthKey, monthLabel, daysUntil } from "@/lib/dates";
 import { pageMetadata } from "@/lib/metadata";
+import JsonLdScript from "@/components/json-ld";
+import { itemListJsonLd } from "@/lib/structured-data";
 
 export const metadata = pageMetadata({
   path: "/tournois",
@@ -36,6 +38,12 @@ export default async function TournamentsPage({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
+      <JsonLdScript
+        data={itemListJsonLd(
+          "Tournois",
+          tournaments.map((t) => ({ path: `/tournois/${t.id}`, name: t.name }))
+        )}
+      />
       <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
         Tournois
       </h1>

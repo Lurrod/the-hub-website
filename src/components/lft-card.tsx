@@ -22,7 +22,13 @@ export default function LftCard({ player }: { player: LftPlayerCardData }) {
     >
       {player.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" decoding="async" src={player.photo} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={player.photo}
+          alt=""
+          className="h-12 w-12 shrink-0 rounded-full object-cover"
+        />
       ) : (
         <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--surface)] text-xs text-[var(--text-muted)]">
           {player.pseudo.slice(0, 2).toUpperCase()}
@@ -37,7 +43,13 @@ export default function LftCard({ player }: { player: LftPlayerCardData }) {
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
             {roleIcon && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img loading="lazy" decoding="async" src={roleIcon} alt="" className="h-3.5 w-3.5 shrink-0 opacity-70" />
+              <img
+                loading="lazy"
+                decoding="async"
+                src={roleIcon}
+                alt=""
+                className="h-3.5 w-3.5 shrink-0 opacity-70"
+              />
             )}
             {role}
           </div>

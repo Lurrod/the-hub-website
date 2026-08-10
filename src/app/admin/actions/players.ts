@@ -17,6 +17,7 @@ import {
 } from "@/lib/data/players";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
+import { deleteStoredImage } from "@/lib/images";
 import { flashCodeFromError } from "@/lib/form-errors";
 import type { MembershipRole } from "@prisma/client";
 
@@ -80,6 +81,9 @@ export async function updatePlayerAction(playerId: string, formData: FormData) {
 export async function deletePlayerAction(playerId: string) {
   await requireAdmin();
   await deletePlayer(playerId);
+  // La photo est une donnée personnelle : elle doit disparaître du disque en
+  // même temps que la fiche, pas seulement de la base (RGPD-01).
+  await deleteStoredImage("players", playerId);
   redirect("/admin/joueurs");
 }
 
@@ -99,7 +103,12 @@ export async function addRosterMemberAction(teamId: string, formData: FormData) 
     nationality: formData.get("nationality") || undefined,
     role: formData.get("role") || "JOUEUR",
   });
-  const created = await createPlayerAndAddToRoster(teamId, data.pseudo, data.nationality, data.role);
+  const created = await createPlayerAndAddToRoster(
+    teamId,
+    data.pseudo,
+    data.nationality,
+    data.role
+  );
   const riotInput = String(formData.get("riotId") ?? "").trim();
   if (riotInput) {
     try {

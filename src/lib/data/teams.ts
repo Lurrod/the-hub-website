@@ -296,9 +296,7 @@ export async function listTeamsManagedBy(userId: string) {
     where: { userId },
     include: { team: { select: { id: true, name: true, tag: true } } },
   });
-  return rows
-    .map((r) => r.team)
-    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  return rows.map((r) => r.team).sort((a, b) => a.name.localeCompare(b.name, "fr"));
 }
 
 /** Joueurs actifs du roster (hors COACH / MANAGER), pour le seuil d'inscription. */

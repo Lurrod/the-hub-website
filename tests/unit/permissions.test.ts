@@ -18,23 +18,16 @@ describe("isAdmin", () => {
 });
 
 describe("canManageTeam", () => {
-  it("admin peut toujours", () =>
-    expect(canManageTeam(admin, ["u9"])).toBe(true));
-  it("manager de l'équipe peut", () =>
-    expect(canManageTeam(user, ["u2", "u3"])).toBe(true));
-  it("non-manager ne peut pas", () =>
-    expect(canManageTeam(user, ["u3"])).toBe(false));
-  it("null ne peut pas", () =>
-    expect(canManageTeam(null, ["u2"])).toBe(false));
+  it("admin peut toujours", () => expect(canManageTeam(admin, ["u9"])).toBe(true));
+  it("manager de l'équipe peut", () => expect(canManageTeam(user, ["u2", "u3"])).toBe(true));
+  it("non-manager ne peut pas", () => expect(canManageTeam(user, ["u3"])).toBe(false));
+  it("null ne peut pas", () => expect(canManageTeam(null, ["u2"])).toBe(false));
 });
 
 describe("canManageTournament", () => {
-  it("admin peut toujours", () =>
-    expect(canManageTournament(admin, ["u9"])).toBe(true));
-  it("manager du tournoi peut", () =>
-    expect(canManageTournament(user, ["u2"])).toBe(true));
-  it("non-manager ne peut pas", () =>
-    expect(canManageTournament(user, ["u3"])).toBe(false));
+  it("admin peut toujours", () => expect(canManageTournament(admin, ["u9"])).toBe(true));
+  it("manager du tournoi peut", () => expect(canManageTournament(user, ["u2"])).toBe(true));
+  it("non-manager ne peut pas", () => expect(canManageTournament(user, ["u3"])).toBe(false));
 });
 
 const owner = { userId: "u2", role: "OWNER" as const };
@@ -64,7 +57,6 @@ describe("isLastOwner", () => {
     expect(isLastOwner([owner, simple], "u2")).toBe(true));
   it("faux quand un autre propriétaire subsiste", () =>
     expect(isLastOwner([owner, { userId: "u5", role: "OWNER" }], "u2")).toBe(false));
-  it("faux pour un simple manager", () =>
-    expect(isLastOwner([owner, simple], "u4")).toBe(false));
+  it("faux pour un simple manager", () => expect(isLastOwner([owner, simple], "u4")).toBe(false));
   it("faux sans aucun propriétaire", () => expect(isLastOwner([simple], "u4")).toBe(false));
 });

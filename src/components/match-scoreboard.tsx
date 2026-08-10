@@ -61,8 +61,16 @@ function OutcomeIcon({ o }: { o: string }) {
 
 function Crest({ url, tag, size }: { url: string | null; tag: string; size: string }) {
   if (url) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img loading="lazy" decoding="async" src={url} alt="" className={`${size} shrink-0 rounded object-cover`} />;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        loading="lazy"
+        decoding="async"
+        src={url}
+        alt=""
+        className={`${size} shrink-0 rounded object-cover`}
+      />
+    );
   }
   return (
     <span
@@ -176,11 +184,13 @@ function RoundTimeline({
   );
 }
 
-const HEAD = "px-1.5 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
+const HEAD =
+  "px-1.5 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
 const CELL = "stat px-1.5 py-1.5 text-center text-sm text-white";
 
 function Diff({ value }: { value: number }) {
-  const cls = value > 0 ? "text-[#289a87]" : value < 0 ? "text-[#c05655]" : "text-[var(--text-muted)]";
+  const cls =
+    value > 0 ? "text-[#289a87]" : value < 0 ? "text-[#c05655]" : "text-[var(--text-muted)]";
   return <span className={cls}>{value > 0 ? `+${value}` : value}</span>;
 }
 
@@ -198,18 +208,40 @@ function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
         </colgroup>
         <thead>
           <tr className="border-b border-[var(--border)]">
-            <th colSpan={2} />
-            <th className={HEAD}>R</th>
-            <th className={HEAD}>ACS</th>
-            <th className={HEAD}>K</th>
-            <th className={HEAD}>D</th>
-            <th className={HEAD}>A</th>
-            <th className={HEAD}>+/−</th>
-            <th className={HEAD}>KAST</th>
-            <th className={HEAD}>ADR</th>
-            <th className={HEAD}>FK</th>
-            <th className={HEAD}>FD</th>
-            <th className={`${HEAD} pr-2`}>+/−</th>
+            <th colSpan={2} scope="col" />
+            <th scope="col" className={HEAD}>
+              R
+            </th>
+            <th scope="col" className={HEAD}>
+              ACS
+            </th>
+            <th scope="col" className={HEAD}>
+              K
+            </th>
+            <th scope="col" className={HEAD}>
+              D
+            </th>
+            <th scope="col" className={HEAD}>
+              A
+            </th>
+            <th scope="col" className={HEAD}>
+              +/−
+            </th>
+            <th scope="col" className={HEAD}>
+              KAST
+            </th>
+            <th scope="col" className={HEAD}>
+              ADR
+            </th>
+            <th scope="col" className={HEAD}>
+              FK
+            </th>
+            <th scope="col" className={HEAD}>
+              FD
+            </th>
+            <th scope="col" className={`${HEAD} pr-2`}>
+              +/−
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -221,32 +253,44 @@ function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
             </tr>
           )}
           {sorted.map((r) => (
-            <tr key={r.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--table-row-hover)]">
+            <tr
+              key={r.id}
+              className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--table-row-hover)]"
+            >
               <td className="w-7 py-1.5 pl-2">
                 <AgentIcon agent={r.agent} />
               </td>
               <td className="max-w-[130px] truncate py-1.5 pl-2 pr-2 text-left text-sm">
                 {r.playerId ? (
-                  <Link href={`/joueurs/${r.playerId}`} className="text-white hover:text-[var(--accent)]">
+                  <Link
+                    href={`/joueurs/${r.playerId}`}
+                    className="text-white hover:text-[var(--accent)]"
+                  >
                     {r.pseudo ?? r.riotName}
                   </Link>
                 ) : (
                   <span className="text-[var(--text-muted)]">{r.riotName}</span>
                 )}
               </td>
-              <td className={`${CELL} font-semibold ${r.rating >= 1 ? "text-white" : "text-[var(--text-muted)]"}`}>
+              <td
+                className={`${CELL} font-semibold ${r.rating >= 1 ? "text-white" : "text-[var(--text-muted)]"}`}
+              >
                 {r.rating.toFixed(2)}
               </td>
               <td className={CELL}>{r.acs}</td>
               <td className={CELL}>{r.kills}</td>
               <td className={CELL}>{r.deaths}</td>
               <td className={CELL}>{r.assists}</td>
-              <td className={CELL}><Diff value={r.kills - r.deaths} /></td>
+              <td className={CELL}>
+                <Diff value={r.kills - r.deaths} />
+              </td>
               <td className={CELL}>{r.kast}%</td>
               <td className={CELL}>{r.adr}</td>
               <td className={CELL}>{r.firstKills}</td>
               <td className={CELL}>{r.firstDeaths}</td>
-              <td className={`${CELL} pr-2`}><Diff value={r.firstKills - r.firstDeaths} /></td>
+              <td className={`${CELL} pr-2`}>
+                <Diff value={r.firstKills - r.firstDeaths} />
+              </td>
             </tr>
           ))}
         </tbody>

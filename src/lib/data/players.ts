@@ -282,9 +282,7 @@ export async function attachRosterPlayer(
   role: MembershipRole
 ) {
   const existing = await findReusablePlayer(tx, pseudo);
-  const player =
-    existing ??
-    (await tx.player.create({ data: { pseudo, nationality } }));
+  const player = existing ?? (await tx.player.create({ data: { pseudo, nationality } }));
   await tx.teamMembership.create({ data: { teamId, playerId: player.id, role } });
   return player;
 }
@@ -359,7 +357,10 @@ export function findPlayerByPuuid(
 }
 
 /** True si ce puuid est déjà pris par un AUTRE joueur. */
-export async function isPuuidTakenByOther(puuid: string, excludePlayerId?: string): Promise<boolean> {
+export async function isPuuidTakenByOther(
+  puuid: string,
+  excludePlayerId?: string
+): Promise<boolean> {
   return (await findPlayerByPuuid(puuid, excludePlayerId)) !== null;
 }
 
@@ -375,8 +376,16 @@ export async function claimPlayerFiche(claimedId: string, temporaryId: string): 
   const temp = await db.player.findUnique({
     where: { id: temporaryId },
     select: {
-      userId: true, pseudo: true, realName: true, nationality: true, photo: true,
-      socials: true, valorantRole: true, birthdate: true, lft: true, lftSince: true,
+      userId: true,
+      pseudo: true,
+      realName: true,
+      nationality: true,
+      photo: true,
+      socials: true,
+      valorantRole: true,
+      birthdate: true,
+      lft: true,
+      lftSince: true,
     },
   });
   if (!temp?.userId) throw new Error("CLAIM_NO_USER");
@@ -385,8 +394,14 @@ export async function claimPlayerFiche(claimedId: string, temporaryId: string): 
     // Par sécurité : en pratique la fiche temporaire n'a ni adhésion ni stat,
     // l'inscription étant bloquante avant tout le reste. Mais les déplacer
     // vaut mieux que de les perdre dans la suppression.
-    db.teamMembership.updateMany({ where: { playerId: temporaryId }, data: { playerId: claimedId } }),
-    db.playerGameStat.updateMany({ where: { playerId: temporaryId }, data: { playerId: claimedId } }),
+    db.teamMembership.updateMany({
+      where: { playerId: temporaryId },
+      data: { playerId: claimedId },
+    }),
+    db.playerGameStat.updateMany({
+      where: { playerId: temporaryId },
+      data: { playerId: claimedId },
+    }),
     // Le `userId` est unique : il faut le libérer avant de le poser ailleurs.
     db.player.delete({ where: { id: temporaryId } }),
     db.player.update({
@@ -440,11 +455,7 @@ export function getActiveMembership(playerId: string) {
 }
 
 /** Ajoute un joueur au roster d'une équipe (rôle JOUEUR par défaut). */
-export function addPlayerToTeam(
-  teamId: string,
-  playerId: string,
-  role: MembershipRole = "JOUEUR"
-) {
+export function addPlayerToTeam(teamId: string, playerId: string, role: MembershipRole = "JOUEUR") {
   return db.teamMembership.create({ data: { teamId, playerId, role } });
 }
 

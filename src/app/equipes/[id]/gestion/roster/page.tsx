@@ -15,11 +15,7 @@ import {
 
 import { teamTitle } from "@/lib/data/titles";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await teamTitle(id);
   return { title: name ? `Roster · ${name}` : "Roster" };
@@ -48,7 +44,10 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-1 text-2xl font-bold text-white">Roster<span className="dot-sep">·</span>{team.name}</h1>
+      <h1 className="mb-1 text-2xl font-bold text-white">
+        Roster<span className="dot-sep">·</span>
+        {team.name}
+      </h1>
       <Link
         href={`/equipes/${id}/gestion`}
         className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
@@ -64,7 +63,10 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
           const removeM = removeMemberAction.bind(null, id, m.id);
           return (
             <li key={m.id} className="flex flex-wrap items-center gap-3 p-3">
-              <Link href={`/joueurs/${m.playerId}`} className="font-medium text-white hover:text-[var(--accent)]">
+              <Link
+                href={`/joueurs/${m.playerId}`}
+                className="font-medium text-white hover:text-[var(--accent)]"
+              >
                 {m.player.pseudo}
               </Link>
               <span className="text-xs text-[var(--text-muted)]">{ROLE_LABELS[m.role]}</span>
@@ -110,8 +112,7 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
         </form>
         <p className="mt-2 text-xs text-[var(--text-muted)]">
           Crée un nouveau joueur et l&apos;ajoute au roster. Les dates d&apos;arrivée sont fixées à
-          aujourd&apos;hui
-          (la saisie de dates historiques précises viendra en finition).
+          aujourd&apos;hui (la saisie de dates historiques précises viendra en finition).
         </p>
       </section>
     </main>

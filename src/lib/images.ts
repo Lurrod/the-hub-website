@@ -124,3 +124,36 @@ export async function processAndStoreImage(
   await pipeline.webp({ quality: 82 }).toFile(out);
   return imageKeyFor(category, id, variant);
 }
+
+/** Variantes qu'une entité peut avoir déposées sur le disque. */
+const STORED_VARIANTS: (ImageVariant | undefined)[] = [undefined, "banner"];
+
+/**
+ * Efface du disque les images d'une entité supprimée.
+ *
+ * Retirer la ligne en base ne suffit pas : le fichier restait servi par
+ * `/api/images` à qui en connaissait l'URL, et la clé est déterministe
+ * (`imageKeyFor`) donc devinable. C'est l'engagement d'effacement de la
+ * politique de confidentialité qui l'exige, en plus de la croissance sans
+ * limite du volume.
+ *
+ * Les deux variantes sont tentées sans distinction : une entité sans bannière
+ * n'a pas de fichier à ce nom, et un fichier absent n'est pas une erreur.
+ * Toute autre défaillance (permissions, disque) est laissée remonter — un
+ * effacement silencieusement raté vaudrait moins que pas d'effacement du tout.
+ */
+export async function deleteStoredImage(category: ImageCategory, id: string): Promise<void> {
+  await Promise.all(
+    STORED_VARIANTS.map(async (variant) => {
+      const suffix = variant === "banner" ? "-banner" : "";
+      // Même garde que la lecture : l'identifiant vient d'une URL, il repasse
+      // par le résolveur qui refuse catégories inconnues et traversées.
+      const target = resolveUploadPath([category, `${id}${suffix}.webp`]);
+      try {
+        await fs.unlink(target);
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException)?.code !== "ENOENT") throw e;
+      }
+    })
+  );
+}

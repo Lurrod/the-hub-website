@@ -12,6 +12,8 @@ import DirectoryFiltersBar from "@/components/player-directory-filters";
 import Pagination from "@/components/pagination";
 import { pageOffset, parsePage } from "@/lib/pagination";
 import { pageMetadata } from "@/lib/metadata";
+import JsonLdScript from "@/components/json-ld";
+import { itemListJsonLd } from "@/lib/structured-data";
 
 export const metadata = pageMetadata({
   path: "/joueurs",
@@ -40,7 +42,15 @@ export default async function PlayersPage({
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Joueurs</h1>
+      <JsonLdScript
+        data={itemListJsonLd(
+          "Joueurs",
+          players.map((p) => ({ path: `/joueurs/${p.id}`, name: p.pseudo }))
+        )}
+      />
+      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Joueurs
+      </h1>
       <p className="mt-1 text-xs text-[var(--text-muted)]">
         Le classement de la scène, calculé sur les cartes jouées en tournoi. Les joueurs sans partie
         importée figurent en fin de liste.

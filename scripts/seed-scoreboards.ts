@@ -14,14 +14,50 @@ import { computeRating } from "../src/lib/match-stats-core";
 const db = new PrismaClient();
 const TID = "vlr-emea-s1";
 
-const MAP_POOL = ["Ascent", "Haven", "Bind", "Split", "Lotus", "Sunset", "Icebox", "Abyss", "Corrode"];
-const AGENT_POOL = [
-  "Jett", "Raze", "Phoenix", "Neon", "Yoru",
-  "Omen", "Brimstone", "Astra", "Harbor", "Clove",
-  "Sova", "Breach", "Skye", "KAY/O", "Fade",
-  "Killjoy", "Cypher", "Chamber", "Sage", "Vyse",
+const MAP_POOL = [
+  "Ascent",
+  "Haven",
+  "Bind",
+  "Split",
+  "Lotus",
+  "Sunset",
+  "Icebox",
+  "Abyss",
+  "Corrode",
 ];
-const OUTCOMES = ["elim", "elim", "elim", "elim", "elim", "detonate", "detonate", "defuse", "time"] as const;
+const AGENT_POOL = [
+  "Jett",
+  "Raze",
+  "Phoenix",
+  "Neon",
+  "Yoru",
+  "Omen",
+  "Brimstone",
+  "Astra",
+  "Harbor",
+  "Clove",
+  "Sova",
+  "Breach",
+  "Skye",
+  "KAY/O",
+  "Fade",
+  "Killjoy",
+  "Cypher",
+  "Chamber",
+  "Sage",
+  "Vyse",
+];
+const OUTCOMES = [
+  "elim",
+  "elim",
+  "elim",
+  "elim",
+  "elim",
+  "detonate",
+  "detonate",
+  "defuse",
+  "time",
+] as const;
 
 // Agents par rôle : un joueur tourne dans le vivier de son rôle, avec un main
 // qui revient souvent. Sans ça, ses « agents les plus joués » seraient aléatoires
@@ -90,9 +126,20 @@ function baseRow(
   // fermé, les kills d'un camp SONT les morts de l'autre. Les tirer chacun de
   // leur côté donnait un tournoi où plus personne n'avait un K/D sous 1.
   return {
-    riotName: pseudo, playerId, teamSide: side, agent,
-    kills: 0, deaths: 0, assists, acs, adr, hsPct, kast, rating: 0,
-    firstKills: 0, firstDeaths: 0,
+    riotName: pseudo,
+    playerId,
+    teamSide: side,
+    agent,
+    kills: 0,
+    deaths: 0,
+    assists,
+    acs,
+    adr,
+    hsPct,
+    kast,
+    rating: 0,
+    firstKills: 0,
+    firstDeaths: 0,
   };
 }
 
@@ -200,11 +247,13 @@ async function main() {
     const [rosterA, rosterB] = await Promise.all([
       db.teamMembership.findMany({
         where: { teamId: m.teamAId, role: "JOUEUR", leaveDate: null },
-        select: { playerId: true, player: { select: { pseudo: true, valorantRole: true } } }, take: 5,
+        select: { playerId: true, player: { select: { pseudo: true, valorantRole: true } } },
+        take: 5,
       }),
       db.teamMembership.findMany({
         where: { teamId: m.teamBId, role: "JOUEUR", leaveDate: null },
-        select: { playerId: true, player: { select: { pseudo: true, valorantRole: true } } }, take: 5,
+        select: { playerId: true, player: { select: { pseudo: true, valorantRole: true } } },
+        take: 5,
       }),
     ]);
     if (rosterA.length < 5 || rosterB.length < 5) continue;
@@ -230,8 +279,12 @@ async function main() {
           rosterB.map((r) => ({ playerId: r.playerId, valorantRole: r.player.valorantRole }))
         );
         const rows: Row[] = [
-          ...rosterA.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, rounds, idx)),
-          ...rosterB.map((r, idx) => baseRow(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, rounds, idx)),
+          ...rosterA.map((r, idx) =>
+            baseRow(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, rounds, idx)
+          ),
+          ...rosterB.map((r, idx) =>
+            baseRow(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, rounds, idx)
+          ),
         ];
         balanceDuels(rows, rounds, aWon);
         distributeFirsts(rows, rounds);
@@ -253,32 +306,38 @@ async function main() {
           return rand(16500, 24000);
         };
 
-        const timeline = shuffle([
-          ...Array(roundsA).fill("A"),
-          ...Array(roundsB).fill("B"),
-        ]).map((w: "A" | "B", idx: number) => {
-          const entry = {
-            w,
-            o: OUTCOMES[rand(0, OUTCOMES.length - 1)],
-            s: idx < 12 ? attackerFirstHalf : flip(attackerFirstHalf),
-            ea: buy("A", idx),
-            eb: buy("B", idx),
-          };
-          lossStreak[w] = 0;
-          lossStreak[flip(w)] += 1;
-          return entry;
-        });
+        const timeline = shuffle([...Array(roundsA).fill("A"), ...Array(roundsB).fill("B")]).map(
+          (w: "A" | "B", idx: number) => {
+            const entry = {
+              w,
+              o: OUTCOMES[rand(0, OUTCOMES.length - 1)],
+              s: idx < 12 ? attackerFirstHalf : flip(attackerFirstHalf),
+              ea: buy("A", idx),
+              eb: buy("B", idx),
+            };
+            lossStreak[w] = 0;
+            lossStreak[flip(w)] += 1;
+            return entry;
+          }
+        );
 
         const map = await tx.matchMap.create({
           data: {
-            matchId: m.id, mapName: mapNames[i], scoreA: roundsA, scoreB: roundsB,
-            order: i, riotMatchId: `sim-${m.id}-${i}`, startedAt: new Date("2026-05-01T18:00:00Z"),
+            matchId: m.id,
+            mapName: mapNames[i],
+            scoreA: roundsA,
+            scoreB: roundsB,
+            order: i,
+            riotMatchId: `sim-${m.id}-${i}`,
+            startedAt: new Date("2026-05-01T18:00:00Z"),
             // Durée réaliste : ~1m40-1m55 par round + un peu d'overhead (buy phases, pauses).
             durationSec: rounds * rand(95, 115) + rand(90, 240),
             roundTimeline: timeline,
           },
         });
-        await tx.playerGameStat.createMany({ data: rows.map((r) => ({ matchMapId: map.id, ...r })) });
+        await tx.playerGameStat.createMany({
+          data: rows.map((r) => ({ matchMapId: map.id, ...r })),
+        });
       }
 
       await tx.match.update({
@@ -289,7 +348,9 @@ async function main() {
     done++;
   }
 
-  console.log(`OK - scoreboards simulés (rating/KAST/FK-FD + timeline) sur ${done} match(s) du tournoi ${TID}.`);
+  console.log(
+    `OK - scoreboards simulés (rating/KAST/FK-FD + timeline) sur ${done} match(s) du tournoi ${TID}.`
+  );
 }
 
 main()

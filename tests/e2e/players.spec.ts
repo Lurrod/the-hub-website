@@ -17,7 +17,9 @@ test("la page équipe affiche le roster avec le joueur", async ({ page }) => {
 // La gestion de roster a quitte /admin pour /equipes/<id>/gestion/roster. Un
 // visiteur sans session y est renvoye vers la connexion par le backstop de
 // src/proxy.ts, avec l'URL demandee en callback.
-test("la gestion de roster renvoie un visiteur non connecté vers la connexion", async ({ page }) => {
+test("la gestion de roster renvoie un visiteur non connecté vers la connexion", async ({
+  page,
+}) => {
   await page.goto("/equipes/seed-team-alpha/gestion/roster");
   await expect(page).toHaveURL(/\/api\/auth\/signin/);
 });

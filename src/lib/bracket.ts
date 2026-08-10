@@ -15,8 +15,7 @@ export type BracketMatchData = {
 
 /** Une case de l'arbre : un match réel, ou un emplacement vide (bye). */
 export type BracketSlot =
-  | { kind: "match"; key: string; match: BracketMatchData }
-  | { kind: "bye"; key: string };
+  { kind: "match"; key: string; match: BracketMatchData } | { kind: "bye"; key: string };
 
 export type BracketRound = { name: string; slots: BracketSlot[] };
 
@@ -179,7 +178,8 @@ function sortRounds(rounds: RawRound[]): RawRound[] {
 
 function sortMatches(matches: BracketMatchData[]): BracketMatchData[] {
   return [...matches].sort(
-    (a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
+    (a, b) =>
+      (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) ||
       a.id.localeCompare(b.id)
   );
 }
@@ -213,7 +213,9 @@ function toSlots(matches: BracketMatchData[], size: number, roundKey: string): B
   }
 
   return slots.map((m, i) =>
-    m ? { kind: "match" as const, key: m.id, match: m } : { kind: "bye" as const, key: `${roundKey}-bye-${i}` }
+    m
+      ? { kind: "match" as const, key: m.id, match: m }
+      : { kind: "bye" as const, key: `${roundKey}-bye-${i}` }
   );
 }
 
@@ -270,10 +272,7 @@ function groupBySection(matches: BracketMatchData[]): Map<BracketSectionKey, Raw
   }
   const out = new Map<BracketSectionKey, RawRound[]>();
   for (const [key, rounds] of bySection) {
-    out.set(
-      key,
-      sortRounds([...rounds.entries()].map(([label, ms]) => ({ label, matches: ms })))
-    );
+    out.set(key, sortRounds([...rounds.entries()].map(([label, ms]) => ({ label, matches: ms }))));
   }
   return out;
 }
@@ -316,9 +315,12 @@ export function buildBracket(matches: BracketMatchData[], format: TournamentForm
     const upper = mergeRounds(bySection.get("upper"), bySection.get("single"));
     const lower = bySection.get("lower") ?? [];
     const final = bySection.get("final") ?? [];
-    if (upper.length > 0) sections.push({ key: "upper", title: SECTION_TITLE.upper, rounds: buildTreeRounds(upper) });
-    if (lower.length > 0) sections.push({ key: "lower", title: SECTION_TITLE.lower, rounds: buildFlatRounds(lower) });
-    if (final.length > 0) sections.push({ key: "final", title: SECTION_TITLE.final, rounds: buildFlatRounds(final) });
+    if (upper.length > 0)
+      sections.push({ key: "upper", title: SECTION_TITLE.upper, rounds: buildTreeRounds(upper) });
+    if (lower.length > 0)
+      sections.push({ key: "lower", title: SECTION_TITLE.lower, rounds: buildFlatRounds(lower) });
+    if (final.length > 0)
+      sections.push({ key: "final", title: SECTION_TITLE.final, rounds: buildFlatRounds(final) });
     return { layout, sections };
   }
 

@@ -35,6 +35,7 @@
 ## Task 1: Parsing & validation du Riot ID
 
 **Files:**
+
 - Create: `src/lib/validation/riot.ts`
 - Test: `tests/unit/validation-riot.test.ts`
 
@@ -100,17 +101,20 @@ export function parseRiotId(input: string): ParsedRiotId {
   return { name, tag };
 }
 
-export const riotIdSchema = z.string().trim().refine(
-  (v) => {
-    try {
-      parseRiotId(v);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: "Format Riot ID invalide (Nom#Tag)" }
-);
+export const riotIdSchema = z
+  .string()
+  .trim()
+  .refine(
+    (v) => {
+      try {
+        parseRiotId(v);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Format Riot ID invalide (Nom#Tag)" }
+  );
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -130,6 +134,7 @@ git commit -m "feat: add Riot ID parsing and validation"
 ## Task 2: Client HenrikDev (`verifyRiotId`)
 
 **Files:**
+
 - Create: `src/lib/henrikdev.ts`
 - Test: `tests/unit/henrikdev.test.ts`
 
@@ -156,9 +161,15 @@ afterEach(() => {
 describe("verifyRiotId", () => {
   it("retourne puuid/region sur succès", async () => {
     vi.stubEnv("HENRIKDEV_API_KEY", "k");
-    vi.stubGlobal("fetch", mockFetch(200, { data: { puuid: "p-1", region: "eu", name: "Zed", tag: "EUW" } }));
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(200, { data: { puuid: "p-1", region: "eu", name: "Zed", tag: "EUW" } })
+    );
     await expect(verifyRiotId("Zed", "EUW")).resolves.toEqual({
-      puuid: "p-1", region: "eu", name: "Zed", tag: "EUW",
+      puuid: "p-1",
+      region: "eu",
+      name: "Zed",
+      tag: "EUW",
     });
   });
   it("404 -> NOT_FOUND", async () => {
@@ -253,6 +264,7 @@ git commit -m "feat: add HenrikDev account verification client"
 ## Task 3: Schéma Prisma + migration (`Player`)
 
 **Files:**
+
 - Modify: `prisma/schema.prisma` (model `Player`)
 - Create: `prisma/migrations/20260726030000_player_riot_id/migration.sql`
 
@@ -300,6 +312,7 @@ git commit -m "feat: add Riot account fields to Player (riotName, riotTag, puuid
 ## Task 4: Résolveur partagé + helper data
 
 **Files:**
+
 - Create: `src/lib/riot-account.ts`
 - Modify: `src/lib/data/players.ts`
 
@@ -324,7 +337,10 @@ export function setPlayerRiotAccount(playerId: string, account: RiotAccount) {
 }
 
 /** True si ce puuid est déjà pris par un AUTRE joueur. */
-export async function isPuuidTakenByOther(puuid: string, excludePlayerId?: string): Promise<boolean> {
+export async function isPuuidTakenByOther(
+  puuid: string,
+  excludePlayerId?: string
+): Promise<boolean> {
   const clash = await db.player.findFirst({
     where: { puuid, ...(excludePlayerId ? { NOT: { id: excludePlayerId } } : {}) },
     select: { id: true },
@@ -393,6 +409,7 @@ git commit -m "feat: add shared Riot account resolver and data helpers"
 ## Task 5: Messages de flash + variable d'env
 
 **Files:**
+
 - Modify: `src/lib/flash-messages.ts`
 - Modify: `.env.example`
 
@@ -440,6 +457,7 @@ git commit -m "feat: add Riot flash messages and HENRIKDEV_API_KEY env"
 ## Task 6: Onboarding (formulaire, page, action)
 
 **Files:**
+
 - Create: `src/components/riot-id-form.tsx`
 - Create: `src/app/onboarding/actions.ts`
 - Create: `src/app/onboarding/page.tsx`
@@ -507,7 +525,12 @@ export async function submitOnboardingRiotId(formData: FormData) {
   }
 
   const store = await cookies();
-  store.set("onboarded", "1", { path: "/", httpOnly: false, sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
+  store.set("onboarded", "1", {
+    path: "/",
+    httpOnly: false,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
   redirect("/?ok=riot-saved");
 }
 ```
@@ -541,8 +564,8 @@ export default async function OnboardingPage() {
         Bienvenue
       </h1>
       <p className="mb-6 mt-2 text-sm text-[var(--text-muted)]">
-        Pour continuer, renseigne ton Riot ID Valorant. Il sert à relier tes matchs
-        et tes statistiques. On vérifie qu'il existe auprès de Riot.
+        Pour continuer, renseigne ton Riot ID Valorant. Il sert à relier tes matchs et tes
+        statistiques. On vérifie qu'il existe auprès de Riot.
       </p>
       <RiotIdForm action={submitOnboardingRiotId} submitLabel="Valider mon Riot ID" />
     </main>
@@ -567,6 +590,7 @@ git commit -m "feat: add onboarding Riot ID page, form and action"
 ## Task 7: Gate d'onboarding (`proxy.ts`)
 
 **Files:**
+
 - Modify: `src/proxy.ts`
 
 - [ ] **Step 1: Réécrire le proxy avec le gate onboarding**
@@ -625,6 +649,7 @@ git commit -m "feat: gate app behind Riot ID onboarding via proxy"
 ## Task 8: Re-confirmation à l'adhésion (`/rejoindre/[token]`)
 
 **Files:**
+
 - Modify: `src/app/rejoindre/actions.ts`
 - Modify: `src/app/rejoindre/[token]/page.tsx`
 
@@ -715,6 +740,7 @@ Dans `src/app/rejoindre/[token]/page.tsx`, là où le bouton « Rejoindre » app
 ```
 
 Où `joinWithToken` est le binding existant du token, adapté pour passer `formData` :
+
 ```tsx
 const joinWithToken = joinTeamViaInviteAction.bind(null, token);
 ```
@@ -740,6 +766,7 @@ git commit -m "feat: re-confirm Riot ID when joining a team via invite"
 ## Task 9: Champ Riot ID dans les formulaires joueur (admin & manager)
 
 **Files:**
+
 - Modify: `src/lib/validation/player.ts`
 - Modify: `src/components/player-form.tsx`
 - Modify: `src/app/admin/actions/players.ts`
@@ -752,11 +779,17 @@ Ajouter dans `PlayerFormValues` le champ `riotId?: string;` et, dans le JSX (apr
 ```tsx
 <label className="grid gap-1 text-sm text-[var(--text-muted)]">
   Riot ID (optionnel, Nom#Tag)
-  <input name="riotId" defaultValue={values?.riotId ?? ""} placeholder="Nom#Tag" className={input} />
+  <input
+    name="riotId"
+    defaultValue={values?.riotId ?? ""}
+    placeholder="Nom#Tag"
+    className={input}
+  />
 </label>
 ```
 
 Et, dans la page d'édition admin qui passe `values` (`src/app/admin/joueurs/[id]/page.tsx`), ajouter :
+
 ```tsx
 riotId: player.riotName ? `${player.riotName}#${player.riotTag}` : undefined,
 ```
@@ -764,60 +797,67 @@ riotId: player.riotName ? `${player.riotName}#${player.riotTag}` : undefined,
 - [ ] **Step 2: Vérifier/enregistrer le Riot ID dans `updatePlayerAction` / `createPlayerAction`**
 
 Dans `src/app/admin/actions/players.ts`, importer le résolveur :
+
 ```ts
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 import { setPlayerRiotAccount } from "@/lib/data/players";
 ```
 
 Dans `createPlayerAction`, après `const player = await createPlayer(data);` :
+
 ```ts
-  const riotInput = String(formData.get("riotId") ?? "").trim();
-  if (riotInput) {
-    try {
-      const account = await resolveRiotAccount(riotInput, { excludePlayerId: player.id });
-      await setPlayerRiotAccount(player.id, account);
-    } catch (e) {
-      redirect(`/admin/joueurs/${player.id}?error=${riotFlashCode(e)}`);
-    }
+const riotInput = String(formData.get("riotId") ?? "").trim();
+if (riotInput) {
+  try {
+    const account = await resolveRiotAccount(riotInput, { excludePlayerId: player.id });
+    await setPlayerRiotAccount(player.id, account);
+  } catch (e) {
+    redirect(`/admin/joueurs/${player.id}?error=${riotFlashCode(e)}`);
   }
+}
 ```
 
 Dans `updatePlayerAction`, après `await updatePlayer(playerId, data);` :
+
 ```ts
-  const riotInput = String(formData.get("riotId") ?? "").trim();
-  if (riotInput) {
-    try {
-      const account = await resolveRiotAccount(riotInput, { excludePlayerId: playerId });
-      await setPlayerRiotAccount(playerId, account);
-    } catch (e) {
-      redirect(`/admin/joueurs/${playerId}?error=${riotFlashCode(e)}`);
-    }
+const riotInput = String(formData.get("riotId") ?? "").trim();
+if (riotInput) {
+  try {
+    const account = await resolveRiotAccount(riotInput, { excludePlayerId: playerId });
+    await setPlayerRiotAccount(playerId, account);
+  } catch (e) {
+    redirect(`/admin/joueurs/${playerId}?error=${riotFlashCode(e)}`);
   }
+}
 ```
 
 - [ ] **Step 3: Champ Riot ID dans l'ajout roster (manager)**
 
 Dans `src/app/equipes/[id]/gestion/roster/page.tsx`, dans le formulaire « Ajouter un joueur », ajouter après le champ pseudo :
+
 ```tsx
 <input name="riotId" placeholder="Riot ID (optionnel, Nom#Tag)" className={input} />
 ```
 
 Dans `addRosterMemberAction` (`src/app/admin/actions/players.ts`), `createPlayerAndAddToRoster` **renvoie déjà le `Player` créé** (aucune modification du helper nécessaire). Capturer sa valeur de retour, puis poser le Riot ID si fourni. Remplacer :
+
 ```ts
-  await createPlayerAndAddToRoster(teamId, data.pseudo, data.nationality, data.role);
+await createPlayerAndAddToRoster(teamId, data.pseudo, data.nationality, data.role);
 ```
+
 par :
+
 ```ts
-  const created = await createPlayerAndAddToRoster(teamId, data.pseudo, data.nationality, data.role);
-  const riotInput = String(formData.get("riotId") ?? "").trim();
-  if (riotInput) {
-    try {
-      const account = await resolveRiotAccount(riotInput);
-      await setPlayerRiotAccount(created.id, account);
-    } catch (e) {
-      redirect(`/equipes/${teamId}/gestion/roster?error=${riotFlashCode(e)}`);
-    }
+const created = await createPlayerAndAddToRoster(teamId, data.pseudo, data.nationality, data.role);
+const riotInput = String(formData.get("riotId") ?? "").trim();
+if (riotInput) {
+  try {
+    const account = await resolveRiotAccount(riotInput);
+    await setPlayerRiotAccount(created.id, account);
+  } catch (e) {
+    redirect(`/equipes/${teamId}/gestion/roster?error=${riotFlashCode(e)}`);
   }
+}
 ```
 
 - [ ] **Step 4: Vérifier la compilation et les tests**
@@ -844,6 +884,7 @@ Expected: exit 0, tous les tests verts (dont validation-riot et henrikdev).
 - [ ] **Step 2: Parcours manuel de bout en bout**
 
 Avec `HENRIKDEV_API_KEY` réel dans `.env` et `npm run dev` :
+
 1. Nouveau compte Discord → redirigé vers `/onboarding`, saisie d'un vrai Riot ID → accès débloqué, toast succès.
 2. Saisie d'un Riot ID inexistant → toast « Riot ID introuvable », reste bloqué.
 3. Saisie d'un Riot ID déjà utilisé par un autre joueur → toast « déjà utilisé ».

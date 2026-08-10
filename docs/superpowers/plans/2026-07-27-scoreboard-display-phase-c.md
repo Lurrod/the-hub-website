@@ -13,6 +13,7 @@
 ---
 
 ## File Structure
+
 - **Create** `src/lib/agents.ts` — `AGENT_ICONS` (nom → URL icône), `agentIconUrl()`.
 - **Create** `src/components/agent-icon.tsx` — `<AgentIcon>`.
 - **Create** `src/components/match-scoreboard.tsx` — composant client (onglets + tables).
@@ -24,15 +25,18 @@
 ## Task 1: Table d'icônes d'agents + composant `AgentIcon`
 
 **Files:**
+
 - Create: `src/lib/agents.ts`
 - Create: `src/components/agent-icon.tsx`
 
 - [ ] **Step 1: Générer la table depuis valorant-api.com**
 
 Récupérer la liste des agents jouables et bâtir la map nom→icône. Exécuter :
+
 ```bash
 node -e "fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true').then(r=>r.json()).then(j=>{const m={};for(const a of j.data){m[a.displayName]=a.displayIcon;}process.stdout.write(JSON.stringify(m,null,2));})"
 ```
+
 Si la commande échoue (réseau indisponible), RAPPORTER BLOCKED (le contrôleur fournira la table). Sinon, utiliser la sortie JSON comme contenu de `AGENT_ICONS` ci-dessous.
 
 - [ ] **Step 2: Écrire `src/lib/agents.ts`**
@@ -52,6 +56,7 @@ export function agentIconUrl(agent: string | null | undefined): string | undefin
   return AGENT_ICONS[agent];
 }
 ```
+
 Remplacer le commentaire par les vraies entrées générées.
 
 - [ ] **Step 3: Écrire `src/components/agent-icon.tsx`**
@@ -108,11 +113,13 @@ git commit -m "feat: add agent icon map and AgentIcon component"
 ## Task 2: Étendre `getMatch` pour charger les scoreboards
 
 **Files:**
+
 - Modify: `src/lib/data/matches.ts`
 
 - [ ] **Step 1: Étendre l'`include` de `getMatch`**
 
 Remplacer la ligne `maps: { orderBy: { order: "asc" } },` dans `getMatch` par :
+
 ```ts
       maps: {
         orderBy: { order: "asc" },
@@ -140,6 +147,7 @@ git commit -m "feat: load per-map player stats in getMatch"
 ## Task 3: Composant `MatchScoreboard` (client, onglets + tables)
 
 **Files:**
+
 - Create: `src/components/match-scoreboard.tsx`
 
 - [ ] **Step 1: Écrire le composant**
@@ -174,7 +182,8 @@ export type ScoreboardMap = {
   stats: ScoreboardРlayerRow[];
 };
 
-const HEAD = "px-2 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
+const HEAD =
+  "px-2 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
 const CELL = "stat px-2 py-1.5 text-right text-sm text-white";
 
 function TeamBlock({
@@ -206,13 +215,19 @@ function TeamBlock({
         </thead>
         <tbody>
           {sorted.map((r) => (
-            <tr key={r.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--table-row-hover)]">
+            <tr
+              key={r.id}
+              className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--table-row-hover)]"
+            >
               <td className="w-8 py-1.5 pl-2">
                 <AgentIcon agent={r.agent} />
               </td>
               <td className="max-w-[160px] truncate py-1.5 pr-2 text-left text-sm">
                 {r.playerId ? (
-                  <Link href={`/joueurs/${r.playerId}`} className="text-white hover:text-[var(--accent)]">
+                  <Link
+                    href={`/joueurs/${r.playerId}`}
+                    className="text-white hover:text-[var(--accent)]"
+                  >
                     {r.pseudo ?? r.riotName}
                   </Link>
                 ) : (
@@ -285,6 +300,7 @@ export default function MatchScoreboard({
   );
 }
 ```
+
 NOTE: le type est nommé `ScoreboardРlayerRow` ci-dessus par erreur de saisie — utiliser un nom ASCII `ScoreboardPlayerRow` partout (renommer les 3 occurrences). Vérifier qu'aucun caractère non-ASCII ne subsiste dans les identifiants.
 
 - [ ] **Step 2: Verify**
@@ -303,72 +319,76 @@ git commit -m "feat: add MatchScoreboard component (per-map tabs, ACS-sorted tab
 ## Task 4: Intégration sur la page match
 
 **Files:**
+
 - Modify: `src/app/matchs/[id]/page.tsx`
 
 - [ ] **Step 1: Importer et mapper les données**
 
 Ajouter l'import :
+
 ```ts
 import MatchScoreboard, { type ScoreboardMap } from "@/components/match-scoreboard";
 ```
+
 Dans le composant, après le chargement de `match`, calculer :
+
 ```ts
-  const hasScoreboard =
-    match.statsStatus === "MATCHED" && match.maps.some((m) => m.stats.length > 0);
-  const scoreboardMaps: ScoreboardMap[] = match.maps.map((m) => ({
-    id: m.id,
-    mapName: m.mapName,
-    scoreA: m.scoreA,
-    scoreB: m.scoreB,
-    stats: m.stats.map((s) => ({
-      id: s.id,
-      playerId: s.playerId,
-      pseudo: s.player?.pseudo ?? null,
-      riotName: s.riotName,
-      teamSide: s.teamSide,
-      agent: s.agent,
-      kills: s.kills,
-      deaths: s.deaths,
-      assists: s.assists,
-      acs: s.acs,
-      adr: s.adr,
-      hsPct: s.hsPct,
-    })),
-  }));
+const hasScoreboard = match.statsStatus === "MATCHED" && match.maps.some((m) => m.stats.length > 0);
+const scoreboardMaps: ScoreboardMap[] = match.maps.map((m) => ({
+  id: m.id,
+  mapName: m.mapName,
+  scoreA: m.scoreA,
+  scoreB: m.scoreB,
+  stats: m.stats.map((s) => ({
+    id: s.id,
+    playerId: s.playerId,
+    pseudo: s.player?.pseudo ?? null,
+    riotName: s.riotName,
+    teamSide: s.teamSide,
+    agent: s.agent,
+    kills: s.kills,
+    deaths: s.deaths,
+    assists: s.assists,
+    acs: s.acs,
+    adr: s.adr,
+    hsPct: s.hsPct,
+  })),
+}));
 ```
 
 - [ ] **Step 2: Remplacer la section « Détail des maps »**
 
 Remplacer le bloc `<section className="mt-10"> ... Détail des maps ... </section>` par :
+
 ```tsx
-      <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold text-white">
-          {hasScoreboard ? "Scoreboard" : "Détail des maps"}
-        </h2>
-        {hasScoreboard ? (
-          <MatchScoreboard
-            maps={scoreboardMaps}
-            teamAName={match.teamA.name}
-            teamBName={match.teamB.name}
-          />
-        ) : match.maps.length === 0 ? (
-          <p className="text-[var(--text-muted)]">Aucun détail carte par carte saisi.</p>
-        ) : (
-          <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
-            {match.maps.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between p-3 text-sm transition-colors hover:bg-[var(--table-row-hover)]"
-              >
-                <span className="text-white">{m.mapName}</span>
-                <span className="stat text-[var(--text-muted)]">
-                  {m.scoreA} – {m.scoreB}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+<section className="mt-10">
+  <h2 className="mb-3 text-lg font-semibold text-white">
+    {hasScoreboard ? "Scoreboard" : "Détail des maps"}
+  </h2>
+  {hasScoreboard ? (
+    <MatchScoreboard
+      maps={scoreboardMaps}
+      teamAName={match.teamA.name}
+      teamBName={match.teamB.name}
+    />
+  ) : match.maps.length === 0 ? (
+    <p className="text-[var(--text-muted)]">Aucun détail carte par carte saisi.</p>
+  ) : (
+    <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
+      {match.maps.map((m) => (
+        <li
+          key={m.id}
+          className="flex items-center justify-between p-3 text-sm transition-colors hover:bg-[var(--table-row-hover)]"
+        >
+          <span className="text-white">{m.mapName}</span>
+          <span className="stat text-[var(--text-muted)]">
+            {m.scoreA} – {m.scoreB}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
 ```
 
 - [ ] **Step 3: Verify**
@@ -393,5 +413,6 @@ git commit -m "feat: show scoreboard on match page when stats are available"
 ---
 
 ## Notes
+
 - Task 2/3 indépendants ; Task 4 dépend de 1, 2, 3.
 - Aucun modèle DB ajouté. Icônes via CDN externe (comme les drapeaux Phase A).

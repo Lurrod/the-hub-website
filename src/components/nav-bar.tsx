@@ -1,11 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import NavLinks from "@/components/nav-links";
-import {
-  NavSessionLinks,
-  NavSessionUser,
-  NavSessionUserFallback,
-} from "@/components/nav-session";
+import { NavSessionLinks, NavSessionUser, NavSessionUserFallback } from "@/components/nav-session";
 import { SearchIcon } from "@/components/icons";
 import NavDrawer from "@/components/nav-drawer";
 
@@ -68,11 +64,7 @@ export default function NavBar() {
           <SearchIcon />
         </Link>
 
-        <form
-          action="/recherche"
-          method="get"
-          className="relative ml-auto hidden md:block"
-        >
+        <form action="/recherche" method="get" className="relative ml-auto hidden md:block">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
           <input
             name="q"

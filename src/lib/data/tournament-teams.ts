@@ -56,7 +56,10 @@ export async function getTournamentTeamStats(tournamentId: string): Promise<Team
     },
   });
 
-  const identities = new Map<string, { id: string; name: string; tag: string; logo: string | null }>();
+  const identities = new Map<
+    string,
+    { id: string; name: string; tag: string; logo: string | null }
+  >();
   const teamMatches: TeamMatchEntry[] = [];
   const teamMaps: TeamMapEntry[] = [];
   /** Cumuls par (équipe, joueur) : un joueur peut jouer pour deux équipes. */

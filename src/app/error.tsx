@@ -30,8 +30,8 @@ export default function Error({
       }
     >
       <p>
-        L&apos;action n&apos;a pas pu aboutir. Réessayer suffit le plus souvent ;
-        si le problème persiste, signale-le sur le Discord de The Hub.
+        L&apos;action n&apos;a pas pu aboutir. Réessayer suffit le plus souvent ; si le problème
+        persiste, signale-le sur le Discord de The Hub.
       </p>
       {error.digest && (
         <p className="mt-3 font-mono text-xs text-[var(--text-subtle)]">

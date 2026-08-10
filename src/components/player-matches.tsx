@@ -24,13 +24,31 @@ function fmtDay(date: Date | null): string {
   });
 }
 
-function Crest({ logo, tag, size = "h-6 w-6" }: { logo: string | null; tag: string; size?: string }) {
+function Crest({
+  logo,
+  tag,
+  size = "h-6 w-6",
+}: {
+  logo: string | null;
+  tag: string;
+  size?: string;
+}) {
   if (logo) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img loading="lazy" decoding="async" src={logo} alt="" className={`${size} shrink-0 rounded object-cover`} />;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        loading="lazy"
+        decoding="async"
+        src={logo}
+        alt=""
+        className={`${size} shrink-0 rounded object-cover`}
+      />
+    );
   }
   return (
-    <span className={`${size} grid shrink-0 place-items-center rounded bg-[var(--bg)] text-[9px] text-[var(--text-muted)]`}>
+    <span
+      className={`${size} grid shrink-0 place-items-center rounded bg-[var(--bg)] text-[9px] text-[var(--text-muted)]`}
+    >
       {tag.slice(0, 2).toUpperCase()}
     </span>
   );
@@ -59,7 +77,11 @@ function Stat({ label, value, strong }: { label: string; value: string; strong?:
   return (
     <div className="w-16 shrink-0 text-center">
       <div className="text-[9px] uppercase tracking-wide text-[var(--text-muted)]">{label}</div>
-      <div className={`stat text-sm ${strong ? "font-semibold text-[var(--accent)]" : "text-white"}`}>{value}</div>
+      <div
+        className={`stat text-sm ${strong ? "font-semibold text-[var(--accent)]" : "text-white"}`}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -95,7 +117,9 @@ function MapRow({ mp }: { mp: PlayerMapRow }) {
         <div className="text-sm font-bold" style={{ color }}>
           {mp.win ? "Victoire" : "Défaite"}
         </div>
-        <div className="stat text-[11px] text-[var(--text-muted)]">{fmtDuration(mp.durationSec)}</div>
+        <div className="stat text-[11px] text-[var(--text-muted)]">
+          {fmtDuration(mp.durationSec)}
+        </div>
       </div>
 
       {/* Map avant le score */}

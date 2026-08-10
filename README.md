@@ -6,16 +6,16 @@ KAST). En production sur [the-hub-vrc.fr](https://the-hub-vrc.fr).
 
 ## Pile technique
 
-| Domaine | Choix |
-| --- | --- |
-| Framework | Next.js 16 (App Router, React Server Components) |
-| Langage | TypeScript, React 19 |
-| Base de données | PostgreSQL via Prisma |
-| Authentification | Auth.js 5 (Discord uniquement, sessions en base) |
-| Styles | Tailwind CSS 4, jetons de charte dans `src/app/globals.css` |
-| Images | `sharp` côté serveur, servies en webp par `/api/images` |
+| Domaine          | Choix                                                          |
+| ---------------- | -------------------------------------------------------------- |
+| Framework        | Next.js 16 (App Router, React Server Components)               |
+| Langage          | TypeScript, React 19                                           |
+| Base de données  | PostgreSQL via Prisma                                          |
+| Authentification | Auth.js 5 (Discord uniquement, sessions en base)               |
+| Styles           | Tailwind CSS 4, jetons de charte dans `src/app/globals.css`    |
+| Images           | `sharp` côté serveur, servies en webp par `/api/images`        |
 | Données Valorant | API HenrikDev (vérification de Riot ID, statistiques de match) |
-| Hébergement | Serveur OVH Kimsufi, PM2 derrière Apache |
+| Hébergement      | Serveur OVH Kimsufi, PM2 derrière Apache                       |
 
 ## Mise en route
 
@@ -35,33 +35,33 @@ Le site tourne sur le port **3200**, pas 3000.
 
 Toutes sont décrites dans `.env.example`.
 
-| Variable | Rôle |
-| --- | --- |
-| `DATABASE_URL` | Chaîne de connexion PostgreSQL |
-| `AUTH_SECRET` | Secret de signature des sessions Auth.js |
-| `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` | Application OAuth Discord |
-| `ADMIN_DISCORD_IDS` | Identifiants Discord promus administrateurs à la connexion |
-| `NEXTAUTH_URL` | URL publique, utilisée pour les callbacks OAuth |
-| `NEXT_PUBLIC_BASE_URL` | URL publique des métadonnées, du sitemap et du robots.txt |
-| `HENRIKDEV_API_KEY` | Clé de l'API HenrikDev (côté serveur uniquement) |
+| Variable                                  | Rôle                                                       |
+| ----------------------------------------- | ---------------------------------------------------------- |
+| `DATABASE_URL`                            | Chaîne de connexion PostgreSQL                             |
+| `AUTH_SECRET`                             | Secret de signature des sessions Auth.js                   |
+| `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` | Application OAuth Discord                                  |
+| `ADMIN_DISCORD_IDS`                       | Identifiants Discord promus administrateurs à la connexion |
+| `NEXTAUTH_URL`                            | URL publique, utilisée pour les callbacks OAuth            |
+| `NEXT_PUBLIC_BASE_URL`                    | URL publique des métadonnées, du sitemap et du robots.txt  |
+| `HENRIKDEV_API_KEY`                       | Clé de l'API HenrikDev (côté serveur uniquement)           |
 
 ## Scripts
 
-| Commande | Effet |
-| --- | --- |
-| `npm run dev` | Serveur de développement (port 3200) |
-| `npm run build` / `npm start` | Build de production autonome, puis service |
-| `npm run lint` | ESLint (configuration Next + durcissement `no-console`) |
-| `npm run format` / `format:check` | Prettier |
-| `npm test` | Tests unitaires Vitest |
-| `npm run test:coverage` | Idem avec couverture et seuils planchers |
-| `npm run test:e2e` | Parcours Playwright |
-| `npm run db:migrate` | `prisma migrate dev` |
-| `npm run db:seed:dev` | Jeu de démonstration (fixtures des tests E2E) |
-| `npm run db:seed:vlr` | Import de données VCT EMEA réalistes |
-| `npm run db:seed:scoreboards` | Scoreboards de démonstration |
-| `npm run db:studio` | Prisma Studio |
-| `npm run db:sync:tournaments` | Recale le statut des tournois d'après leurs dates (tâche planifiée) |
+| Commande                          | Effet                                                               |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `npm run dev`                     | Serveur de développement (port 3200)                                |
+| `npm run build` / `npm start`     | Build de production autonome, puis service                          |
+| `npm run lint`                    | ESLint (configuration Next + durcissement `no-console`)             |
+| `npm run format` / `format:check` | Prettier                                                            |
+| `npm test`                        | Tests unitaires Vitest                                              |
+| `npm run test:coverage`           | Idem avec couverture et seuils planchers                            |
+| `npm run test:e2e`                | Parcours Playwright                                                 |
+| `npm run db:migrate`              | `prisma migrate dev`                                                |
+| `npm run db:seed:dev`             | Jeu de démonstration (fixtures des tests E2E)                       |
+| `npm run db:seed:vlr`             | Import de données VCT EMEA réalistes                                |
+| `npm run db:seed:scoreboards`     | Scoreboards de démonstration                                        |
+| `npm run db:studio`               | Prisma Studio                                                       |
+| `npm run db:sync:tournaments`     | Recale le statut des tournois d'après leurs dates (tâche planifiée) |
 
 ## Organisation
 

@@ -19,9 +19,12 @@ export default function InviteLink({ link }: { link: string }) {
     if (link.startsWith("/")) setUrl(window.location.origin + link);
   }, [link]);
 
-  useEffect(() => () => {
-    if (revert.current) window.clearTimeout(revert.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (revert.current) window.clearTimeout(revert.current);
+    },
+    []
+  );
 
   /**
    * Bascule du libellé en trois temps (snippet `04-text-states-swap`) : sortie
@@ -33,9 +36,8 @@ export default function InviteLink({ link }: { link: string }) {
     const el = labelRef.current;
     if (!el) return;
     const dur =
-      parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur")
-      ) || 150;
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur")) ||
+      150;
     el.classList.add("is-exit");
     window.setTimeout(() => {
       el.textContent = next;

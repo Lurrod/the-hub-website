@@ -24,10 +24,10 @@ export default function GlobalError({
       <body>
         <title>Erreur · The Hub</title>
         <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 text-center">
-          <p className="font-mono text-sm uppercase tracking-widest text-[var(--accent)]">
-            Erreur
-          </p>
-          <h1 className="mt-3 text-2xl font-bold text-white">Le site n&apos;a pas pu s&apos;afficher</h1>
+          <p className="font-mono text-sm uppercase tracking-widest text-[var(--accent)]">Erreur</p>
+          <h1 className="mt-3 text-2xl font-bold text-white">
+            Le site n&apos;a pas pu s&apos;afficher
+          </h1>
           <p className="mt-4 text-[var(--text-muted)]">
             Une erreur est survenue avant même le chargement de la page.
           </p>

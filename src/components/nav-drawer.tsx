@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 /**
  * Tiroir de navigation mobile.
@@ -65,11 +66,11 @@ export default function NavDrawer({
     };
   }, [open, close]);
 
-  // Le focus part sur le panneau à l'ouverture : au clavier comme au lecteur
-  // d'écran, on doit se retrouver dans le menu qu'on vient d'ouvrir.
-  useEffect(() => {
-    if (shown) panelRef.current?.focus();
-  }, [shown]);
+  // Le focus part sur le panneau à l'ouverture, y reste tant que le tiroir est
+  // déployé et revient au bouton hamburger à la fermeture : au clavier comme
+  // au lecteur d'écran, on ne doit jamais se retrouver à parcourir la page
+  // masquée derrière le voile.
+  useFocusTrap(panelRef, open);
 
   useEffect(
     () => () => {

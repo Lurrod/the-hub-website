@@ -22,12 +22,23 @@ import type { MatchMapImportInput } from "@/lib/validation/match";
 const MATCH_THRESHOLD = 8;
 const MAX_PLAYER_QUERIES = 4;
 
-type Known = { puuid: string; playerId: string; side: Side; region: string; name: string; tag: string };
+type Known = {
+  puuid: string;
+  playerId: string;
+  side: Side;
+  region: string;
+  name: string;
+  tag: string;
+};
 
 /** Joueurs (adhésions actives) des 2 équipes ayant un puuid, avec leur côté A/B. */
 async function knownPlayers(teamAId: string, teamBId: string): Promise<Known[]> {
   const rows = await db.teamMembership.findMany({
-    where: { leaveDate: null, teamId: { in: [teamAId, teamBId] }, player: { puuid: { not: null } } },
+    where: {
+      leaveDate: null,
+      teamId: { in: [teamAId, teamBId] },
+      player: { puuid: { not: null } },
+    },
     select: {
       teamId: true,
       player: { select: { id: true, puuid: true, region: true, riotName: true, riotTag: true } },
@@ -38,8 +49,12 @@ async function knownPlayers(teamAId: string, teamBId: string): Promise<Known[]> 
     const p = r.player;
     if (!p.puuid || !p.riotName || !p.riotTag) continue;
     known.push({
-      puuid: p.puuid, playerId: p.id, side: r.teamId === teamAId ? "A" : "B",
-      region: p.region ?? "eu", name: p.riotName, tag: p.riotTag,
+      puuid: p.puuid,
+      playerId: p.id,
+      side: r.teamId === teamAId ? "A" : "B",
+      region: p.region ?? "eu",
+      name: p.riotName,
+      tag: p.riotTag,
     });
   }
   return known;
@@ -76,7 +91,11 @@ function gameStatRows(
   // Le nombre de rounds joués fait foi pour le KAST : les duels ne portent que
   // les rounds où quelqu'un est mort, un round « sec » compterait sinon en moins.
   const roundCount = cm.rounds.length > 0 ? cm.rounds.length : rounds;
-  const impact = computeImpact(cm.kills, cm.players.map((p) => p.puuid), roundCount);
+  const impact = computeImpact(
+    cm.kills,
+    cm.players.map((p) => p.puuid),
+    roundCount
+  );
 
   return cm.players.map((p) => {
     const d = computeDerivedStats(p, rounds);
@@ -139,11 +158,23 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
       continue;
     }
     for (const m of list) if (m.matchId) byId.set(m.matchId, m);
-    const found = selectSeries([...byId.values()], expected, MATCH_THRESHOLD, match.bestOf, match.date);
+    const found = selectSeries(
+      [...byId.values()],
+      expected,
+      MATCH_THRESHOLD,
+      match.bestOf,
+      match.date
+    );
     if (found.length > 0) break;
   }
 
-  const series = selectSeries([...byId.values()], expected, MATCH_THRESHOLD, match.bestOf, match.date);
+  const series = selectSeries(
+    [...byId.values()],
+    expected,
+    MATCH_THRESHOLD,
+    match.bestOf,
+    match.date
+  );
   if (series.length === 0) {
     await setStatus(match.id, "NOT_FOUND");
     return "NOT_FOUND";
@@ -165,8 +196,13 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
 
       const created = await tx.matchMap.create({
         data: {
-          matchId: match.id, mapName: cm.map || "?", scoreA: roundsA, scoreB: roundsB,
-          order: i, riotMatchId: cm.matchId, startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
+          matchId: match.id,
+          mapName: cm.map || "?",
+          scoreA: roundsA,
+          scoreB: roundsB,
+          order: i,
+          riotMatchId: cm.matchId,
+          startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
           durationSec: cm.durationSec,
           roundTimeline: roundTimeline(cm.rounds, sideOfTeam),
         },
@@ -178,18 +214,20 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
     const winnerId = mapsA > mapsB ? match.teamAId : mapsB > mapsA ? match.teamBId : null;
     await tx.match.update({
       where: { id: match.id },
-      data: { scoreA: mapsA, scoreB: mapsB, winnerId, statsStatus: "MATCHED", statsFetchedAt: new Date() },
+      data: {
+        scoreA: mapsA,
+        scoreB: mapsB,
+        winnerId,
+        statsStatus: "MATCHED",
+        statsFetchedAt: new Date(),
+      },
     });
   });
   return "MATCHED";
 }
 
 export type ManualImportResult =
-  | "IMPORTED"
-  | "DUPLICATE"
-  | "NOT_FOUND"
-  | "RATE_LIMITED"
-  | "API_ERROR";
+  "IMPORTED" | "DUPLICATE" | "NOT_FOUND" | "RATE_LIMITED" | "API_ERROR";
 
 /** Région à interroger : celle des joueurs liés, `eu` à défaut. */
 function pickRegion(known: Known[]): string {

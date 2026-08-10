@@ -34,7 +34,9 @@ export default async function SearchPage({
         </form>
 
         {q.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Saisis un terme pour lancer la recherche.</p>
+          <p className="text-sm text-[var(--text-muted)]">
+            Saisis un terme pour lancer la recherche.
+          </p>
         ) : total === 0 ? (
           <p className="text-sm text-[var(--text-muted)]">Aucun résultat pour « {q} ».</p>
         ) : (

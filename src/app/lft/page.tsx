@@ -104,10 +104,12 @@ async function LftView({ raw, page }: { raw: Params; page: number }) {
     q: normalizeLftSearch(raw.q),
   };
 
-  const { players, total, pageSize, page: current } = await listLftPlayers(
-    { ...filters, birthdate: birthdateRangeForAge(filters.age) },
-    page
-  );
+  const {
+    players,
+    total,
+    pageSize,
+    page: current,
+  } = await listLftPlayers({ ...filters, birthdate: birthdateRangeForAge(filters.age) }, page);
 
   return (
     <>

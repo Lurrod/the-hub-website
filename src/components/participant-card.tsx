@@ -20,7 +20,13 @@ export default function ParticipantCard({ p }: { p: P }) {
         <Link href={`/equipes/${p.teamId}`} aria-label={p.name}>
           {p.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img loading="lazy" decoding="async" src={p.logo} alt="" className="h-16 w-16 rounded-lg object-cover" />
+            <img
+              loading="lazy"
+              decoding="async"
+              src={p.logo}
+              alt=""
+              className="h-16 w-16 rounded-lg object-cover"
+            />
           ) : (
             <div className="grid h-16 w-16 place-items-center rounded-lg bg-[var(--surface)] text-sm text-[var(--text-muted)]">
               {p.name.slice(0, 2).toUpperCase()}

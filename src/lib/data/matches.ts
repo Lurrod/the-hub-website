@@ -42,7 +42,11 @@ export function getGroupsWithMatches(tournamentId: string) {
   });
 }
 
-export function assignParticipantGroup(tournamentId: string, teamId: string, groupId: string | null) {
+export function assignParticipantGroup(
+  tournamentId: string,
+  teamId: string,
+  groupId: string | null
+) {
   return db.tournamentParticipant.update({
     where: { tournamentId_teamId: { tournamentId, teamId } },
     data: { groupId },
@@ -56,7 +60,7 @@ export function createMatch(tournamentId: string, data: MatchInput) {
   return db.match.create({
     data: {
       tournamentId,
-      groupId: data.stage === "GROUP" ? data.groupId ?? null : null,
+      groupId: data.stage === "GROUP" ? (data.groupId ?? null) : null,
       teamAId: data.teamAId,
       teamBId: data.teamBId,
       scoreA: data.scoreA,
@@ -64,8 +68,8 @@ export function createMatch(tournamentId: string, data: MatchInput) {
       stage: data.stage as MatchStage,
       status: data.status as MatchStatus,
       bestOf: data.bestOf,
-      round: data.stage === "BRACKET" ? data.round ?? null : null,
-      bracketPosition: data.stage === "BRACKET" ? data.bracketPosition ?? null : null,
+      round: data.stage === "BRACKET" ? (data.round ?? null) : null,
+      bracketPosition: data.stage === "BRACKET" ? (data.bracketPosition ?? null) : null,
       date: data.date.date,
       hasTime: data.date.hasTime,
       vodUrl: data.vodUrl ?? null,
@@ -79,7 +83,7 @@ export function updateMatch(id: string, tournamentId: string, data: MatchInput) 
   return db.match.updateMany({
     where: { id, tournamentId },
     data: {
-      groupId: data.stage === "GROUP" ? data.groupId ?? null : null,
+      groupId: data.stage === "GROUP" ? (data.groupId ?? null) : null,
       teamAId: data.teamAId,
       teamBId: data.teamBId,
       scoreA: data.scoreA,
@@ -87,8 +91,8 @@ export function updateMatch(id: string, tournamentId: string, data: MatchInput) 
       stage: data.stage as MatchStage,
       status: data.status as MatchStatus,
       bestOf: data.bestOf,
-      round: data.stage === "BRACKET" ? data.round ?? null : null,
-      bracketPosition: data.stage === "BRACKET" ? data.bracketPosition ?? null : null,
+      round: data.stage === "BRACKET" ? (data.round ?? null) : null,
+      bracketPosition: data.stage === "BRACKET" ? (data.bracketPosition ?? null) : null,
       date: data.date.date ?? null,
       hasTime: data.date.hasTime,
       vodUrl: data.vodUrl ?? null,

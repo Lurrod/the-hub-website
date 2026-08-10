@@ -145,8 +145,8 @@ export default function RatingTrend({ points }: { points: TrendPoint[] }) {
         ))}
       </svg>
       <figcaption className="mt-1 text-[11px] text-[var(--text-muted)]">
-        De la plus ancienne à la plus récente. Le trait en pointillé marque 1.00, la
-        performance moyenne.
+        De la plus ancienne à la plus récente. Le trait en pointillé marque 1.00, la performance
+        moyenne.
       </figcaption>
     </figure>
   );

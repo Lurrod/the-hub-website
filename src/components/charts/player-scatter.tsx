@@ -39,8 +39,14 @@ export default function PlayerScatter({ players }: { players: PlayerPoint[] }) {
     );
   }
 
-  const xa = axis(pts.map((p) => p.acs), 40);
-  const ya = axis(pts.map((p) => p.kd), 0.4);
+  const xa = axis(
+    pts.map((p) => p.acs),
+    40
+  );
+  const ya = axis(
+    pts.map((p) => p.kd),
+    0.4
+  );
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
   const x = (v: number) => PAD.left + ((v - xa.min) / (xa.max - xa.min)) * plotW;
@@ -187,9 +193,9 @@ export default function PlayerScatter({ players }: { players: PlayerPoint[] }) {
       </div>
 
       <figcaption className="mt-2 text-[11px] text-[var(--text-muted)]">
-        Un point par joueur, taille selon les cartes jouées. Les pointillés marquent le K/D
-        de 1.00 et l&apos;ACS moyen du tournoi. Les trois meilleurs ratings sont nommés ;
-        survolez un point pour le reste.
+        Un point par joueur, taille selon les cartes jouées. Les pointillés marquent le K/D de 1.00
+        et l&apos;ACS moyen du tournoi. Les trois meilleurs ratings sont nommés ; survolez un point
+        pour le reste.
       </figcaption>
     </figure>
   );

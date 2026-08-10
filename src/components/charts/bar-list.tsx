@@ -68,9 +68,7 @@ export default function BarList({
             <span className="stat text-xs font-semibold text-white">
               {item.valueLabel ?? item.value}
             </span>
-            {item.note && (
-              <span className="text-[10px] text-[var(--text-muted)]">{item.note}</span>
-            )}
+            {item.note && <span className="text-[10px] text-[var(--text-muted)]">{item.note}</span>}
           </div>
         </div>
       ))}

@@ -58,12 +58,12 @@ sudo -u postgres createdb thehub -O thehub
 
 ## Deux jeux de secrets, à ne pas confondre
 
-|  | Étape 3 | Étape 6 |
-|---|---|---|
-| Où | fichier **sur le serveur** | interface **GitHub** |
-| Quoi | `<APP_DIR>/shared/.env` | Settings → Secrets → Actions |
-| Rôle | **faire tourner** le site (base, Discord, HenrikDev) | **livrer** le site (IP, user, clé SSH) |
-| Visible par GitHub | **non, jamais** | oui |
+|                    | Étape 3                                              | Étape 6                                |
+| ------------------ | ---------------------------------------------------- | -------------------------------------- |
+| Où                 | fichier **sur le serveur**                           | interface **GitHub**                   |
+| Quoi               | `<APP_DIR>/shared/.env`                              | Settings → Secrets → Actions           |
+| Rôle               | **faire tourner** le site (base, Discord, HenrikDev) | **livrer** le site (IP, user, clé SSH) |
+| Visible par GitHub | **non, jamais**                                      | oui                                    |
 
 Les secrets applicatifs ne quittent jamais le serveur. GitHub ne reçoit que de
 quoi s'y connecter en SSH.
@@ -105,7 +105,7 @@ chmod 600 "$APP_DIR/shared/.env"
 `X-Forwarded-Host` et la connexion Discord échoue.
 
 Penser à ajouter `https://the-hub-vrc.fr/api/auth/callback/discord` dans les
-*Redirects* de l'application Discord — l'URL de dev ne suffit pas en prod.
+_Redirects_ de l'application Discord — l'URL de dev ne suffit pas en prod.
 
 ## 4. Apache + HTTPS
 
@@ -149,14 +149,14 @@ ssh -i ~/.ssh/thehub_deploy ubuntu@51.68.234.84 'pm2 -v'   # vérifie que ça pa
 **Settings → Secrets and variables → Actions**. Rien d'applicatif ici : ces
 valeurs servent uniquement à GitHub Actions pour se connecter au serveur.
 
-| Secret | Valeur |
-|---|---|
-| `SSH_HOST` | `51.68.234.84` |
-| `SSH_USER` | `ubuntu` |
-| `SSH_PORT` | `22` |
+| Secret            | Valeur                                                 |
+| ----------------- | ------------------------------------------------------ |
+| `SSH_HOST`        | `51.68.234.84`                                         |
+| `SSH_USER`        | `ubuntu`                                               |
+| `SSH_PORT`        | `22`                                                   |
 | `SSH_PRIVATE_KEY` | contenu de `~/.ssh/thehub_deploy` (clé privée entière) |
-| `SSH_KNOWN_HOSTS` | sortie de `ssh-keyscan 51.68.234.84` |
-| `APP_DIR` | `/var/www/the-hub-vrc.fr` |
+| `SSH_KNOWN_HOSTS` | sortie de `ssh-keyscan 51.68.234.84`                   |
+| `APP_DIR`         | `/var/www/the-hub-vrc.fr`                              |
 
 ## 7. Mise en ligne
 
@@ -199,6 +199,7 @@ cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
 
   Rien de critique n'en dépend : l'ouverture des inscriptions est décidée à
   partir des dates, pas du statut stocké.
+
 - **Migrations destructives** : `prisma migrate deploy` tourne avant la bascule.
   Une migration qui supprime une colonne cassera l'ancienne version pendant le
   rechargement.
