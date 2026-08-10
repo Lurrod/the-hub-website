@@ -273,13 +273,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             )}
 
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
+                <SocialLinks
+                  socials={(tournament.socials ?? {}) as Record<string, string | undefined>}
+                  size="h-4 w-4"
+                />
+              </div>
               <p className="mt-0.5 text-xs text-[var(--text-muted)]">{dateRange}</p>
-              <SocialLinks
-                socials={(tournament.socials ?? {}) as Record<string, string | undefined>}
-                size="h-4 w-4"
-                className="mt-2"
-              />
             </div>
 
             <div className="flex items-center gap-8 sm:ml-auto">
