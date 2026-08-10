@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { auth, signIn } from "@/lib/auth";
-import { ensurePlayerForUser, getActiveMembership } from "@/lib/data/players";
+import { ensurePlayerForUser, getActiveMembership, getUserDiscord } from "@/lib/data/players";
 import {
   updateMyProfileAction,
   updateMyRiotIdAction,
   leaveMyTeamAction,
   toggleMyLftAction,
+  toggleMyDiscordVisibilityAction,
 } from "@/app/profil/actions";
 import RiotIdForm from "@/components/riot-id-form";
 import ProfileFields from "@/components/profile-fields";
@@ -43,6 +44,7 @@ export default async function ProfilePage() {
     photo: session.user.image,
   });
   const membership = await getActiveMembership(player.id);
+  const discordAccount = await getUserDiscord(session.user.id);
   const socials = (player.socials ?? {}) as { twitter?: string; twitch?: string };
   const nationality = player.nationality ?? "";
   const birthdateValue = player.birthdate
@@ -125,6 +127,39 @@ export default async function ProfilePage() {
             </form>
           </div>
         </section>
+
+        {discordAccount?.discordId && (
+          <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+              Compte Discord
+            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm text-white">
+                  {discordAccount.discordUsername
+                    ? `Connecté en tant que ${discordAccount.discordUsername}`
+                    : "Compte Discord lié"}
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  {player.showDiscord
+                    ? "Ton Discord s'affiche sur ta fiche publique : les équipes peuvent te contacter."
+                    : "Ton Discord n'apparaît pas sur ta fiche publique."}
+                </p>
+              </div>
+              <form action={toggleMyDiscordVisibilityAction} className="ml-auto shrink-0">
+                <button
+                  className={
+                    player.showDiscord
+                      ? "rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
+                      : "rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                  }
+                >
+                  {player.showDiscord ? "Masquer mon Discord" : "Afficher mon Discord"}
+                </button>
+              </form>
+            </div>
+          </section>
+        )}
 
         <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">

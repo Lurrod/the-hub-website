@@ -19,6 +19,9 @@ model User {
   emailVerified DateTime?
   image         String?
   discordId     String?   @unique
+  /// Pseudo Discord (@handle), rafraîchi à chaque connexion. `name` porte le
+  /// nom d'affichage, qui ne permet pas de retrouver le compte.
+  discordUsername String?
   globalRole    Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -152,6 +155,9 @@ model Player {
   birthdate    DateTime?
   lft          Boolean          @default(false)
   lftSince     DateTime?
+  /// Le Discord du compte lié s'affiche d'office sur la fiche publique ; ce
+  /// drapeau laisse au joueur la possibilité de le retirer.
+  showDiscord  Boolean          @default(true)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   memberships TeamMembership[]
@@ -211,6 +217,9 @@ model Tournament {
   prizePool    String?
   organizer    String?
   description  String?
+  /// Réseaux de l'organisation (même forme que `Team.socials`) : c'est là que
+  /// les joueurs trouvent le Discord du tournoi.
+  socials      Json?
   maxTeams     Int?
   groupSize    Int?
   bestOf       Int?

@@ -111,7 +111,12 @@ export default function ConfidentialitePage() {
           The Hub est un site de référencement compétitif : votre pseudo, votre photo, votre
           nationalité, votre équipe et vos statistiques de match sont visibles par tous les
           visiteurs et peuvent être indexés par les moteurs de recherche. Votre adresse
-          électronique et votre identifiant Discord ne sont jamais affichés publiquement.
+          électronique n&apos;est jamais affichée publiquement.
+        </p>
+        <p>
+          Votre fiche joueur affiche également un lien vers votre profil Discord, afin que les
+          équipes puissent vous contacter. Vous pouvez le retirer à tout moment depuis vos
+          paramètres, rubrique <span className="text-white">Compte Discord</span>.
         </p>
       </Section>
 

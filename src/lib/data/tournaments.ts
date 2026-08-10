@@ -85,6 +85,7 @@ export function createTournament(data: TournamentInput, createdById: string) {
       groupSize: data.groupSize,
       bestOf: data.bestOf,
       seeding: data.seeding,
+      socials: data.socials ?? undefined,
       createdById,
       // Le créateur est propriétaire d'emblée : sans ça un tournoi naissait
       // sans aucun manager, et personne ne pouvait en administrer la gestion
@@ -111,6 +112,7 @@ export function updateTournament(id: string, data: TournamentInput) {
       groupSize: data.groupSize ?? null,
       bestOf: data.bestOf ?? null,
       seeding: data.seeding ?? null,
+      socials: data.socials ?? undefined,
     },
   });
 }

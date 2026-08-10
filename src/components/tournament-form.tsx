@@ -17,6 +17,15 @@ import {
 } from "@/lib/constants";
 import ImageUpload from "@/components/image-upload";
 
+type Socials = {
+  twitter?: string | null;
+  twitch?: string | null;
+  youtube?: string | null;
+  instagram?: string | null;
+  discord?: string | null;
+  website?: string | null;
+} | null;
+
 type TournamentFormValues = {
   name?: string;
   region?: string;
@@ -33,6 +42,7 @@ type TournamentFormValues = {
   seeding?: string;
   logo?: string | null;
   banner?: string | null;
+  socials?: Socials;
 };
 
 const input =
@@ -59,6 +69,7 @@ export default function TournamentForm({
   values?: TournamentFormValues;
   submitLabel: string;
 }) {
+  const s = values?.socials ?? {};
   const [format, setFormat] = useState<TournamentFormat>(
     (values?.format as TournamentFormat) ?? TOURNAMENT_FORMATS[0]
   );
@@ -237,6 +248,77 @@ export default function TournamentForm({
                 </option>
               ))}
             </select>
+          </label>
+        </div>
+      </Section>
+
+      <Section title="Réseaux sociaux">
+        <p className="text-xs text-[var(--text-muted)]">
+          Affichés sur la page publique du tournoi. Le lien Discord est celui que les équipes
+          utiliseront pour vous joindre.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ErrorShake codes={["invalid"]}>
+            <label className={lbl}>
+              Discord
+              <input
+                name="discord"
+                type="url"
+                placeholder="https://discord.gg/…"
+                defaultValue={s?.discord ?? ""}
+                className={`t-input ${input}`}
+              />
+            </label>
+          </ErrorShake>
+          <label className={lbl}>
+            Twitter / X
+            <input
+              name="twitter"
+              type="url"
+              placeholder="https://x.com/…"
+              defaultValue={s?.twitter ?? ""}
+              className={input}
+            />
+          </label>
+          <label className={lbl}>
+            Twitch
+            <input
+              name="twitch"
+              type="url"
+              placeholder="https://twitch.tv/…"
+              defaultValue={s?.twitch ?? ""}
+              className={input}
+            />
+          </label>
+          <label className={lbl}>
+            YouTube
+            <input
+              name="youtube"
+              type="url"
+              placeholder="https://youtube.com/…"
+              defaultValue={s?.youtube ?? ""}
+              className={input}
+            />
+          </label>
+          <label className={lbl}>
+            Instagram
+            <input
+              name="instagram"
+              type="url"
+              placeholder="https://instagram.com/…"
+              defaultValue={s?.instagram ?? ""}
+              className={input}
+            />
+          </label>
+          <label className={lbl}>
+            Site web
+            <input
+              name="website"
+              type="url"
+              placeholder="https://…"
+              defaultValue={s?.website ?? ""}
+              className={input}
+            />
           </label>
         </div>
       </Section>

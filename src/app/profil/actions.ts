@@ -12,6 +12,7 @@ import {
   endMembership,
   setPlayerRiotAccount,
   setPlayerLft,
+  setPlayerShowDiscord,
 } from "@/lib/data/players";
 import { nextLftState } from "@/lib/lft";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
@@ -84,6 +85,16 @@ export async function toggleMyLftAction() {
   revalidatePath("/profil");
   revalidatePath("/lft");
   redirect(`/profil?ok=${state.lft ? "lft-on" : "lft-off"}`);
+}
+
+export async function toggleMyDiscordVisibilityAction() {
+  const player = await requireOwnPlayer();
+
+  const show = !player.showDiscord;
+  await setPlayerShowDiscord(player.id, show);
+  revalidatePath("/profil");
+  revalidatePath(`/joueurs/${player.id}`);
+  redirect(`/profil?ok=${show ? "discord-on" : "discord-off"}`);
 }
 
 export async function leaveMyTeamAction() {

@@ -18,6 +18,7 @@ import BarList from "@/components/charts/bar-list";
 import Meter from "@/components/charts/meter";
 import RatingTrend from "@/components/charts/rating-trend";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
+import { playerDiscordSocial } from "@/lib/discord";
 
 import { playerTitle } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
@@ -70,7 +71,13 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     scoreB: played ? m.scoreB : undefined,
   });
 
-  const socials = (player.socials ?? {}) as Record<string, string | undefined>;
+  // Le Discord du compte lié complète les réseaux saisis à la main : c'est le
+  // canal par lequel on recrute, il n'a pas à être ressaisi.
+  const discord = playerDiscordSocial(player);
+  const socials = {
+    ...((player.socials ?? {}) as Record<string, string | undefined>),
+    ...(discord ? { discord: discord.url } : {}),
+  };
   const age = computeAge(player.birthdate);
   const roleIcon = roleIconUrl(player.valorantRole);
   const currentTeam = player.memberships.find((m) => m.leaveDate === null);
@@ -236,7 +243,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 <h1 style={{ fontSize: "24px" }} className="font-bold text-white">
                   {player.pseudo}
                 </h1>
-                <SocialLinks socials={socials} />
+                <SocialLinks
+                  socials={socials}
+                  labels={discord ? { discord: discord.label } : undefined}
+                />
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[var(--text-muted)]">

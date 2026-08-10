@@ -54,6 +54,42 @@ describe("tournamentInputSchema", () => {
       })
     ).toThrow();
   });
+
+  const base = { name: "Cup", region: "France", format: "GROUPS" } as const;
+
+  it("accepte les réseaux de l'organisation", () => {
+    const r = tournamentInputSchema.parse({
+      ...base,
+      socials: {
+        discord: "https://discord.gg/abc",
+        twitter: "https://x.com/cup",
+        website: "https://cup.gg",
+      },
+    });
+    expect(r.socials).toEqual({
+      discord: "https://discord.gg/abc",
+      twitter: "https://x.com/cup",
+      website: "https://cup.gg",
+    });
+  });
+
+  it("ramène les champs réseaux laissés vides à undefined", () => {
+    const r = tournamentInputSchema.parse({ ...base, socials: { discord: "", twitter: "" } });
+    expect(r.socials?.discord).toBeUndefined();
+    expect(r.socials?.twitter).toBeUndefined();
+  });
+
+  it("refuse un lien Twitter hors x.com", () => {
+    expect(() =>
+      tournamentInputSchema.parse({ ...base, socials: { twitter: "https://evil.example/cup" } })
+    ).toThrow();
+  });
+
+  it("refuse un schéma d'URL non http(s)", () => {
+    expect(() =>
+      tournamentInputSchema.parse({ ...base, socials: { website: "javascript:alert(1)" } })
+    ).toThrow();
+  });
 });
 
 describe("participantAddSchema", () => {

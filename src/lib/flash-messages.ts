@@ -43,6 +43,14 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
     title: "Statut LFT désactivé",
     message: "Tu n'apparais plus sur la page LFT.",
   },
+  "discord-on": {
+    title: "Discord affiché",
+    message: "Ton Discord apparaît sur ta fiche publique.",
+  },
+  "discord-off": {
+    title: "Discord masqué",
+    message: "Ton Discord n'apparaît plus sur ta fiche publique.",
+  },
   "stats-refetched": {
     title: "Recherche relancée",
     message: "Les maps du match ont été resynchronisées avec l'historique Riot.",
