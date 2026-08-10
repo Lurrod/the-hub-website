@@ -37,7 +37,7 @@ const config = [
   {
     // Scripts d'amorçage et de maintenance : lancés à la main, la sortie
     // console y est le mode d'expression normal.
-    files: ["prisma/**/*.ts", "scripts/**/*.ts"],
+    files: ["prisma/**/*.ts", "scripts/**/*.{ts,mjs}"],
     rules: { "no-console": "off" },
   },
 ];

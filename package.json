@@ -1,6 +1,6 @@
 {
   "name": "the-hub-website",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -20,8 +20,8 @@
     "format:check": "prettier --check .",
     "test:coverage": "vitest run --coverage",
     "db:seed:formats": "tsx prisma/seed-formats.ts",
-    "db:sync:tournaments": "tsx scripts/sync-tournament-statuses.ts",
-    "images:prune": "tsx scripts/prune-orphan-images.ts"
+    "db:sync:tournaments": "node scripts/sync-tournament-statuses.mjs",
+    "images:prune": "node scripts/prune-orphan-images.mjs"
   },
   "overrides": {
     "sharp": "^0.35.3",

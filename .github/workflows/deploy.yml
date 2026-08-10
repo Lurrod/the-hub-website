@@ -60,6 +60,14 @@ jobs:
           # Migrations + schéma : `prisma migrate deploy` tourne sur le serveur.
           cp -r prisma release/prisma
           cp ecosystem.config.cjs release/
+          # Scripts de maintenance, en .mjs pour tourner avec le Node et le
+          # client Prisma de la release : le standalone n'embarque ni tsx ni les
+          # dépendances de développement. Copiés un par un et non `cp -r scripts` :
+          # les scripts d'amorçage `seed-*` sont des données de démonstration et
+          # n'ont rien à faire en production.
+          mkdir -p release/scripts
+          cp scripts/prune-orphan-images.mjs release/scripts/
+          cp scripts/sync-tournament-statuses.mjs release/scripts/
           # Le traçage de fichiers de Next embarque un dossier `uploads` s'il
           # existe au moment du build. Il doit être un lien vers le volume
           # persistant du serveur, pas un vrai dossier livré avec la release.
