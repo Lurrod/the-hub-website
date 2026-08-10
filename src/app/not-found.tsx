@@ -20,8 +20,8 @@ export default function NotFound() {
       }
     >
       <p>
-        Le lien est peut-être erroné, ou la fiche a été supprimée. Les tournois,
-        équipes et joueurs restent accessibles depuis la recherche.
+        Le lien est peut-être erroné, ou la fiche a été supprimée. Les tournois, équipes et joueurs
+        restent accessibles depuis la recherche.
       </p>
     </StatusPage>
   );

@@ -58,11 +58,11 @@ B dépend de A, C dépend de B. Ce spec ne couvre **que la Phase A**.
 Nouveaux champs :
 
 | Champ      | Type      | Notes                                                        |
-|------------|-----------|--------------------------------------------------------------|
+| ---------- | --------- | ------------------------------------------------------------ |
 | `riotName` | `String?` | Partie « Nom » du Riot ID (avant le `#`).                    |
-| `riotTag`  | `String?` | Partie « Tag » (après le `#`).                              |
+| `riotTag`  | `String?` | Partie « Tag » (après le `#`).                               |
 | `puuid`    | `String?` | **@unique**. Identifiant stable Riot, vraie garde d'unicité. |
-| `region`   | `String?` | Région renvoyée par HenrikDev (`eu`, `na`, …).              |
+| `region`   | `String?` | Région renvoyée par HenrikDev (`eu`, `na`, …).               |
 
 - Affichage : `riotName#riotTag`.
 - Unicité réelle portée par `puuid @unique`. Contrôle applicatif complémentaire :
@@ -134,13 +134,13 @@ Nouveaux champs :
 
 Nouveaux codes d'erreur dans `lib/flash-messages.ts` :
 
-| Code           | Message                                                        |
-|----------------|---------------------------------------------------------------|
-| `riotformat`   | « Riot ID invalide. Format attendu : Nom#Tag. »               |
-| `riotnotfound` | « Ce Riot ID n'existe pas (introuvable côté Riot). »          |
-| `riottaken`    | « Ce Riot ID est déjà associé à un autre joueur. »            |
-| `ratelimited`  | « Trop de requêtes, réessaie dans un instant. »               |
-| `riotapi`      | « Service Riot indisponible, réessaie plus tard. »            |
+| Code           | Message                                              |
+| -------------- | ---------------------------------------------------- |
+| `riotformat`   | « Riot ID invalide. Format attendu : Nom#Tag. »      |
+| `riotnotfound` | « Ce Riot ID n'existe pas (introuvable côté Riot). » |
+| `riottaken`    | « Ce Riot ID est déjà associé à un autre joueur. »   |
+| `ratelimited`  | « Trop de requêtes, réessaie dans un instant. »      |
+| `riotapi`      | « Service Riot indisponible, réessaie plus tard. »   |
 
 Succès : `riot-saved` → « Riot ID enregistré ».
 

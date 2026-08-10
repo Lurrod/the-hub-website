@@ -45,7 +45,14 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
       <div className="absolute left-3 top-3 z-10 flex items-center uppercase tracking-wide text-[var(--text-subtle)] tp-label">
         {roleIcon ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img loading="lazy" decoding="async" src={roleIcon} alt={roleName ?? ""} title={roleName} className="h-5 w-5" />
+          <img
+            loading="lazy"
+            decoding="async"
+            src={roleIcon}
+            alt={roleName ?? ""}
+            title={roleName}
+            className="h-5 w-5"
+          />
         ) : (
           <span>{MEMBERSHIP_LABELS[player.membershipRole] ?? player.membershipRole}</span>
         )}
@@ -57,7 +64,9 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
         {player.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            loading="lazy" decoding="async" src={player.photo}
+            loading="lazy"
+            decoding="async"
+            src={player.photo}
             alt=""
             className="mx-auto h-[120px] w-[120px] rounded-full object-cover"
           />
@@ -68,7 +77,9 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
         )}
 
         <div className="flex min-w-0 items-center justify-center gap-1.5">
-          {player.nationality && <Flag country={player.nationality} className="h-[12px] w-[16px]" />}
+          {player.nationality && (
+            <Flag country={player.nationality} className="h-[12px] w-[16px]" />
+          )}
           <span className="truncate font-semibold text-white tp-name">{player.pseudo}</span>
         </div>
 
@@ -79,7 +90,9 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
               return icon ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  loading="lazy" decoding="async" key={agent}
+                  loading="lazy"
+                  decoding="async"
+                  key={agent}
                   src={icon}
                   alt={agent}
                   title={agent}

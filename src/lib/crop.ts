@@ -100,12 +100,7 @@ export function clampOffset(offset: Offset, image: Size, frame: Size, zoom: numb
  * Peut déborder de l'image quand `zoom < 1` : `drawImage` clippe alors le
  * dessin et laisse les marges transparentes, ce qu'on veut.
  */
-export function computeCropRect(
-  image: Size,
-  frame: Size,
-  zoom: number,
-  offset: Offset
-): CropRect {
+export function computeCropRect(image: Size, frame: Size, zoom: number, offset: Offset): CropRect {
   const scale = coverScale(image, frame) * zoom || 1;
   const shown = displayedSize(image, frame, zoom);
   return {

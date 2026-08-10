@@ -12,16 +12,16 @@ la fiche joueur.
 
 ## Ce que la politique promet, et ce que cela implique
 
-| Donnée                       | Sort à l'effacement                              |
-| ---------------------------- | ------------------------------------------------ |
-| Compte (`User`)              | supprimé                                         |
-| Jetons OAuth (`Account`)     | supprimé en cascade                              |
-| Sessions (`Session`)         | supprimé en cascade                              |
-| Rôles de gestion             | `TeamManager` supprimé en cascade                |
-| Fiche joueur (`Player`)      | conservée mais **anonymisée** (voir plus bas)    |
-| Photo déposée                | fichier effacé du disque                         |
-| Statistiques de match        | conservées, `playerId` remis à `NULL`            |
-| Historique d'équipe          | conservé (adhésions rattachées à la fiche)       |
+| Donnée                   | Sort à l'effacement                           |
+| ------------------------ | --------------------------------------------- |
+| Compte (`User`)          | supprimé                                      |
+| Jetons OAuth (`Account`) | supprimé en cascade                           |
+| Sessions (`Session`)     | supprimé en cascade                           |
+| Rôles de gestion         | `TeamManager` supprimé en cascade             |
+| Fiche joueur (`Player`)  | conservée mais **anonymisée** (voir plus bas) |
+| Photo déposée            | fichier effacé du disque                      |
+| Statistiques de match    | conservées, `playerId` remis à `NULL`         |
+| Historique d'équipe      | conservé (adhésions rattachées à la fiche)    |
 
 La conservation des statistiques est un choix assumé et annoncé : les
 classements et les feuilles de match d'une compétition passée resteraient faux

@@ -28,6 +28,7 @@
 ## Task 1: Client `getPlayerCustomMatches` + types normalisés
 
 **Files:**
+
 - Modify: `src/lib/henrikdev.ts`
 - Test: `tests/unit/henrikdev-matches.test.ts`
 
@@ -40,10 +41,15 @@ import { getPlayerCustomMatches } from "@/lib/henrikdev";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
-    status, ok: status >= 200 && status < 300, json: async () => body,
+    status,
+    ok: status >= 200 && status < 300,
+    json: async () => body,
   } as Response);
 }
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 const rawMatch = {
   metadata: { match_id: "m1", map: { name: "Ascent" }, started_at: "2026-07-27T20:00:00Z" },
@@ -53,8 +59,21 @@ const rawMatch = {
   ],
   players: [
     {
-      puuid: "p1", name: "Zed", tag: "EUW", team_id: "Red", agent: { name: "Jett" },
-      stats: { kills: 20, deaths: 12, assists: 5, score: 4400, headshots: 30, bodyshots: 60, legshots: 10, damage: { dealt: 3300 } },
+      puuid: "p1",
+      name: "Zed",
+      tag: "EUW",
+      team_id: "Red",
+      agent: { name: "Jett" },
+      stats: {
+        kills: 20,
+        deaths: 12,
+        assists: 5,
+        score: 4400,
+        headshots: 30,
+        bodyshots: 60,
+        legshots: 10,
+        damage: { dealt: 3300 },
+      },
     },
   ],
 };
@@ -66,12 +85,24 @@ describe("getPlayerCustomMatches", () => {
     const out = await getPlayerCustomMatches("eu", "Zed", "EUW");
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({
-      matchId: "m1", map: "Ascent", startedAt: "2026-07-27T20:00:00Z",
+      matchId: "m1",
+      map: "Ascent",
+      startedAt: "2026-07-27T20:00:00Z",
       teamRounds: { Red: 13, Blue: 9 },
     });
     expect(out[0].players[0]).toMatchObject({
-      puuid: "p1", teamId: "Red", agent: "Jett", kills: 20, deaths: 12, assists: 5,
-      score: 4400, headshots: 30, bodyshots: 60, legshots: 10, damageMade: 3300, firstKills: 0,
+      puuid: "p1",
+      teamId: "Red",
+      agent: "Jett",
+      kills: 20,
+      deaths: 12,
+      assists: 5,
+      score: 4400,
+      headshots: 30,
+      bodyshots: 60,
+      legshots: 10,
+      damageMade: 3300,
+      firstKills: 0,
     });
   });
   it("retourne [] si data absent", async () => {
@@ -82,7 +113,9 @@ describe("getPlayerCustomMatches", () => {
   it("429 -> RATE_LIMITED", async () => {
     vi.stubEnv("HENRIKDEV_API_KEY", "k");
     vi.stubGlobal("fetch", mockFetch(429, {}));
-    await expect(getPlayerCustomMatches("eu", "x", "yyy")).rejects.toMatchObject({ code: "RATE_LIMITED" });
+    await expect(getPlayerCustomMatches("eu", "x", "yyy")).rejects.toMatchObject({
+      code: "RATE_LIMITED",
+    });
   });
 });
 ```
@@ -160,11 +193,19 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
     metadata?: { match_id?: string; map?: { name?: string }; started_at?: string };
     teams?: { team_id?: string; rounds?: { won?: number } }[];
     players?: {
-      puuid?: string; name?: string; tag?: string; team_id?: string;
+      puuid?: string;
+      name?: string;
+      tag?: string;
+      team_id?: string;
       agent?: { name?: string };
       stats?: {
-        kills?: number; deaths?: number; assists?: number; score?: number;
-        headshots?: number; bodyshots?: number; legshots?: number;
+        kills?: number;
+        deaths?: number;
+        assists?: number;
+        score?: number;
+        headshots?: number;
+        bodyshots?: number;
+        legshots?: number;
         damage?: { dealt?: number };
       };
     }[];
@@ -215,6 +256,7 @@ git commit -m "feat: add HenrikDev custom match history client (normalized)"
 ## Task 2: Logique pure `match-stats-core.ts`
 
 **Files:**
+
 - Create: `src/lib/match-stats-core.ts`
 - Test: `tests/unit/match-stats-core.test.ts`
 
@@ -224,22 +266,46 @@ git commit -m "feat: add HenrikDev custom match history client (normalized)"
 // tests/unit/match-stats-core.test.ts
 import { describe, it, expect } from "vitest";
 import {
-  countExpected, assignSides, computeDerivedStats, selectSeries,
+  countExpected,
+  assignSides,
+  computeDerivedStats,
+  selectSeries,
 } from "@/lib/match-stats-core";
 import type { CustomMatch, CustomMatchPlayer } from "@/lib/henrikdev";
 
 function player(puuid: string, teamId: string): CustomMatchPlayer {
   return {
-    puuid, name: puuid, tag: "EUW", teamId, agent: "Jett",
-    kills: 0, deaths: 0, assists: 0, score: 0,
-    headshots: 0, bodyshots: 0, legshots: 0, damageMade: 0, firstKills: 0,
+    puuid,
+    name: puuid,
+    tag: "EUW",
+    teamId,
+    agent: "Jett",
+    kills: 0,
+    deaths: 0,
+    assists: 0,
+    score: 0,
+    headshots: 0,
+    bodyshots: 0,
+    legshots: 0,
+    damageMade: 0,
+    firstKills: 0,
   };
 }
-function match(id: string, startedAt: string, puuidsRed: string[], puuidsBlue: string[]): CustomMatch {
+function match(
+  id: string,
+  startedAt: string,
+  puuidsRed: string[],
+  puuidsBlue: string[]
+): CustomMatch {
   return {
-    matchId: id, map: "Ascent", startedAt,
+    matchId: id,
+    map: "Ascent",
+    startedAt,
     teamRounds: { Red: 13, Blue: 9 },
-    players: [...puuidsRed.map((p) => player(p, "Red")), ...puuidsBlue.map((p) => player(p, "Blue"))],
+    players: [
+      ...puuidsRed.map((p) => player(p, "Red")),
+      ...puuidsBlue.map((p) => player(p, "Blue")),
+    ],
   };
 }
 
@@ -270,7 +336,14 @@ describe("assignSides", () => {
 
 describe("computeDerivedStats", () => {
   it("calcule ACS/ADR/HS%", () => {
-    const p = { ...player("a", "Red"), score: 4400, damageMade: 3300, headshots: 30, bodyshots: 60, legshots: 10 };
+    const p = {
+      ...player("a", "Red"),
+      score: 4400,
+      damageMade: 3300,
+      headshots: 30,
+      bodyshots: 60,
+      legshots: 10,
+    };
     const s = computeDerivedStats(p, 22);
     expect(s.acs).toBe(200);
     expect(s.adr).toBe(150);
@@ -386,10 +459,12 @@ git commit -m "feat: add pure match-stats core (matching, sides, derived stats)"
 ## Task 3: Schéma Prisma + migration
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 - Create: `prisma/migrations/20260727010000_match_scoreboard/migration.sql`
 
 - [ ] **Step 1: Étendre `MatchMap`** — après `order Int @default(0)` (avant la relation `match`), ajouter :
+
 ```prisma
   riotMatchId String?   @unique
   startedAt   DateTime?
@@ -397,17 +472,20 @@ git commit -m "feat: add pure match-stats core (matching, sides, derived stats)"
 ```
 
 - [ ] **Step 2: Étendre `Match`** — après `vodUrl String?`, ajouter :
+
 ```prisma
   statsStatus    String?
   statsFetchedAt DateTime?
 ```
 
 - [ ] **Step 3: Étendre `Player`** — dans `model Player`, après `memberships TeamMembership[]`, ajouter :
+
 ```prisma
   gameStats   PlayerGameStat[]
 ```
 
 - [ ] **Step 4: Ajouter le model `PlayerGameStat`** (à la fin, après `MatchMap`) :
+
 ```prisma
 model PlayerGameStat {
   id         String    @id @default(cuid())
@@ -434,6 +512,7 @@ model PlayerGameStat {
 ```
 
 - [ ] **Step 5: Écrire la migration** `prisma/migrations/20260727010000_match_scoreboard/migration.sql` :
+
 ```sql
 ALTER TABLE "MatchMap" ADD COLUMN IF NOT EXISTS "riotMatchId" TEXT;
 ALTER TABLE "MatchMap" ADD COLUMN IF NOT EXISTS "startedAt" TIMESTAMP(3);
@@ -484,6 +563,7 @@ git commit -m "feat: add PlayerGameStat model + MatchMap/Match stats fields"
 ## Task 4: Orchestrateur `fetchAndStoreMatchStats`
 
 **Files:**
+
 - Create: `src/lib/match-stats.ts`
 
 - [ ] **Step 1: Implémenter l'orchestrateur**
@@ -496,12 +576,23 @@ import { assignSides, computeDerivedStats, selectSeries, type Side } from "@/lib
 const MATCH_THRESHOLD = 8;
 const MAX_PLAYER_QUERIES = 4;
 
-type Known = { puuid: string; playerId: string; side: Side; region: string; name: string; tag: string };
+type Known = {
+  puuid: string;
+  playerId: string;
+  side: Side;
+  region: string;
+  name: string;
+  tag: string;
+};
 
 /** Joueurs (adhésions actives) des 2 équipes ayant un puuid, avec leur côté A/B. */
 async function knownPlayers(teamAId: string, teamBId: string): Promise<Known[]> {
   const rows = await db.teamMembership.findMany({
-    where: { leaveDate: null, teamId: { in: [teamAId, teamBId] }, player: { puuid: { not: null } } },
+    where: {
+      leaveDate: null,
+      teamId: { in: [teamAId, teamBId] },
+      player: { puuid: { not: null } },
+    },
     select: {
       teamId: true,
       player: { select: { id: true, puuid: true, region: true, riotName: true, riotTag: true } },
@@ -512,8 +603,12 @@ async function knownPlayers(teamAId: string, teamBId: string): Promise<Known[]> 
     const p = r.player;
     if (!p.puuid || !p.riotName || !p.riotTag) continue;
     known.push({
-      puuid: p.puuid, playerId: p.id, side: r.teamId === teamAId ? "A" : "B",
-      region: p.region ?? "eu", name: p.riotName, tag: p.riotTag,
+      puuid: p.puuid,
+      playerId: p.id,
+      side: r.teamId === teamAId ? "A" : "B",
+      region: p.region ?? "eu",
+      name: p.riotName,
+      tag: p.riotTag,
     });
   }
   return known;
@@ -575,8 +670,13 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
 
       const created = await tx.matchMap.create({
         data: {
-          matchId: match.id, mapName: cm.map || "?", scoreA: roundsA, scoreB: roundsB,
-          order: i, riotMatchId: cm.matchId, startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
+          matchId: match.id,
+          mapName: cm.map || "?",
+          scoreA: roundsA,
+          scoreB: roundsB,
+          order: i,
+          riotMatchId: cm.matchId,
+          startedAt: cm.startedAt ? new Date(cm.startedAt) : null,
         },
       });
       await tx.playerGameStat.createMany({
@@ -586,10 +686,18 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
           return {
             matchMapId: created.id,
             playerId: playerIdByPuuid.get(p.puuid) ?? null,
-            riotName: p.name, riotTag: p.tag, puuid: p.puuid || null,
+            riotName: p.name,
+            riotTag: p.tag,
+            puuid: p.puuid || null,
             teamSide: sideOfTeam[p.teamId] ?? "A",
-            agent: p.agent, kills: p.kills, deaths: p.deaths, assists: p.assists,
-            acs: d.acs, adr: d.adr, hsPct: d.hsPct, firstKills: p.firstKills,
+            agent: p.agent,
+            kills: p.kills,
+            deaths: p.deaths,
+            assists: p.assists,
+            acs: d.acs,
+            adr: d.adr,
+            hsPct: d.hsPct,
+            firstKills: p.firstKills,
           };
         }),
       });
@@ -597,7 +705,13 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
     const winnerId = mapsA > mapsB ? match.teamAId : mapsB > mapsA ? match.teamBId : null;
     await tx.match.update({
       where: { id: match.id },
-      data: { scoreA: mapsA, scoreB: mapsB, winnerId, statsStatus: "MATCHED", statsFetchedAt: new Date() },
+      data: {
+        scoreA: mapsA,
+        scoreB: mapsB,
+        winnerId,
+        statsStatus: "MATCHED",
+        statsFetchedAt: new Date(),
+      },
     });
   });
   return "MATCHED";
@@ -620,6 +734,7 @@ git commit -m "feat: add fetchAndStoreMatchStats orchestrator (idempotent)"
 ## Task 5: Déclencheur dans `updateMatchAction`
 
 **Files:**
+
 - Modify: `src/app/admin/actions/matches.ts`
 
 - [ ] **Step 1: Lire** `src/app/admin/actions/matches.ts` pour trouver `updateMatchAction` et comment le statut est déterminé (champ `status` du form / de `data`).
@@ -627,20 +742,24 @@ git commit -m "feat: add fetchAndStoreMatchStats orchestrator (idempotent)"
 - [ ] **Step 2: Déclencher après la mise à jour, si `FINISHED`**
 
 Ajouter l'import :
+
 ```ts
 import { fetchAndStoreMatchStats } from "@/lib/match-stats";
 ```
+
 Dans `updateMatchAction`, APRÈS que le match a été mis à jour en base et AVANT les `revalidatePath`/`redirect`, ajouter (adapter le nom de la variable de statut à ce que le fichier utilise réellement — c'est la valeur validée du statut, p.ex. `data.status`) :
+
 ```ts
-  if (data.status === "FINISHED") {
-    try {
-      await fetchAndStoreMatchStats(matchId);
-    } catch (e) {
-      // Ne jamais casser la validation du match sur une erreur de récupération.
-      console.error("fetchAndStoreMatchStats failed", e);
-    }
+if (data.status === "FINISHED") {
+  try {
+    await fetchAndStoreMatchStats(matchId);
+  } catch (e) {
+    // Ne jamais casser la validation du match sur une erreur de récupération.
+    console.error("fetchAndStoreMatchStats failed", e);
   }
+}
 ```
+
 Si `fetchAndStoreMatchStats` ne lève déjà jamais (elle renvoie un statut), le `try/catch` reste une ceinture de sécurité. NE PAS modifier la logique existante de mise à jour du match.
 
 - [ ] **Step 3: Typecheck**
@@ -659,24 +778,29 @@ git commit -m "feat: fetch scoreboard stats automatically on match validation"
 ## Task 6: Indicateur `statsStatus` en gestion du match
 
 **Files:**
+
 - Modify: `src/app/tournois/[id]/gestion/matchs/[matchId]/page.tsx`
 
 - [ ] **Step 1: Lire** la page pour voir comment le match est chargé (variable `match`, quels champs sont `select`és — si un `select` limite les champs, ajouter `statsStatus` et `statsFetchedAt`).
 
 - [ ] **Step 2: Afficher un indicateur** sous le titre du match :
+
 ```tsx
-{match.statsStatus === "MATCHED" ? (
-  <p className="mb-4 text-xs text-[var(--success)]">
-    Stats récupérées automatiquement depuis Riot
-    {match.statsFetchedAt ? ` (${new Date(match.statsFetchedAt).toLocaleString("fr-FR")})` : ""}.
-  </p>
-) : match.statsStatus === "NOT_FOUND" ? (
-  <p className="mb-4 text-xs text-[var(--text-muted)]">
-    Aucune partie custom correspondante trouvée. Ré-enregistre le match une fois la partie
-    disponible dans l&apos;historique Riot pour réessayer.
-  </p>
-) : null}
+{
+  match.statsStatus === "MATCHED" ? (
+    <p className="mb-4 text-xs text-[var(--success)]">
+      Stats récupérées automatiquement depuis Riot
+      {match.statsFetchedAt ? ` (${new Date(match.statsFetchedAt).toLocaleString("fr-FR")})` : ""}.
+    </p>
+  ) : match.statsStatus === "NOT_FOUND" ? (
+    <p className="mb-4 text-xs text-[var(--text-muted)]">
+      Aucune partie custom correspondante trouvée. Ré-enregistre le match une fois la partie
+      disponible dans l&apos;historique Riot pour réessayer.
+    </p>
+  ) : null;
+}
 ```
+
 Si le chargement du match utilise un `select` Prisma explicite qui n'inclut pas ces champs, ajouter `statsStatus: true, statsFetchedAt: true` à ce `select`. Si c'est un `include`/objet complet, rien à ajouter.
 
 - [ ] **Step 3: Typecheck**

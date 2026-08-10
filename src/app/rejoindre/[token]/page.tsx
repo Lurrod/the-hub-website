@@ -37,8 +37,8 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
       <Shell>
         <h1 className="mb-2 text-2xl font-bold text-white">Rejoindre {team.name}</h1>
         <p className="mb-6 text-sm text-[var(--text-muted)]">
-          Connecte-toi avec Discord pour rejoindre cette équipe. Un compte sera créé si tu
-          n&apos;en as pas.
+          Connecte-toi avec Discord pour rejoindre cette équipe. Un compte sera créé si tu n&apos;en
+          as pas.
         </p>
         <form
           action={async () => {
@@ -75,7 +75,9 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
   if (active) {
     return (
       <Shell>
-        <h1 className="mb-3 text-2xl font-bold text-white">Tu dois d&apos;abord quitter ton équipe</h1>
+        <h1 className="mb-3 text-2xl font-bold text-white">
+          Tu dois d&apos;abord quitter ton équipe
+        </h1>
         <p className="mb-6 text-sm text-[var(--text-muted)]">
           Tu fais déjà partie de <span className="text-white">{active.team.name}</span>. Quitte-la
           depuis ton profil avant de rejoindre {team.name}.

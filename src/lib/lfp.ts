@@ -52,10 +52,7 @@ export function normalizeLfpMessage(raw: string | undefined): string | null {
  * Libellé des postes recherchés. Une liste vide veut dire « ouvert à tous »,
  * pas « aucun poste » — c'est le cas d'une équipe qui se reconstruit.
  */
-export function lfpRolesLabel(
-  roles: readonly string[],
-  labels: Record<string, string>
-): string {
+export function lfpRolesLabel(roles: readonly string[], labels: Record<string, string>): string {
   if (roles.length === 0) return "Tous les postes";
   return roles.map((r) => labels[r] ?? r).join(", ");
 }

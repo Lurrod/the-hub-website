@@ -12,11 +12,7 @@ import { updateTeamAction, deleteTeamAction } from "@/app/admin/actions/teams";
 
 import { teamTitle } from "@/lib/data/titles";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await teamTitle(id);
   return { title: name ? `Gestion · ${name}` : "Gestion de l'équipe" };
@@ -25,11 +21,7 @@ export async function generateMetadata({
 const TAB_LINK =
   "rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]";
 
-export default async function TeamGestionPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function TeamGestionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const team = await getTeam(id);
   if (!team) notFound();
@@ -45,7 +37,10 @@ export default async function TeamGestionPage({
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Gérer<span className="dot-sep">·</span>{team.name}</h1>
+        <h1 className="text-2xl font-bold text-white">
+          Gérer<span className="dot-sep">·</span>
+          {team.name}
+        </h1>
         <Link
           href={`/equipes/${id}`}
           className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-sm text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]"
@@ -95,12 +90,18 @@ export default async function TeamGestionPage({
             <>
               <fieldset className="grid gap-2">
                 <legend className="text-sm text-[var(--text-muted)]">
-                  Postes recherchés <span className="text-[var(--text-subtle)]">(aucun coché = ouvert à tous)</span>
+                  Postes recherchés{" "}
+                  <span className="text-[var(--text-subtle)]">(aucun coché = ouvert à tous)</span>
                 </legend>
                 <div className="flex flex-wrap gap-3">
                   {VALORANT_ROLES.map((r) => (
                     <label key={r} className="flex items-center gap-1.5 text-sm text-white">
-                      <input type="checkbox" name="lfpRole" value={r} className="accent-[var(--accent)]" />
+                      <input
+                        type="checkbox"
+                        name="lfpRole"
+                        value={r}
+                        className="accent-[var(--accent)]"
+                      />
                       {ROLE_LABELS[r]}
                     </label>
                   ))}
@@ -134,7 +135,8 @@ export default async function TeamGestionPage({
       <section className="mt-10 rounded-lg border border-[var(--destructive)] p-4">
         <h2 className="mb-2 text-lg font-semibold text-[var(--destructive)]">Zone danger</h2>
         <p className="mb-3 text-sm text-[var(--text-muted)]">
-          La suppression de l&apos;équipe est définitive (roster, historiques et participations liées).
+          La suppression de l&apos;équipe est définitive (roster, historiques et participations
+          liées).
         </p>
         <ConfirmDeleteButton
           action={deleteWithId}

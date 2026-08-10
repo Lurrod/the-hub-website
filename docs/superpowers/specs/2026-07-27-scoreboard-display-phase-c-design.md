@@ -23,7 +23,9 @@ d'équipe, colonnes agent/joueur/K/D/A/ACS/ADR/HS%.
 ## Design
 
 ### 1. Données (`src/lib/data/matches.ts`)
+
 Étendre `getMatch` :
+
 ```
 maps: {
   orderBy: { order: "asc" },
@@ -32,6 +34,7 @@ maps: {
 ```
 
 ### 2. Icônes d'agents (`src/lib/agents.ts` + `src/components/agent-icon.tsx`)
+
 - `AGENT_ICONS: Record<string, string>` : nom d'agent (displayName) → URL d'icône,
   **généré une fois** depuis `https://valorant-api.com/v1/agents?isPlayableCharacter=true`
   (champ `displayName` → `displayIcon`) et figé dans le fichier (pas de fetch runtime).
@@ -39,10 +42,11 @@ maps: {
   repli (monogramme/initiale). Server component (simple `<img>`).
 
 ### 3. Scoreboard (`src/components/match-scoreboard.tsx`, client)
+
 - Props : liste des cartes `{ id, mapName, scoreA, scoreB, stats: PlayerStatRow[] }`,
-  + noms/tags des deux équipes.
+  - noms/tags des deux équipes.
 - `PlayerStatRow` : `{ playerId, pseudo, riotName, teamSide, agent, kills, deaths,
-  assists, acs, adr, hsPct }`.
+assists, acs, adr, hsPct }`.
 - **Onglets** : un par carte (label = nom + score `13–9`). État client (`useState`) pour
   la carte active.
 - Par carte : bloc équipe A puis bloc équipe B. En-tête de bloc = nom d'équipe + rounds
@@ -52,15 +56,18 @@ maps: {
   en texte.
 
 ### 4. Intégration (`src/app/matchs/[id]/page.tsx`)
+
 - Si `match.statsStatus === "MATCHED"` et au moins une carte a des `stats` → afficher
   `<MatchScoreboard ... />` à la place de la section « Détail des maps ».
 - Sinon → comportement actuel inchangé.
 
 ### 5. Robustesse / hors périmètre
+
 - Aucune donnée sensible ; pas de nouveau modèle DB. Repli propre si agent inconnu.
 - Hors périmètre : tri interactif des colonnes, agrégats multi-matchs, filtres.
 
 ## Tests
+
 - Pas de logique métier nouvelle testable unitairement (affichage). Vérification par
   `npx tsc --noEmit` + build + contrôle visuel avec des données réelles (Phase B).
 - Optionnel : un test de tri des joueurs par ACS (fonction pure extraite si utile).

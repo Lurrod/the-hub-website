@@ -22,27 +22,28 @@ Satori n'est pas un navigateur. Trois pièges reviennent :
 
 ## Structure des fichiers
 
-| Fichier | Responsabilité |
-|---|---|
-| `assets/fonts/BricolageGrotesque-ExtraBold.ttf` | police d'affichage, versionnée |
-| `assets/fonts/GeistMono-Medium.ttf` | police mono, versionnée |
-| `assets/fonts/README.md` | d'où viennent ces fichiers et comment les régénérer |
-| `src/lib/og/theme.ts` | couleurs et tailles, copiées des tokens CSS |
-| `src/lib/og/size.ts` | `size` / `contentType`, réexportés par chaque route |
-| `src/lib/og/fonts.ts` | lecture mémoïsée des TTF |
-| `src/lib/og/image.ts` | clé d'upload → PNG en data URI, `null` si absent |
-| `src/lib/og/labels.ts` | formatage pur : dates, scores, bilans, badges, monogrammes |
-| `src/lib/og/fields.tsx` | briques JSX : titre, ligne de méta, bloc de chiffres, pastille |
-| `src/lib/og/frame.tsx` | cadre commun + `renderOg()` qui enveloppe les erreurs |
-| `src/app/**/opengraph-image.tsx` | 9 routes, 15 à 25 lignes chacune |
-| `tests/unit/og-labels.test.ts` | couverture de `labels.ts` |
-| `tests/unit/og-image.test.ts` | couverture de `image.ts` |
+| Fichier                                         | Responsabilité                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------- |
+| `assets/fonts/BricolageGrotesque-ExtraBold.ttf` | police d'affichage, versionnée                                 |
+| `assets/fonts/GeistMono-Medium.ttf`             | police mono, versionnée                                        |
+| `assets/fonts/README.md`                        | d'où viennent ces fichiers et comment les régénérer            |
+| `src/lib/og/theme.ts`                           | couleurs et tailles, copiées des tokens CSS                    |
+| `src/lib/og/size.ts`                            | `size` / `contentType`, réexportés par chaque route            |
+| `src/lib/og/fonts.ts`                           | lecture mémoïsée des TTF                                       |
+| `src/lib/og/image.ts`                           | clé d'upload → PNG en data URI, `null` si absent               |
+| `src/lib/og/labels.ts`                          | formatage pur : dates, scores, bilans, badges, monogrammes     |
+| `src/lib/og/fields.tsx`                         | briques JSX : titre, ligne de méta, bloc de chiffres, pastille |
+| `src/lib/og/frame.tsx`                          | cadre commun + `renderOg()` qui enveloppe les erreurs          |
+| `src/app/**/opengraph-image.tsx`                | 9 routes, 15 à 25 lignes chacune                               |
+| `tests/unit/og-labels.test.ts`                  | couverture de `labels.ts`                                      |
+| `tests/unit/og-image.test.ts`                   | couverture de `image.ts`                                       |
 
 ---
 
 ## Task 1 : Versionner les polices
 
 **Files:**
+
 - Create: `assets/fonts/BricolageGrotesque-ExtraBold.ttf`
 - Create: `assets/fonts/GeistMono-Medium.ttf`
 - Create: `assets/fonts/README.md`
@@ -118,6 +119,7 @@ git commit -m "chore(og): versionner les polices ttf du rendu des images de part
 ## Task 2 : Thème et constantes de route
 
 **Files:**
+
 - Create: `src/lib/og/theme.ts`
 - Create: `src/lib/og/size.ts`
 
@@ -179,6 +181,7 @@ git commit -m "feat(og): poser les jetons de style et les constantes de route"
 ## Task 3 : Formatage pur (`labels.ts`)
 
 **Files:**
+
 - Create: `src/lib/og/labels.ts`
 - Test: `tests/unit/og-labels.test.ts`
 
@@ -493,6 +496,7 @@ git commit -m "feat(og): formater dates, scores, bilans et badges des images de 
 ## Task 4 : Lecture des uploads (`image.ts`)
 
 **Files:**
+
 - Create: `src/lib/og/image.ts`
 - Test: `tests/unit/og-image.test.ts`
 
@@ -596,6 +600,7 @@ git commit -m "feat(og): convertir les uploads webp en png inlinable"
 ## Task 5 : Polices, cadre et briques JSX
 
 **Files:**
+
 - Create: `src/lib/og/fonts.ts`
 - Create: `src/lib/og/fields.tsx`
 - Create: `src/lib/og/frame.tsx`
@@ -674,17 +679,13 @@ export function Title({ children }: { children: string }) {
 /** Ligne de contexte sous le titre. Ne rend rien si elle est vide. */
 export function Meta({ children }: { children: string }) {
   if (!children) return null;
-  return (
-    <div style={{ fontFamily: MONO, fontSize: 26, color: OG.muted }}>{children}</div>
-  );
+  return <div style={{ fontFamily: MONO, fontSize: 26, color: OG.muted }}>{children}</div>;
 }
 
 /** Ligne de chiffres, en mono et en orange. Ne rend rien si elle est vide. */
 export function Stats({ children }: { children: string }) {
   if (!children) return null;
-  return (
-    <div style={{ fontFamily: MONO, fontSize: 30, color: OG.accent }}>{children}</div>
-  );
+  return <div style={{ fontFamily: MONO, fontSize: 30, color: OG.accent }}>{children}</div>;
 }
 
 /**
@@ -870,6 +871,7 @@ git commit -m "feat(og): construire le cadre commun des images de partage"
 ## Task 6 : Les cinq pages d'index
 
 **Files:**
+
 - Create: `src/app/tournois/opengraph-image.tsx`
 - Create: `src/app/equipes/opengraph-image.tsx`
 - Create: `src/app/matchs/opengraph-image.tsx`
@@ -1027,6 +1029,7 @@ git commit -m "feat(og): images de partage des cinq pages d index"
 ## Task 7 : Fiche tournoi
 
 **Files:**
+
 - Create: `src/app/tournois/[id]/opengraph-image.tsx`
 
 - [ ] **Step 1: Écrire la route**
@@ -1098,6 +1101,7 @@ git commit -m "feat(og): image de partage d une fiche tournoi"
 ## Task 8 : Fiche équipe
 
 **Files:**
+
 - Create: `src/app/equipes/[id]/opengraph-image.tsx`
 
 - [ ] **Step 1: Écrire la route**
@@ -1118,10 +1122,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const team = await getTeam(id);
   if (!team) return renderOg("ÉQUIPE", () => null);
 
-  const [logo, record] = await Promise.all([
-    uploadAsPngDataUri(team.logo),
-    getTeamRecord(id),
-  ]);
+  const [logo, record] = await Promise.all([uploadAsPngDataUri(team.logo), getTeamRecord(id)]);
 
   return renderOg("ÉQUIPE", () => (
     <>
@@ -1163,6 +1164,7 @@ git commit -m "feat(og): image de partage d une fiche equipe"
 ## Task 9 : Fiche joueur
 
 **Files:**
+
 - Create: `src/app/joueurs/[id]/opengraph-image.tsx`
 
 Le joueur n'a pas d'agrégat tout prêt : les moyennes se calculent ici, à partir de `PlayerGameStat`.
@@ -1251,6 +1253,7 @@ git commit -m "feat(og): image de partage d une fiche joueur"
 ## Task 10 : Fiche match
 
 **Files:**
+
 - Create: `src/app/matchs/[id]/opengraph-image.tsx`
 
 La carte la plus dense : deux logos, un score au centre, le contexte du tournoi et le détail des maps.
@@ -1307,8 +1310,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
   // Le score n'a de sens qu'une fois le match commencé : avant, la carte
   // annonce l'affiche, pas un 0 – 0 qui se lirait comme un résultat.
-  const center =
-    match.status === "SCHEDULED" ? "VS" : scoreLabel(match.scoreA, match.scoreB);
+  const center = match.status === "SCHEDULED" ? "VS" : scoreLabel(match.scoreA, match.scoreB);
 
   return renderOg(matchBadge(match.status), () => (
     <>
@@ -1317,9 +1319,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         <div style={{ fontFamily: DISPLAY, fontSize: 72, color: OG.accent }}>{center}</div>
         <Side src={logoB} name={match.teamB.name} />
       </div>
-      <Meta>
-        {metaLine([match.tournament.name, match.round, bestOfLabel(match.bestOf)])}
-      </Meta>
+      <Meta>{metaLine([match.tournament.name, match.round, bestOfLabel(match.bestOf)])}</Meta>
       <Stats>{mapsLabel(match.maps)}</Stats>
     </>
   ));
@@ -1348,6 +1348,7 @@ git commit -m "feat(og): image de partage d une fiche match"
 ## Task 11 : Vérification d'ensemble
 
 **Files:**
+
 - Modify: aucun, sauf correctif révélé par les vérifications
 
 - [ ] **Step 1: Suite complète**
@@ -1411,20 +1412,20 @@ git commit -m "fix(og): ajustements issus de la revue visuelle des cartes"
 
 **Couverture de la spec**
 
-| Exigence de la spec | Tâche |
-|---|---|
-| 9 routes (4 fiches + 5 index) | 6, 7, 8, 9, 10 |
-| Accueil et pages légales inchangés | 11 step 3 |
-| Cadre commun, tokens recopiés | 2, 5 |
-| `size.ts` / `fonts.ts` / `image.ts` / `labels.ts` / `fields.tsx` / `frame.tsx` | 2, 3, 4, 5 |
-| Polices TTF versionnées, budget 500 Ko | 1, 11 step 2 |
-| Conversion WebP → PNG par `sharp` | 4 |
-| Chiffres sur les cartes | 7, 8, 9, 10 |
-| Dégradation : monogramme, ligne vide, cadre nu | 3 (`monogram`), 5 (`Avatar`, `Stats`), 7–10 (garde `if (!x)`) |
-| Erreur rattrapée, jamais de 500 | 5 (`renderOg`) |
-| `Cache-Control` court | 5 (`renderOg`) |
-| Tests de `labels.ts` et `image.ts` | 3, 4 |
-| `src/lib/metadata.ts` inchangé | aucune tâche ne le touche |
+| Exigence de la spec                                                            | Tâche                                                         |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| 9 routes (4 fiches + 5 index)                                                  | 6, 7, 8, 9, 10                                                |
+| Accueil et pages légales inchangés                                             | 11 step 3                                                     |
+| Cadre commun, tokens recopiés                                                  | 2, 5                                                          |
+| `size.ts` / `fonts.ts` / `image.ts` / `labels.ts` / `fields.tsx` / `frame.tsx` | 2, 3, 4, 5                                                    |
+| Polices TTF versionnées, budget 500 Ko                                         | 1, 11 step 2                                                  |
+| Conversion WebP → PNG par `sharp`                                              | 4                                                             |
+| Chiffres sur les cartes                                                        | 7, 8, 9, 10                                                   |
+| Dégradation : monogramme, ligne vide, cadre nu                                 | 3 (`monogram`), 5 (`Avatar`, `Stats`), 7–10 (garde `if (!x)`) |
+| Erreur rattrapée, jamais de 500                                                | 5 (`renderOg`)                                                |
+| `Cache-Control` court                                                          | 5 (`renderOg`)                                                |
+| Tests de `labels.ts` et `image.ts`                                             | 3, 4                                                          |
+| `src/lib/metadata.ts` inchangé                                                 | aucune tâche ne le touche                                     |
 
 **Écart assumé.** La spec listait `fields.tsx` comme unique module de contenu ; le plan le scinde en `labels.ts` (pur, testé) et `fields.tsx` (JSX). La spec a été mise à jour en conséquence.
 

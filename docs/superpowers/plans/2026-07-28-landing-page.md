@@ -26,6 +26,7 @@ Aucune modification de schéma. Le dashboard actuel disparaît (remplacement com
 ## Task 1: Data function `listTopPlayers`
 
 **Files:**
+
 - Modify: `src/lib/data/players.ts` (ajout d'une fonction exportée)
 
 - [ ] **Step 1: Ajouter la fonction**
@@ -73,17 +74,15 @@ export async function listTopPlayers(limit = 6) {
   for (const r of rows) {
     const p = r.player;
     if (!p) continue;
-    const a =
-      byId.get(p.id) ??
-      {
-        id: p.id,
-        pseudo: p.pseudo,
-        photo: p.photo,
-        nationality: p.nationality,
-        teamTag: p.memberships[0]?.team.tag ?? null,
-        sum: 0,
-        games: 0,
-      };
+    const a = byId.get(p.id) ?? {
+      id: p.id,
+      pseudo: p.pseudo,
+      photo: p.photo,
+      nationality: p.nationality,
+      teamTag: p.memberships[0]?.team.tag ?? null,
+      sum: 0,
+      games: 0,
+    };
     a.sum += r.rating;
     a.games += 1;
     byId.set(p.id, a);
@@ -119,7 +118,8 @@ import { listTopPlayers } from "@/lib/data/players";
 (async () => {
   const top = await listTopPlayers(6);
   console.log("count:", top.length);
-  for (const p of top) console.log(" -", p.pseudo, "| team", p.teamTag, "| rating", p.rating, "| games", p.games);
+  for (const p of top)
+    console.log(" -", p.pseudo, "| team", p.teamTag, "| rating", p.rating, "| games", p.games);
 })();
 ```
 
@@ -138,6 +138,7 @@ git commit -m "feat: listTopPlayers data function for landing"
 ## Task 2: Composant `PlayerMiniCard`
 
 **Files:**
+
 - Create: `src/components/player-mini-card.tsx`
 
 - [ ] **Step 1: Créer le composant**
@@ -158,7 +159,10 @@ export type MiniPlayer = {
 /** Carte joueur compacte pour la landing (joueurs à suivre). */
 export default function PlayerMiniCard({ player }: { player: MiniPlayer }) {
   return (
-    <Link href={`/joueurs/${player.id}`} className="card card-interactive flex items-center gap-3 p-3">
+    <Link
+      href={`/joueurs/${player.id}`}
+      className="card card-interactive flex items-center gap-3 p-3"
+    >
       {player.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={player.photo} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
@@ -175,7 +179,9 @@ export default function PlayerMiniCard({ player }: { player: MiniPlayer }) {
         <div className="text-xs text-[var(--text-muted)]">{player.teamTag ?? "Sans équipe"}</div>
       </div>
       <div className="shrink-0 text-right">
-        <div className="stat text-lg font-bold text-[var(--accent)]">{player.rating.toFixed(2)}</div>
+        <div className="stat text-lg font-bold text-[var(--accent)]">
+          {player.rating.toFixed(2)}
+        </div>
         <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Rating</div>
       </div>
     </Link>
@@ -200,6 +206,7 @@ git commit -m "feat: PlayerMiniCard component"
 ## Task 3: Composant `LandingFeatures`
 
 **Files:**
+
 - Create: `src/components/landing-features.tsx`
 
 - [ ] **Step 1: Créer le composant**
@@ -243,6 +250,7 @@ git commit -m "feat: LandingFeatures block"
 ## Task 4: Réécrire `page.tsx` (landing complète)
 
 **Files:**
+
 - Rewrite: `src/app/page.tsx`
 
 - [ ] **Step 1: Remplacer tout le contenu du fichier**
@@ -285,9 +293,14 @@ export default async function HomePage() {
       {/* Hero */}
       <section
         className="mb-12 rounded-lg border border-[var(--border)] px-6 py-16 text-center"
-        style={{ background: "radial-gradient(120% 100% at 50% 0%, var(--accent-soft) 0%, var(--surface) 55%)" }}
+        style={{
+          background:
+            "radial-gradient(120% 100% at 50% 0%, var(--accent-soft) 0%, var(--surface) 55%)",
+        }}
       >
-        <div className="eyebrow mb-2">T3 Valorant<span className="dot-sep">·</span>France</div>
+        <div className="eyebrow mb-2">
+          T3 Valorant<span className="dot-sep">·</span>France
+        </div>
         <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">The Hub</h1>
         <p className="mx-auto mt-3 max-w-xl text-[var(--text-muted)]">
           La maison du <span className="text-[var(--accent)]">Valorant Tier 3</span> francophone.
@@ -317,7 +330,10 @@ export default async function HomePage() {
         <section className="mb-12">
           <div className="flex items-end justify-between">
             <h2 className={H2}>Tournois en cours / à venir</h2>
-            <Link href="/tournois" className="text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--accent)]">
+            <Link
+              href="/tournois"
+              className="text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--accent)]"
+            >
               Tout voir
             </Link>
           </div>
@@ -334,7 +350,10 @@ export default async function HomePage() {
         <section className="mb-12">
           <div className="flex items-end justify-between">
             <h2 className={H2}>Derniers résultats</h2>
-            <Link href="/matchs" className="text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--accent)]">
+            <Link
+              href="/matchs"
+              className="text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--accent)]"
+            >
               Tout voir
             </Link>
           </div>
@@ -353,8 +372,12 @@ export default async function HomePage() {
                   date: m.date,
                   bestOf: m.bestOf,
                   vodUrl: m.vodUrl,
-                  teamA: m.teamA ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo } : null,
-                  teamB: m.teamB ? { name: m.teamB.name, tag: m.teamB.tag, logo: m.teamB.logo } : null,
+                  teamA: m.teamA
+                    ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo }
+                    : null,
+                  teamB: m.teamB
+                    ? { name: m.teamB.name, tag: m.teamB.tag, logo: m.teamB.logo }
+                    : null,
                   contextLabel: m.tournament.name,
                 }}
               />
@@ -384,7 +407,10 @@ export default async function HomePage() {
       {/* CTA finale */}
       <section
         className="rounded-lg border border-[var(--border)] px-6 py-14 text-center"
-        style={{ background: "radial-gradient(120% 100% at 50% 100%, var(--accent-soft) 0%, var(--surface) 55%)" }}
+        style={{
+          background:
+            "radial-gradient(120% 100% at 50% 100%, var(--accent-soft) 0%, var(--surface) 55%)",
+        }}
       >
         <h2 className="text-2xl font-bold text-white">Prêt à jouer ?</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-muted)]">
@@ -454,6 +480,7 @@ Le CTA principal doit être « Connexion Discord » pour un visiteur déconnect�
 ## Self-Review (rempli)
 
 **Couverture du spec :**
+
 - Hero épuré + CTA auth-aware, sans stat bar → Task 4 (hero). ✅
 - Tournois en cours → Task 4 (section, `TournamentCard`, `listTournaments` filtré). ✅
 - Derniers résultats → Task 4 (`MatchRow`, `listRecentResults`). ✅

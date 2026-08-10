@@ -26,12 +26,12 @@
   --text-subtle: #6f7178;
 
   /* Accent (orange de marque - remplace le periwinkle rft.gg) */
-  --accent: #ED5E29;
-  --accent-hover: #D14E1F;
-  --accent-2: #F2925E;
+  --accent: #ed5e29;
+  --accent-hover: #d14e1f;
+  --accent-2: #f2925e;
   --accent-foreground: #131619;
   --accent-soft: rgba(237, 94, 41, 0.12);
-  --accent-glow: rgba(237, 94, 41, 0.30);
+  --accent-glow: rgba(237, 94, 41, 0.3);
 
   /* Couleurs sémantiques (rft.gg) */
   --success: #4ac97e;

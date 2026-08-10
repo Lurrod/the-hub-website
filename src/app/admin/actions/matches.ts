@@ -99,7 +99,10 @@ function revalidateMatch(tournamentId: string, matchId: string) {
 export async function createGroupAction(tournamentId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
   const base = `/tournois/${tournamentId}/gestion/competition`;
-  const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+  const t = await db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { format: true },
+  });
   if (t && !formatAllowsGroups(t.format)) redirect(`${base}?error=nogroups`);
   const name = String(formData.get("name") ?? "").trim();
   if (name) await createGroup(tournamentId, name);
@@ -113,7 +116,11 @@ export async function deleteGroupAction(tournamentId: string, groupId: string) {
   revalidateCompetition(tournamentId);
 }
 
-export async function assignParticipantGroupAction(tournamentId: string, teamId: string, formData: FormData) {
+export async function assignParticipantGroupAction(
+  tournamentId: string,
+  teamId: string,
+  formData: FormData
+) {
   await assertCanManageTournament(tournamentId);
   const raw = String(formData.get("groupId") ?? "").trim();
   // Même garde que pour les matchs : sans elle, un organisateur pouvait
@@ -132,12 +139,16 @@ export async function createMatchAction(tournamentId: string, formData: FormData
   } catch (e) {
     redirect(`${base}?error=${flashCodeFromError(e)}`);
   }
-  const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+  const t = await db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { format: true },
+  });
   if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
     redirect(`${base}?error=notregistered`);
   }
-  if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
+  if (data.stage === "GROUP" && data.groupId)
+    await assertGroupInTournament(data.groupId, tournamentId);
   await createMatch(tournamentId, data);
   revalidateCompetition(tournamentId);
   redirect(base);
@@ -153,12 +164,16 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
   } catch (e) {
     redirect(`${editBase}?error=${flashCodeFromError(e)}`);
   }
-  const t = await db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+  const t = await db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { format: true },
+  });
   if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
     redirect(`${editBase}?error=notregistered`);
   }
-  if (data.stage === "GROUP" && data.groupId) await assertGroupInTournament(data.groupId, tournamentId);
+  if (data.stage === "GROUP" && data.groupId)
+    await assertGroupInTournament(data.groupId, tournamentId);
   await updateMatch(matchId, tournamentId, data);
 
   // La recherche automatique REMPLACE toutes les maps du match. On ne la

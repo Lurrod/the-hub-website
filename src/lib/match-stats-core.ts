@@ -101,9 +101,10 @@ export function assignSides(
  * qu'un match a des maps, que celles-ci viennent de Riot ou de la saisie
  * manuelle — sinon retirer une map laisserait le score figé sur l'ancien.
  */
-export function seriesScore(
-  maps: readonly { scoreA: number; scoreB: number }[]
-): { scoreA: number; scoreB: number } {
+export function seriesScore(maps: readonly { scoreA: number; scoreB: number }[]): {
+  scoreA: number;
+  scoreB: number;
+} {
   let scoreA = 0;
   let scoreB = 0;
   for (const m of maps) {
@@ -215,12 +216,7 @@ export function computeRating(s: {
   const apr = s.assists / s.rounds;
   const impact = 2.13 * kpr + 0.42 * apr - 0.41;
   const rating =
-    0.0073 * s.kastPct +
-    0.3591 * kpr -
-    0.5329 * dpr +
-    0.2372 * impact +
-    0.00171 * s.adr -
-    0.001;
+    0.0073 * s.kastPct + 0.3591 * kpr - 0.5329 * dpr + 0.2372 * impact + 0.00171 * s.adr - 0.001;
   return Math.round(Math.max(0.01, rating) * 100) / 100;
 }
 

@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTournament, getTournamentTeamsWithPlayers } from "@/lib/data/tournaments";
-import { listTournamentMatches, getGroupsWithMatches, listBracketMatches } from "@/lib/data/matches";
+import {
+  listTournamentMatches,
+  getGroupsWithMatches,
+  listBracketMatches,
+} from "@/lib/data/matches";
 import { getTournamentStats } from "@/lib/data/tournament-stats";
 import { getTournamentTeamStats } from "@/lib/data/tournament-teams";
 import TournamentTabs from "@/components/tournament-tabs";
@@ -28,11 +32,7 @@ import JsonLdScript from "@/components/json-ld";
 import { tournamentJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await tournamentTitle(id);
   return pageMetadata({ path: `/tournois/${id}`, title: name ?? "Tournoi" });
@@ -92,7 +92,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
         }))
     );
     if (rows.length > 0) {
-      stageDefs.push({ key: "classement", label: "Classement", content: <StandingsTable rows={rows} /> });
+      stageDefs.push({
+        key: "classement",
+        label: "Classement",
+        content: <StandingsTable rows={rows} />,
+      });
     }
   }
   if (bracket.length > 0) {
@@ -121,7 +125,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
 
   const upcoming = allMatches.filter((m) => m.status === "SCHEDULED" || m.status === "LIVE");
   const stageLabel = (m: (typeof allMatches)[number]) =>
-    m.group ? m.group.name : m.round ?? "Playoffs";
+    m.group ? m.group.name : (m.round ?? "Playoffs");
 
   const teamCount = tournament.participants.length;
 
@@ -221,17 +225,17 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       </h2>
       <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
         <TournamentMatchList
-      matches={allMatches.map((m) => ({
-        id: m.id,
-        date: m.date,
-        hasTime: m.hasTime,
-        status: m.status,
-        scoreA: m.scoreA,
-        scoreB: m.scoreB,
-        stageLabel: stageLabel(m),
-        teamA: m.teamA ? { name: m.teamA.name, logo: m.teamA.logo } : null,
-        teamB: m.teamB ? { name: m.teamB.name, logo: m.teamB.logo } : null,
-      }))}
+          matches={allMatches.map((m) => ({
+            id: m.id,
+            date: m.date,
+            hasTime: m.hasTime,
+            status: m.status,
+            scoreA: m.scoreA,
+            scoreB: m.scoreB,
+            stageLabel: stageLabel(m),
+            teamA: m.teamA ? { name: m.teamA.name, logo: m.teamA.logo } : null,
+            teamB: m.teamB ? { name: m.teamB.name, logo: m.teamB.logo } : null,
+          }))}
         />
       </div>
     </div>
@@ -293,7 +297,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
               <div className="text-left">
-                <div className="text-xs font-semibold text-white">{tournament.prizePool ?? "-"}</div>
+                <div className="text-xs font-semibold text-white">
+                  {tournament.prizePool ?? "-"}
+                </div>
                 <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                   cash prize
                 </div>

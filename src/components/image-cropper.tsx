@@ -82,9 +82,12 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
 
   const cancel = useCallback(() => finish(onCancel), [finish, onCancel]);
 
-  useEffect(() => () => {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    },
+    []
+  );
 
   // Décodage hors DOM : donne les dimensions naturelles et l'objet passé plus
   // tard à drawImage, sans dépendre de l'aperçu affiché.

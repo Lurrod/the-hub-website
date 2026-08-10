@@ -108,7 +108,10 @@ export async function getPlayerMatches(playerId: string, limit = 30): Promise<Pl
       const myScore = side === "A" ? mp.scoreA : mp.scoreB;
       const oppScore = side === "A" ? mp.scoreB : mp.scoreA;
       const agentsForSide = (s: "A" | "B") =>
-        mp.stats.filter((r) => r.teamSide === s).map((r) => r.agent ?? "").filter(Boolean);
+        mp.stats
+          .filter((r) => r.teamSide === s)
+          .map((r) => r.agent ?? "")
+          .filter(Boolean);
 
       const teamA: TeamAgents | null = m.teamA ? { ...m.teamA, agents: agentsForSide("A") } : null;
       const teamB: TeamAgents | null = m.teamB ? { ...m.teamB, agents: agentsForSide("B") } : null;
@@ -129,9 +132,7 @@ export async function getPlayerMatches(playerId: string, limit = 30): Promise<Pl
         assists: mine.assists,
         kast: mine.kast,
         playerTeamId: side === "A" ? m.teamAId : m.teamBId,
-        opponent: opponent
-          ? { name: opponent.name, tag: opponent.tag, logo: opponent.logo }
-          : null,
+        opponent: opponent ? { name: opponent.name, tag: opponent.tag, logo: opponent.logo } : null,
         teamA,
         teamB,
       });

@@ -53,7 +53,8 @@ export async function getPlayerCareer(playerId: string): Promise<CareerStint[]> 
 
   // Nb de passages par équipe : si un seul, on ne filtre pas par date (dates seed peu fiables).
   const stintsPerTeam = new Map<string, number>();
-  for (const ms of memberships) stintsPerTeam.set(ms.teamId, (stintsPerTeam.get(ms.teamId) ?? 0) + 1);
+  for (const ms of memberships)
+    stintsPerTeam.set(ms.teamId, (stintsPerTeam.get(ms.teamId) ?? 0) + 1);
 
   return memberships.map((ms) => {
     const single = (stintsPerTeam.get(ms.teamId) ?? 0) <= 1;

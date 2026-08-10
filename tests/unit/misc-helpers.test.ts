@@ -5,9 +5,7 @@ import { lengthLabel } from "@/lib/duration";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
 
 function zodIssue(field: string): ZodError {
-  return new ZodError([
-    { code: "custom", path: ["socials", field], message: "invalide" },
-  ]);
+  return new ZodError([{ code: "custom", path: ["socials", field], message: "invalide" }]);
 }
 
 describe("flashCodeFromError", () => {

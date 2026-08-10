@@ -22,11 +22,7 @@ import JsonLdScript from "@/components/json-ld";
 import { teamJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await teamTitle(id);
   return pageMetadata({ path: `/equipes/${id}`, title: name ?? "Équipe" });
@@ -139,7 +135,10 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
                 key={m.id}
                 className="flex items-center justify-between p-3 text-sm transition-colors hover:bg-[var(--table-row-hover)]"
               >
-                <Link href={`/joueurs/${m.playerId}`} className="text-white hover:text-[var(--accent)]">
+                <Link
+                  href={`/joueurs/${m.playerId}`}
+                  className="text-white hover:text-[var(--accent)]"
+                >
                   {m.player.pseudo}
                 </Link>
                 <span className="text-[var(--text-muted)]">

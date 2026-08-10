@@ -19,6 +19,7 @@ par une véritable **landing page** qui présente The Hub et incite à rejoindre
 ## Structure de la page (de haut en bas)
 
 ### 1. Hero (épuré)
+
 - Bloc centré, fond sombre avec un léger halo orange
   (`radial-gradient` discret, cohérent avec les zones existantes).
 - Contenu :
@@ -33,16 +34,19 @@ par une véritable **landing page** qui présente The Hub et incite à rejoindre
 - **Pas de barre de stats** dans le hero (choix validé).
 
 ### 2. Tournois en cours / à venir
+
 - Titre de section (style existant : `text-sm font-semibold uppercase … text-[var(--accent)]`).
 - Grille de `TournamentCard` — `listTournaments()` filtré `status !== "FINISHED"`,
   limité à ~6.
 - État vide : message « Aucun tournoi programmé pour le moment. »
 
 ### 3. Derniers résultats
+
 - Liste de `MatchRow` — `listRecentResults(6)`.
 - État vide : message discret.
 
 ### 4. Joueurs à suivre
+
 - Grille de cartes joueur **compactes** (nouveau composant léger) : photo, pseudo,
   drapeau, équipe actuelle (tag), et **rating moyen** en avant.
 - Données : nouvelle fonction `listTopPlayers(limit)` — top joueurs par **rating
@@ -53,31 +57,37 @@ par une véritable **landing page** qui présente The Hub et incite à rejoindre
 - État vide : masquer la section si aucun joueur qualifié.
 
 ### 5. Rejoindre
+
 - 3 cartes statiques présentant la valeur, sans données :
   - **Joueur** — crée ton profil, suis tes stats et ta carrière.
   - **Équipe** — référence ton équipe, gère ton roster, suis tes résultats.
   - **Compétition** — inscris-toi aux tournois, brackets et scoreboards.
 
 ### 6. CTA finale
+
 - Bande centrée « Prêt à jouer ? » + bouton **Connexion Discord** (ou, si déjà
   connecté, un lien « Explorer les tournois » — on ne montre pas Discord à un
   utilisateur déjà connecté).
 
 ### 7. Footer
+
 - Le footer existant reste (rendu par le layout).
 
 ## Découpage technique
 
 ### Fichier remplacé
+
 - `src/app/page.tsx` : réécrit entièrement en landing (server component async).
   Récupère en parallèle : tournois actifs, derniers résultats, top joueurs,
   session utilisateur (pour le CTA).
 
 ### Réutilisé (inchangé)
+
 - `TournamentCard`, `MatchRow`, `Flag`, footer/nav (layout), tokens DA globaux,
   `auth()` / `signIn` (déjà utilisés dans `/profil`).
 
 ### Nouveau
+
 - **Data** : `listTopPlayers(limit)` dans `src/lib/data/players.ts`
   (agrégation rating moyen par joueur + seuil de parties + jointure équipe actuelle).
 - **Composant** : `src/components/player-mini-card.tsx` — carte joueur compacte
@@ -88,24 +98,28 @@ par une véritable **landing page** qui présente The Hub et incite à rejoindre
   selon la taille ; garder des fichiers focalisés (< 200-400 lignes).
 
 ### Auth
+
 - Un seul appel `auth()` en haut de `page.tsx`. Détermine :
   - `isLoggedIn` → variante des CTA.
   - `profileHref` → `/joueurs/<playerId>` si un joueur est lié, sinon `/profil`
     (réutilise `getPlayerByUserId`).
 
 ## États & erreurs
+
 - Chaque section de données gère son **état vide** proprement (message ou section masquée).
 - Aucune donnée sensible exposée. La page est publique (SSR, pas de secret).
 - Le CTA Discord réutilise le flux `signIn` existant (server action `"use server"`),
   identique à `/profil`.
 
 ## Hors périmètre (YAGNI)
+
 - Pas de barre de stats agrégées dans le hero.
 - Pas de section « top équipes ».
 - Pas d'animations complexes / carrousel — transitions sobres cohérentes avec le site.
 - Pas de i18n (site déjà en français).
 
 ## Critères de réussite
+
 - `/` affiche la landing pour un visiteur connecté **et** déconnecté ; l'ancien
   dashboard n'existe plus.
 - Le CTA principal s'adapte à l'état de connexion.

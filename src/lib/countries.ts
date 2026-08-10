@@ -206,7 +206,10 @@ export function countryCode(name?: string | null): string | undefined {
 }
 
 /** URL du drapeau (flagcdn.com) pour un nom de pays, ou undefined si inconnu. */
-export function flagUrl(name?: string | null, size: "24x18" | "48x36" = "24x18"): string | undefined {
+export function flagUrl(
+  name?: string | null,
+  size: "24x18" | "48x36" = "24x18"
+): string | undefined {
   const code = countryCode(name);
   return code ? `https://flagcdn.com/${size}/${code}.png` : undefined;
 }

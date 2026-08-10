@@ -75,12 +75,7 @@ export default function Segmented({
   }, [move]);
 
   return (
-    <div
-      ref={barRef}
-      role="tablist"
-      data-variant={variant}
-      className={`t-tabs ${className ?? ""}`}
-    >
+    <div ref={barRef} role="tablist" data-variant={variant} className={`t-tabs ${className ?? ""}`}>
       <span ref={pillRef} className="t-tabs-pill" aria-hidden="true" />
       {children}
     </div>

@@ -16,21 +16,13 @@ import {
 
 import { tournamentTitle } from "@/lib/data/titles";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await tournamentTitle(id);
   return { title: name ? `Compétition · ${name}` : "Compétition" };
 }
 
-export default async function CompetitionPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function CompetitionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const tournament = await getTournament(id);
   if (!tournament) notFound();
@@ -57,14 +49,19 @@ export default async function CompetitionPage({
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-white">Compétition<span className="dot-sep">·</span>{tournament.name}</h1>
+      <h1 className="mb-6 text-2xl font-bold text-white">
+        Compétition<span className="dot-sep">·</span>
+        {tournament.name}
+      </h1>
 
       {allowGroups && (
         <>
           <section className="mb-10">
             <h2 className="mb-3 text-lg font-semibold text-white">Poules</h2>
             <ul className="mb-3 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
-              {groups.length === 0 && <li className="p-3 text-[var(--text-muted)]">Aucune poule.</li>}
+              {groups.length === 0 && (
+                <li className="p-3 text-[var(--text-muted)]">Aucune poule.</li>
+              )}
               {groups.map((g) => {
                 const deleteGroupWith = deleteGroupAction.bind(null, id, g.id);
                 return (
@@ -78,7 +75,12 @@ export default async function CompetitionPage({
               })}
             </ul>
             <form action={createGroupWith} className="flex gap-2">
-              <input name="name" placeholder="Nom de la poule (ex. Groupe A)" required className={`${input} flex-1`} />
+              <input
+                name="name"
+                placeholder="Nom de la poule (ex. Groupe A)"
+                required
+                className={`${input} flex-1`}
+              />
               <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white">
                 Ajouter
               </button>
@@ -86,7 +88,9 @@ export default async function CompetitionPage({
           </section>
 
           <section className="mb-10">
-            <h2 className="mb-3 text-lg font-semibold text-white">Affectation des équipes aux poules</h2>
+            <h2 className="mb-3 text-lg font-semibold text-white">
+              Affectation des équipes aux poules
+            </h2>
             <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
               {tournament.participants.length === 0 && (
                 <li className="p-3 text-[var(--text-muted)]">Aucune équipe inscrite.</li>
@@ -105,7 +109,9 @@ export default async function CompetitionPage({
                           </option>
                         ))}
                       </select>
-                      <button className="rounded bg-[var(--card)] px-3 py-2 text-sm text-white">OK</button>
+                      <button className="rounded bg-[var(--card)] px-3 py-2 text-sm text-white">
+                        OK
+                      </button>
                     </form>
                   </li>
                 );
@@ -126,11 +132,14 @@ export default async function CompetitionPage({
                 <span className="text-white">
                   {m.teamA.name} {m.scoreA}-{m.scoreB} {m.teamB.name}
                   <span className="ml-2 text-[var(--text-muted)]">
-                    {m.stage === "BRACKET" ? m.round ?? "Playoffs" : m.group?.name ?? "Poule"}
+                    {m.stage === "BRACKET" ? (m.round ?? "Playoffs") : (m.group?.name ?? "Poule")}
                   </span>
                 </span>
                 <span className="flex shrink-0 gap-3">
-                  <Link href={`/tournois/${id}/gestion/matchs/${m.id}`} className="text-[var(--accent)]">
+                  <Link
+                    href={`/tournois/${id}/gestion/matchs/${m.id}`}
+                    className="text-[var(--accent)]"
+                  >
                     Éditer
                   </Link>
                   <form action={deleteMatchWith}>

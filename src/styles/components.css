@@ -14,7 +14,8 @@
     border: 1px solid var(--border);
     border-radius: var(--r-lg);
     box-shadow: var(--shadow-card);
-    transition: background-color var(--hover-fast) var(--ease),
+    transition:
+      background-color var(--hover-fast) var(--ease),
       border-color var(--hover-fast) var(--ease);
   }
 
@@ -191,15 +192,33 @@
 .stagger-in > * {
   animation: t-fade-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.stagger-in > *:nth-child(1) { animation-delay: 0.03s; }
-.stagger-in > *:nth-child(2) { animation-delay: 0.07s; }
-.stagger-in > *:nth-child(3) { animation-delay: 0.11s; }
-.stagger-in > *:nth-child(4) { animation-delay: 0.15s; }
-.stagger-in > *:nth-child(5) { animation-delay: 0.19s; }
-.stagger-in > *:nth-child(6) { animation-delay: 0.23s; }
-.stagger-in > *:nth-child(7) { animation-delay: 0.27s; }
-.stagger-in > *:nth-child(8) { animation-delay: 0.31s; }
-.stagger-in > *:nth-child(n + 9) { animation-delay: 0.35s; }
+.stagger-in > *:nth-child(1) {
+  animation-delay: 0.03s;
+}
+.stagger-in > *:nth-child(2) {
+  animation-delay: 0.07s;
+}
+.stagger-in > *:nth-child(3) {
+  animation-delay: 0.11s;
+}
+.stagger-in > *:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.stagger-in > *:nth-child(5) {
+  animation-delay: 0.19s;
+}
+.stagger-in > *:nth-child(6) {
+  animation-delay: 0.23s;
+}
+.stagger-in > *:nth-child(7) {
+  animation-delay: 0.27s;
+}
+.stagger-in > *:nth-child(8) {
+  animation-delay: 0.31s;
+}
+.stagger-in > *:nth-child(n + 9) {
+  animation-delay: 0.35s;
+}
 
 /* Squelettes de chargement (balayage shimmer). */
 @keyframes t-shimmer {
@@ -336,12 +355,22 @@ body :is(h1, h2, h3, h4, h5, h6) {
   will-change: transform;
 }
 @keyframes h-drift-a {
-  0%, 100% { transform: translate3d(-3%, -2%, 0) scale(1); }
-  50%      { transform: translate3d(7%, 5%, 0) scale(1.15); }
+  0%,
+  100% {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(7%, 5%, 0) scale(1.15);
+  }
 }
 @keyframes h-drift-b {
-  0%, 100% { transform: translate3d(4%, 3%, 0) scale(1.1); }
-  50%      { transform: translate3d(-6%, -4%, 0) scale(0.92); }
+  0%,
+  100% {
+    transform: translate3d(4%, 3%, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-6%, -4%, 0) scale(0.92);
+  }
 }
 .h-bloom-a {
   top: -20%;
@@ -403,11 +432,21 @@ body :is(h1, h2, h3, h4, h5, h6) {
 .h-in > * {
   animation: h-reveal 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.h-in > *:nth-child(1) { animation-delay: 0.05s; }
-.h-in > *:nth-child(2) { animation-delay: 0.19s; }
-.h-in > *:nth-child(3) { animation-delay: 0.33s; }
-.h-in > *:nth-child(4) { animation-delay: 0.47s; }
-.h-in > *:nth-child(n + 5) { animation-delay: 0.61s; }
+.h-in > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.h-in > *:nth-child(2) {
+  animation-delay: 0.19s;
+}
+.h-in > *:nth-child(3) {
+  animation-delay: 0.33s;
+}
+.h-in > *:nth-child(4) {
+  animation-delay: 0.47s;
+}
+.h-in > *:nth-child(n + 5) {
+  animation-delay: 0.61s;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .h-bloom,

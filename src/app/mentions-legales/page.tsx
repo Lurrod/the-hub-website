@@ -14,21 +14,19 @@ export default function MentionsLegalesPage() {
       intro="Informations légales relatives à l'éditeur et à l'hébergeur du site The Hub, conformément à l'article 6 III de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique (LCEN)."
     >
       <Section title="Éditeur du site">
-        <p>
-          Le site The Hub est édité par Titouan Borde.
-        </p>
+        <p>Le site The Hub est édité par Titouan Borde.</p>
         <Ul>
           <li>Statut : particulier, éditant le site à titre non professionnel.</li>
           <li>
-            Contact : en rejoignant <ContactDiscord />, canal par lequel l&apos;éditeur reçoit
-            toute demande relative au site.
+            Contact : en rejoignant <ContactDiscord />, canal par lequel l&apos;éditeur reçoit toute
+            demande relative au site.
           </li>
         </Ul>
         <p className="text-xs">
           Conformément à l&apos;article 6 III 2 de la LCEN, l&apos;éditeur, personne physique
           éditant le site à titre non professionnel, ne rend pas publique son adresse postale.
-          Celle-ci est communiquée à l&apos;hébergeur du site, désigné ci-dessous, qui la tient à
-          la disposition des autorités judiciaires.
+          Celle-ci est communiquée à l&apos;hébergeur du site, désigné ci-dessous, qui la tient à la
+          disposition des autorités judiciaires.
         </p>
       </Section>
 
@@ -47,15 +45,15 @@ export default function MentionsLegalesPage() {
       <Section title="Objet du site">
         <p>
           The Hub référence les équipes, les joueurs, les tournois et les statistiques de match de
-          la scène Valorant Tier 3 francophone. Le site permet à ses utilisateurs de créer une
-          fiche joueur, de gérer une équipe et d&apos;inscrire celle-ci à des tournois.
+          la scène Valorant Tier 3 francophone. Le site permet à ses utilisateurs de créer une fiche
+          joueur, de gérer une équipe et d&apos;inscrire celle-ci à des tournois.
         </p>
       </Section>
 
       <Section title="Propriété intellectuelle">
         <p>
-          La structure du site, ses textes et ses éléments graphiques originaux sont protégés par
-          le droit de la propriété intellectuelle. Toute reproduction ou représentation, totale ou
+          La structure du site, ses textes et ses éléments graphiques originaux sont protégés par le
+          droit de la propriété intellectuelle. Toute reproduction ou représentation, totale ou
           partielle, sans autorisation préalable de l&apos;éditeur est interdite.
         </p>
         <p>

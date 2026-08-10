@@ -2,8 +2,13 @@ import Link from "next/link";
 import Segmented from "@/components/segmented";
 import ClearableSearch from "@/components/clearable-search";
 import { VALORANT_ROLES, ROLE_LABELS, ROLE_ICONS } from "@/lib/roles";
-import { AGE_BRACKETS, TEAM_STATUSES, lftHref, hasActiveLftFilter, type LftFilters } from "@/lib/lft";
-
+import {
+  AGE_BRACKETS,
+  TEAM_STATUSES,
+  lftHref,
+  hasActiveLftFilter,
+  type LftFilters,
+} from "@/lib/lft";
 
 /**
  * Filtres de la page LFT.
@@ -46,7 +51,9 @@ export default function LftFilters({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              loading="lazy" decoding="async" src={ROLE_ICONS[r]}
+              loading="lazy"
+              decoding="async"
+              src={ROLE_ICONS[r]}
               alt=""
               className={`h-4 w-4 shrink-0 ${role === r ? "opacity-100" : "opacity-60"}`}
             />

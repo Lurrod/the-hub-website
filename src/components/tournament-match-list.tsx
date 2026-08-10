@@ -19,7 +19,13 @@ function TeamRow({ team }: { team: Team }) {
     <div className="flex items-center gap-2">
       {team?.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" decoding="async" src={team.logo} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={team.logo}
+          alt=""
+          className="h-5 w-5 shrink-0 rounded object-cover"
+        />
       ) : (
         <div className="grid h-5 w-5 shrink-0 place-items-center rounded bg-[var(--surface)] text-[8px] text-[var(--text-muted)]">
           {team?.name?.slice(0, 2).toUpperCase() ?? "?"}
@@ -39,7 +45,9 @@ export function MatchListItem({ m }: { m: MatchEntry }) {
         href={`/matchs/${m.id}`}
         className="flex items-center gap-3 rounded px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
       >
-        <div className="stat w-12 shrink-0 text-center text-sm text-white">{timeLabel(m.date, m.hasTime ?? false)}</div>
+        <div className="stat w-12 shrink-0 text-center text-sm text-white">
+          {timeLabel(m.date, m.hasTime ?? false)}
+        </div>
         <div className="min-w-0 max-w-[55%] space-y-1">
           <TeamRow team={m.teamA} />
           <TeamRow team={m.teamB} />

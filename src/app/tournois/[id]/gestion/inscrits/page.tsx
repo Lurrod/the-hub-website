@@ -7,11 +7,7 @@ import { addParticipantAction, removeParticipantAction } from "@/app/admin/actio
 
 import { tournamentTitle } from "@/lib/data/titles";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await tournamentTitle(id);
   return { title: name ? `Inscrits · ${name}` : "Inscrits" };
@@ -39,7 +35,10 @@ export default async function TournamentParticipantsPage({
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-white">Inscrits<span className="dot-sep">·</span>{tournament.name}</h1>
+      <h1 className="mb-6 text-2xl font-bold text-white">
+        Inscrits<span className="dot-sep">·</span>
+        {tournament.name}
+      </h1>
 
       <ul className="mb-6 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
         {tournament.participants.length === 0 && (

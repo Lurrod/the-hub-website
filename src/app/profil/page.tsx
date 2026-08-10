@@ -92,7 +92,8 @@ export default async function ProfilePage() {
             </div>
           ) : (
             <p className="text-sm text-[var(--text-muted)]">
-              Tu n&apos;es dans aucune équipe. Utilise un lien d&apos;invitation pour en rejoindre une.
+              Tu n&apos;es dans aucune équipe. Utilise un lien d&apos;invitation pour en rejoindre
+              une.
             </p>
           )}
         </section>
@@ -104,9 +105,7 @@ export default async function ProfilePage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-0">
               <p className="text-sm text-white">
-                {player.lft
-                  ? "Tu apparais sur la page LFT."
-                  : "Tu n'apparais pas sur la page LFT."}
+                {player.lft ? "Tu apparais sur la page LFT." : "Tu n'apparais pas sur la page LFT."}
               </p>
               <p className="mt-1 text-xs text-[var(--text-muted)]">
                 {membership

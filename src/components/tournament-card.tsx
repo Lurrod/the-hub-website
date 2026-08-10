@@ -44,7 +44,13 @@ export default function TournamentCard({ tournament }: { tournament: TournamentC
       <div className="flex items-center gap-3">
         {tournament.logo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img loading="lazy" decoding="async" src={tournament.logo} alt="" className="h-12 w-12 rounded-lg object-cover" />
+          <img
+            loading="lazy"
+            decoding="async"
+            src={tournament.logo}
+            alt=""
+            className="h-12 w-12 rounded-lg object-cover"
+          />
         ) : (
           <div className="monogram grid h-12 w-12 place-items-center rounded-lg text-sm">
             {tournament.name.slice(0, 2).toUpperCase()}
@@ -55,7 +61,9 @@ export default function TournamentCard({ tournament }: { tournament: TournamentC
           <div className="text-xs text-[var(--text-muted)]">{tournament.region}</div>
         </div>
         <StatusBadge
-          label={TOURNAMENT_STATUS_LABELS[tournament.status as TournamentStatus] ?? tournament.status}
+          label={
+            TOURNAMENT_STATUS_LABELS[tournament.status as TournamentStatus] ?? tournament.status
+          }
           status={tournament.status}
         />
       </div>
@@ -67,8 +75,16 @@ export default function TournamentCard({ tournament }: { tournament: TournamentC
           mono={!!tournament.startDate}
         />
         <div className="grid grid-cols-2 gap-4">
-          <StatItem label="Équipes" value={teamCount > 0 ? `${teamCount}` : "-"} mono={teamCount > 0} />
-          <StatItem label="Cashprize" value={tournament.prizePool ?? "-"} mono={tournament.prizePool != null} />
+          <StatItem
+            label="Équipes"
+            value={teamCount > 0 ? `${teamCount}` : "-"}
+            mono={teamCount > 0}
+          />
+          <StatItem
+            label="Cashprize"
+            value={tournament.prizePool ?? "-"}
+            mono={tournament.prizePool != null}
+          />
         </div>
       </div>
     </Link>

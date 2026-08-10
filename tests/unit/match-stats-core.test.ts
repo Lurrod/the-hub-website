@@ -1,23 +1,53 @@
 import { describe, it, expect } from "vitest";
 import {
-  countExpected, assignSides, assignSidesFromCamp, computeDerivedStats, hasRiotStats,
-  indexPlayerIdsByPuuid, selectSeries, seriesScore, computeImpact, computeRating, roundTimeline,
+  countExpected,
+  assignSides,
+  assignSidesFromCamp,
+  computeDerivedStats,
+  hasRiotStats,
+  indexPlayerIdsByPuuid,
+  selectSeries,
+  seriesScore,
+  computeImpact,
+  computeRating,
+  roundTimeline,
   attackingTeamByRound,
 } from "@/lib/match-stats-core";
 import type { CustomMatch, CustomMatchPlayer } from "@/lib/henrikdev";
 
 function player(puuid: string, teamId: string): CustomMatchPlayer {
   return {
-    puuid, name: puuid, tag: "EUW", teamId, agent: "Jett",
-    kills: 0, deaths: 0, assists: 0, score: 0,
-    headshots: 0, bodyshots: 0, legshots: 0, damageMade: 0,
+    puuid,
+    name: puuid,
+    tag: "EUW",
+    teamId,
+    agent: "Jett",
+    kills: 0,
+    deaths: 0,
+    assists: 0,
+    score: 0,
+    headshots: 0,
+    bodyshots: 0,
+    legshots: 0,
+    damageMade: 0,
   };
 }
-function match(id: string, startedAt: string, puuidsRed: string[], puuidsBlue: string[]): CustomMatch {
+function match(
+  id: string,
+  startedAt: string,
+  puuidsRed: string[],
+  puuidsBlue: string[]
+): CustomMatch {
   return {
-    matchId: id, map: "Ascent", startedAt, durationSec: 2400,
+    matchId: id,
+    map: "Ascent",
+    startedAt,
+    durationSec: 2400,
     teamRounds: { Red: 13, Blue: 9 },
-    players: [...puuidsRed.map((p) => player(p, "Red")), ...puuidsBlue.map((p) => player(p, "Blue"))],
+    players: [
+      ...puuidsRed.map((p) => player(p, "Red")),
+      ...puuidsBlue.map((p) => player(p, "Blue")),
+    ],
     rounds: [],
     kills: [],
   };
@@ -50,7 +80,14 @@ describe("assignSides", () => {
 
 describe("computeDerivedStats", () => {
   it("calcule ACS/ADR/HS%", () => {
-    const p = { ...player("a", "Red"), score: 4400, damageMade: 3300, headshots: 30, bodyshots: 60, legshots: 10 };
+    const p = {
+      ...player("a", "Red"),
+      score: 4400,
+      damageMade: 3300,
+      headshots: 30,
+      bodyshots: 60,
+      legshots: 10,
+    };
     const s = computeDerivedStats(p, 22);
     expect(s.acs).toBe(200);
     expect(s.adr).toBe(150);
@@ -132,7 +169,12 @@ describe("indexPlayerIdsByPuuid", () => {
 
 describe("seriesScore", () => {
   it("compte une map gagnée comme un point", () => {
-    expect(seriesScore([{ scoreA: 13, scoreB: 9 }, { scoreA: 7, scoreB: 13 }])).toEqual({
+    expect(
+      seriesScore([
+        { scoreA: 13, scoreB: 9 },
+        { scoreA: 7, scoreB: 13 },
+      ])
+    ).toEqual({
       scoreA: 1,
       scoreB: 1,
     });
@@ -144,18 +186,31 @@ describe("seriesScore", () => {
     expect(seriesScore([{ scoreA: 12, scoreB: 12 }])).toEqual({ scoreA: 0, scoreB: 0 });
   });
   it("recalcule bien après retrait d'une map d'une série 1-1", () => {
-    const maps = [{ scoreA: 13, scoreB: 9 }, { scoreA: 7, scoreB: 13 }];
+    const maps = [
+      { scoreA: 13, scoreB: 9 },
+      { scoreA: 7, scoreB: 13 },
+    ];
     expect(seriesScore(maps.slice(0, 1))).toEqual({ scoreA: 1, scoreB: 0 });
   });
 });
 
 function kill(round: number, t: number, killer: string, victim: string, assists: string[] = []) {
-  return { round, timeInRoundMs: t, killerPuuid: killer, victimPuuid: victim, assistantPuuids: assists };
+  return {
+    round,
+    timeInRoundMs: t,
+    killerPuuid: killer,
+    victimPuuid: victim,
+    assistantPuuids: assists,
+  };
 }
 
 describe("computeImpact", () => {
   it("attribue first kill et first death au premier duel du round", () => {
-    const i = computeImpact([kill(0, 8000, "a", "f"), kill(0, 3000, "b", "g")], ["a", "b", "f", "g"], 1);
+    const i = computeImpact(
+      [kill(0, 8000, "a", "f"), kill(0, 3000, "b", "g")],
+      ["a", "b", "f", "g"],
+      1
+    );
     expect(i.get("b")!.firstKills).toBe(1);
     expect(i.get("g")!.firstDeaths).toBe(1);
     expect(i.get("a")!.firstKills).toBe(0);
@@ -189,21 +244,46 @@ describe("computeImpact", () => {
 
 describe("computeRating", () => {
   it("place une performance moyenne autour de 1.00", () => {
-    const r = computeRating({ rounds: 20, kills: 15, deaths: 15, assists: 4, kastPct: 72, adr: 140 });
+    const r = computeRating({
+      rounds: 20,
+      kills: 15,
+      deaths: 15,
+      assists: 4,
+      kastPct: 72,
+      adr: 140,
+    });
     expect(r).toBeGreaterThan(0.85);
     expect(r).toBeLessThan(1.15);
   });
   it("monte sur un gros match et descend sur un mauvais", () => {
-    const bon = computeRating({ rounds: 20, kills: 25, deaths: 10, assists: 6, kastPct: 85, adr: 200 });
-    const mauvais = computeRating({ rounds: 20, kills: 7, deaths: 18, assists: 2, kastPct: 55, adr: 80 });
+    const bon = computeRating({
+      rounds: 20,
+      kills: 25,
+      deaths: 10,
+      assists: 6,
+      kastPct: 85,
+      adr: 200,
+    });
+    const mauvais = computeRating({
+      rounds: 20,
+      kills: 7,
+      deaths: 18,
+      assists: 2,
+      kastPct: 55,
+      adr: 80,
+    });
     expect(bon).toBeGreaterThan(1.3);
     expect(mauvais).toBeLessThan(0.8);
   });
   it("ne descend jamais à zéro ni en négatif", () => {
-    expect(computeRating({ rounds: 20, kills: 0, deaths: 20, assists: 0, kastPct: 0, adr: 0 })).toBe(0.01);
+    expect(
+      computeRating({ rounds: 20, kills: 0, deaths: 20, assists: 0, kastPct: 0, adr: 0 })
+    ).toBe(0.01);
   });
   it("renvoie 0 sans round joué", () => {
-    expect(computeRating({ rounds: 0, kills: 5, deaths: 2, assists: 1, kastPct: 70, adr: 150 })).toBe(0);
+    expect(
+      computeRating({ rounds: 0, kills: 5, deaths: 2, assists: 1, kastPct: 70, adr: 150 })
+    ).toBe(0);
   });
 });
 
@@ -216,16 +296,27 @@ describe("roundTimeline", () => {
       ],
       { Red: "A", Blue: "B" }
     );
-    expect(t).toEqual([{ w: "A", o: "elim" }, { w: "B", o: "defuse" }]);
+    expect(t).toEqual([
+      { w: "A", o: "elim" },
+      { w: "B", o: "defuse" },
+    ]);
   });
   it("écarte un round dont le camp vainqueur est inconnu", () => {
-    const t = roundTimeline([{ winningTeamId: "", outcome: "elim", plantedByTeamId: null, loadoutByTeam: {} }], { Red: "A", Blue: "B" });
+    const t = roundTimeline(
+      [{ winningTeamId: "", outcome: "elim", plantedByTeamId: null, loadoutByTeam: {} }],
+      { Red: "A", Blue: "B" }
+    );
     expect(t).toEqual([]);
   });
 });
 
 function rnd(win: string, planted: string | null) {
-  return { winningTeamId: win, outcome: "elim" as const, plantedByTeamId: planted, loadoutByTeam: {} };
+  return {
+    winningTeamId: win,
+    outcome: "elim" as const,
+    plantedByTeamId: planted,
+    loadoutByTeam: {},
+  };
 }
 
 describe("attackingTeamByRound", () => {
@@ -235,10 +326,7 @@ describe("attackingTeamByRound", () => {
   });
 
   it("inverse les camps au round 12", () => {
-    const rounds = [
-      ...Array.from({ length: 12 }, () => rnd("Red", "Red")),
-      rnd("Blue", "Blue"),
-    ];
+    const rounds = [...Array.from({ length: 12 }, () => rnd("Red", "Red")), rnd("Blue", "Blue")];
     const out = attackingTeamByRound(rounds);
     expect(out[11]).toBe("Red");
     expect(out[12]).toBe("Blue");
@@ -286,14 +374,21 @@ describe("attackingTeamByRound", () => {
 describe("roundTimeline enrichie", () => {
   it("porte le camp attaquant et l'équipement de chaque côté", () => {
     const rounds = [
-      { winningTeamId: "Red", outcome: "elim" as const, plantedByTeamId: "Red", loadoutByTeam: { Red: 20000, Blue: 4000 } },
+      {
+        winningTeamId: "Red",
+        outcome: "elim" as const,
+        plantedByTeamId: "Red",
+        loadoutByTeam: { Red: 20000, Blue: 4000 },
+      },
     ];
     expect(roundTimeline(rounds, { Red: "A", Blue: "B" })).toEqual([
       { w: "A", o: "elim", s: "A", ea: 20000, eb: 4000 },
     ]);
   });
   it("omet les champs optionnels quand la donnée manque", () => {
-    const rounds = [{ winningTeamId: "Red", outcome: "elim" as const, plantedByTeamId: null, loadoutByTeam: {} }];
+    const rounds = [
+      { winningTeamId: "Red", outcome: "elim" as const, plantedByTeamId: null, loadoutByTeam: {} },
+    ];
     expect(roundTimeline(rounds, { Red: "A", Blue: "B" })).toEqual([{ w: "A", o: "elim" }]);
   });
 });

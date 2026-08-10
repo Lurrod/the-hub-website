@@ -3,10 +3,15 @@ import { getCustomMatchById, getPlayerCustomMatches } from "@/lib/henrikdev";
 
 function mockFetch(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
-    status, ok: status >= 200 && status < 300, json: async () => body,
+    status,
+    ok: status >= 200 && status < 300,
+    json: async () => body,
   } as Response);
 }
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 const rawMatch = {
   metadata: { match_id: "m1", map: { name: "Ascent" }, started_at: "2026-07-27T20:00:00Z" },
@@ -22,16 +27,38 @@ const rawMatch = {
   ],
   kills: [
     {
-      round: 0, time_in_round_in_ms: 9000,
-      killer: { puuid: "p1" }, victim: { puuid: "p2" }, assistants: [{ puuid: "p3" }],
+      round: 0,
+      time_in_round_in_ms: 9000,
+      killer: { puuid: "p1" },
+      victim: { puuid: "p2" },
+      assistants: [{ puuid: "p3" }],
     },
-    { round: 0, time_in_round_in_ms: 4000, killer: { puuid: "p2" }, victim: { puuid: "p4" }, assistants: [] },
+    {
+      round: 0,
+      time_in_round_in_ms: 4000,
+      killer: { puuid: "p2" },
+      victim: { puuid: "p4" },
+      assistants: [],
+    },
     { round: 1, time_in_round_in_ms: 5000, killer: { puuid: "p1" }, victim: {}, assistants: [] },
   ],
   players: [
     {
-      puuid: "p1", name: "Zed", tag: "EUW", team_id: "Red", agent: { name: "Jett" },
-      stats: { kills: 20, deaths: 12, assists: 5, score: 4400, headshots: 30, bodyshots: 60, legshots: 10, damage: { dealt: 3300 } },
+      puuid: "p1",
+      name: "Zed",
+      tag: "EUW",
+      team_id: "Red",
+      agent: { name: "Jett" },
+      stats: {
+        kills: 20,
+        deaths: 12,
+        assists: 5,
+        score: 4400,
+        headshots: 30,
+        bodyshots: 60,
+        legshots: 10,
+        damage: { dealt: 3300 },
+      },
     },
   ],
 };
@@ -43,12 +70,23 @@ describe("getPlayerCustomMatches", () => {
     const out = await getPlayerCustomMatches("eu", "Zed", "EUW");
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({
-      matchId: "m1", map: "Ascent", startedAt: "2026-07-27T20:00:00Z",
+      matchId: "m1",
+      map: "Ascent",
+      startedAt: "2026-07-27T20:00:00Z",
       teamRounds: { Red: 13, Blue: 9 },
     });
     expect(out[0].players[0]).toMatchObject({
-      puuid: "p1", teamId: "Red", agent: "Jett", kills: 20, deaths: 12, assists: 5,
-      score: 4400, headshots: 30, bodyshots: 60, legshots: 10, damageMade: 3300,
+      puuid: "p1",
+      teamId: "Red",
+      agent: "Jett",
+      kills: 20,
+      deaths: 12,
+      assists: 5,
+      score: 4400,
+      headshots: 30,
+      bodyshots: 60,
+      legshots: 10,
+      damageMade: 3300,
     });
   });
   it("retourne [] si data absent", async () => {
@@ -59,7 +97,9 @@ describe("getPlayerCustomMatches", () => {
   it("429 -> RATE_LIMITED", async () => {
     vi.stubEnv("HENRIKDEV_API_KEY", "k");
     vi.stubGlobal("fetch", mockFetch(429, {}));
-    await expect(getPlayerCustomMatches("eu", "x", "yyy")).rejects.toMatchObject({ code: "RATE_LIMITED" });
+    await expect(getPlayerCustomMatches("eu", "x", "yyy")).rejects.toMatchObject({
+      code: "RATE_LIMITED",
+    });
   });
 });
 
@@ -120,8 +160,11 @@ describe("mapRawCustomMatch - rounds et duels", () => {
     const [m] = await getPlayerCustomMatches("eu", "Zed", "EUW");
     expect(m.kills).toHaveLength(2);
     expect(m.kills[0]).toEqual({
-      round: 0, timeInRoundMs: 9000,
-      killerPuuid: "p1", victimPuuid: "p2", assistantPuuids: ["p3"],
+      round: 0,
+      timeInRoundMs: 9000,
+      killerPuuid: "p1",
+      victimPuuid: "p2",
+      assistantPuuids: ["p3"],
     });
   });
 });

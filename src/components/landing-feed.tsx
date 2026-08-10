@@ -77,8 +77,12 @@ export default async function LandingFeed({ isLoggedIn }: { isLoggedIn: boolean 
                   hasTime: m.hasTime,
                   bestOf: m.bestOf,
                   vodUrl: m.vodUrl,
-                  teamA: m.teamA ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo } : null,
-                  teamB: m.teamB ? { name: m.teamB.name, tag: m.teamB.tag, logo: m.teamB.logo } : null,
+                  teamA: m.teamA
+                    ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo }
+                    : null,
+                  teamB: m.teamB
+                    ? { name: m.teamB.name, tag: m.teamB.tag, logo: m.teamB.logo }
+                    : null,
                   contextLabel: m.tournament.name,
                 }}
               />
@@ -105,7 +109,10 @@ export default async function LandingFeed({ isLoggedIn }: { isLoggedIn: boolean 
 
       <section
         className="rounded-lg border border-[var(--border)] px-6 py-14 text-center"
-        style={{ background: "radial-gradient(120% 100% at 50% 100%, var(--accent-soft) 0%, var(--surface) 55%)" }}
+        style={{
+          background:
+            "radial-gradient(120% 100% at 50% 100%, var(--accent-soft) 0%, var(--surface) 55%)",
+        }}
       >
         <h2 className="text-2xl font-bold text-white">Prêt à jouer ?</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-muted)]">

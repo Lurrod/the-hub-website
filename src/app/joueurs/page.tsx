@@ -48,7 +48,9 @@ export default async function PlayersPage({
           players.map((p) => ({ path: `/joueurs/${p.id}`, name: p.pseudo }))
         )}
       />
-      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Joueurs</h1>
+      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Joueurs
+      </h1>
       <p className="mt-1 text-xs text-[var(--text-muted)]">
         Le classement de la scène, calculé sur les cartes jouées en tournoi. Les joueurs sans partie
         importée figurent en fin de liste.

@@ -135,27 +135,57 @@ export default function TeamForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={lbl}>
             Twitter / X
-            <input name="twitter" placeholder="https://x.com/…" defaultValue={s?.twitter ?? ""} className={input} />
+            <input
+              name="twitter"
+              placeholder="https://x.com/…"
+              defaultValue={s?.twitter ?? ""}
+              className={input}
+            />
           </label>
           <label className={lbl}>
             Twitch
-            <input name="twitch" placeholder="https://twitch.tv/…" defaultValue={s?.twitch ?? ""} className={input} />
+            <input
+              name="twitch"
+              placeholder="https://twitch.tv/…"
+              defaultValue={s?.twitch ?? ""}
+              className={input}
+            />
           </label>
           <label className={lbl}>
             YouTube
-            <input name="youtube" placeholder="https://youtube.com/…" defaultValue={s?.youtube ?? ""} className={input} />
+            <input
+              name="youtube"
+              placeholder="https://youtube.com/…"
+              defaultValue={s?.youtube ?? ""}
+              className={input}
+            />
           </label>
           <label className={lbl}>
             Instagram
-            <input name="instagram" placeholder="https://instagram.com/…" defaultValue={s?.instagram ?? ""} className={input} />
+            <input
+              name="instagram"
+              placeholder="https://instagram.com/…"
+              defaultValue={s?.instagram ?? ""}
+              className={input}
+            />
           </label>
           <label className={lbl}>
             Discord
-            <input name="discord" placeholder="https://discord.gg/…" defaultValue={s?.discord ?? ""} className={input} />
+            <input
+              name="discord"
+              placeholder="https://discord.gg/…"
+              defaultValue={s?.discord ?? ""}
+              className={input}
+            />
           </label>
           <label className={lbl}>
             Site web
-            <input name="website" placeholder="https://…" defaultValue={s?.website ?? ""} className={input} />
+            <input
+              name="website"
+              placeholder="https://…"
+              defaultValue={s?.website ?? ""}
+              className={input}
+            />
           </label>
         </div>
       </Section>

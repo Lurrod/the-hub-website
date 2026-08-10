@@ -78,9 +78,12 @@ export default function ImageUpload({
 
   // Les aperçus sont des URL de blob créées à la volée : on libère la
   // précédente à chaque remplacement et au démontage.
-  useEffect(() => () => {
-    if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    },
+    []
+  );
 
   function showPreview(f: File | null) {
     if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
@@ -226,7 +229,13 @@ export default function ImageUpload({
         <div className="min-w-0 text-xs">
           {applied ? (
             <div className="flex items-center gap-1.5 font-medium text-[var(--success)]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5 shrink-0">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={3}
+                className="h-3.5 w-3.5 shrink-0"
+              >
                 <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span className="truncate text-white">{applied.source.name}</span>
@@ -282,12 +291,7 @@ export default function ImageUpload({
       />
 
       {editing && (
-        <ImageCropper
-          file={editing}
-          shape={shape}
-          onCancel={cancelCrop}
-          onApply={applyCrop}
-        />
+        <ImageCropper file={editing} shape={shape} onCancel={cancelCrop} onApply={applyCrop} />
       )}
     </div>
   );

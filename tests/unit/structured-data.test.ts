@@ -27,8 +27,11 @@ describe("teamJsonLd", () => {
 
   it("rend le logo absolu à partir de sa clé /api/images", () => {
     const d = teamJsonLd({
-      id: "t1", name: "Alpha", tag: "ALP",
-      logo: "/api/images/teams/t1.webp", description: null,
+      id: "t1",
+      name: "Alpha",
+      tag: "ALP",
+      logo: "/api/images/teams/t1.webp",
+      description: null,
     });
     expect(String(d.logo)).toMatch(/^https?:\/\/.+\/api\/images\/teams\/t1\.webp$/);
   });
@@ -37,8 +40,11 @@ describe("teamJsonLd", () => {
 describe("playerJsonLd", () => {
   it("décrit une Person et retient le pseudo comme alternateName", () => {
     const d = playerJsonLd({
-      id: "p1", pseudo: "Lurrod", realName: "Titouan",
-      nationality: "France", photo: null,
+      id: "p1",
+      pseudo: "Lurrod",
+      realName: "Titouan",
+      nationality: "France",
+      photo: null,
     });
     expect(d["@type"]).toBe("Person");
     expect(d.name).toBe("Titouan");
@@ -48,7 +54,11 @@ describe("playerJsonLd", () => {
 
   it("retombe sur le pseudo quand le nom réel est absent", () => {
     const d = playerJsonLd({
-      id: "p1", pseudo: "Lurrod", realName: null, nationality: null, photo: null,
+      id: "p1",
+      pseudo: "Lurrod",
+      realName: null,
+      nationality: null,
+      photo: null,
     });
     expect(d.name).toBe("Lurrod");
     expect("alternateName" in d).toBe(false);
@@ -58,7 +68,11 @@ describe("playerJsonLd", () => {
 describe("tournamentJsonLd", () => {
   it("décrit un SportsEvent daté en ISO", () => {
     const d = tournamentJsonLd({
-      id: "x1", name: "Open #1", logo: null, description: null, organizer: "The Hub",
+      id: "x1",
+      name: "Open #1",
+      logo: null,
+      description: null,
+      organizer: "The Hub",
       startDate: new Date("2026-09-01T18:00:00Z"),
       endDate: new Date("2026-09-03T22:00:00Z"),
       status: "UPCOMING",
@@ -70,18 +84,33 @@ describe("tournamentJsonLd", () => {
   });
 
   it("traduit le statut en eventStatus Schema.org", () => {
-    const base = { id: "x", name: "n", logo: null, description: null, organizer: null,
-                   startDate: null, endDate: null };
-    expect(tournamentJsonLd({ ...base, status: "UPCOMING" }).eventStatus)
-      .toBe("https://schema.org/EventScheduled");
-    expect(tournamentJsonLd({ ...base, status: "FINISHED" }).eventStatus)
-      .toBe("https://schema.org/EventScheduled");
+    const base = {
+      id: "x",
+      name: "n",
+      logo: null,
+      description: null,
+      organizer: null,
+      startDate: null,
+      endDate: null,
+    };
+    expect(tournamentJsonLd({ ...base, status: "UPCOMING" }).eventStatus).toBe(
+      "https://schema.org/EventScheduled"
+    );
+    expect(tournamentJsonLd({ ...base, status: "FINISHED" }).eventStatus).toBe(
+      "https://schema.org/EventScheduled"
+    );
   });
 
   it("omet les dates absentes", () => {
     const d = tournamentJsonLd({
-      id: "x", name: "n", logo: null, description: null, organizer: null,
-      startDate: null, endDate: null, status: "UPCOMING",
+      id: "x",
+      name: "n",
+      logo: null,
+      description: null,
+      organizer: null,
+      startDate: null,
+      endDate: null,
+      status: "UPCOMING",
     });
     expect("startDate" in d).toBe(false);
     expect("endDate" in d).toBe(false);
@@ -91,8 +120,10 @@ describe("tournamentJsonLd", () => {
 describe("matchJsonLd", () => {
   it("liste les deux équipes en competitor", () => {
     const d = matchJsonLd({
-      id: "m1", date: new Date("2026-09-01T18:00:00Z"),
-      teamA: { id: "a", name: "Alpha" }, teamB: { id: "b", name: "Beta" },
+      id: "m1",
+      date: new Date("2026-09-01T18:00:00Z"),
+      teamA: { id: "a", name: "Alpha" },
+      teamB: { id: "b", name: "Beta" },
       tournamentName: "Open #1",
     });
     expect(d["@type"]).toBe("SportsEvent");
@@ -105,8 +136,10 @@ describe("matchJsonLd", () => {
 
   it("rattache le match à son tournoi", () => {
     const d = matchJsonLd({
-      id: "m1", date: null,
-      teamA: { id: "a", name: "Alpha" }, teamB: { id: "b", name: "Beta" },
+      id: "m1",
+      date: null,
+      teamA: { id: "a", name: "Alpha" },
+      teamB: { id: "b", name: "Beta" },
       tournamentName: "Open #1",
     });
     expect((d.superEvent as Record<string, unknown>).name).toBe("Open #1");
@@ -120,8 +153,11 @@ describe("tous les documents", () => {
       teamJsonLd({ id: "t", name: "n", tag: "T", logo: null, description: null }),
       playerJsonLd({ id: "p", pseudo: "p", realName: null, nationality: null, photo: null }),
       matchJsonLd({
-        id: "m", date: null, teamA: { id: "a", name: "A" },
-        teamB: { id: "b", name: "B" }, tournamentName: "t",
+        id: "m",
+        date: null,
+        teamA: { id: "a", name: "A" },
+        teamB: { id: "b", name: "B" },
+        tournamentName: "t",
       }),
     ];
     for (const d of docs) {
@@ -152,7 +188,11 @@ describe("serializeJsonLd", () => {
 
   it("reste du JSON valide et fidèle après échappement", () => {
     const data = teamJsonLd({
-      id: "t", name: "A<B", tag: "T", logo: null, description: "x < y",
+      id: "t",
+      name: "A<B",
+      tag: "T",
+      logo: null,
+      description: "x < y",
     });
     expect(JSON.parse(serializeJsonLd(data))).toEqual(data);
   });
@@ -209,8 +249,10 @@ describe("siteJsonLd", () => {
   });
 
   it("n'insère pas de double slash entre le domaine et le chemin", () => {
-    const target = (siteJsonLd().potentialAction as Record<string, unknown>)
-      .target as Record<string, unknown>;
+    const target = (siteJsonLd().potentialAction as Record<string, unknown>).target as Record<
+      string,
+      unknown
+    >;
     expect(String(target.urlTemplate)).not.toMatch(/[^:]\/\//);
   });
 });

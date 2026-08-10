@@ -33,7 +33,16 @@ describe("parseSiteDateTime", () => {
   });
 
   it("rejette une chaîne mal formée", () => {
-    for (const v of ["", "hier", "2026-13-99T99:99", "05/08/2026", "2026-08-05T20", "2026-02-31", "2026-00-10", "2026-08-05T25:00"]) {
+    for (const v of [
+      "",
+      "hier",
+      "2026-13-99T99:99",
+      "05/08/2026",
+      "2026-08-05T20",
+      "2026-02-31",
+      "2026-00-10",
+      "2026-08-05T25:00",
+    ]) {
       expect(parseSiteDateTime(v)).toBeNull();
     }
   });

@@ -103,7 +103,12 @@ export async function addRosterMemberAction(teamId: string, formData: FormData) 
     nationality: formData.get("nationality") || undefined,
     role: formData.get("role") || "JOUEUR",
   });
-  const created = await createPlayerAndAddToRoster(teamId, data.pseudo, data.nationality, data.role);
+  const created = await createPlayerAndAddToRoster(
+    teamId,
+    data.pseudo,
+    data.nationality,
+    data.role
+  );
   const riotInput = String(formData.get("riotId") ?? "").trim();
   if (riotInput) {
     try {

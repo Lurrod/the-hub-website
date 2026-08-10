@@ -97,7 +97,11 @@ export const SYNC_INTERVAL_MS = 5 * 60 * 1000;
  * les espacer de quelques minutes ne change rien à ce qui s'affiche, et évite
  * un UPDATE sur chaque consultation d'une liste de tournois.
  */
-export function shouldSync(lastSyncAt: number, now: number, intervalMs = SYNC_INTERVAL_MS): boolean {
+export function shouldSync(
+  lastSyncAt: number,
+  now: number,
+  intervalMs = SYNC_INTERVAL_MS
+): boolean {
   return now - lastSyncAt >= intervalMs;
 }
 

@@ -30,15 +30,27 @@ export default function PlayerDirectory({
       <table className="w-full min-w-[560px] text-sm">
         <thead>
           <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">
-            <th scope="col" className="w-10 py-2 pl-3 pr-2 font-medium">{ranked ? "#" : ""}</th>
-            <th scope="col" className="py-2 pr-2 font-medium">Joueur</th>
-            <th scope="col" className="hidden py-2 pr-3 font-medium sm:table-cell">Équipe</th>
+            <th scope="col" className="w-10 py-2 pl-3 pr-2 font-medium">
+              {ranked ? "#" : ""}
+            </th>
+            <th scope="col" className="py-2 pr-2 font-medium">
+              Joueur
+            </th>
+            <th scope="col" className="hidden py-2 pr-3 font-medium sm:table-cell">
+              Équipe
+            </th>
             <th scope="col" className="py-2 pr-3 text-right font-medium" title="Cartes jouées">
               Cartes
             </th>
-            <th scope="col" className="hidden py-2 pr-3 text-right font-medium sm:table-cell">K/D</th>
-            <th scope="col" className="hidden py-2 pr-3 text-right font-medium sm:table-cell">ACS</th>
-            <th scope="col" className="py-2 pr-3 text-right font-medium">Rating</th>
+            <th scope="col" className="hidden py-2 pr-3 text-right font-medium sm:table-cell">
+              K/D
+            </th>
+            <th scope="col" className="hidden py-2 pr-3 text-right font-medium sm:table-cell">
+              ACS
+            </th>
+            <th scope="col" className="py-2 pr-3 text-right font-medium">
+              Rating
+            </th>
           </tr>
         </thead>
         <tbody>

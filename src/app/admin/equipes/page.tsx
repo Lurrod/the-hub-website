@@ -13,8 +13,13 @@ export default async function AdminTeamsPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Admin<span className="dot-sep">·</span>Équipes</h1>
-        <Link href="/admin/equipes/nouvelle" className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white">
+        <h1 className="text-2xl font-bold text-white">
+          Admin<span className="dot-sep">·</span>Équipes
+        </h1>
+        <Link
+          href="/admin/equipes/nouvelle"
+          className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+        >
           Nouvelle équipe
         </Link>
       </div>
@@ -25,8 +30,12 @@ export default async function AdminTeamsPage() {
               {t.name} <span className="text-[var(--text-muted)]">[{t.tag}]</span>
             </span>
             <span className="flex gap-3 text-sm">
-              <Link href={`/equipes/${t.id}/gestion`} className="text-[var(--accent)]">Éditer</Link>
-              <Link href={`/equipes/${t.id}/gestion/managers`} className="text-[var(--accent-2)]">Managers</Link>
+              <Link href={`/equipes/${t.id}/gestion`} className="text-[var(--accent)]">
+                Éditer
+              </Link>
+              <Link href={`/equipes/${t.id}/gestion/managers`} className="text-[var(--accent-2)]">
+                Managers
+              </Link>
             </span>
           </li>
         ))}

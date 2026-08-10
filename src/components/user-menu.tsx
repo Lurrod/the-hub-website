@@ -63,9 +63,12 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
     };
   }, [open, close]);
 
-  useEffect(() => () => {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    },
+    []
+  );
 
   const item =
     "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-white transition-colors duration-[130ms] hover:bg-[var(--card-hover)]";
@@ -83,7 +86,13 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
       >
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img loading="lazy" decoding="async" src={photo} alt="" className="h-7 w-7 rounded-full object-cover" />
+          <img
+            loading="lazy"
+            decoding="async"
+            src={photo}
+            alt=""
+            className="h-7 w-7 rounded-full object-cover"
+          />
         ) : (
           <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--surface)] text-[10px] font-medium text-[var(--text-muted)]">
             {pseudo.slice(0, 2).toUpperCase()}
@@ -112,31 +121,31 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
           open ? "is-open" : closing ? "is-closing" : ""
         }`}
       >
-          <Link role="menuitem" href={profilHref} onClick={close} className={item}>
+        <Link role="menuitem" href={profilHref} onClick={close} className={item}>
+          <Icon>
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </Icon>
+          Profil
+        </Link>
+        <Link role="menuitem" href="/profil" onClick={close} className={item}>
+          <Icon>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z" />
+          </Icon>
+          Paramètres
+        </Link>
+        <div className="my-1 h-px bg-[var(--border)]" />
+        <form action={signOutAction}>
+          <button role="menuitem" className={item}>
             <Icon>
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
             </Icon>
-            Profil
-          </Link>
-          <Link role="menuitem" href="/profil" onClick={close} className={item}>
-            <Icon>
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z" />
-            </Icon>
-            Paramètres
-          </Link>
-          <div className="my-1 h-px bg-[var(--border)]" />
-          <form action={signOutAction}>
-            <button role="menuitem" className={item}>
-              <Icon>
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </Icon>
-              Déconnexion
-            </button>
-          </form>
+            Déconnexion
+          </button>
+        </form>
       </div>
     </div>
   );

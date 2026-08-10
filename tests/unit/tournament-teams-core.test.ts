@@ -14,11 +14,22 @@ const TEAM: TeamIdentity = { id: "t1", name: "Alpha", tag: "ALP", logo: null };
 
 /** Round minimal : seul le résultat compte, le reste est neutre par défaut. */
 function round(won: boolean, extra: Partial<TeamRound> = {}): TeamRound {
-  return { won, outcome: "Elimination", attacking: null, loadout: null, oppLoadout: null, ...extra };
+  return {
+    won,
+    outcome: "Elimination",
+    attacking: null,
+    loadout: null,
+    oppLoadout: null,
+    ...extra,
+  };
 }
 
 /** Carte dont le score se déduit des rounds, pour ne pas le saisir deux fois. */
-function map(mapName: string, rounds: TeamRound[], extra: Partial<TeamMapEntry> = {}): TeamMapEntry {
+function map(
+  mapName: string,
+  rounds: TeamRound[],
+  extra: Partial<TeamMapEntry> = {}
+): TeamMapEntry {
   const roundsFor = rounds.filter((r) => r.won).length;
   return {
     teamId: TEAM.id,
@@ -53,7 +64,14 @@ function player(over: Partial<TeamPlayerEntry> = {}): TeamPlayerEntry {
 
 describe("longestStreak", () => {
   it("compte la plus longue suite de rounds gagnés", () => {
-    const m = map("Ascent", [round(true), round(true), round(false), round(true), round(true), round(true)]);
+    const m = map("Ascent", [
+      round(true),
+      round(true),
+      round(false),
+      round(true),
+      round(true),
+      round(true),
+    ]);
     expect(longestStreak([m])).toBe(3);
   });
 
@@ -95,7 +113,15 @@ describe("biggestComeback", () => {
 
   it("retient le plus gros retard parmi plusieurs cartes gagnées", () => {
     const petit = map("Bind", [round(false), round(true), round(true)]);
-    const gros = map("Icebox", [round(false), round(false), round(false), round(true), round(true), round(true), round(true)]);
+    const gros = map("Icebox", [
+      round(false),
+      round(false),
+      round(false),
+      round(true),
+      round(true),
+      round(true),
+      round(true),
+    ]);
     expect(biggestComeback([petit, gros])).toBe(3);
   });
 
@@ -195,10 +221,7 @@ describe("buildTeamStats", () => {
   });
 
   it("calcule la part d'éliminations de chaque joueur", () => {
-    const players = [
-      player({ playerId: "p1", kills: 30 }),
-      player({ playerId: "p2", kills: 10 }),
-    ];
+    const players = [player({ playerId: "p1", kills: 30 }), player({ playerId: "p2", kills: 10 })];
     const s = buildTeamStats(TEAM, [], [], players);
     expect(s.players.map((p) => p.killShare)).toEqual([75, 25]);
   });
@@ -244,7 +267,12 @@ describe("buildTeamStats", () => {
   });
 
   it("neutralise la part d'éliminations quand l'équipe n'en a aucune", () => {
-    const s = buildTeamStats(TEAM, [], [], [player({ kills: 0, maps: 0, ratingSum: 0, acsSum: 0 })]);
+    const s = buildTeamStats(
+      TEAM,
+      [],
+      [],
+      [player({ kills: 0, maps: 0, ratingSum: 0, acsSum: 0 })]
+    );
     expect(s.players[0].killShare).toBe(0);
     expect(s.players[0].acs).toBe(0);
     expect(s.players[0].rating).toBe(0);

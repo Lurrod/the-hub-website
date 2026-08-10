@@ -45,15 +45,21 @@ describe("hasTournamentStarted", () => {
   });
 
   it("est faux quand le début est dans le futur", () => {
-    expect(hasTournamentStarted({ startDate: new Date("2026-08-10T00:00:00.000Z") }, NOW)).toBe(false);
+    expect(hasTournamentStarted({ startDate: new Date("2026-08-10T00:00:00.000Z") }, NOW)).toBe(
+      false
+    );
   });
 
   it("est vrai le jour même du début", () => {
-    expect(hasTournamentStarted({ startDate: new Date("2026-08-03T00:00:00.000Z") }, NOW)).toBe(true);
+    expect(hasTournamentStarted({ startDate: new Date("2026-08-03T00:00:00.000Z") }, NOW)).toBe(
+      true
+    );
   });
 
   it("est vrai après le début", () => {
-    expect(hasTournamentStarted({ startDate: new Date("2026-07-01T00:00:00.000Z") }, NOW)).toBe(true);
+    expect(hasTournamentStarted({ startDate: new Date("2026-07-01T00:00:00.000Z") }, NOW)).toBe(
+      true
+    );
   });
 });
 
@@ -117,9 +123,9 @@ describe("nextTournamentStatus", () => {
   });
 
   it("ne rouvre jamais un tournoi terminé manuellement", () => {
-    expect(
-      nextTournamentStatus({ status: "FINISHED", startDate: null, endDate: null }, NOW)
-    ).toBe("FINISHED");
+    expect(nextTournamentStatus({ status: "FINISHED", startDate: null, endDate: null }, NOW)).toBe(
+      "FINISHED"
+    );
   });
 });
 

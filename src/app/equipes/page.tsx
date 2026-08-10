@@ -11,8 +11,7 @@ import { itemListJsonLd } from "@/lib/structured-data";
 export const metadata = pageMetadata({
   path: "/equipes",
   title: "Équipes",
-  description:
-    "Les équipes du Tier 3 Valorant francophone et leurs rosters.",
+  description: "Les équipes du Tier 3 Valorant francophone et leurs rosters.",
 });
 
 export default async function TeamsPage({
@@ -46,7 +45,9 @@ export default async function TeamsPage({
           teams.map((t) => ({ path: `/equipes/${t.id}`, name: t.name }))
         )}
       />
-      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Équipes</h1>
+      <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        Équipes
+      </h1>
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="mb-4">

@@ -11,12 +11,7 @@ const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"
  * rester atteignables à tout moment : ce sont précisément les documents qu'on
  * veut pouvoir lire AVANT de terminer son inscription.
  */
-const ONBOARDING_EXEMPT = new Set([
-  "/onboarding",
-  "/cgu",
-  "/confidentialite",
-  "/mentions-legales",
-]);
+const ONBOARDING_EXEMPT = new Set(["/onboarding", "/cgu", "/confidentialite", "/mentions-legales"]);
 
 export function isOnboardingExempt(path: string): boolean {
   return ONBOARDING_EXEMPT.has(path);

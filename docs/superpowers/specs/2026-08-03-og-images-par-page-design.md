@@ -108,17 +108,17 @@ construit en `flex`.
 
 ## Contenu par page
 
-| Route | Badge | Titre | Méta | Chiffres |
-|---|---|---|---|---|
-| `/tournois/[id]` | `TOURNOI` + statut | nom + logo | format · région · dates | inscrits / limite, cashprize |
-| `/equipes/[id]` | `ÉQUIPE` | nom + logo + tag | région | bilan V–D, winrate, diff. de maps |
-| `/joueurs/[id]` | `JOUEUR` | pseudo + photo | équipe actuelle · rôle · nationalité | rating moyen, ACS, K/D |
-| `/matchs/[id]` | `MATCH` + statut | équipe A vs équipe B, logos | tournoi · round · Bo*n* | score, détail des maps |
-| `/tournois` | `TOURNOIS` | « Tous les tournois » | — | nombre de tournois, dont en cours |
-| `/equipes` | `ÉQUIPES` | « Toutes les équipes » | — | nombre d'équipes |
-| `/matchs` | `MATCHS` | « Tous les matchs » | — | nombre de matchs joués |
-| `/lft` | `LFT` | « Joueurs libres » | — | nombre de joueurs en recherche |
-| `/recherche` | `RECHERCHE` | « Rechercher » | — | — |
+| Route            | Badge              | Titre                       | Méta                                 | Chiffres                          |
+| ---------------- | ------------------ | --------------------------- | ------------------------------------ | --------------------------------- |
+| `/tournois/[id]` | `TOURNOI` + statut | nom + logo                  | format · région · dates              | inscrits / limite, cashprize      |
+| `/equipes/[id]`  | `ÉQUIPE`           | nom + logo + tag            | région                               | bilan V–D, winrate, diff. de maps |
+| `/joueurs/[id]`  | `JOUEUR`           | pseudo + photo              | équipe actuelle · rôle · nationalité | rating moyen, ACS, K/D            |
+| `/matchs/[id]`   | `MATCH` + statut   | équipe A vs équipe B, logos | tournoi · round · Bo*n*              | score, détail des maps            |
+| `/tournois`      | `TOURNOIS`         | « Tous les tournois »       | —                                    | nombre de tournois, dont en cours |
+| `/equipes`       | `ÉQUIPES`          | « Toutes les équipes »      | —                                    | nombre d'équipes                  |
+| `/matchs`        | `MATCHS`           | « Tous les matchs »         | —                                    | nombre de matchs joués            |
+| `/lft`           | `LFT`              | « Joueurs libres »          | —                                    | nombre de joueurs en recherche    |
+| `/recherche`     | `RECHERCHE`        | « Rechercher »              | —                                    | —                                 |
 
 ### Sources des chiffres
 
@@ -173,7 +173,7 @@ Chaque brique dégrade au lieu de casser :
 - Entité introuvable (`null`) → cadre générique portant le seul badge de type.
 
 Le rendu de chaque route est enveloppé : toute exception retombe sur le cadre
-générique. Une exception non rattrapée renverrait une 500 à Discord, donc *aucun*
+générique. Une exception non rattrapée renverrait une 500 à Discord, donc _aucun_
 aperçu, là où l'image de marque aurait fait l'affaire.
 
 ## Tests

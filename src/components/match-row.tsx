@@ -51,13 +51,21 @@ function Side({
     >
       {team?.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" decoding="async" src={team.logo} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={team.logo}
+          alt=""
+          className="h-6 w-6 shrink-0 rounded object-cover"
+        />
       ) : (
         <div className="monogram grid h-6 w-6 shrink-0 place-items-center rounded text-[10px]">
           {(team?.tag ?? "?").slice(0, 3).toUpperCase()}
         </div>
       )}
-      <span className={`truncate text-sm ${isWinner ? "font-semibold text-white" : "text-[var(--text-muted)]"}`}>
+      <span
+        className={`truncate text-sm ${isWinner ? "font-semibold text-white" : "text-[var(--text-muted)]"}`}
+      >
         {team?.name ?? "-"}
       </span>
     </div>
@@ -100,9 +108,17 @@ export default function MatchRow({
       <div className="flex shrink-0 items-center gap-3 justify-self-center">
         <Side team={match.teamA} isWinner={aWin} align="left" />
         <div className="stat flex items-center gap-1.5 text-sm">
-          <span className={aWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}>{match.scoreA}</span>
+          <span
+            className={aWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}
+          >
+            {match.scoreA}
+          </span>
           <span className="text-[var(--text-subtle)]">-</span>
-          <span className={bWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}>{match.scoreB}</span>
+          <span
+            className={bWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}
+          >
+            {match.scoreB}
+          </span>
         </div>
         <Side team={match.teamB} isWinner={bWin} align="right" />
       </div>
@@ -125,7 +141,9 @@ export default function MatchRow({
           </span>
         ) : null}
         {match.contextLabel && (
-          <span className="hidden text-xs text-[var(--text-muted)] sm:block">{match.contextLabel}</span>
+          <span className="hidden text-xs text-[var(--text-muted)] sm:block">
+            {match.contextLabel}
+          </span>
         )}
       </div>
     </Link>

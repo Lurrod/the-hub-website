@@ -40,13 +40,23 @@ describe("matchInputSchema", () => {
   it("refuse un score de série qui dépasse le format (rounds saisis à la place des maps)", () => {
     // 13-11 est un score de rounds : sur un BO1 il gonflerait le classement.
     expect(() =>
-      matchInputSchema.parse({ teamAId: "a", teamBId: "b", bestOf: "1", scoreA: "13", scoreB: "11" })
+      matchInputSchema.parse({
+        teamAId: "a",
+        teamBId: "b",
+        bestOf: "1",
+        scoreA: "13",
+        scoreB: "11",
+      })
     ).toThrow();
   });
 
   it("plafonne le score au nombre de maps nécessaires pour gagner", () => {
     const bo3 = matchInputSchema.parse({
-      teamAId: "a", teamBId: "b", bestOf: "3", scoreA: "2", scoreB: "1",
+      teamAId: "a",
+      teamBId: "b",
+      bestOf: "3",
+      scoreA: "2",
+      scoreB: "1",
     });
     expect(bo3.scoreA).toBe(2);
     expect(() =>

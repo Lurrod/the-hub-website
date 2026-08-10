@@ -46,8 +46,7 @@ export default async function MatchesPage({
           tournaments.flatMap((t) =>
             t.matches.map((m) => ({
               path: `/matchs/${m.id}`,
-              name:
-                m.teamA && m.teamB ? `${m.teamA.name} vs ${m.teamB.name}` : null,
+              name: m.teamA && m.teamB ? `${m.teamA.name} vs ${m.teamB.name}` : null,
             }))
           )
         )}
@@ -109,8 +108,8 @@ export default async function MatchesPage({
                         scoreB: m.scoreB,
                         stageLabel:
                           m.stage === "BRACKET"
-                            ? m.round ?? "Playoffs"
-                            : m.group?.name ?? "Poule",
+                            ? (m.round ?? "Playoffs")
+                            : (m.group?.name ?? "Poule"),
                         teamA: m.teamA ? { name: m.teamA.name, logo: m.teamA.logo } : null,
                         teamB: m.teamB ? { name: m.teamB.name, logo: m.teamB.logo } : null,
                       }}

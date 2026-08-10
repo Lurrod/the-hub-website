@@ -32,7 +32,9 @@ export const matchInputSchema = z
     bestOf: z.coerce
       .number()
       .int()
-      .refine((n) => (BEST_OF_OPTIONS as readonly number[]).includes(n), { message: "BestOf invalide" })
+      .refine((n) => (BEST_OF_OPTIONS as readonly number[]).includes(n), {
+        message: "BestOf invalide",
+      })
       .default(1),
     groupId: z.string().trim().optional(),
     round: z.string().trim().max(60).optional(),

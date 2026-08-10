@@ -103,9 +103,12 @@ export default function ConfirmDeleteButton({
   // déclencheur à la fermeture (WCAG 2.1.2 / 2.4.3).
   useFocusTrap(panelRef, open);
 
-  useEffect(() => () => {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    },
+    []
+  );
 
   return (
     <>
@@ -117,42 +120,44 @@ export default function ConfirmDeleteButton({
         {label}
       </button>
 
-      {open && mounted && createPortal(
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-200 ${
-            shown ? "opacity-100" : "opacity-0"
-          }`}
-          role="dialog"
-          aria-modal="true"
-          aria-label={title}
-          onClick={close}
-        >
+      {open &&
+        mounted &&
+        createPortal(
           <div
-            ref={panelRef}
-            tabIndex={-1}
-            className={`t-modal w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl outline-none ${
-              shown ? "is-open" : closing ? "is-closing" : ""
+            className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-200 ${
+              shown ? "opacity-100" : "opacity-0"
             }`}
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            onClick={close}
           >
-            <h2 className="text-base font-semibold text-white">{title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">{message}</p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={close}
-                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-white transition-colors hover:bg-[var(--card-hover)]"
-              >
-                Annuler
-              </button>
-              <form action={action}>
-                <ConfirmButton label={confirmLabel} pendingLabel={pendingLabel} />
-              </form>
+            <div
+              ref={panelRef}
+              tabIndex={-1}
+              className={`t-modal w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl outline-none ${
+                shown ? "is-open" : closing ? "is-closing" : ""
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-base font-semibold text-white">{title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">{message}</p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={close}
+                  className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-white transition-colors hover:bg-[var(--card-hover)]"
+                >
+                  Annuler
+                </button>
+                <form action={action}>
+                  <ConfirmButton label={confirmLabel} pendingLabel={pendingLabel} />
+                </form>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

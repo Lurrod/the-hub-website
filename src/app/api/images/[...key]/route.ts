@@ -6,10 +6,7 @@ import { imageEtag, resolveUploadPath } from "@/lib/images";
 // pas bougé, au lieu de retélécharger le fichier entier.
 const CACHE_CONTROL = "public, max-age=86400, stale-while-revalidate=604800";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ key: string[] }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const { key } = await params;
   let filePath: string;
   try {

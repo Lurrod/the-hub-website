@@ -29,11 +29,7 @@ export default async function HomePage() {
   return (
     <main>
       <JsonLdScript data={siteJsonLd()} />
-      <LandingHero
-        isLoggedIn={isLoggedIn}
-        primaryHref={profileHref}
-        signInAction={signInDiscord}
-      />
+      <LandingHero isLoggedIn={isLoggedIn} primaryHref={profileHref} signInAction={signInDiscord} />
       {SHOW_FEED && <LandingFeed isLoggedIn={isLoggedIn} />}
     </main>
   );

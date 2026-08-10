@@ -29,12 +29,12 @@ export default function CguPage() {
             disposer d&apos;un compte Discord valide et en respecter les conditions.
           </li>
           <li>
-            Vous êtes responsable des activités réalisées depuis votre compte et vous vous engagez
-            à fournir des informations exactes, notamment votre pseudo et votre Riot ID.
+            Vous êtes responsable des activités réalisées depuis votre compte et vous vous engagez à
+            fournir des informations exactes, notamment votre pseudo et votre Riot ID.
           </li>
           <li>
-            Un compte est strictement personnel. L&apos;usurpation de l&apos;identité d&apos;un autre
-            joueur, d&apos;une équipe ou d&apos;un organisateur est interdite.
+            Un compte est strictement personnel. L&apos;usurpation de l&apos;identité d&apos;un
+            autre joueur, d&apos;une équipe ou d&apos;un organisateur est interdite.
           </li>
           <li>
             Les mineurs de moins de 15 ans doivent obtenir l&apos;autorisation d&apos;un titulaire
@@ -51,8 +51,8 @@ export default function CguPage() {
           durée de leur publication et aux seules fins de fonctionnement du service.
         </p>
         <p>
-          Vous garantissez détenir les droits nécessaires sur les contenus déposés et vous engagez
-          à ne pas publier de contenu illicite, diffamatoire, haineux, pornographique, ou portant
+          Vous garantissez détenir les droits nécessaires sur les contenus déposés et vous engagez à
+          ne pas publier de contenu illicite, diffamatoire, haineux, pornographique, ou portant
           atteinte aux droits de tiers.
         </p>
       </Section>
@@ -72,8 +72,7 @@ export default function CguPage() {
             créer de fiches fictives.
           </li>
           <li>
-            Adopter un comportement respectueux envers les autres joueurs, équipes et
-            organisateurs.
+            Adopter un comportement respectueux envers les autres joueurs, équipes et organisateurs.
           </li>
         </Ul>
       </Section>
@@ -85,9 +84,9 @@ export default function CguPage() {
             inscriptions qu&apos;il réalise.
           </li>
           <li>
-            L&apos;inscription à un tournoi n&apos;est possible que pendant la phase d&apos;ouverture
-            des inscriptions, dans la limite du nombre de places définies par l&apos;organisateur et
-            sous réserve d&apos;un effectif suffisant.
+            L&apos;inscription à un tournoi n&apos;est possible que pendant la phase
+            d&apos;ouverture des inscriptions, dans la limite du nombre de places définies par
+            l&apos;organisateur et sous réserve d&apos;un effectif suffisant.
           </li>
           <li>
             L&apos;éditeur du site n&apos;organise pas nécessairement les tournois référencés et

@@ -58,10 +58,7 @@ describe("syncTournamentStatuses", () => {
     ];
     expect(args.data).toEqual({ status: "ONGOING" });
     expect(args.where.status).toBe("UPCOMING");
-    expect(args.where.OR).toEqual([
-      { endDate: null },
-      { endDate: { gte: finishedCutoff() } },
-    ]);
+    expect(args.where.OR).toEqual([{ endDate: null }, { endDate: { gte: finishedCutoff() } }]);
   });
 
   it("rend le total des deux mises à jour", async () => {

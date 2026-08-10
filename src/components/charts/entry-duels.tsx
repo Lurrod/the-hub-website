@@ -25,8 +25,7 @@ export default function EntryDuels({ players }: { players: PlayerPoint[] }) {
     .filter((p) => p.firstKills + p.firstDeaths > 0)
     .sort(
       (a, b) =>
-        b.firstKills - b.firstDeaths - (a.firstKills - a.firstDeaths) ||
-        b.firstKills - a.firstKills
+        b.firstKills - b.firstDeaths - (a.firstKills - a.firstDeaths) || b.firstKills - a.firstKills
     );
   const shown = ranked.slice(0, TOP);
   const hidden = ranked.length - shown.length;
@@ -61,9 +60,7 @@ export default function EntryDuels({ players }: { players: PlayerPoint[] }) {
               className="flex items-center gap-2 text-xs"
               title={`${p.name} — ${p.firstKills} premiers kills, ${p.firstDeaths} premières morts (${diff > 0 ? "+" : ""}${diff})`}
             >
-              <span className="w-24 shrink-0 truncate text-right text-white sm:w-32">
-                {p.name}
-              </span>
+              <span className="w-24 shrink-0 truncate text-right text-white sm:w-32">{p.name}</span>
 
               {/* Les compteurs suivent le bout de leur barre plutot que de rester
                   colles au nom : sinon un chiffre flotte loin de ce qu'il mesure. */}
@@ -112,7 +109,8 @@ export default function EntryDuels({ players }: { players: PlayerPoint[] }) {
 
       <figcaption className="mt-2 text-[11px] text-[var(--text-muted)]">
         Classé par différentiel.
-        {hidden > 0 && ` ${hidden} autre${hidden > 1 ? "s" : ""} joueur${hidden > 1 ? "s" : ""} non affiché${hidden > 1 ? "s" : ""}.`}
+        {hidden > 0 &&
+          ` ${hidden} autre${hidden > 1 ? "s" : ""} joueur${hidden > 1 ? "s" : ""} non affiché${hidden > 1 ? "s" : ""}.`}
       </figcaption>
     </figure>
   );

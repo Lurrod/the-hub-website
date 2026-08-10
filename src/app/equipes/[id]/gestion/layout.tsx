@@ -7,7 +7,6 @@ import { NOINDEX } from "@/lib/metadata";
  *  définissent pas leur propre clé `robots`. */
 export const metadata = NOINDEX;
 
-
 /**
  * Garde partagée de toute la gestion d'équipe : admin OU manager de l'équipe.
  * Backstop pour éviter qu'une future sous-page oublie sa garde (les pages

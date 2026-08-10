@@ -9,11 +9,21 @@ describe("computeStandings", () => {
   });
 
   it("compte victoires, défaites et maps pour un match", () => {
-    const rows = computeStandings(["a", "b"], [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 1 }]);
+    const rows = computeStandings(
+      ["a", "b"],
+      [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 1 }]
+    );
     const a = rows.find((r) => r.teamId === "a")!;
     const b = rows.find((r) => r.teamId === "b")!;
     expect(a).toMatchObject({ played: 1, wins: 1, losses: 0, mapsWon: 2, mapsLost: 1, mapDiff: 1 });
-    expect(b).toMatchObject({ played: 1, wins: 0, losses: 1, mapsWon: 1, mapsLost: 2, mapDiff: -1 });
+    expect(b).toMatchObject({
+      played: 1,
+      wins: 0,
+      losses: 1,
+      mapsWon: 1,
+      mapsLost: 2,
+      mapDiff: -1,
+    });
   });
 
   it("trie par victoires décroissantes", () => {
@@ -58,7 +68,10 @@ describe("computeStandings", () => {
   });
 
   it("ignore les matchs impliquant une équipe hors de la poule", () => {
-    const rows = computeStandings(["a", "b"], [{ teamAId: "a", teamBId: "z", scoreA: 2, scoreB: 0 }]);
+    const rows = computeStandings(
+      ["a", "b"],
+      [{ teamAId: "a", teamBId: "z", scoreA: 2, scoreB: 0 }]
+    );
     const a = rows.find((r) => r.teamId === "a")!;
     expect(a.played).toBe(0);
   });
@@ -71,9 +84,7 @@ describe("buildStandingRows", () => {
   ];
 
   it("résout le nom et le tag de chaque équipe, dans l'ordre du classement", () => {
-    const rows = buildStandingRows(teams, [
-      { teamAId: "a", teamBId: "b", scoreA: 0, scoreB: 2 },
-    ]);
+    const rows = buildStandingRows(teams, [{ teamAId: "a", teamBId: "b", scoreA: 0, scoreB: 2 }]);
     expect(rows.map((r) => r.teamTag)).toEqual(["BRV", "ALP"]);
     expect(rows[0].teamName).toBe("Bravo");
     expect(rows[0].wins).toBe(1);
@@ -87,13 +98,18 @@ describe("buildStandingRows", () => {
   });
 
   it("rend un classement vide sans équipe", () => {
-    expect(buildStandingRows([], [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 0 }])).toEqual([]);
+    expect(buildStandingRows([], [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 0 }])).toEqual(
+      []
+    );
   });
 });
 
 describe("matchs nuls", () => {
   it("compte une série à égalité de maps comme un nul des deux côtés", () => {
-    const rows = computeStandings(["a", "b"], [{ teamAId: "a", teamBId: "b", scoreA: 1, scoreB: 1 }]);
+    const rows = computeStandings(
+      ["a", "b"],
+      [{ teamAId: "a", teamBId: "b", scoreA: 1, scoreB: 1 }]
+    );
     for (const r of rows) {
       expect(r.played).toBe(1);
       expect(r.draws).toBe(1);
@@ -103,13 +119,19 @@ describe("matchs nuls", () => {
   });
 
   it("n'incrémente pas les nuls sur une série décidée", () => {
-    const rows = computeStandings(["a", "b"], [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 0 }]);
+    const rows = computeStandings(
+      ["a", "b"],
+      [{ teamAId: "a", teamBId: "b", scoreA: 2, scoreB: 0 }]
+    );
     expect(rows.every((r) => r.draws === 0)).toBe(true);
   });
 
   it("remonte les nuls jusqu'à la ligne d'affichage", () => {
     const rows = buildStandingRows(
-      [{ teamId: "a", name: "A", tag: "A" }, { teamId: "b", name: "B", tag: "B" }],
+      [
+        { teamId: "a", name: "A", tag: "A" },
+        { teamId: "b", name: "B", tag: "B" },
+      ],
       [{ teamAId: "a", teamBId: "b", scoreA: 1, scoreB: 1 }]
     );
     expect(rows[0].draws).toBe(1);

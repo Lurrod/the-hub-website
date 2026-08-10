@@ -188,7 +188,12 @@ export default async function EditMatchPage({
             required
             className={`${input} min-w-72 flex-1 font-mono`}
           />
-          <select name="campOfTeamA" defaultValue="AUTO" className={input} aria-label="Camp Riot de l'équipe A">
+          <select
+            name="campOfTeamA"
+            defaultValue="AUTO"
+            className={input}
+            aria-label="Camp Riot de l'équipe A"
+          >
             <option value="AUTO">Déduire le camp</option>
             <option value="Blue">{match.teamA.name} était Blue</option>
             <option value="Red">{match.teamA.name} était Red</option>

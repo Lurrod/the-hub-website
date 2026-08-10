@@ -5,13 +5,7 @@ import Segmented from "@/components/segmented";
 
 type Tab = { key: string; label: string; content: ReactNode };
 
-export default function TournamentTabs({
-  header,
-  tabs,
-}: {
-  header?: ReactNode;
-  tabs: Tab[];
-}) {
+export default function TournamentTabs({ header, tabs }: { header?: ReactNode; tabs: Tab[] }) {
   const [active, setActive] = useState(tabs[0]?.key);
   const current = tabs.find((t) => t.key === active) ?? tabs[0];
 

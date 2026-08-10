@@ -31,9 +31,7 @@ export type PlayerTeamFilterKey = (typeof PLAYER_TEAM_FILTERS)[number]["key"];
 export function normalizePlayerTeamFilter(
   raw: string | undefined
 ): PlayerTeamFilterKey | undefined {
-  return PLAYER_TEAM_FILTERS.some((t) => t.key === raw)
-    ? (raw as PlayerTeamFilterKey)
-    : undefined;
+  return PLAYER_TEAM_FILTERS.some((t) => t.key === raw) ? (raw as PlayerTeamFilterKey) : undefined;
 }
 
 export function normalizePlayerRole(raw: string | undefined): ValorantRoleKey | undefined {

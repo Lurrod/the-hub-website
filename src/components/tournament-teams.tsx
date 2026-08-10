@@ -103,7 +103,17 @@ function Bar({ pct, title }: { pct: number; title?: string }) {
 }
 
 /** Bilan d'un camp : part gagnée, avec le détail chiffré. */
-function SideBar({ label, won, played, pct }: { label: string; won: number; played: number; pct: number }) {
+function SideBar({
+  label,
+  won,
+  played,
+  pct,
+}: {
+  label: string;
+  won: number;
+  played: number;
+  pct: number;
+}) {
   if (played === 0) {
     return (
       <div className="flex items-center gap-2 text-xs">
@@ -140,7 +150,8 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
   const nationalities = new Map<string, number>();
   for (const t of teams) {
     for (const p of t.players) {
-      if (p.nationality) nationalities.set(p.nationality, (nationalities.get(p.nationality) ?? 0) + 1);
+      if (p.nationality)
+        nationalities.set(p.nationality, (nationalities.get(p.nationality) ?? 0) + 1);
     }
   }
   const flags = [...nationalities.entries()].sort((a, b) => b[1] - a[1]);
@@ -213,15 +224,23 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
                   </div>
                   <ul className="flex flex-col gap-1.5">
                     {t.players.map((p) => (
-                      <li key={`${p.playerId ?? p.name}`} className="flex items-center gap-2 text-xs">
+                      <li
+                        key={`${p.playerId ?? p.name}`}
+                        className="flex items-center gap-2 text-xs"
+                      >
                         {/* Emplacement réservé même sans drapeau, sinon les
                             pseudos se décalent d'une ligne à l'autre. */}
                         <span className="w-3.5 shrink-0">
-                          {p.nationality && <Flag country={p.nationality} className="h-2.5 w-3.5" />}
+                          {p.nationality && (
+                            <Flag country={p.nationality} className="h-2.5 w-3.5" />
+                          )}
                         </span>
                         <span className="min-w-0 flex-1 truncate text-white">
                           {p.playerId ? (
-                            <Link href={`/joueurs/${p.playerId}`} className="hover:text-[var(--accent)]">
+                            <Link
+                              href={`/joueurs/${p.playerId}`}
+                              className="hover:text-[var(--accent)]"
+                            >
                               {p.name}
                             </Link>
                           ) : (
@@ -275,7 +294,14 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
                     agents={t.agents.slice(0, 6).map((a) => ({
                       agent: a.agent,
                       maps: a.maps,
-                      pct: Math.round((a.maps / Math.max(1, t.agents.reduce((n, x) => n + x.maps, 0))) * 100),
+                      pct: Math.round(
+                        (a.maps /
+                          Math.max(
+                            1,
+                            t.agents.reduce((n, x) => n + x.maps, 0)
+                          )) *
+                          100
+                      ),
                     }))}
                     totalMaps={t.mapsPlayed}
                     stacked
@@ -354,7 +380,8 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
         <h2 className={SECTION}>Attaque et défense</h2>
         <p className={NOTE}>
           Round gagné en attaque ou défense.
-          {!hasSideData && " Aucune carte importée ne porte encore le camp — ré-importe une map pour l'alimenter."}
+          {!hasSideData &&
+            " Aucune carte importée ne porte encore le camp — ré-importe une map pour l'alimenter."}
         </p>
         <div className={CARD}>
           <ul className="flex flex-col gap-4">
@@ -365,8 +392,18 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
                   {t.team.tag}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <SideBar label="Attaque" won={t.attack.won} played={t.attack.played} pct={t.attack.winratePct} />
-                  <SideBar label="Défense" won={t.defense.won} played={t.defense.played} pct={t.defense.winratePct} />
+                  <SideBar
+                    label="Attaque"
+                    won={t.attack.won}
+                    played={t.attack.played}
+                    pct={t.attack.winratePct}
+                  />
+                  <SideBar
+                    label="Défense"
+                    won={t.defense.won}
+                    played={t.defense.played}
+                    pct={t.defense.winratePct}
+                  />
                 </div>
               </li>
             ))}
@@ -378,8 +415,8 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
       <section>
         <h2 className={SECTION}>Gun rounds et économie</h2>
         <p className={NOTE}>
-          Le gun round est le premier round de chaque mi-temps. Un round « eco » est un round
-          joué avec au moins 4 000 d&apos;équipement de moins que l&apos;adversaire.
+          Le gun round est le premier round de chaque mi-temps. Un round « eco » est un round joué
+          avec au moins 4 000 d&apos;équipement de moins que l&apos;adversaire.
           {!hasEcoData && " L'économie n'est portée que par les cartes ré-importées."}
         </p>
         <div className={CARD}>
@@ -425,7 +462,10 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
                     <Crest team={t.team} />
                     {t.team.tag}
                   </span>
-                  <Bar pct={share} title={`${t.firstKills} premiers kills, ${t.firstDeaths} premières morts`} />
+                  <Bar
+                    pct={share}
+                    title={`${t.firstKills} premiers kills, ${t.firstDeaths} premières morts`}
+                  />
                   <span className="stat w-10 shrink-0 text-right font-semibold text-white">
                     {Math.round(share)}%
                   </span>

@@ -117,8 +117,14 @@ export default function AgentDonut({
             <g key={s.agent}>
               {single ? (
                 <>
-                  <circle cx={CENTER} cy={CENTER} r={(R_OUT + R_IN) / 2} fill="none"
-                    stroke={s.color} strokeWidth={R_OUT - R_IN} />
+                  <circle
+                    cx={CENTER}
+                    cy={CENTER}
+                    r={(R_OUT + R_IN) / 2}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth={R_OUT - R_IN}
+                  />
                 </>
               ) : (
                 <path d={arc(s.from, s.to)} fill={s.color} />

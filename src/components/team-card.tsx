@@ -16,7 +16,13 @@ export default function TeamCard({ team }: { team: TeamCardData }) {
     >
       {team.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" decoding="async" src={team.logo} alt="" className="h-10 w-10 rounded object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={team.logo}
+          alt=""
+          className="h-10 w-10 rounded object-cover"
+        />
       ) : (
         <div className="monogram grid h-10 w-10 place-items-center rounded text-xs">
           {team.tag.slice(0, 3).toUpperCase()}

@@ -118,7 +118,14 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
   ]);
 
   if (rows.length === 0) {
-    return { tournamentRecords: [], records: [], averages: [], totals: [], players: [], hasData: false };
+    return {
+      tournamentRecords: [],
+      records: [],
+      averages: [],
+      totals: [],
+      players: [],
+      hasData: false,
+    };
   }
 
   // Contexte par ligne : équipe du joueur et adversaire (selon le côté A/B).
@@ -157,12 +164,36 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
   };
 
   const records: StatRecord[] = [
-    record("Plus de kills (game)", (r) => r.kills, (v) => `${v}`),
-    record("Plus d'assists (game)", (r) => r.assists, (v) => `${v}`),
-    record("Plus de morts (game)", (r) => r.deaths, (v) => `${v}`),
-    record("Meilleur ACS (game)", (r) => r.acs, (v) => `${v}`),
-    record("Plus de first kills (game)", (r) => r.firstKills, (v) => `${v}`),
-    record("Plus de first deaths (game)", (r) => r.firstDeaths, (v) => `${v}`),
+    record(
+      "Plus de kills (game)",
+      (r) => r.kills,
+      (v) => `${v}`
+    ),
+    record(
+      "Plus d'assists (game)",
+      (r) => r.assists,
+      (v) => `${v}`
+    ),
+    record(
+      "Plus de morts (game)",
+      (r) => r.deaths,
+      (v) => `${v}`
+    ),
+    record(
+      "Meilleur ACS (game)",
+      (r) => r.acs,
+      (v) => `${v}`
+    ),
+    record(
+      "Plus de first kills (game)",
+      (r) => r.firstKills,
+      (v) => `${v}`
+    ),
+    record(
+      "Plus de first deaths (game)",
+      (r) => r.firstDeaths,
+      (v) => `${v}`
+    ),
   ];
 
   // --- Records du tournoi : perso le plus joué, map la plus jouée, partie la plus longue ---
@@ -214,24 +245,22 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
   const byPlayer = new Map<string, Agg>();
   for (const r of resolved) {
     const key = r.player?.id ?? `${r.riotName}#${r.riotTag ?? ""}`;
-    const a =
-      byPlayer.get(key) ??
-      {
-        playerId: r.player?.id ?? null,
-        name: r.name,
-        teamTag: r.teamTag,
-        maps: 0,
-        kills: 0,
-        deaths: 0,
-        assists: 0,
-        firstKills: 0,
-        firstDeaths: 0,
-        acsSum: 0,
-        ratingSum: 0,
-        kastSum: 0,
-        hsSum: 0,
-        agents: new Set<string>(),
-      };
+    const a = byPlayer.get(key) ?? {
+      playerId: r.player?.id ?? null,
+      name: r.name,
+      teamTag: r.teamTag,
+      maps: 0,
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      firstKills: 0,
+      firstDeaths: 0,
+      acsSum: 0,
+      ratingSum: 0,
+      kastSum: 0,
+      hsSum: 0,
+      agents: new Set<string>(),
+    };
     a.maps += 1;
     a.kills += r.kills;
     a.deaths += r.deaths;
@@ -274,10 +303,26 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
 
   const averages: StatRecord[] = [
     avgRecord("Meilleur K/D", kd, (v) => v.toFixed(2)),
-    avgRecord("Meilleur rating", (a) => a.ratingSum / a.maps, (v) => v.toFixed(2)),
-    avgRecord("Meilleur ACS", (a) => a.acsSum / a.maps, (v) => `${Math.round(v)}`),
-    avgRecord("Meilleur HS%", (a) => a.hsSum / a.maps, (v) => `${Math.round(v)}%`),
-    avgRecord("Meilleur KAST", (a) => a.kastSum / a.maps, (v) => `${Math.round(v)}%`),
+    avgRecord(
+      "Meilleur rating",
+      (a) => a.ratingSum / a.maps,
+      (v) => v.toFixed(2)
+    ),
+    avgRecord(
+      "Meilleur ACS",
+      (a) => a.acsSum / a.maps,
+      (v) => `${Math.round(v)}`
+    ),
+    avgRecord(
+      "Meilleur HS%",
+      (a) => a.hsSum / a.maps,
+      (v) => `${Math.round(v)}%`
+    ),
+    avgRecord(
+      "Meilleur KAST",
+      (a) => a.kastSum / a.maps,
+      (v) => `${Math.round(v)}%`
+    ),
   ];
 
   // Cumul : top 3, aucun seuil de cartes.
@@ -295,12 +340,36 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
   });
 
   const totals: StatLeaderboard[] = [
-    totalBoard("Plus de kills (total)", (a) => a.kills, (v) => `${v}`),
-    totalBoard("Plus d'assists (total)", (a) => a.assists, (v) => `${v}`),
-    totalBoard("Plus de morts (total)", (a) => a.deaths, (v) => `${v}`),
-    totalBoard("Plus de first kills (total)", (a) => a.firstKills, (v) => `${v}`),
-    totalBoard("Plus de first deaths (total)", (a) => a.firstDeaths, (v) => `${v}`),
-    totalBoard("Joueur le plus flex", (a) => a.agents.size, (v) => `${v} perso${v > 1 ? "s" : ""}`),
+    totalBoard(
+      "Plus de kills (total)",
+      (a) => a.kills,
+      (v) => `${v}`
+    ),
+    totalBoard(
+      "Plus d'assists (total)",
+      (a) => a.assists,
+      (v) => `${v}`
+    ),
+    totalBoard(
+      "Plus de morts (total)",
+      (a) => a.deaths,
+      (v) => `${v}`
+    ),
+    totalBoard(
+      "Plus de first kills (total)",
+      (a) => a.firstKills,
+      (v) => `${v}`
+    ),
+    totalBoard(
+      "Plus de first deaths (total)",
+      (a) => a.firstDeaths,
+      (v) => `${v}`
+    ),
+    totalBoard(
+      "Joueur le plus flex",
+      (a) => a.agents.size,
+      (v) => `${v} perso${v > 1 ? "s" : ""}`
+    ),
   ];
 
   const playerPoints: PlayerPoint[] = players.map((a) => ({

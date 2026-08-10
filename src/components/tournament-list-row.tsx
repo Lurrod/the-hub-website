@@ -34,7 +34,13 @@ export default function TournamentListRow({ t }: { t: Row }) {
 
       {t.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img loading="lazy" decoding="async" src={t.logo} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={t.logo}
+          alt=""
+          className="h-12 w-12 shrink-0 rounded-lg object-cover"
+        />
       ) : (
         <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[var(--surface)] text-xs text-[var(--text-muted)]">
           {t.name.slice(0, 2).toUpperCase()}
@@ -52,7 +58,9 @@ export default function TournamentListRow({ t }: { t: Row }) {
       <div className="ml-auto hidden shrink-0 items-center gap-5 sm:flex sm:gap-8">
         <div className="text-left">
           <div className="text-xs font-semibold text-white">{t.teamCount}</div>
-          <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">équipes</div>
+          <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+            équipes
+          </div>
         </div>
         <div className="text-left">
           <div className="text-xs font-semibold text-white">{t.prizePool ?? "-"}</div>

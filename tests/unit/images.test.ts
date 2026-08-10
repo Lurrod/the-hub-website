@@ -67,7 +67,9 @@ describe("resolveUploadPath (tournaments)", () => {
 
 describe("imageEtag", () => {
   it("produit un ETag fort et cité", () => {
-    expect(imageEtag({ size: 1234, mtimeMs: 1_700_000_000_000 })).toMatch(/^"[0-9a-z]+-[0-9a-z]+"$/);
+    expect(imageEtag({ size: 1234, mtimeMs: 1_700_000_000_000 })).toMatch(
+      /^"[0-9a-z]+-[0-9a-z]+"$/
+    );
   });
   it("change quand le fichier est réécrit", () => {
     // Les clés d'image sont stables (identifiant en base) : sans ce lien avec
@@ -106,7 +108,9 @@ describe("assertRealImage", () => {
   });
 
   it("refuse un SVG, même renommé en .png", async () => {
-    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4"/></svg>');
+    const svg = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4"/></svg>'
+    );
     const r = await assertRealImage(svg);
     expect(r.ok).toBe(false);
   });
@@ -196,9 +200,9 @@ describe("deleteStoredImage", () => {
   });
 
   it("refuse une catégorie inconnue", async () => {
-    await expect(
-      deleteStoredImage("secrets" as unknown as "teams", id)
-    ).rejects.toThrow(/Catégorie invalide/);
+    await expect(deleteStoredImage("secrets" as unknown as "teams", id)).rejects.toThrow(
+      /Catégorie invalide/
+    );
   });
 
   it("refuse un identifiant qui tente une traversée de répertoire", async () => {

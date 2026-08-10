@@ -12,21 +12,13 @@ import type { ManagerRoleKey } from "@/lib/manager-roles";
 
 import { teamTitle } from "@/lib/data/titles";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const name = await teamTitle(id);
   return { title: name ? `Managers · ${name}` : "Managers" };
 }
 
-export default async function TeamManagersPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function TeamManagersPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getSessionUser();
   const managers = await getTeamManagers(id);

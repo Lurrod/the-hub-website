@@ -65,7 +65,11 @@ describe("mapRecords", () => {
 
 describe("bestGame", () => {
   it("retient la carte au plus grand nombre de kills", () => {
-    const out = bestGame([row({ kills: 12 }), row({ kills: 30, mapName: "Split" }), row({ kills: 9 })]);
+    const out = bestGame([
+      row({ kills: 12 }),
+      row({ kills: 30, mapName: "Split" }),
+      row({ kills: 9 }),
+    ]);
     expect(out).toMatchObject({ kills: 30, mapName: "Split" });
   });
   it("départage une égalité de kills par le rating", () => {
@@ -94,10 +98,7 @@ describe("ratingTrend", () => {
 
 describe("buildPlayerOverview", () => {
   it("calcule le K/D sur les totaux, pas sur la moyenne des cartes", () => {
-    const o = buildPlayerOverview([
-      row({ kills: 20, deaths: 10 }),
-      row({ kills: 10, deaths: 10 }),
-    ]);
+    const o = buildPlayerOverview([row({ kills: 20, deaths: 10 }), row({ kills: 10, deaths: 10 })]);
     expect(o.kills).toBe(30);
     expect(o.deaths).toBe(20);
     expect(o.kd).toBe(1.5);

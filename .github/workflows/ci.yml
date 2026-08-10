@@ -26,6 +26,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Formatage
+        # Sans cette étape, la dérive de formatage n'était détectée par personne :
+        # l'audit du 6 août 2026 a trouvé 222 fichiers non conformes (QUAL-01).
+        # `* text=auto eol=lf` dans .gitattributes garantit que les fins de ligne
+        # arrivent en LF sur le disque du runner comme sur un poste Windows.
+        run: npm run format:check
+
       - name: Vérification des types
         run: npx tsc --noEmit
 
