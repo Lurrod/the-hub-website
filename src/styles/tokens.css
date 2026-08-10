@@ -1,0 +1,227 @@
+/* Jetons de charte : palette, typographie, rayons, durées, plus les variables
+   du système de transitions. Aucune règle de rendu ici — uniquement des noms.
+
+   Découpé de globals.css (finding CSS-01 de l'audit du 6 août 2026 : 1574
+   lignes dans un seul fichier). L'ordre d'import dans globals.css reproduit
+   exactement l'ordre d'origine : la cascade est inchangée. */
+
+:root {
+  /* Rend `auto` interpolable : requis par .t-resize-details. */
+  interpolate-size: allow-keywords;
+  /* Fond & élévation (palette rft.gg) */
+  --bg: #131619;
+  --shell: #0d0f10;
+  --surface: #191c22;
+  --card: #191c22;
+  --card-hover: #242832;
+  --border: #303133;
+  --border-strong: #404040;
+
+  /* Bandeau de catégorie (en-tête de tournoi) - un ton distinct des lignes de match */
+  --category: #1f232b;
+
+  /* Texte */
+  --text: #fafafa;
+  --text-muted: #9b9c9e;
+  --text-subtle: #6f7178;
+
+  /* Accent (orange de marque - remplace le periwinkle rft.gg) */
+  --accent: #ED5E29;
+  --accent-hover: #D14E1F;
+  --accent-2: #F2925E;
+  --accent-foreground: #131619;
+  --accent-soft: rgba(237, 94, 41, 0.12);
+  --accent-glow: rgba(237, 94, 41, 0.30);
+
+  /* Couleurs sémantiques (rft.gg) */
+  --success: #4ac97e;
+  --destructive: #f7665e;
+  --destructive-soft: rgba(247, 102, 94, 0.12);
+  --legendary: #ffd47d;
+
+  /* Rayons (base rft.gg .625rem = 10px) */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 14px;
+
+  /* Ombres (rft.gg : subtiles) */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-elev: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 1px var(--accent), 0 6px 22px var(--accent-glow);
+
+  /* Interactions (rft.gg : remplissage neutre subtil) */
+  --table-row-hover: var(--card-hover);
+  --hover-fast: 130ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* transitions-dev — bloc :root du skill, installé une seule fois. Chaque
+   snippet `t-*` lit ces noms sémantiques.
+   Adaptation : les quatre familles de tokens de COULEUR (tabs, tooltip,
+   shimmer) sont livrées en valeurs thème clair et documentées avec un
+   override `html[data-theme="dark"]`. Le site n'ayant qu'un thème sombre, on
+   les branche directement sur la palette du projet plutôt que de dupliquer un
+   bloc d'override qui s'appliquerait toujours. */
+:root {
+  /* Card resize */
+  --resize-dur: 300ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Number pop-in */
+  --digit-dur: 500ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --digit-dir-x: 0;
+  --digit-dir-y: 1;
+  /* Notification badge */
+  --badge-slide-dur: 260ms;
+  --badge-pop-dur: 500ms;
+  --badge-pop-close-dur: 180ms;
+  --badge-fade-dur: 400ms;
+  --badge-fade-close-dur: 180ms;
+  --badge-blur: 2px;
+  --badge-offset-x: -8.2px;
+  --badge-offset-y: 12.4px;
+  --badge-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --badge-pop-ease: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --badge-close-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Text states swap */
+  --text-swap-dur: 150ms;
+  --text-swap-translate-y: 4px;
+  --text-swap-blur: 2px;
+  --text-swap-ease: ease-in-out;
+  /* Menu dropdown */
+  --dropdown-open-dur: 250ms;
+  --dropdown-close-dur: 150ms;
+  --dropdown-pre-scale: 0.97;
+  --dropdown-closing-scale: 0.99;
+  --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Tiroir de navigation (mobile) */
+  --drawer-open-dur: 250ms;
+  --drawer-close-dur: 150ms;
+  --drawer-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Modal open / close */
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale: 0.96;
+  --modal-scale-close: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Panel reveal */
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-y: 100px;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Page side-by-side */
+  --page-slide-dur: 200ms;
+  --page-fade-dur: 200ms;
+  --page-slide-distance: 8px;
+  --page-blur: 3px;
+  --page-stagger: 0ms;
+  --page-exit-enabled: 1;
+  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Icon swap */
+  --icon-swap-dur: 200ms;
+  --icon-swap-blur: 2px;
+  --icon-swap-start-scale: 0.25;
+  --icon-swap-ease: ease-in-out;
+  /* Success check */
+  --check-opacity-dur: 550ms;
+  --check-rotate-dur: 550ms;
+  --check-rotate-from: 80deg;
+  --check-bob-dur: 450ms;
+  --check-y-amount: 40px;
+  --check-blur-dur: 500ms;
+  --check-blur-from: 10px;
+  --check-path-dur: 550ms;
+  --check-path-delay: 80ms;
+  --check-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-opacity: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-rotate: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-bob: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --check-ease-path: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Avatar group hover */
+  --avatar-lift: -4px;
+  --avatar-dur: 320ms;
+  --avatar-scale: 1.05;
+  --avatar-falloff: 0.45;
+  --avatar-ease-in: cubic-bezier(0.22, 1, 0.36, 1);
+  --avatar-ease-out: cubic-bezier(0.34, 3.85, 0.64, 1);
+  /* Error state shake */
+  --shake-distance: 6px;
+  --shake-overshoot: 4px;
+  --shake-dur-a: 80ms;
+  --shake-dur-b: 60ms;
+  --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --revert-hold: 3000ms;
+  --revert-dur: 280ms;
+  /* Input clear with dissolve */
+  --clear-dur: 1000ms;
+  --clear-out-dur: 400ms;
+  --clear-in-dur: 400ms;
+  --clear-out-fly: 12px;
+  --clear-in-fly: 12px;
+  --clear-out-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --clear-in-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --clear-blur: 2px;
+  --glow-delay: 50ms;
+  --glow-peak-at: 0.15;
+  /* Thème sombre : opacité relevée, cf. 13-input-clear-dissolve.md */
+  --glow-opacity: 0.85;
+  --glow-spread: 1.5;
+  /* Skeleton loader and reveal */
+  --pulse-dur: 1000ms;
+  --pulse-count: 1;
+  --pulse-min: 0.5;
+  --reveal-dur: 400ms;
+  --reveal-blur: 2px;
+  --reveal-ease: ease-in-out;
+  /* Shimmer text — couleurs sur la palette sombre du projet */
+  --shimmer-dur: 2000ms;
+  --shimmer-base: var(--text-subtle);
+  --shimmer-highlight: var(--text);
+  --shimmer-band: 400%;
+  --shimmer-ease: linear;
+  /* Tabs sliding — couleurs alignées sur .segment */
+  --tabs-dur: 200ms;
+  --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tabs-text-muted: var(--text-muted);
+  --tabs-text-active: #ffffff;
+  --tabs-bar-bg: var(--bg);
+  --tabs-pill-bg: var(--card-hover);
+  /* Tooltip open/close — couleurs sur la palette sombre du projet */
+  --tt-in-dur: 150ms;
+  --tt-out-dur: 50ms;
+  --tt-scale: 0.98;
+  --tt-delay: 80ms;
+  --tt-in-ease: ease-out;
+  --tt-out-ease: ease-out;
+  --tt-bg: var(--card-hover);
+  --tt-fg: var(--text);
+  /* Texts reveal */
+  --stagger-dur: 600ms;
+  --stagger-distance: 12px;
+  --stagger-stagger: 40ms;
+  --stagger-blur: 3px;
+  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-destructive: var(--destructive);
+  --color-legendary: var(--legendary);
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bricolage);
+}

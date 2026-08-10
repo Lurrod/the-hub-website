@@ -22,7 +22,7 @@ import {
   removeTournamentManagerIfNotLast,
   setTournamentManagerRole,
 } from "@/lib/data/tournaments";
-import { readUploadedImage, processAndStoreImage } from "@/lib/images";
+import { readUploadedImage, processAndStoreImage, deleteStoredImage } from "@/lib/images";
 
 function parseTournamentForm(formData: FormData) {
   const raw = {
@@ -105,6 +105,8 @@ export async function deleteTournamentAction(tournamentId: string) {
   // réservé au propriétaire.
   await assertCanAdministerTournament(tournamentId);
   await deleteTournament(tournamentId);
+  // Logo ET bannière : les deux variantes partent avec le tournoi (RGPD-01).
+  await deleteStoredImage("tournaments", tournamentId);
   revalidatePath("/tournois");
   revalidatePath("/admin/tournois");
   redirect("/tournois?ok=tournament-deleted");

@@ -5,6 +5,8 @@ import {
   tournamentJsonLd,
   matchJsonLd,
   serializeJsonLd,
+  itemListJsonLd,
+  siteJsonLd,
 } from "@/lib/structured-data";
 
 describe("teamJsonLd", () => {
@@ -153,5 +155,62 @@ describe("serializeJsonLd", () => {
       id: "t", name: "A<B", tag: "T", logo: null, description: "x < y",
     });
     expect(JSON.parse(serializeJsonLd(data))).toEqual(data);
+  });
+});
+
+describe("itemListJsonLd", () => {
+  it("numérote les éléments à partir de 1 et rend les URLs absolues", () => {
+    const d = itemListJsonLd("Joueurs", [
+      { path: "/joueurs/p1", name: "Neo" },
+      { path: "/joueurs/p2", name: "Ash" },
+    ]);
+    expect(d["@type"]).toBe("ItemList");
+    expect(d.name).toBe("Joueurs");
+    const items = d.itemListElement as Record<string, unknown>[];
+    expect(items).toHaveLength(2);
+    expect(items[0].position).toBe(1);
+    expect(items[1].position).toBe(2);
+    expect(String(items[0].url)).toMatch(/^https?:\/\/.+\/joueurs\/p1$/);
+  });
+
+  it("annonce le nombre d'éléments réellement émis", () => {
+    // Sur une page paginée, annoncer le total de la collection serait faux :
+    // la liste ne contient que la page courante.
+    const d = itemListJsonLd("Tournois", [{ path: "/tournois/a" }, { path: "/tournois/b" }]);
+    expect(d.numberOfItems).toBe(2);
+  });
+
+  it("omet le nom d'un élément qui n'en a pas plutôt que d'émettre null", () => {
+    const d = itemListJsonLd("Matchs", [{ path: "/matchs/m1", name: null }]);
+    const items = d.itemListElement as Record<string, unknown>[];
+    expect("name" in items[0]).toBe(false);
+  });
+
+  it("produit une liste vide sans élément, pas une clé absente", () => {
+    const d = itemListJsonLd("Équipes", []);
+    expect(d.itemListElement).toEqual([]);
+    expect(d.numberOfItems).toBe(0);
+  });
+});
+
+describe("siteJsonLd", () => {
+  it("décrit un WebSite avec son éditeur", () => {
+    const d = siteJsonLd();
+    expect(d["@type"]).toBe("WebSite");
+    expect((d.publisher as Record<string, unknown>)["@type"]).toBe("Organization");
+  });
+
+  it("déclare l'action de recherche sur le paramètre que /recherche lit vraiment", () => {
+    // Le gabarit doit pointer `q` : c'est le nom lu par src/app/recherche/page.tsx.
+    const action = siteJsonLd().potentialAction as Record<string, unknown>;
+    const target = action.target as Record<string, unknown>;
+    expect(String(target.urlTemplate)).toMatch(/\/recherche\?q=\{search_term_string\}$/);
+    expect(action["query-input"]).toContain("search_term_string");
+  });
+
+  it("n'insère pas de double slash entre le domaine et le chemin", () => {
+    const target = (siteJsonLd().potentialAction as Record<string, unknown>)
+      .target as Record<string, unknown>;
+    expect(String(target.urlTemplate)).not.toMatch(/[^:]\/\//);
   });
 });

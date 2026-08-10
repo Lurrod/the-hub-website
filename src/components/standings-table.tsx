@@ -13,17 +13,17 @@ export default function StandingsTable({ rows }: { rows: StandingDisplayRow[] })
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">
-          <th className="py-2 pl-3 pr-2 font-medium">#</th>
-          <th className="py-2 pr-2 font-medium">Équipe</th>
-          <th className="py-2 pr-3 text-center font-medium">J</th>
-          <th className="py-2 pr-3 text-center font-medium">V</th>
+          <th scope="col" className="py-2 pl-3 pr-2 font-medium">#</th>
+          <th scope="col" className="py-2 pr-2 font-medium">Équipe</th>
+          <th scope="col" className="py-2 pr-3 text-center font-medium">J</th>
+          <th scope="col" className="py-2 pr-3 text-center font-medium">V</th>
           {showDraws && (
-            <th className="py-2 pr-3 text-center font-medium" title="Matchs nuls">
+            <th scope="col" className="py-2 pr-3 text-center font-medium" title="Matchs nuls">
               N
             </th>
           )}
-          <th className="py-2 pr-3 text-center font-medium">D</th>
-          <th className="py-2 pr-3 text-center font-medium">Diff</th>
+          <th scope="col" className="py-2 pr-3 text-center font-medium">D</th>
+          <th scope="col" className="py-2 pr-3 text-center font-medium">Diff</th>
         </tr>
       </thead>
       <tbody>

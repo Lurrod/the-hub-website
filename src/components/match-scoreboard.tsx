@@ -198,18 +198,18 @@ function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
         </colgroup>
         <thead>
           <tr className="border-b border-[var(--border)]">
-            <th colSpan={2} />
-            <th className={HEAD}>R</th>
-            <th className={HEAD}>ACS</th>
-            <th className={HEAD}>K</th>
-            <th className={HEAD}>D</th>
-            <th className={HEAD}>A</th>
-            <th className={HEAD}>+/−</th>
-            <th className={HEAD}>KAST</th>
-            <th className={HEAD}>ADR</th>
-            <th className={HEAD}>FK</th>
-            <th className={HEAD}>FD</th>
-            <th className={`${HEAD} pr-2`}>+/−</th>
+            <th colSpan={2} scope="col" />
+            <th scope="col" className={HEAD}>R</th>
+            <th scope="col" className={HEAD}>ACS</th>
+            <th scope="col" className={HEAD}>K</th>
+            <th scope="col" className={HEAD}>D</th>
+            <th scope="col" className={HEAD}>A</th>
+            <th scope="col" className={HEAD}>+/−</th>
+            <th scope="col" className={HEAD}>KAST</th>
+            <th scope="col" className={HEAD}>ADR</th>
+            <th scope="col" className={HEAD}>FK</th>
+            <th scope="col" className={HEAD}>FD</th>
+            <th scope="col" className={`${HEAD} pr-2`}>+/−</th>
           </tr>
         </thead>
         <tbody>

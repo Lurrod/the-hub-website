@@ -207,7 +207,10 @@ export default function ClearableSearch({
       <span ref={glowRef} className="t-clear-glow" aria-hidden="true" />
       <button
         type="button"
-        className="t-clear-btn relative z-[4] ml-1 shrink-0 text-[var(--text-subtle)] transition-colors hover:text-[var(--text)]"
+        // La marge et la taille de cible sont portées par `.t-clear-btn` : la
+        // boîte fait 24 × 24 px pour WCAG 2.5.8, compensée par des marges
+        // négatives pour ne rien déplacer.
+        className="t-clear-btn relative z-[4] shrink-0 text-[var(--text-subtle)] transition-colors hover:text-[var(--text)]"
         aria-label="Effacer la recherche"
       >
         ×

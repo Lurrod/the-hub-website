@@ -24,13 +24,13 @@ export default function PlayerCareerTable({ stints }: { stints: CareerStint[] })
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-[var(--border)]" style={{ backgroundColor: "#242832" }}>
-            <th className={`${TH} text-left`}>Équipe</th>
-            <th className={`${TH} text-center`}>Début</th>
-            <th className={`${TH} text-center`}>Fin</th>
-            <th className={`${TH} text-center`}>Durée</th>
-            <th className={`${TH} text-center`}>Parties</th>
-            <th className={`${TH} text-center`}>Win%</th>
-            <th className={`${TH} text-center`}>Top persos</th>
+            <th scope="col" className={`${TH} text-left`}>Équipe</th>
+            <th scope="col" className={`${TH} text-center`}>Début</th>
+            <th scope="col" className={`${TH} text-center`}>Fin</th>
+            <th scope="col" className={`${TH} text-center`}>Durée</th>
+            <th scope="col" className={`${TH} text-center`}>Parties</th>
+            <th scope="col" className={`${TH} text-center`}>Win%</th>
+            <th scope="col" className={`${TH} text-center`}>Top persos</th>
           </tr>
         </thead>
         <tbody>

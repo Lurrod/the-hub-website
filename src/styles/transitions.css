@@ -1,0 +1,828 @@
+/* Système de transitions `t-*`, installé verbatim depuis le skill
+   transitions-dev. Volontairement hors `@layer` : ces règles pilotent
+   transform/opacity et ne doivent pas être écrasées par une utilitaire Tailwind
+   de même spécificité. */
+
+/* ==========================================================================
+   transitions-dev — snippets installés verbatim.
+   Hors @layer volontairement : ces règles pilotent transform/opacity et ne
+   doivent pas être écrasées par une utilitaire Tailwind de même spécificité.
+   Ne pas réécrire les sélecteurs, ne pas retirer les blocs
+   prefers-reduced-motion.
+   ========================================================================== */
+
+/* --- Menu dropdown (05) --------------------------------------------------- */
+.t-dropdown {
+  transform-origin: top left;
+  transform: scale(var(--dropdown-pre-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-open-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-open-dur) var(--dropdown-ease);
+  will-change: transform, opacity;
+}
+.t-dropdown[data-origin="top-right"]     { transform-origin: top right; }
+.t-dropdown[data-origin="top-center"]    { transform-origin: top center; }
+.t-dropdown[data-origin="bottom-left"]   { transform-origin: bottom left; }
+.t-dropdown[data-origin="bottom-center"] { transform-origin: bottom center; }
+.t-dropdown[data-origin="bottom-right"]  { transform-origin: bottom right; }
+
+.t-dropdown.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-dropdown.is-closing {
+  transform: scale(var(--dropdown-closing-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-close-dur) var(--dropdown-ease),
+    opacity   var(--dropdown-close-dur) var(--dropdown-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-dropdown { transition: none !important; }
+}
+
+/* --- Modal open / close (06) ---------------------------------------------- */
+.t-modal {
+  transform-origin: center;
+  transform: scale(var(--modal-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-open-dur) var(--modal-ease),
+    opacity   var(--modal-open-dur) var(--modal-ease);
+  will-change: transform, opacity;
+}
+.t-modal.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-modal.is-closing {
+  transform: scale(var(--modal-scale-close));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-close-dur) var(--modal-ease),
+    opacity   var(--modal-close-dur) var(--modal-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-modal { transition: none !important; }
+}
+
+/* --- Tiroir de navigation ------------------------------------------------- */
+/* Même contrat que .t-modal (repos / .is-open / .is-closing), mais le panneau
+   glisse depuis le bord gauche au lieu de grandir depuis le centre : il est
+   ancré à ce bord, pas flottant. */
+.t-drawer {
+  transform: translateX(-100%);
+  transition: transform var(--drawer-open-dur) var(--drawer-ease);
+  will-change: transform;
+}
+.t-drawer.is-open {
+  transform: translateX(0);
+}
+.t-drawer.is-closing {
+  transform: translateX(-100%);
+  transition: transform var(--drawer-close-dur) var(--drawer-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-drawer { transition: none !important; }
+}
+
+/* --- Success check (10) --------------------------------------------------- */
+/* Wrapper drives the appear animation; it doesn't own any
+   sizing or color so you can drop in any icon. */
+.t-success-check {
+  display: inline-block;
+  transform-origin: center;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+/* overflow: visible keeps the stroke from clipping while it
+   draws; display: block kills the inline whitespace under SVGs. */
+.t-success-check svg { display: block; overflow: visible; }
+/* Stroke-draw setup. 23 = longueur réelle du tracé de la coche du toast
+   (M20 6 9 17l-5-5 → 22,63 unités), arrondie au supérieur d'une unité comme
+   le préconise la référence. Recalculer si le tracé change. */
+.t-success-check svg path {
+  stroke-dasharray: 23;
+  stroke-dashoffset: 23;
+}
+
+.t-success-check[data-state="in"] {
+  animation:
+    t-check-fade   var(--check-opacity-dur) var(--check-ease-opacity) forwards,
+    t-check-rotate var(--check-rotate-dur)  var(--check-ease-rotate)  forwards,
+    t-check-blur   var(--check-blur-dur)    var(--check-ease-out)     forwards,
+    t-check-bob    var(--check-bob-dur)     var(--check-ease-bob)     forwards;
+}
+.t-success-check[data-state="in"] svg path {
+  animation: t-check-draw var(--check-path-dur) var(--check-ease-path) var(--check-path-delay, 0ms) forwards;
+}
+
+@keyframes t-check-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes t-check-rotate {
+  from { transform: rotate(var(--check-rotate-from)); }
+  to   { transform: rotate(0deg); }
+}
+@keyframes t-check-blur {
+  from { filter: blur(var(--check-blur-from)); }
+  to   { filter: blur(0); }
+}
+@keyframes t-check-bob {
+  from { translate: 0 var(--check-y-amount); }
+  to   { translate: 0 0; }
+}
+@keyframes t-check-draw { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-success-check { animation: none !important; opacity: 1; }
+  .t-success-check svg path { animation: none !important; stroke-dashoffset: 0 !important; }
+}
+
+/* --- Tabs sliding (16) ---------------------------------------------------- */
+/* The bar is just a flex container with padding for the pill
+   to sit inside. Tabs sit on z-index: 1, the pill on z-index: 0,
+   so labels read above the pill background. */
+.t-tabs {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 48px;
+  background: var(--tabs-bar-bg);
+}
+.t-tab {
+  position: relative;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  height: 30px;
+  padding: 4px 12px;
+  color: var(--tabs-text-muted);
+  cursor: pointer;
+  border-radius: 48px;
+  z-index: 1;
+  transition: color var(--tabs-dur) var(--tabs-ease);
+}
+.t-tab:not([aria-selected="true"]):hover,
+.t-tab[aria-selected="true"] {
+  color: var(--tabs-text-active);
+}
+
+/* The pill: width + transform are written inline by JS so
+   the transition tweens between the previous and next
+   measured positions. */
+.t-tabs-pill {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  height: 30px;
+  width: 0;
+  background: var(--tabs-pill-bg);
+  border-radius: 48px;
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width     var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tabs-pill, .t-tab { transition: none !important; }
+}
+
+/* Adaptation projet du snippet 16 — géométrie uniquement, la mécanique de la
+   pastille reste celle du snippet.
+   1. La piste reprend le rayon et la bordure de l'ancienne .segment.
+   2. Les items peuvent passer à la ligne : le snippet suppose une barre sur
+      une seule ligne et ne positionne la pastille qu'en X. Le composant écrit
+      donc aussi la hauteur et le décalage Y, d'où `top: 0` ici.
+   3. Variante « underline » pour les onglets de tournoi et le menu d'étapes :
+      la pastille devient le trait accent déjà en place, qui coulisse au lieu
+      de sauter. */
+.t-tabs {
+  flex-wrap: wrap;
+  gap: 2px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.t-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: auto;
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.t-tabs-pill {
+  top: 0;
+  height: 0;
+  border-radius: 7px;
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width     var(--tabs-dur) var(--tabs-ease),
+    height    var(--tabs-dur) var(--tabs-ease);
+}
+
+.t-tabs[data-variant="underline"] {
+  display: flex;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.t-tabs[data-variant="underline"] .t-tab {
+  padding: 8px 16px;
+  border-radius: 0;
+  font-weight: 500;
+}
+.t-tabs[data-variant="underline"] .t-tabs-pill {
+  top: auto;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--accent);
+}
+
+/* --- Avatar group hover (11) ---------------------------------------------- */
+/* Hover-spring transition only — bring your own avatar/chip
+   styling (size, shape, border, stacking, background). */
+.t-avatar {
+  transform-origin: center;
+  /* translateY before scale so scale doesn't amplify the lift offset. */
+  transform:
+    translateY(var(--shift, 0px))
+    scale(var(--scale-active, 1));
+  transition: transform var(--avatar-dur) var(--avatar-ease-in);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-avatar { transition: none !important; transform: none !important; }
+}
+
+/* --- Skeleton loader and reveal (14) -------------------------------------- */
+/* The wrap stacks two layers on the same coordinates. The
+   skeleton owns the cold pulse + the fade-out side of the
+   reveal; the content owns the fade-in side. They share the
+   same duration / ease so the swap reads as one motion. */
+.t-skel { position: relative; }
+.t-skel-skeleton,
+.t-skel-content {
+  position: absolute;
+  inset: 0;
+}
+
+.t-skel-skeleton {
+  z-index: 1;
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity var(--reveal-dur) var(--reveal-ease),
+    filter  var(--reveal-dur) var(--reveal-ease);
+}
+.t-skel-content {
+  z-index: 2;
+  opacity: 0;
+  filter: blur(var(--reveal-blur));
+  transition:
+    opacity var(--reveal-dur) var(--reveal-ease),
+    filter  var(--reveal-dur) var(--reveal-ease);
+}
+.t-skel.is-revealed .t-skel-skeleton {
+  opacity: 0;
+  filter: blur(var(--reveal-blur));
+}
+.t-skel.is-revealed .t-skel-content {
+  opacity: 1;
+  filter: blur(0);
+}
+/* Snap-back when replaying: kill transitions so the reverse
+   (revealed → skeleton) is instant. Drop `.is-resetting`
+   after a forced reflow and the next reveal animates again. */
+.t-skel.is-resetting .t-skel-skeleton,
+.t-skel.is-resetting .t-skel-content {
+  transition: none !important;
+}
+
+/* Pulse: place the animation on the bar/avatar children, not
+   on the skeleton itself, so the skeleton's opacity / filter
+   stay free for the cross-fade transition above. */
+.t-skel-skeleton.is-pulsing > * {
+  animation: t-skel-pulse var(--pulse-dur) ease-in-out var(--pulse-count);
+}
+@keyframes t-skel-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: var(--pulse-min); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-skel-skeleton, .t-skel-content {
+    transition: none !important;
+  }
+  .t-skel-skeleton.is-pulsing > * { animation: none !important; }
+}
+
+/* Adaptation projet du snippet 14.
+   Le squelette du site n'est pas un frère du contenu : c'est le fallback de
+   Suspense de `loading.tsx`, que React démonte d'un coup. Les deux couches ne
+   peuvent donc pas être superposées et le fondu croisé complet est hors de
+   portée sans réécrire le chargement des pages.
+   On garde ce qui s'applique : le battement du squelette passe sur les tokens
+   --pulse-*, et le contenu qui lui succède reprend la moitié « entrée » du
+   snippet (fondu + sortie de flou) via .t-skel-in, sans le positionnement
+   absolu qui casserait la mise en page. */
+/* Le squelette du fallback n'a pas de contenu superposé : il doit rester dans
+   le flux, d'où cette annulation ciblée du `position: absolute` du snippet. */
+.t-skel-skeleton.is-static {
+  position: static;
+}
+/* Entrée de page : la montée historique du site ET la sortie de flou du
+   snippet, dans une seule déclaration. Deux règles `animation` séparées se
+   seraient écrasées l'une l'autre. */
+.t-skel-in {
+  animation:
+    t-fade-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both,
+    t-skel-reveal-in var(--reveal-dur) var(--reveal-ease) both;
+}
+@keyframes t-skel-reveal-in {
+  from { filter: blur(var(--reveal-blur)); }
+  to   { filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-skel-in { animation: none !important; }
+}
+
+/* --- Input clear with dissolve (13) --------------------------------------- */
+/* The wrap clips the glow to its rounded box. The hairline
+   border is `inset` so it sits inside that clip — when the
+   glow's mix-blend-mode darkens its area, the border
+   underneath darkens with it. Bring your own width / height /
+   border-radius / surface color. */
+.t-clear {
+  position: relative;
+  overflow: hidden;
+}
+.t-clear-mirror,
+.t-clear-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 2;
+}
+.t-clear-mirror { opacity: 0; }
+.t-clear.has-value .t-clear-mirror,
+.t-clear.is-clearing .t-clear-mirror { opacity: 1; }
+/* Hide the input's own glyphs while the mirror owns them so
+   the cleared text doesn't double-render with the fly-up. */
+.t-clear.has-value > input,
+.t-clear.is-clearing > input {
+  -webkit-text-fill-color: transparent;
+}
+.t-clear.has-value .t-clear-placeholder { opacity: 0; }
+/* The streak overlay: empty by default; JS writes a stack of
+   `radial-gradient(...)` layers into background during a clear,
+   then animates opacity. mix-blend-mode: multiply darkens the
+   underlying input + hairline; flip to `screen` in dark mode
+   so the same alpha values lighten instead of vanish. */
+.t-clear-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  mix-blend-mode: multiply;
+}
+
+/* The transitions live in JS (per-frame transform/opacity/
+   filter writes), so this stylesheet only owns the resting
+   state + the variables that JS reads. Read them with
+   `parseFloat(getComputedStyle(root).getPropertyValue(...))`
+   so live tweaks apply on the next clear without a reload. */
+
+@media (prefers-reduced-motion: reduce) {
+  .t-clear-glow { opacity: 0 !important; }
+}
+
+/* Adaptation projet : thème sombre. `multiply` sur #131619 fait disparaître
+   la traînée ; `screen` l'éclaircit avec les mêmes alphas. Le texte du miroir
+   et du placeholder reprend le retrait du champ. */
+.t-clear-glow { mix-blend-mode: screen; }
+.t-clear-mirror,
+.t-clear-placeholder {
+  padding: 0 12px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+.t-clear-mirror { color: var(--text); }
+.t-clear-placeholder { color: var(--text-subtle); }
+
+/* WCAG 2.2 AA — 2.5.8 (taille de cible minimale). Le glyphe « × » ne mesure que
+   7,41 × 15 px, très en dessous des 24 × 24 px exigés.
+
+   La boîte du bouton est portée à 24 × 24 px et l'agrandissement est repris par
+   des marges négatives : son emprise dans le flux reste exactement celle du
+   glyphe et de sa marge de 4 px (11,41 × 15 px), et le caractère ne bouge pas
+   d'un pixel. Un pseudo-élément agrandirait bien la zone cliquable mais pas la
+   boîte de l'élément : axe-core continuerait — à juste titre — de signaler la
+   violation, faute de pouvoir la mesurer.
+   `place-items: center` recentre le glyphe dans la boîte élargie.
+   La marge gauche remplace le `ml-1` retiré du composant, pour que la
+   compensation vive à un seul endroit.
+   Les valeurs ne sont pas rondes : elles compensent la largeur réelle du glyphe
+   dans la police du site. À recalculer si la police ou la taille change — la
+   mesure se relit dans le rectangle de `.t-clear` et de son `input`, qui
+   doivent rester inchangés. */
+.t-clear-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -4.5px -8.295px -4.5px -4.295px;
+}
+
+/* --- Icon swap (09) ------------------------------------------------------- */
+.t-icon-swap {
+  position: relative;
+  display: inline-grid;
+}
+.t-icon-swap .t-icon {
+  grid-area: 1 / 1;
+  transition:
+    opacity   var(--icon-swap-dur) var(--icon-swap-ease),
+    filter    var(--icon-swap-dur) var(--icon-swap-ease),
+    transform var(--icon-swap-dur) var(--icon-swap-ease);
+  will-change: opacity, filter, transform;
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+.t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
+.t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
+  opacity: 0;
+  filter: blur(var(--icon-swap-blur));
+  transform: scale(var(--icon-swap-start-scale));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-icon-swap .t-icon { transition: none !important; }
+}
+
+/* --- Error state shake (12) ----------------------------------------------- */
+/* Border-color tween. Define your input's default / focused
+   / error border-color in your own component CSS — this rule
+   only owns the interpolation. Use a constant border-width
+   across states so the tween never shifts inner content. */
+.t-input {
+  transition: border-color 150ms ease-out;
+  will-change: transform;
+}
+.t-input.is-error {
+  /* Error border auto-reverts on the hold timer, so the
+     fade-out uses the slower revert duration (matches the
+     message fade). */
+  transition: border-color var(--revert-dur, 280ms) ease-out;
+}
+
+/* Error message reveal. Visibility is delayed by --revert-dur
+   on hide so the message stays painted for the full opacity
+   fade-out. Entering .is-error drops the delay to 0 so the
+   message becomes visible immediately. */
+.t-error-msg {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity    var(--revert-dur, 280ms) ease-out,
+    visibility 0s linear var(--revert-dur, 280ms);
+}
+.t-input-wrap.is-error .t-error-msg {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity    var(--revert-dur, 280ms) ease-out,
+    visibility 0s linear 0s;
+}
+
+/* Multi-segment keyframe with per-stop easing so each leg
+   of the shake follows its own cubic-bezier independently.
+   %-stops are cumulative durations as a fraction of the
+   total (80, 60, 80, 60 = 280ms): 28.57%, 57.14%, 78.57%,
+   100%. Recompute if any segment duration changes. */
+.t-input.is-shaking {
+  animation: t-input-shake calc(
+      var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2
+    ) linear;
+}
+@keyframes t-input-shake {
+  0%      { transform: translateX(0);                                 animation-timing-function: var(--shake-ease); }
+  28.57%  { transform: translateX(var(--shake-distance));             animation-timing-function: var(--shake-ease); }
+  57.14%  { transform: translateX(calc(var(--shake-distance) * -1)); animation-timing-function: var(--shake-ease); }
+  78.57%  { transform: translateX(var(--shake-overshoot));            animation-timing-function: var(--shake-ease); }
+  100%    { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-input { animation: none !important; transform: none !important; }
+}
+
+/* Adaptation projet : la bordure d'erreur, que le snippet laisse au composant. */
+.t-input.is-error {
+  border-color: var(--destructive);
+}
+
+/* --- Texts reveal (18) ---------------------------------------------------- */
+/* Lines start translated down + blurred + invisible; .is-shown
+   on the parent flips them to their resting state. The second
+   line's transition-delay holds it back by --stagger-stagger
+   so the eye lands on the headline first. */
+.t-stagger-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(var(--stagger-distance));
+  filter: blur(var(--stagger-blur));
+  transition:
+    opacity   var(--stagger-dur) var(--stagger-ease),
+    transform var(--stagger-dur) var(--stagger-ease),
+    filter    var(--stagger-dur) var(--stagger-ease);
+  will-change: transform, opacity, filter;
+}
+.t-stagger-line--2 { transition-delay: var(--stagger-stagger); }
+
+.t-stagger.is-shown .t-stagger-line {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+/* Exit decouples from the stagger: same fade for every line,
+   no Y return, no blur — so the disappearance reads as a
+   single quiet fade instead of a reverse reveal. */
+.t-stagger.is-hiding .t-stagger-line {
+  opacity: 0;
+  transform: translateY(0);
+  filter: blur(0);
+  transition:
+    opacity 200ms ease,
+    transform 0s linear,
+    filter 0s linear;
+  transition-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-stagger-line { transition: none !important; }
+}
+
+/* --- Number pop-in (02) --------------------------------------------------- */
+@keyframes t-digit-pop-in {
+  0%   {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% { transform: translate(0, 0); opacity: 1; filter: blur(0); }
+}
+
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+.t-digit-group.is-animating .t-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+.t-digit-group.is-animating .t-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-digit-group .t-digit { animation: none !important; }
+}
+
+/* --- Text states swap (04) ------------------------------------------------ */
+.t-text-swap {
+  display: inline-block;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--text-swap-ease),
+    filter    var(--text-swap-dur) var(--text-swap-ease),
+    opacity   var(--text-swap-dur) var(--text-swap-ease);
+  will-change: transform, filter, opacity;
+}
+.t-text-swap.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+.t-text-swap.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-text-swap { transition: none !important; }
+}
+
+/* --- Tooltip open/close (17) ---------------------------------------------- */
+.t-tt-wrap {
+  position: relative;
+  display: inline-block;
+}
+.t-tt {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, 0) scale(var(--tt-scale));
+  transform-origin: 50% 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--tt-bg);
+  color: var(--tt-fg);
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px 0 rgba(0, 0, 0, 0.05),
+    0 4px 42px 0 rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  pointer-events: none;
+  /* Default rule controls the LEAVE state. transition-delay
+     stays unset so leaving plays without delay. */
+  transition:
+    opacity   var(--tt-out-dur) var(--tt-out-ease),
+    transform var(--tt-out-dur) var(--tt-out-ease);
+}
+/* The 50ms delay belongs ONLY to the hover rule so leaving
+   the trigger snaps the delay back to 0 and the disappear
+   plays immediately. */
+.t-tt-wrap:hover .t-tt,
+.t-tt-trigger:focus-visible + .t-tt {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  transition-duration: var(--tt-in-dur);
+  transition-timing-function: var(--tt-in-ease);
+  transition-delay: var(--tt-delay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tt { transition: none !important; }
+}
+
+/* Adaptation projet : l'ombre du snippet est calibrée pour un fond clair et
+   disparaît sur #131619. Bordure et ombre portée reprises du thème, taille de
+   texte alignée sur le reste du site. */
+.t-tt {
+  z-index: 60;
+  padding: 5px 9px;
+  font-size: 11px;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+/* Le déclencheur est une enveloppe en `display: contents` : le focus clavier
+   atterrit sur l'élément interactif à l'intérieur, pas sur elle. :focus-within
+   complète donc le :focus-visible du snippet. */
+.t-tt-trigger:focus-within + .t-tt {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  transition-duration: var(--tt-in-dur);
+  transition-timing-function: var(--tt-in-ease);
+  transition-delay: var(--tt-delay);
+}
+
+/* ---------------------------------------------------------------------------
+   Défilement horizontal signalé
+
+   Un tableau large (scoreboard, carrière) reste lisible en mobile parce qu'il
+   défile — encore faut-il que le lecteur le devine. Ces ombres apparaissent
+   uniquement quand du contenu dépasse, et s'effacent une fois arrivé au bout.
+
+   Le mécanisme est en CSS seul : les deux dégradés « couvre-bord » sont en
+   background-attachment: local (ils suivent le contenu), les deux ombres sont
+   en scroll (elles restent collées au cadre). Quand il n'y a rien à faire
+   défiler, les couvre-bords masquent exactement les ombres.
+
+   IMPORTANT : le couvre-bord doit être de la couleur du fond RÉELLEMENT visible
+   derrière le conteneur. Sinon il ne masque rien et laisse une bande colorée aux
+   deux bords, même sur un tableau qui tient entièrement — c'est réglé par
+   --scroll-x-bg, à passer à chaque usage dont le fond n'est pas --surface.
+   -------------------------------------------------------------------------- */
+.scroll-x {
+  --scroll-x-bg: var(--surface);
+  overflow-x: auto;
+  background-image:
+    linear-gradient(to right, var(--scroll-x-bg) 70%, transparent),
+    linear-gradient(to left, var(--scroll-x-bg) 70%, transparent),
+    linear-gradient(to right, rgba(0, 0, 0, 0.6), transparent),
+    linear-gradient(to left, rgba(0, 0, 0, 0.6), transparent);
+  background-position: left center, right center, left center, right center;
+  /* Le couvre-bord doit rester opaque sur TOUTE la largeur de l'ombre (70 % de
+     24px = 16.8px > 14px), sinon une bande sombre subsiste en début de course. */
+  background-size: 24px 100%, 24px 100%, 14px 100%, 14px 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/** Conteneur posé sur le fond de page plutôt que sur une surface de carte. */
+.scroll-x-on-bg {
+  --scroll-x-bg: var(--bg);
+}
+
+
+/* ---------------------------------------------------------------------------
+   Card resize (snippet 01) — tween de la hauteur d'un conteneur qui change
+   d'état. Les variables --resize-* sont déjà dans le bloc :root plus haut.
+   -------------------------------------------------------------------------- */
+.t-resize {
+  transition:
+    width  var(--resize-dur) var(--resize-ease),
+    height var(--resize-dur) var(--resize-ease);
+  will-change: width, height;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-resize { transition: none !important; }
+}
+
+/* `<details>` n'expose aucune hauteur animable : c'est ::details-content, avec
+   interpolate-size pour rendre `auto` interpolable, qui produit le changement
+   de taille que .t-resize sait ensuite tweener. Les navigateurs sans
+   interpolate-size (Firefox à ce jour) ouvrent d'un coup — le contenu reste
+   accessible, seule l'animation manque. */
+.t-resize-details::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size var(--resize-dur) var(--resize-ease),
+    content-visibility var(--resize-dur) var(--resize-ease) allow-discrete;
+}
+.t-resize-details[open]::details-content {
+  block-size: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-resize-details::details-content { transition: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Panel reveal (snippet 07) — le contenu glisse dans la zone avec un
+   cross-blur. Les variables --panel-* sont déjà dans le bloc :root plus haut.
+   -------------------------------------------------------------------------- */
+.t-panel-slide {
+  transform: translateY(var(--panel-translate-y));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity   var(--panel-close-dur) var(--panel-ease),
+    filter    var(--panel-close-dur) var(--panel-ease);
+  will-change: transform, opacity, filter;
+}
+.t-panel-slide[data-open="true"] {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity   var(--panel-open-dur) var(--panel-ease),
+    filter    var(--panel-open-dur) var(--panel-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-panel-slide { transition: none !important; }
+}

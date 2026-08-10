@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormStatus } from "react-dom";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface ConfirmDeleteButtonProps {
   /** Server action à exécuter une fois la suppression confirmée. */
@@ -52,6 +53,7 @@ export default function ConfirmDeleteButton({
   const [shown, setShown] = useState(false);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // La modale est rendue dans <body> via un portail : `template.tsx` enveloppe
   // chaque page dans un `.animate-in` qui anime `transform`. Avec
@@ -97,6 +99,10 @@ export default function ConfirmDeleteButton({
     };
   }, [open, close]);
 
+  // Le focus entre dans la modale, y est confiné et repart sur le bouton
+  // déclencheur à la fermeture (WCAG 2.1.2 / 2.4.3).
+  useFocusTrap(panelRef, open);
+
   useEffect(() => () => {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
   }, []);
@@ -122,7 +128,9 @@ export default function ConfirmDeleteButton({
           onClick={close}
         >
           <div
-            className={`t-modal w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl ${
+            ref={panelRef}
+            tabIndex={-1}
+            className={`t-modal w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl outline-none ${
               shown ? "is-open" : closing ? "is-closing" : ""
             }`}
             onClick={(e) => e.stopPropagation()}

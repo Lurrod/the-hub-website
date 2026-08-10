@@ -17,7 +17,7 @@ import {
   addInitialRoster,
   findTeamConflict,
 } from "@/lib/data/teams";
-import { readUploadedImage, processAndStoreImage } from "@/lib/images";
+import { readUploadedImage, processAndStoreImage, deleteStoredImage } from "@/lib/images";
 import { flashCodeFromError } from "@/lib/form-errors";
 
 function parseTeamForm(formData: FormData) {
@@ -106,6 +106,9 @@ export async function deleteTeamAction(teamId: string) {
   const participations = await db.tournamentParticipant.count({ where: { teamId } });
   if (participations > 0) redirect(`/equipes/${teamId}/gestion?error=hasparticipations`);
   await deleteTeam(teamId);
+  // Le logo doit partir avec la ligne : sans cela le fichier reste sur le
+  // disque et servi par /api/images, dont la clé est devinable (RGPD-01).
+  await deleteStoredImage("teams", teamId);
   revalidatePath("/equipes");
   revalidatePath("/admin/equipes");
   redirect("/equipes?ok=team-deleted");

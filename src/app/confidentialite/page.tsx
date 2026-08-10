@@ -74,8 +74,8 @@ export default function ConfidentialitePage() {
           <table className="w-full min-w-[520px] border-collapse">
             <thead>
               <tr>
-                <th className={TH}>Finalité</th>
-                <th className={TH}>Base légale</th>
+                <th scope="col" className={TH}>Finalité</th>
+                <th scope="col" className={TH}>Base légale</th>
               </tr>
             </thead>
             <tbody className="text-[var(--text-muted)]">

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import {
   CROP_ASPECT,
   CROP_OUTPUT,
@@ -58,6 +59,7 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
 
   const imageRef = useRef<HTMLImageElement | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, Offset>());
   const dragStart = useRef<{ x: number; y: number; offset: Offset } | null>(null);
   const pinchStart = useRef<{ dist: number; zoom: number } | null>(null);
@@ -277,6 +279,10 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
     }
   }
 
+  // Le focus entre dans la modale, y est confiné et repart sur le bouton qui a
+  // ouvert le recadrage à la fermeture (WCAG 2.1.2 / 2.4.3).
+  useFocusTrap(panelRef, mounted);
+
   const shownSize = natural ? displayedSize(natural, frame, view.zoom) : null;
   // Arrondi au pas du curseur : une borne à 0,41666… désaligne toutes les
   // valeurs du `range` et le navigateur les recale de travers.
@@ -296,7 +302,9 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
       onClick={cancel}
     >
       <div
-        className={`t-modal w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl ${
+        ref={panelRef}
+        tabIndex={-1}
+        className={`t-modal w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl outline-none ${
           shown ? "is-open" : closing ? "is-closing" : ""
         }`}
         onClick={(e) => e.stopPropagation()}

@@ -1,0 +1,512 @@
+/* Classes de composants du site : panneaux, cartes, champs, badges, tableaux,
+   animations d'entrée, survols, et l'habillage de la page d'accueil (`.h-*`). */
+
+/* --- Système de composants --- */
+@layer components {
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+    transition: background-color var(--hover-fast) var(--ease),
+      border-color var(--hover-fast) var(--ease);
+  }
+
+  /* Hover : remplissage neutre subtil au survol. Pas de barre, pas de lift, pas de glow. */
+  .card-interactive {
+    position: relative;
+    cursor: pointer;
+  }
+  .card-interactive:hover {
+    background-color: var(--table-row-hover);
+    border-color: var(--border-strong);
+  }
+
+  /* Lien de navigation : texte orange au survol ; onglet actif souligné accent
+     (même effet que le sous-menu actif d'une page tournoi). */
+  .nav-link {
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: color var(--hover-fast) var(--ease);
+  }
+  .nav-link:hover {
+    color: var(--accent);
+  }
+  .nav-link[data-active="true"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Variante tiroir : la marque de l'onglet actif passe du soulignement à un
+     filet à gauche, seul bord disponible dans une liste verticale. */
+  .nav-link-drawer {
+    color: var(--text-muted);
+    border-left: 2px solid transparent;
+    transition:
+      color var(--hover-fast) var(--ease),
+      background-color var(--hover-fast) var(--ease);
+  }
+  .nav-link-drawer:hover {
+    color: var(--accent);
+    background-color: var(--card-hover);
+  }
+  .nav-link-drawer[data-active="true"] {
+    color: var(--text);
+    border-left-color: var(--accent);
+    background-color: var(--accent-soft);
+  }
+
+  /* Séparateur « · » : un peu d'air autour et une teinte discrète, pour alléger. */
+  .dot-sep {
+    padding-inline: 0.35em;
+    color: var(--text-subtle);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+  .eyebrow::before {
+    content: "";
+    width: 14px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+  }
+
+  /* Chiffres & stats : mono tabulaire (scores, dates, seeds, cashprize) */
+  .stat {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* Logo de marque */
+  .wordmark {
+    font-family: var(--font-display), sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Filtre en pilule - accent sobre à l'état actif (pas de aplat criard) */
+  /* Contrôle de filtre saisissable (recherche, listes déroulantes) : même fond
+     encastré et même rayon que la piste, pour une barre de filtres homogène. */
+  .field {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    padding: 6px 12px;
+    font-size: 12px;
+    line-height: 1.25;
+    color: var(--text);
+    transition:
+      border-color var(--hover-fast) var(--ease),
+      background-color var(--hover-fast) var(--ease);
+  }
+  .field:hover {
+    border-color: var(--border-strong);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field::placeholder {
+    color: var(--text-subtle);
+  }
+  /* Le menu natif d'un <select> ne suit pas le fond du contrôle. */
+  .field option {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  /* Monogramme (placeholder de logo équipe/tournoi) */
+  .monogram {
+    background: linear-gradient(180deg, var(--card-hover), var(--surface));
+    border: 1px solid var(--border);
+    color: var(--text-subtle);
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .live-dot {
+    position: relative;
+    display: inline-block;
+    height: 7px;
+    width: 7px;
+    border-radius: 9999px;
+    background: var(--accent);
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    animation: live-pulse 1.6s ease-out infinite;
+  }
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(237, 94, 41, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(237, 94, 41, 0);
+  }
+}
+
+/* --- Animations modernes : entrée de page, apparition en cascade, squelettes --- */
+@keyframes t-fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Entrée de page (montée en fondu), rejouée à chaque navigation via template.tsx. */
+.animate-in {
+  animation: t-fade-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Apparition en cascade des enfants directs (grilles / listes). */
+.stagger-in > * {
+  animation: t-fade-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger-in > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.07s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.11s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.19s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.23s; }
+.stagger-in > *:nth-child(7) { animation-delay: 0.27s; }
+.stagger-in > *:nth-child(8) { animation-delay: 0.31s; }
+.stagger-in > *:nth-child(n + 9) { animation-delay: 0.35s; }
+
+/* Squelettes de chargement (balayage shimmer). */
+@keyframes t-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--card);
+  border-radius: var(--r-md);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: t-shimmer 1.4s ease-in-out infinite;
+}
+
+/* --- Survol moderne des boutons (cible les classes Tailwind, DRY app-wide) --- */
+/* Boutons/liens accent : assombrissement + ombre portée douce au survol. */
+button:not(:disabled).bg-\[var\(--accent\)\]:hover,
+a.bg-\[var\(--accent\)\]:hover {
+  background-color: var(--accent-hover);
+  box-shadow: 0 6px 18px var(--accent-glow);
+}
+/* Boutons/liens secondaires (surface card) : remplissage au survol. */
+button:not(:disabled).bg-\[var\(--card\)\]:hover,
+a.bg-\[var\(--card\)\]:hover {
+  background-color: var(--card-hover);
+}
+/* Liens stylés en bouton : mêmes transitions + enfoncement au clic que <button>. */
+a.bg-\[var\(--accent\)\],
+a.bg-\[var\(--card\)\] {
+  transition:
+    background-color var(--hover-fast) var(--ease),
+    border-color var(--hover-fast) var(--ease),
+    color var(--hover-fast) var(--ease),
+    box-shadow var(--hover-fast) var(--ease),
+    transform 120ms var(--ease);
+}
+a.bg-\[var\(--accent\)\]:hover,
+a.bg-\[var\(--card\)\]:hover {
+  transform: translateY(-1px);
+}
+a.bg-\[var\(--accent\)\]:active,
+a.bg-\[var\(--card\)\]:active {
+  transform: translateY(0) scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+  .nav-link::after {
+    transition: none;
+  }
+  .live-dot::after {
+    animation: none;
+  }
+  .animate-in,
+  .stagger-in > * {
+    animation: none;
+  }
+  .skeleton::after {
+    animation: none;
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  a.bg-\[var\(--accent\)\]:hover,
+  a.bg-\[var\(--card\)\]:hover,
+  a.bg-\[var\(--accent\)\]:active,
+  a.bg-\[var\(--card\)\]:active {
+    transform: none;
+  }
+}
+
+/* Typographie unifiée sur tout le site : Plus Jakarta Sans partout, 16px pour
+   les titres (h1-h6), 12px pour tout le reste. Règles non-layered → priorité
+   sur les utilitaires Tailwind. On ne touche pas <html> pour préserver la
+   base rem (espacements). */
+body,
+body * {
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+}
+body :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 16px;
+}
+
+/* ============================================================
+   Landing - hero atmosphérique
+   Hors @layer et accroché à une classe : ces règles doivent primer
+   sur la contrainte typographique globale ci-dessus (0,0,2) qui
+   plafonne le site à 12/16px. Seul le hero y échappe.
+   Chaque sélecteur vise aussi ses descendants (`X *`) : sans ça les
+   <span> internes retomberaient à 12px et écraseraient le titre.
+   ============================================================ */
+
+.h-display,
+.h-display * {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.35rem, 5.4vw, 4.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.038em;
+}
+.h-lede,
+.h-lede * {
+  font-size: clamp(0.9rem, 1.1vw, 1.125rem);
+  line-height: 1.75;
+}
+.h-sign,
+.h-sign * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.h-act,
+.h-act * {
+  font-size: 13px;
+}
+
+/* --- Atmosphère : deux nappes d'accent qui dérivent lentement --- */
+.h-bloom {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(90px);
+  will-change: transform;
+}
+@keyframes h-drift-a {
+  0%, 100% { transform: translate3d(-3%, -2%, 0) scale(1); }
+  50%      { transform: translate3d(7%, 5%, 0) scale(1.15); }
+}
+@keyframes h-drift-b {
+  0%, 100% { transform: translate3d(4%, 3%, 0) scale(1.1); }
+  50%      { transform: translate3d(-6%, -4%, 0) scale(0.92); }
+}
+.h-bloom-a {
+  top: -20%;
+  left: 2%;
+  width: 56%;
+  height: 72%;
+  background: radial-gradient(closest-side, rgba(237, 94, 41, 0.4), transparent 70%);
+  animation: h-drift-a 26s ease-in-out infinite;
+}
+.h-bloom-b {
+  bottom: -24%;
+  right: -4%;
+  width: 54%;
+  height: 66%;
+  background: radial-gradient(closest-side, rgba(242, 146, 94, 0.28), transparent 72%);
+  animation: h-drift-b 34s ease-in-out infinite;
+}
+/* Voile large et immobile : évite que le texte flotte sur du noir plat. */
+.h-bloom-c {
+  top: 12%;
+  left: 8%;
+  width: 84%;
+  height: 60%;
+  filter: blur(120px);
+  background: radial-gradient(closest-side, rgba(237, 94, 41, 0.12), transparent 72%);
+}
+
+/* Grain : casse le dégradé et évite l'aplat « rendu 3D ». */
+.h-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.038;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Vignette : ramène l'œil au centre, assombrit les bords. */
+.h-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(82% 66% at 50% 45%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+/* --- Entrée : les lignes montent en sortant d'un flou --- */
+@keyframes h-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.42em);
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.h-in > * {
+  animation: h-reveal 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.h-in > *:nth-child(1) { animation-delay: 0.05s; }
+.h-in > *:nth-child(2) { animation-delay: 0.19s; }
+.h-in > *:nth-child(3) { animation-delay: 0.33s; }
+.h-in > *:nth-child(4) { animation-delay: 0.47s; }
+.h-in > *:nth-child(n + 5) { animation-delay: 0.61s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .h-bloom,
+  .h-in > * {
+    animation: none;
+  }
+}
+
+/* Crédit du footer : tailles imposées. Hors @layer et accrochées à une classe
+   pour primer sur la règle globale `body *` qui plafonne le site à 12px. */
+.f-by {
+  font-size: 9px;
+}
+.f-name {
+  font-size: 16px;
+}
+
+/* Pages légales : texte long, donc lisible. Hors @layer et accroché à `.legal`
+   pour primer sur la règle globale `body *` qui plafonne le site à 12/16px. */
+.legal h2 {
+  font-size: 15px;
+}
+.legal h3 {
+  font-size: 13px;
+}
+.legal p,
+.legal li,
+.legal td,
+.legal th,
+.legal address {
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+/* Zones repliables (matchs d'équipe groupés par tournoi). Le marqueur natif du
+   <summary> est masqué au profit d'un chevron qui pivote à l'ouverture. */
+.disclosure > summary {
+  list-style: none;
+}
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosure-chevron {
+  transition: transform 180ms var(--ease);
+}
+.disclosure[open] > summary .disclosure-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-chevron {
+    transition: none;
+  }
+}
+
+/* Page équipe : tailles imposées du bandeau et des cartes joueurs. Hors @layer
+   et accrochées à des classes pour primer sur la règle globale `body *` qui
+   plafonne le site à 12/16px (un `text-[16px]` Tailwind y perdrait). */
+.t-title {
+  font-size: 24px;
+}
+.tp-name {
+  font-size: 16px;
+}
+.tp-label {
+  font-size: 10px;
+}
+.tp-value {
+  font-size: 12px;
+}
+
+/* Défilement horizontal discret (arbre de playoffs) : on ne garde que le
+   curseur orange. Pas de piste, pas de contour, pas de flèches. Hors @layer
+   pour primer sur les utilitaires Tailwind du conteneur. */
+.scroll-accent {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+.scroll-accent::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+  background: transparent;
+}
+.scroll-accent::-webkit-scrollbar-track,
+.scroll-accent::-webkit-scrollbar-corner {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.scroll-accent::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.scroll-accent::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+}
+.scroll-accent::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}

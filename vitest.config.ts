@@ -22,10 +22,15 @@ export default defineConfig({
       exclude: ["src/lib/db.ts", "src/lib/auth.ts", "src/lib/data/**"],
       // Seuils calés sur le niveau réellement atteint, pas sur un objectif :
       // ils servent de cliquet — la couverture ne peut plus baisser sans
-      // faire échouer la CI. À relever au fur et à mesure ; la cible reste
-      // 80 %, elle demande de couvrir bracket.ts, standings.ts et
-      // match-stats.ts plus finement.
-      thresholds: { statements: 71, branches: 67, functions: 72, lines: 73 },
+      // faire échouer la CI. À relever au fur et à mesure.
+      //
+      // La cible de 80 % d'instructions est tenue depuis la campagne de
+      // couverture du finding QUAL-02 (tournament-teams-core, metadata, maps,
+      // le recalage de statut, deleteStoredImage et les données structurées de
+      // liste). Ce qui reste à zéro demande de la plomberie de test :
+      // match-stats.ts (API Riot + base), server-auth.ts et session.ts
+      // (session Auth.js), countries.ts (table de données pure).
+      thresholds: { statements: 82, branches: 77, functions: 83, lines: 83 },
     },
   },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },

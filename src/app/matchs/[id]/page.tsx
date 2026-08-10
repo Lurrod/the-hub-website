@@ -79,6 +79,14 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           tournamentName: match.tournament.name,
         })}
       />
+      {/* Le bandeau affiche l'affiche du match en trois blocs (équipe / score /
+          équipe) : aucun d'eux ne peut porter à lui seul le titre du document.
+          Le H1 est donc posé en `sr-only` — il donne aux lecteurs d'écran et
+          aux moteurs le point d'entrée qui manquait, sans rien changer au
+          rendu visuel. */}
+      <h1 className="sr-only">
+        {match.teamA.name} vs {match.teamB.name}
+      </h1>
       <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-8">
         {/* Équipe A */}

@@ -5,6 +5,8 @@ import { MatchListItem } from "@/components/tournament-match-list";
 import Pagination from "@/components/pagination";
 import { parsePage } from "@/lib/pagination";
 import { pageMetadata } from "@/lib/metadata";
+import JsonLdScript from "@/components/json-ld";
+import { itemListJsonLd } from "@/lib/structured-data";
 
 export const metadata = pageMetadata({
   path: "/matchs",
@@ -38,6 +40,18 @@ export default async function MatchesPage({
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
+      <JsonLdScript
+        data={itemListJsonLd(
+          "Matchs",
+          tournaments.flatMap((t) =>
+            t.matches.map((m) => ({
+              path: `/matchs/${m.id}`,
+              name:
+                m.teamA && m.teamB ? `${m.teamA.name} vs ${m.teamB.name}` : null,
+            }))
+          )
+        )}
+      />
       <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Matchs</h1>
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">

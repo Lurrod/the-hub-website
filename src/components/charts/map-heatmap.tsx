@@ -26,11 +26,11 @@ export default function MapHeatmap({ teams }: { teams: TeamStats[] }) {
       <table className="w-full min-w-[560px] border-separate border-spacing-0.5 text-xs">
         <thead>
           <tr>
-            <th className="sticky left-0 z-10 bg-[var(--surface)] px-2 py-1 text-left font-medium text-[var(--text-muted)]">
+            <th scope="col" className="sticky left-0 z-10 bg-[var(--surface)] px-2 py-1 text-left font-medium text-[var(--text-muted)]">
               Équipe
             </th>
             {mapNames.map((m) => (
-              <th key={m} className="px-1 py-1 text-center font-medium text-[var(--text-muted)]">
+              <th scope="col" key={m} className="px-1 py-1 text-center font-medium text-[var(--text-muted)]">
                 {m}
               </th>
             ))}
@@ -39,7 +39,7 @@ export default function MapHeatmap({ teams }: { teams: TeamStats[] }) {
         <tbody>
           {teams.map((t) => (
             <tr key={t.team.id}>
-              <th className="sticky left-0 z-10 bg-[var(--surface)] px-2 py-1 text-left font-medium text-white">
+              <th scope="row" className="sticky left-0 z-10 bg-[var(--surface)] px-2 py-1 text-left font-medium text-white">
                 <span className="flex items-center gap-1.5">
                   {t.team.logo ? (
                     // eslint-disable-next-line @next/next/no-img-element

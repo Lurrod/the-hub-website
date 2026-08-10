@@ -32,6 +32,69 @@ export function serializeJsonLd(data: JsonLd): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
+/**
+ * Liste ordonnée d'entités déjà affichées par une page de liste.
+ *
+ * Chaque élément se réduit à son rang et à son URL : la fiche pointée porte
+ * déjà son propre bloc Schema.org, dupliquer nom, image et description ici ne
+ * ferait qu'ouvrir deux sources de vérité pour la même entité.
+ *
+ * `numberOfItems` vaut le nombre d'éléments **émis**, pas le total de la
+ * collection : sur une page paginée, annoncer un total que la liste ne contient
+ * pas serait faux.
+ */
+export function itemListJsonLd(
+  name: string,
+  items: { path: string; name?: string | null }[]
+): JsonLd {
+  return compact({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: items.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    itemListElement: items.map((item, i) =>
+      compact({
+        "@type": "ListItem",
+        position: i + 1,
+        url: absolute(item.path),
+        name: item.name ?? null,
+      })
+    ),
+  });
+}
+
+/**
+ * Identité du site et action de recherche, posées sur l'accueil.
+ *
+ * `potentialAction` décrit `/recherche?q=` à un moteur qui saurait proposer une
+ * boîte de recherche directement dans ses résultats. Le paramètre déclaré doit
+ * être celui que la route lit réellement, sans quoi l'action mène à une page
+ * vide.
+ */
+export function siteJsonLd(): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    inLanguage: "fr-FR",
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL.replace(/\/$/, "")}/recherche?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
 export function teamJsonLd(team: {
   id: string;
   name: string;

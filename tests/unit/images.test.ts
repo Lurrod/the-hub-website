@@ -1,4 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
+import path from "node:path";
+import { promises as fs } from "node:fs";
 import sharp from "sharp";
 import {
   validateImageUpload,
@@ -7,6 +9,7 @@ import {
   imageKeyFor,
   resolveUploadPath,
   imageEtag,
+  deleteStoredImage,
 } from "@/lib/images";
 
 describe("validateImageUpload", () => {
@@ -146,5 +149,73 @@ describe("readUploadedImage", () => {
       type: "image/png",
     });
     await expect(readUploadedImage(f)).rejects.toThrow();
+  });
+});
+
+describe("deleteStoredImage", () => {
+  // Les fichiers sont créés pour de vrai sous uploads/ (dossier ignoré par git,
+  // volume dédié en production) : la fonction n'a d'intérêt que si l'on vérifie
+  // qu'elle touche bien le disque.
+  const id = "test-delete-stored-image";
+  const dir = path.join(process.cwd(), "uploads", "teams");
+  const logo = path.join(dir, `${id}.webp`);
+  const banner = path.join(dir, `${id}-banner.webp`);
+
+  async function seed(files: string[]) {
+    await fs.mkdir(dir, { recursive: true });
+    for (const f of files) await fs.writeFile(f, "contenu");
+  }
+  async function exists(f: string) {
+    return fs
+      .access(f)
+      .then(() => true)
+      .catch(() => false);
+  }
+
+  afterEach(async () => {
+    for (const f of [logo, banner]) await fs.rm(f, { force: true });
+  });
+
+  it("efface les deux variantes d'une entité", async () => {
+    await seed([logo, banner]);
+    await deleteStoredImage("teams", id);
+    expect(await exists(logo)).toBe(false);
+    expect(await exists(banner)).toBe(false);
+  });
+
+  it("ne se plaint pas d'une variante absente", async () => {
+    // Une équipe n'a pas de bannière : le fichier n'existe pas, ce n'est pas
+    // une erreur.
+    await seed([logo]);
+    await expect(deleteStoredImage("teams", id)).resolves.toBeUndefined();
+    expect(await exists(logo)).toBe(false);
+  });
+
+  it("ne fait rien quand aucun fichier n'a jamais été déposé", async () => {
+    await expect(deleteStoredImage("teams", id)).resolves.toBeUndefined();
+  });
+
+  it("refuse une catégorie inconnue", async () => {
+    await expect(
+      deleteStoredImage("secrets" as unknown as "teams", id)
+    ).rejects.toThrow(/Catégorie invalide/);
+  });
+
+  it("refuse un identifiant qui tente une traversée de répertoire", async () => {
+    // L'identifiant vient d'une URL : il repasse par le même résolveur que la
+    // lecture, qui refuse les séparateurs et les « .. ».
+    await expect(deleteStoredImage("teams", "../../etc/passwd")).rejects.toThrow();
+  });
+
+  it("laisse intact le fichier d'une autre entité", async () => {
+    const other = path.join(dir, "test-delete-stored-image-voisin.webp");
+    await seed([logo]);
+    await fs.writeFile(other, "voisin");
+    try {
+      await deleteStoredImage("teams", id);
+      expect(await exists(other)).toBe(true);
+    } finally {
+      await fs.rm(other, { force: true });
+    }
   });
 });
