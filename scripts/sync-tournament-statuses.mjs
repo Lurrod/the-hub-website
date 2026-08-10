@@ -6,14 +6,28 @@
  * prévu pour une tâche planifiée quotidienne : un site sans visite entre deux
  * journées y trouve ses bascules faites malgré tout.
  *
- * Lancer :  npm run db:sync:tournaments
+ * En `.mjs` pour la même raison que `prune-orphan-images.mjs` : la tâche
+ * planifiée tourne sur le serveur, où le paquet `standalone` n'embarque ni
+ * `tsx` ni les dépendances de développement.
+ *
+ * ## Lancer
+ *
+ * En local :
+ *   npm run db:sync:tournaments
+ *
+ * Sur le serveur (crontab, cf. docs/DEPLOIEMENT.md) :
+ *   node scripts/sync-tournament-statuses.mjs
  */
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
-/** Copie de `finishedCutoff` : minuit UTC du jour courant. */
-function cutoff(now = new Date()): Date {
+/**
+ * Copie de `finishedCutoff` : minuit UTC du jour courant.
+ * @param {Date} [now]
+ * @returns {Date}
+ */
+function cutoff(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 

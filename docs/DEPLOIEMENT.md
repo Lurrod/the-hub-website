@@ -132,6 +132,54 @@ sinon la validation échoue.
 certbot duplique ce VirtualHost pour le 443, et une valeur figée a `http` y
 ferait construire les callbacks Discord en http.
 
+### Deux VirtualHosts, et c'est le second qui sert le trafic
+
+**À lire avant toute modification d'Apache.** `certbot --apache` ne modifie pas
+le fichier existant : il en fait une **copie figée** pour le 443.
+
+```
+/etc/apache2/sites-available/the-hub-vrc.fr.conf          :80  — redirige vers HTTPS
+/etc/apache2/sites-available/the-hub-vrc.fr-le-ssl.conf   :443 — sert le vrai trafic
+```
+
+Conséquence : `deploy/apache.conf` ne décrit **que** le `:80`. Le `-le-ssl.conf`
+a été copié le jour où certbot est passé et ne bouge plus. Les deux dérivent
+depuis, et le dépôt raconte alors une chose pendant que la production en fait
+une autre.
+
+Le 10 août 2026, `LimitRequestBody` a ainsi été porté à 12 Mo dans le dépôt et
+dans le `:80` — sans effet, parce que le `:443` est resté à 8 Mo pendant que le
+symptôme (413 sur un envoi lourd) restait entier.
+
+**Toute directive de comportement — `LimitRequestBody`, filtres de compression,
+en-têtes, `LocationMatch` — doit être reportée dans les deux fichiers.** Le
+`:80` n'a besoin que de la redirection ; c'est le `:443` qui compte.
+
+Après chaque modification :
+
+```bash
+grep -nE 'LimitRequestBody|BROTLI_COMPRESS|DEFLATE' \
+  /etc/apache2/sites-available/the-hub-vrc.fr*.conf
+sudo apache2ctl configtest && sudo systemctl restart apache2
+```
+
+`restart` et non `reload` : un module fraîchement activé par `a2enmod` n'est pas
+chargé par un simple rechargement — Apache le dit lui-même à l'activation.
+
+### Compression
+
+`deflate` est activé à l'étape ci-dessus. Brotli demande un module de plus :
+
+```bash
+sudo a2enmod brotli
+sudo systemctl restart apache2
+curl -sI -H 'Accept-Encoding: br' https://the-hub-vrc.fr/ | grep -i content-encoding
+```
+
+Attendu : `content-encoding: br`. Le bloc `AddOutputFilterByType BROTLI_COMPRESS`
+de `deploy/apache.conf` est encadré par `<IfModule mod_brotli.c>` : la
+configuration reste valide si le module n'est pas activé.
+
 ## 5. Clé SSH pour GitHub Actions
 
 Un mot de passe ne convient pas pour de l'automatisé : il faut une paire dédiée,
@@ -190,15 +238,44 @@ cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
 - **Statut des tournois** : les bascules « à venir → en cours → terminé » se
   déduisent des dates. Elles sont recalculées au fil des consultations, au plus
   une fois toutes les cinq minutes. Pour qu'un site sans visite ne prenne pas
-  de retard, ajouter une tâche planifiée quotidienne sur la release active :
+  de retard, ajouter une tâche planifiée quotidienne :
 
   ```bash
   # crontab -e, à 00h05 UTC
-  5 0 * * * cd /srv/the-hub/current && npm run db:sync:tournaments >> /srv/the-hub/shared/logs/cron.log 2>&1
+  5 0 * * * cd /var/www/the-hub-vrc.fr/current && set -a && . /var/www/the-hub-vrc.fr/shared/.env && set +a && node scripts/sync-tournament-statuses.mjs >> /var/www/the-hub-vrc.fr/shared/logs/cron.log 2>&1
   ```
 
   Rien de critique n'en dépend : l'ouverture des inscriptions est décidée à
   partir des dates, pas du statut stocké.
+
+- **Scripts de maintenance sur le serveur** : le paquet déployé est un build
+  `standalone`. Il ne contient **ni le `package.json` du dépôt, ni `tsx`, ni les
+  dépendances de développement** — `npm run <quelque chose>` n'y existe pas.
+  Seuls les scripts en `.mjs`, listés explicitement dans l'étape « Assembler le
+  paquet à déployer » de `.github/workflows/deploy.yml`, sont livrés et
+  s'exécutent avec le Node et le client Prisma de la release.
+
+  Les variables d'environnement ne sont pas chargées automatiquement hors pm2 :
+  il faut sourcer `shared/.env` soi-même.
+
+  ```bash
+  APP=/var/www/the-hub-vrc.fr
+  cd "$APP/current"
+  set -a; . "$APP/shared/.env"; set +a
+
+  node scripts/sync-tournament-statuses.mjs
+  node scripts/prune-orphan-images.mjs            # aperçu, ne supprime rien
+  node scripts/prune-orphan-images.mjs --apply    # effacement
+  ```
+
+  Les scripts d'amorçage (`seed-*`) restent en TypeScript et ne sont
+  volontairement **pas** livrés : ce sont des données de démonstration.
+
+- **Images orphelines** : avant la correction du finding RGPD-01 (v1.15.0), une
+  suppression ne retirait que la ligne en base et laissait le fichier sur le
+  disque, toujours servi par `/api/images`. Les suppressions l'effacent
+  désormais ; `prune-orphan-images.mjs` est là pour rattraper l'historique, à
+  passer une fois. Toujours lire l'aperçu avant `--apply`.
 
 - **Migrations destructives** : `prisma migrate deploy` tourne avant la bascule.
   Une migration qui supprime une colonne cassera l'ancienne version pendant le
