@@ -71,6 +71,10 @@ export default async function TeamGestionPage({ params }: { params: Promise<{ id
           region: team.region,
           description: team.description ?? undefined,
           status: team.status,
+          // Sans lui, le champ d'upload s'affichait vide sur une équipe qui a
+          // pourtant un logo : on ne savait pas ce qui était en ligne, et
+          // enregistrer donnait l'impression de l'avoir perdu.
+          logo: team.logo,
           socials: (team.socials ?? {}) as { twitter?: string; twitch?: string; website?: string },
         }}
       />

@@ -79,6 +79,10 @@ export default async function TournamentGestionPage({
           prizePool: tournament.prizePool ?? undefined,
           organizer: tournament.organizer ?? undefined,
           description: tournament.description ?? undefined,
+          // Même raison que pour l'équipe : les deux champs d'image partaient
+          // vides alors que le tournoi avait déjà un logo et une bannière.
+          logo: tournament.logo,
+          banner: tournament.banner,
           maxTeams: tournament.maxTeams ?? undefined,
           groupSize: tournament.groupSize ?? undefined,
           bestOf: tournament.bestOf ?? undefined,
