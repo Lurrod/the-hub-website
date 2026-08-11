@@ -404,9 +404,16 @@ export default function MatchScoreboard({
   teamALogo: string | null;
   teamBLogo: string | null;
 }) {
+  // L'onglet cumulé n'a d'intérêt qu'à partir de deux maps réellement
+  // stattées : sur une seule, il répéterait l'onglet de cette map.
+  const stattedMaps = maps.filter((m) => m.stats.length > 0);
+  const canAggregate = stattedMaps.length > 1;
+
   // `"all"` désigne l'onglet cumulé sur toute la rencontre ; les autres
-  // valeurs sont l'indice de la map affichée.
-  const [active, setActive] = useState<number | "all">(0);
+  // valeurs sont l'indice de la map affichée. C'est le cumul qui s'ouvre par
+  // défaut : sur une rencontre en plusieurs maps, c'est la lecture d'ensemble
+  // qu'on cherche d'abord, le détail d'une map vient ensuite.
+  const [active, setActive] = useState<number | "all">(canAggregate ? "all" : 0);
   // Le panneau doit repasser par « fermé » avant de se rouvrir, sinon rien ne
   // transitionne au changement de carte.
   //
@@ -436,10 +443,6 @@ export default function MatchScoreboard({
 
   if (maps.length === 0) return null;
 
-  // L'onglet cumulé n'a d'intérêt qu'à partir de deux maps réellement
-  // stattées : sur une seule, il répéterait l'onglet de cette map.
-  const stattedMaps = maps.filter((m) => m.stats.length > 0);
-  const canAggregate = stattedMaps.length > 1;
   const showAll = active === "all" && canAggregate;
 
   const map = showAll ? null : maps[Math.min(active === "all" ? 0 : active, maps.length - 1)];
@@ -454,6 +457,17 @@ export default function MatchScoreboard({
       {maps.length > 1 && (
         <div className="border-b border-[var(--border)] px-2">
           <Segmented activeKey={String(active)} variant="underline">
+            {canAggregate && (
+              <button
+                type="button"
+                onClick={() => setActive("all")}
+                role="tab"
+                aria-selected={showAll}
+                className="t-tab shrink-0"
+              >
+                Toutes les maps
+              </button>
+            )}
             {maps.map((m, i) => (
               <button
                 key={m.id}
@@ -466,17 +480,6 @@ export default function MatchScoreboard({
                 {m.mapName}
               </button>
             ))}
-            {canAggregate && (
-              <button
-                type="button"
-                onClick={() => setActive("all")}
-                role="tab"
-                aria-selected={showAll}
-                className="t-tab shrink-0"
-              >
-                Toutes les maps
-              </button>
-            )}
           </Segmented>
         </div>
       )}
