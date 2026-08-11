@@ -46,6 +46,14 @@ describe("mapRows", () => {
     expect(rows.map((r) => r.side).sort()).toEqual(["A", "B"]);
   });
 
+  it("porte l'agent de la map dans une liste à une entrée", () => {
+    expect(mapRows([stat({ agent: "Jett" })])[0].agents).toEqual(["Jett"]);
+  });
+
+  it("laisse la liste d'agents vide quand la map n'en renseigne aucun", () => {
+    expect(mapRows([stat({ agent: null })])[0].agents).toEqual([]);
+  });
+
   it("renvoie une liste vide sans statistique", () => {
     expect(mapRows([])).toEqual([]);
   });
@@ -87,13 +95,23 @@ describe("seriesRows", () => {
     expect(rows[0].kills).toBe(22);
   });
 
-  it("retient l'agent le plus joué de la série", () => {
+  it("liste tous les agents joués, du plus joué au moins joué", () => {
     const rows = seriesRows([
       stat({ agent: "Jett" }),
       stat({ agent: "Raze" }),
       stat({ agent: "Raze" }),
     ]);
-    expect(rows[0].agent).toBe("Raze");
+    expect(rows[0].agents).toEqual(["Raze", "Jett"]);
+  });
+
+  it("départage deux agents à égalité par leur nom", () => {
+    const rows = seriesRows([stat({ agent: "Raze" }), stat({ agent: "Jett" })]);
+    expect(rows[0].agents).toEqual(["Jett", "Raze"]);
+  });
+
+  it("ne répète pas un agent joué sur plusieurs maps", () => {
+    const rows = seriesRows([stat({ agent: "Jett" }), stat({ agent: "Jett" })]);
+    expect(rows[0].agents).toEqual(["Jett"]);
   });
 
   it("ignore les maps sans agent renseigné dans ce décompte", () => {
@@ -102,7 +120,7 @@ describe("seriesRows", () => {
       stat({ agent: null }),
       stat({ agent: "Jett" }),
     ]);
-    expect(rows[0].agent).toBe("Jett");
+    expect(rows[0].agents).toEqual(["Jett"]);
   });
 
   it("renvoie une liste vide sans statistique", () => {
@@ -125,6 +143,10 @@ describe("bySide", () => {
 
 describe("kdaLabel", () => {
   it("écrit les trois compteurs séparés par des barres", () => {
-    expect(kdaLabel({ kills: 24, deaths: 13, assists: 6 })).toBe("24 / 13 / 6");
+    expect(kdaLabel({ kills: 24, deaths: 13, assists: 6 })).toBe("24/13/6");
+  });
+
+  it("reste sur une ligne quand les compteurs passent à trois chiffres", () => {
+    expect(kdaLabel({ kills: 146, deaths: 120, assists: 88 })).toBe("146/120/88");
   });
 });

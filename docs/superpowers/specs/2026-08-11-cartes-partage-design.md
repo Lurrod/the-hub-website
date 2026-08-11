@@ -129,11 +129,11 @@ aucune génération.
 Un match ne se partage pas d'une seule façon. La boîte de dialogue propose
 donc un sélecteur, alimenté par `matchShareVariants()` :
 
-| Vue      | `?vue=`  | Onglet     | Contenu                                         |
-| -------- | -------- | ---------- | ----------------------------------------------- |
-| Résultat | _(rien)_ | `Résultat` | le duel, le détail des maps, le joueur du match |
-| Map      | `map-N`  | nom de map | le scoreboard complet de cette map              |
-| Série    | `serie`  | `Bo3`      | les statistiques de chaque joueur sur le Bo     |
+| Vue      | `?vue=`  | Onglet     | Contenu                                                           |
+| -------- | -------- | ---------- | ----------------------------------------------------------------- |
+| Résultat | _(rien)_ | `Résultat` | le duel, le détail des maps, le joueur du match                   |
+| Map      | `map-N`  | nom de map | le scoreboard complet de cette map, agents en icônes              |
+| Série    | `serie`  | `Bo3`      | les statistiques de chaque joueur sur le Bo, avec tous ses agents |
 
 - **Une map sans scoreboard importé n'est pas proposée** : elle n'aurait rien à
   montrer. Les numéros restent en revanche ceux du match — `map-2` désigne la
@@ -153,6 +153,36 @@ s'additionnent, l'ACS et le rating se moyennent **sur les maps réellement
 jouées par ce joueur** — un remplaçant entré sur une seule map ne doit pas voir
 sa moyenne diluée par les maps où il n'était pas là. Le regroupement se fait
 sur la fiche du joueur, ou sur son Riot ID quand il n'en a pas.
+
+### Les agents en icônes
+
+La colonne d'agents porte les icônes du jeu, pas leur nom : sur un scoreboard,
+c'est l'image qu'on lit, et un nom écrit y occupe la place de trois icônes.
+Une ligne porte donc **tous les agents joués**, du plus joué au moins joué —
+un seul sur une map, jusqu'à cinq sur une série.
+
+`src/lib/og/agent-icon.ts` va chercher les PNG sur `media.valorant-api.com`
+(les URL sont déjà figées dans `src/lib/agents.ts`, aucune découverte à
+l'exécution), les redimensionne avec `sharp` et les rend en data URI : Satori
+ne va pas chercher les images distantes lui-même.
+
+- **Mémoïsé au niveau du module** : le CDN n'est interrogé qu'une fois par
+  agent et par processus. Une carte tirée à froid paie une vingtaine de
+  requêtes en parallèle, les suivantes rien.
+- **Les échecs ne sont pas mémorisés** : une indisponibilité passagère du CDN
+  ne doit pas priver d'icônes toutes les cartes suivantes du processus.
+- **Coupure à 2,5 s** et repli sur les trois premières lettres de l'agent, dans
+  un gabarit de même taille pour que les colonnes ne bougent pas. La
+  disponibilité d'un CDN tiers ne conditionne pas celle d'une image du site.
+
+La largeur de la colonne est calculée (`agentColumnWidth`) plutôt que fixée au
+pire cas : sur le scoreboard d'une map, chaque joueur n'a qu'un agent, et une
+colonne taillée pour cinq y laisserait un vide que la colonne des noms occupe
+mieux.
+
+Le libellé K/D/A est écrit sans espaces (`46/40/22`) : sur la carte de série
+les compteurs passent à trois chiffres, et la colonne se cassait alors sur deux
+lignes, chevauchant la ligne suivante.
 
 ## Contenu des cartes
 
@@ -273,6 +303,12 @@ Le rendu Satori lui-même n'est pas testé unitairement : les deux gabarits sont
 vérifiés à l'œil avant livraison, comme les neuf cartes OG.
 
 ## Risques
+
+**Dépendance au CDN d'icônes.** Les cartes de scoreboard vont chercher les
+icônes d'agent sur `media.valorant-api.com`. C'est une dépendance externe dans
+un chemin de rendu, atténuée par trois choses : la mémoïsation par processus,
+la coupure à 2,5 s, et le repli textuel. Le pire cas est une carte moins jolie,
+jamais une carte absente.
 
 **Coût de génération.** Chaque ouverture de modale déclenche un rendu Satori et
 une conversion `sharp`. L'exposition est la même que celle des routes OG déjà en
