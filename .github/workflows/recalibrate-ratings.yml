@@ -1,0 +1,73 @@
+# Lance `scripts/recalibrate-ratings.mjs` sur le serveur de production.
+#
+# Le script ne peut pas se lancer depuis un poste de développement : il lui
+# faut la base de production, dont les accès ne vivent que dans les secrets du
+# dépôt et dans `shared/.env` sur le serveur. Ce workflow est le chemin prévu.
+#
+# Il ne part **que** sur déclenchement manuel, et `apply` vaut `false` par
+# défaut : la mesure seule ne touche à rien. Écrire dans la base demande de
+# choisir explicitement `true`.
+name: Recalibrer les ratings
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Écrire les ratings recalculés (sinon, mesure seule)"
+        type: boolean
+        default: false
+
+# Deux exécutions concurrentes réécriraient les mêmes lignes.
+concurrency:
+  group: recalibrate-ratings
+  cancel-in-progress: false
+
+jobs:
+  recalibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Préparer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Épingle l'empreinte du serveur, comme le déploiement.
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Lancer le script
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          USER: ${{ secrets.SSH_USER }}
+          PORT: ${{ secrets.SSH_PORT || '22' }}
+          APP_DIR: ${{ secrets.APP_DIR }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          ssh -p "$PORT" "$USER@$HOST" APP_DIR="$APP_DIR" APPLY="$APPLY" 'bash -euo pipefail -s' <<'REMOTE'
+            # Même garde-fou que le déploiement : refuse d'agir sur un dossier
+            # qui n'est pas celui du site.
+            if [ ! -f "$APP_DIR/shared/.env" ]; then
+              echo "ERREUR : $APP_DIR/shared/.env introuvable."
+              echo "Le dossier n'est pas initialise, ou APP_DIR pointe au mauvais endroit."
+              exit 1
+            fi
+
+            SCRIPT="$APP_DIR/current/scripts/recalibrate-ratings.mjs"
+            if [ ! -f "$SCRIPT" ]; then
+              echo "ERREUR : $SCRIPT introuvable."
+              echo "La release en place est anterieure a la livraison du script."
+              exit 1
+            fi
+
+            cd "$APP_DIR/current"
+            # Hors pm2, les variables ne sont pas chargees toutes seules.
+            set -a; . "$APP_DIR/shared/.env"; set +a
+
+            if [ "$APPLY" = "true" ]; then
+              echo "--- recalcul (ecriture) ---"
+              node scripts/recalibrate-ratings.mjs --apply
+            else
+              echo "--- mesure seule, aucune ecriture ---"
+              node scripts/recalibrate-ratings.mjs
+            fi
+          REMOTE
