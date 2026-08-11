@@ -114,6 +114,14 @@ export function shareCardFilename(parts: readonly string[]): string {
   return slug ? `the-hub-${slug}.png` : "the-hub.png";
 }
 
+/**
+ * Nom affich\u00e9 d'un joueur : celui de sa fiche, ou son Riot ID \u00e0 d\u00e9faut. Le tag
+ * qui suit le \u00ab # \u00bb n'apporte rien sur une carte et allonge la ligne.
+ */
+export function displayName(pseudo: string | null, riotName: string | null): string {
+  return pseudo ?? riotName?.split("#")[0] ?? "";
+}
+
 /** Statistique d'un joueur sur une map, telle que stock\u00e9e en base. */
 export type MvpStat = {
   pseudo: string | null;
@@ -132,9 +140,7 @@ export type MvpStat = {
 export function mvpLabel(stats: readonly MvpStat[]): string {
   if (stats.length === 0) return "";
   const best = stats.reduce((a, b) => (b.rating > a.rating ? b : a));
-  // Le Riot ID prend le relais quand la ligne n'est rattach\u00e9e \u00e0 aucune fiche ;
-  // le tag apr\u00e8s \u00ab # \u00bb n'apporte rien sur une carte.
-  const name = best.pseudo ?? best.riotName?.split("#")[0] ?? "";
+  const name = displayName(best.pseudo, best.riotName);
   return `${name} \u00b7 ${best.rating.toFixed(2)} rating \u00b7 ${Math.round(best.acs)} ACS`;
 }
 

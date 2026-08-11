@@ -95,9 +95,8 @@ défilement, et `useFocusTrap` sur le panneau.
 
 ```tsx
 <ShareCardButton
-  imageUrl={`/matchs/${match.id}/carte`}
+  variants={matchShareVariants(match)}
   pageUrl={`${SITE_URL}/matchs/${match.id}`}
-  filename="the-hub-navi-vs-karmine-corp.png"
   title="Partager le match"
   alt="Carte du match NAVI contre Karmine Corp"
 />
@@ -105,6 +104,10 @@ défilement, et `useFocusTrap` sur le panneau.
 
 Contenu du panneau :
 
+0. **Sélecteur de vue** — barre `Segmented`, affichée seulement à partir de deux
+   vues. Le statut de chargement est mémorisé par vue : revenir sur une carte
+   déjà affichée ne rejoue pas le squelette, et l'échec de l'une ne contamine
+   pas les autres.
 1. **Aperçu** — `<img src={imageUrl}>`, en carré, largeur limitée à `min(420px, 80vw)`.
    L'image est servie par le site : `img-src 'self'` de la CSP la couvre déjà.
 2. **Télécharger le PNG** — `<a href={imageUrl} download={filename}>`. Même
@@ -120,6 +123,36 @@ Contenu du panneau :
 L'aperçu n'est demandé qu'à l'ouverture de la modale : le `<img>` n'est monté
 qu'avec le panneau. Une fiche consultée sans clic sur « Partager » ne déclenche
 aucune génération.
+
+## Les vues d'un match
+
+Un match ne se partage pas d'une seule façon. La boîte de dialogue propose
+donc un sélecteur, alimenté par `matchShareVariants()` :
+
+| Vue      | `?vue=`  | Onglet     | Contenu                                         |
+| -------- | -------- | ---------- | ----------------------------------------------- |
+| Résultat | _(rien)_ | `Résultat` | le duel, le détail des maps, le joueur du match |
+| Map      | `map-N`  | nom de map | le scoreboard complet de cette map              |
+| Série    | `serie`  | `Bo3`      | les statistiques de chaque joueur sur le Bo     |
+
+- **Une map sans scoreboard importé n'est pas proposée** : elle n'aurait rien à
+  montrer. Les numéros restent en revanche ceux du match — `map-2` désigne la
+  deuxième map jouée, pas la deuxième map stattée. C'est ce que la route sait
+  valider, et cela reste vrai si un scoreboard est importé plus tard.
+- **La carte de série n'apparaît qu'à partir de deux maps stattées** : sur une
+  seule, elle répéterait mot pour mot celle de la map.
+- **Une valeur de `vue` inconnue retombe sur le résultat** plutôt que d'échouer.
+  Ces URL circulent ; l'identifiant, lui, est valide, et une carte qui s'affiche
+  vaut mieux qu'une erreur.
+- La fiche joueur n'a qu'une vue. Elle passe malgré tout par la même liste, à
+  une entrée : le composant n'a ainsi qu'un seul mode, et le sélecteur ne
+  s'affiche qu'à partir de deux entrées.
+
+Les statistiques de série sont agrégées par `seriesRows()` : les frags
+s'additionnent, l'ACS et le rating se moyennent **sur les maps réellement
+jouées par ce joueur** — un remplaçant entré sur une seule map ne doit pas voir
+sa moyenne diluée par les maps où il n'était pas là. Le regroupement se fait
+sur la fiche du joueur, ou sur son Riot ID quand il n'en a pas.
 
 ## Contenu des cartes
 
@@ -204,6 +237,13 @@ portent des chiffres, elles ne peuvent pas être figées ; cinq minutes suffisen
 
 ## Tests
 
+Le sélecteur de vues n'est pas couvert en E2E : **aucun des trois jeux de
+données de la CI ne crée de `PlayerGameStat`**, donc aucun match n'y a de
+scoreboard, et les onglets de map n'y apparaissent jamais. La construction de
+la liste est donc couverte à part, en test unitaire pur
+(`tests/unit/og-share-variants.test.ts`), et l'E2E vérifie le cas que la CI sait
+produire : un match sans scoreboard n'affiche aucun sélecteur.
+
 **Unitaires** (`tests/unit/og-labels.test.ts`, `tests/unit/share-card.test.ts`) :
 
 - `shareCardFilename` : accents, ponctuation, espaces multiples, chaîne vide,
@@ -220,6 +260,14 @@ portent des chiffres, elles ne peuvent pas être figées ; cinq minutes suffisen
 - Le lien de téléchargement porte le bon `download`.
 - Échap referme et rend le focus au bouton.
 - La route `/matchs/<id>/carte` répond `200 image/png` en direct.
+- Une `vue` inconnue renvoie exactement l'image du résultat.
+- Le bandeau de match ne déborde pas en largeur sur un écran de 390 px.
+
+Ce dernier point est une régression rencontrée à l'intégration : le bouton
+s'insère dans une ligne déjà chargée (tournoi, date, stage, format, parfois
+« Gérer »), qui débordait alors de 15 px et faisait défiler la page entière à
+l'horizontale. Le libellé du bouton est masqué sous `sm` — d'où l'`aria-label`,
+sans lequel il n'aurait plus de nom accessible — et la ligne se replie.
 
 Le rendu Satori lui-même n'est pas testé unitairement : les deux gabarits sont
 vérifiés à l'œil avant livraison, comme les neuf cartes OG.

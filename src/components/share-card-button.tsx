@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Segmented from "@/components/segmented";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import type { ShareVariant } from "@/lib/og/share-variants";
 
 interface ShareCardButtonProps {
-  /** Route qui rend la carte carrée (ex. `/matchs/<id>/carte`). */
-  imageUrl: string;
+  /** Au moins une entrée ; le sélecteur n'apparaît qu'à partir de deux. */
+  variants: readonly ShareVariant[];
   /** Adresse absolue de la fiche, celle qu'on copie. */
   pageUrl: string;
-  /** Nom proposé au téléchargement (ex. `the-hub-navi-vs-kc.png`). */
-  filename: string;
   /** Titre de la boîte de dialogue (ex. « Partager le match »). */
   title: string;
-  /** Texte alternatif de l'aperçu. */
+  /** Base du texte alternatif ; le libellé de la variante y est ajouté. */
   alt: string;
 }
 
@@ -33,20 +33,19 @@ const COPIED_MS = 2000;
  * L'aperçu n'est monté qu'avec le panneau : une fiche consultée sans clic sur
  * « Partager » ne déclenche aucune génération d'image côté serveur.
  */
-export default function ShareCardButton({
-  imageUrl,
-  pageUrl,
-  filename,
-  title,
-  alt,
-}: ShareCardButtonProps) {
+export default function ShareCardButton({ variants, pageUrl, title, alt }: ShareCardButtonProps) {
   const [open, setOpen] = useState(false);
   const [shown, setShown] = useState(false);
   const [closing, setClosing] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [active, setActive] = useState(variants[0].key);
+  // Statut de chargement par variante : revenir sur une carte déjà vue ne doit
+  // pas rejouer le squelette, et un échec ne doit pas contaminer les autres.
+  const [status, setStatus] = useState<Record<string, "ok" | "ko">>({});
   const [canShareFiles, setCanShareFiles] = useState(false);
+
+  const current = variants.find((v) => v.key === active) ?? variants[0];
+  const state = status[current.key];
   const closeTimer = useRef<number | null>(null);
   const copiedTimer = useRef<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -63,14 +62,14 @@ export default function ShareCardButton({
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.canShare || !navigator.share) return;
     try {
-      const probe = new File([new Blob()], filename, { type: "image/png" });
+      const probe = new File([new Blob()], "carte.png", { type: "image/png" });
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCanShareFiles(navigator.canShare({ files: [probe] }));
     } catch {
       // Un environnement sans constructeur `File` n'est pas un cas d'erreur :
       // il n'a simplement pas le partage de fichiers.
     }
-  }, [filename]);
+  }, []);
 
   const close = useCallback(() => {
     setShown(false);
@@ -128,9 +127,9 @@ export default function ShareCardButton({
 
   const shareFile = useCallback(async () => {
     try {
-      const response = await fetch(imageUrl);
+      const response = await fetch(current.imageUrl);
       if (!response.ok) return;
-      const file = new File([await response.blob()], filename, { type: "image/png" });
+      const file = new File([await response.blob()], current.filename, { type: "image/png" });
       if (!navigator.canShare({ files: [file] })) return;
       await navigator.share({ files: [file], title, url: pageUrl });
     } catch {
@@ -138,14 +137,18 @@ export default function ShareCardButton({
       // l'un ni l'autre ne mérite un message : la boîte reste ouverte, les
       // deux autres sorties restent disponibles.
     }
-  }, [imageUrl, filename, title, pageUrl]);
+  }, [current, title, pageUrl]);
 
   return (
     <>
+      {/* `aria-label` plutôt que le seul texte : le libellé disparaît sous
+          `sm`, où la ligne qui accueille le bouton n'a plus la place de le
+          porter. Sans lui, le bouton n'aurait plus de nom sur mobile. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex shrink-0 items-center gap-1.5 rounded border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-white"
+        aria-label="Partager"
+        className="flex shrink-0 items-center gap-1.5 rounded border border-[var(--border)] px-2 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-white sm:px-2.5"
       >
         <svg
           viewBox="0 0 24 24"
@@ -161,7 +164,7 @@ export default function ShareCardButton({
           <path d="M12 15V3" />
           <path d="m8 7 4-4 4 4" />
         </svg>
-        Partager
+        <span className="hidden sm:inline">Partager</span>
       </button>
 
       {open &&
@@ -179,7 +182,7 @@ export default function ShareCardButton({
             <div
               ref={panelRef}
               tabIndex={-1}
-              className={`t-modal w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl outline-none ${
+              className={`t-modal w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl outline-none ${
                 shown ? "is-open" : closing ? "is-closing" : ""
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -206,8 +209,27 @@ export default function ShareCardButton({
                 </button>
               </div>
 
-              <div className="mt-4 overflow-hidden rounded-lg border border-[var(--border)]">
-                {failed ? (
+              {variants.length > 1 && (
+                <div className="mt-3 -mx-1 overflow-x-auto px-1">
+                  <Segmented activeKey={current.key} variant="pill">
+                    {variants.map((v) => (
+                      <button
+                        key={v.key}
+                        type="button"
+                        onClick={() => setActive(v.key)}
+                        aria-selected={v.key === current.key}
+                        role="tab"
+                        className="t-tab shrink-0"
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </Segmented>
+                </div>
+              )}
+
+              <div className="mt-3 overflow-hidden rounded-lg border border-[var(--border)]">
+                {state === "ko" ? (
                   <p className="grid aspect-square place-items-center px-6 text-center text-sm text-[var(--text-muted)]">
                     L&apos;aperçu n&apos;a pas pu être chargé. Le téléchargement reste possible.
                   </p>
@@ -216,16 +238,21 @@ export default function ShareCardButton({
                     {/* Le carré est réservé avant l'arrivée de l'image : sans
                         lui, le panneau se redimensionne sous le curseur au
                         moment où l'aperçu se pose. */}
-                    {!loaded && <div className="aspect-square animate-pulse bg-[var(--card)]" />}
+                    {state !== "ok" && (
+                      <div className="aspect-square animate-pulse bg-[var(--card)]" />
+                    )}
+                    {/* `key` : changer de variante doit remonter l'image, sinon
+                        `onLoad` ne se rejoue pas et le squelette reste. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={imageUrl}
-                      alt={alt}
+                      key={current.key}
+                      src={current.imageUrl}
+                      alt={variants.length > 1 ? `${alt} — ${current.label}` : alt}
                       width={1080}
                       height={1080}
-                      onLoad={() => setLoaded(true)}
-                      onError={() => setFailed(true)}
-                      className={`block w-full ${loaded ? "" : "hidden"}`}
+                      onLoad={() => setStatus((s) => ({ ...s, [current.key]: "ok" }))}
+                      onError={() => setStatus((s) => ({ ...s, [current.key]: "ko" }))}
+                      className={`block w-full ${state === "ok" ? "" : "hidden"}`}
                     />
                   </>
                 )}
@@ -233,8 +260,8 @@ export default function ShareCardButton({
 
               <div className="mt-4 flex flex-col gap-2">
                 <a
-                  href={imageUrl}
-                  download={filename}
+                  href={current.imageUrl}
+                  download={current.filename}
                   className="rounded-lg bg-[var(--accent)] px-4 py-2 text-center text-sm font-semibold text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent-hover)]"
                 >
                   Télécharger le PNG

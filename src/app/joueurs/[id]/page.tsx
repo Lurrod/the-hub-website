@@ -25,7 +25,7 @@ import JsonLdScript from "@/components/json-ld";
 import ShareCardButton from "@/components/share-card-button";
 import { playerJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
-import { shareCardFilename } from "@/lib/og/labels";
+import { playerShareVariants } from "@/lib/og/share-variants";
 import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -291,9 +291,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
             <div className="sm:ml-auto">
               <ShareCardButton
-                imageUrl={`/joueurs/${player.id}/carte`}
+                variants={playerShareVariants(player)}
                 pageUrl={`${SITE_URL}/joueurs/${player.id}`}
-                filename={shareCardFilename([player.pseudo])}
                 title="Partager la fiche"
                 alt={`Carte du joueur ${player.pseudo}`}
               />

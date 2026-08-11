@@ -37,6 +37,42 @@ test("la boîte de partage se ferme à Échap et rend le focus au bouton", async
   await expect(bouton).toBeFocused();
 });
 
+// Aucun jeu de données de la CI ne produit de `PlayerGameStat` : les cartes de
+// scoreboard n'ont donc pas de match à cibler ici. La construction de la liste
+// des variantes est couverte à part, dans tests/unit/og-share-variants.test.ts.
+test("sans scoreboard importé, la boîte ne propose aucun choix de carte", async ({ page }) => {
+  await page.goto(`/matchs/${MATCH}`);
+  await page.getByRole("button", { name: "Partager" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Partager le match" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("tablist")).toBeHidden();
+});
+
+// Le bouton s'insère dans le bas du bandeau, déjà chargé (tournoi, date,
+// stage, format). Avec son libellé, la ligne débordait de 15 px sur un écran
+// de 390 px et faisait défiler la page entière à l'horizontale.
+test("le bandeau de match ne déborde pas en largeur sur mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/matchs/${MATCH}`);
+  await expect(page.getByRole("button", { name: "Partager" })).toBeVisible();
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+});
+
+test("une vue inconnue retombe sur la carte de résultat", async ({ request }) => {
+  const [resume, inconnue] = await Promise.all([
+    request.get(`/matchs/${MATCH}/carte`),
+    request.get(`/matchs/${MATCH}/carte?vue=map-99`),
+  ]);
+  expect(inconnue.status()).toBe(200);
+  expect((await inconnue.body()).equals(await resume.body())).toBe(true);
+});
+
 test("la fiche joueur propose la même carte", async ({ page }) => {
   await page.goto(`/joueurs/${JOUEUR}`);
 
