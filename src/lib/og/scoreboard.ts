@@ -24,7 +24,12 @@ export type CardStatRow = {
   key: string;
   name: string;
   side: Side;
-  agent: string | null;
+  /**
+   * Agents joués, du plus joué au moins joué. Une seule entrée sur une map,
+   * autant que d'agents différents sur une série, aucune quand la donnée
+   * manque.
+   */
+  agents: string[];
   kills: number;
   deaths: number;
   assists: number;
@@ -62,7 +67,7 @@ export function mapRows(stats: readonly RawStat[]): CardStatRow[] {
       key: rowKey(s),
       name: displayName(s.pseudo, s.riotName),
       side: side(s),
-      agent: s.agent,
+      agents: s.agent ? [s.agent] : [],
       kills: s.kills,
       deaths: s.deaths,
       assists: s.assists,
@@ -72,21 +77,19 @@ export function mapRows(stats: readonly RawStat[]): CardStatRow[] {
     .sort(byRating);
 }
 
-/** Agent le plus joué de la série ; `null` si aucune map ne le renseigne. */
-function topAgent(agents: readonly (string | null)[]): string | null {
+/**
+ * Agents joués sur la série, du plus joué au moins joué, sans doublon. À
+ * égalité de maps, l'ordre alphabétique : deux rendus de la même carte doivent
+ * aligner les icônes dans le même ordre.
+ */
+function rankAgents(agents: readonly (string | null)[]): string[] {
   const counts = new Map<string, number>();
   for (const agent of agents) {
     if (agent) counts.set(agent, (counts.get(agent) ?? 0) + 1);
   }
-  let best: string | null = null;
-  let bestCount = 0;
-  for (const [agent, count] of counts) {
-    if (count > bestCount) {
-      best = agent;
-      bestCount = count;
-    }
-  }
-  return best;
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"))
+    .map(([agent]) => agent);
 }
 
 /**
@@ -110,7 +113,7 @@ export function seriesRows(stats: readonly RawStat[]): CardStatRow[] {
       key,
       name: displayName(rows[0].pseudo, rows[0].riotName),
       side: side(rows[0]),
-      agent: topAgent(rows.map((r) => r.agent)),
+      agents: rankAgents(rows.map((r) => r.agent)),
       kills: rows.reduce((n, r) => n + r.kills, 0),
       deaths: rows.reduce((n, r) => n + r.deaths, 0),
       assists: rows.reduce((n, r) => n + r.assists, 0),
@@ -128,7 +131,10 @@ export function bySide(rows: readonly CardStatRow[]): { a: CardStatRow[]; b: Car
   };
 }
 
-/** « 24 / 13 / 6 ». Espacé pour rester lisible en mono à petite taille. */
+/**
+ * « 24/13/6 ». Sans espaces : sur la carte de série les compteurs passent à
+ * trois chiffres, et la colonne se casserait sur deux lignes.
+ */
 export function kdaLabel(row: { kills: number; deaths: number; assists: number }): string {
-  return `${row.kills} / ${row.deaths} / ${row.assists}`;
+  return `${row.kills}/${row.deaths}/${row.assists}`;
 }

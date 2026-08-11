@@ -184,7 +184,29 @@ export function ScoreRow({
  * Largeur des colonnes chiffrées du scoreboard. Le nom occupe le reste de la
  * ligne : c'est la seule colonne dont la longueur varie.
  */
-const SB_COL = { agent: 150, kda: 190, acs: 92, rating: 92 };
+const SB_COL = { kda: 180, acs: 88, rating: 88 };
+
+/** Côté d'une icône d'agent, et écart entre deux icônes d'une même ligne. */
+const AGENT_PX = 34;
+const AGENT_GAP = 6;
+
+/**
+ * Un Bo5 ne peut pas donner plus de cinq agents à un joueur. La borne est là
+ * pour que la colonne ne déborde jamais, quoi qu'apporte la donnée.
+ */
+const AGENTS_MAX = 5;
+
+/**
+ * Largeur de la colonne d'agents pour `slots` icônes.
+ *
+ * Elle est calculée plutôt que fixée au pire cas : sur le scoreboard d'une
+ * map, chaque joueur n'a qu'un agent, et une colonne taillée pour cinq y
+ * laisserait un vide que la colonne des noms peut occuper.
+ */
+export function agentColumnWidth(slots: number): number {
+  const shown = Math.min(Math.max(slots, 1), AGENTS_MAX);
+  return shown * AGENT_PX + (shown - 1) * AGENT_GAP;
+}
 
 /** Écart entre deux colonnes, repris par l'en-tête et par les lignes. */
 const SB_GAP = 16;
@@ -196,13 +218,16 @@ const SB_GAP = 16;
 function SbLine({
   name,
   agent,
+  agentWidth,
   kda,
   acs,
   rating,
   tone,
 }: {
   name: string;
-  agent: string;
+  /** Le titre de la colonne sur l'en-tête, les icônes d'agent sur une ligne. */
+  agent: React.ReactNode;
+  agentWidth: number;
   kda: string;
   acs: string;
   rating: string;
@@ -220,6 +245,9 @@ function SbLine({
         fontFamily: MONO,
         fontSize: size,
         letterSpacing: head ? 2 : 0,
+        // Une colonne chiffrée ne se casse jamais en deux : elle chevaucherait
+        // la ligne suivante plutôt que de simplement dépasser.
+        whiteSpace: "nowrap",
         color: tint ?? color,
       }}
     >
@@ -240,7 +268,20 @@ function SbLine({
       >
         {name}
       </div>
-      {cell(SB_COL.agent, agent, false)}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          width: agentWidth,
+          gap: AGENT_GAP,
+          fontFamily: MONO,
+          fontSize: size,
+          letterSpacing: head ? 2 : 0,
+          color,
+        }}
+      >
+        {agent}
+      </div>
       {cell(SB_COL.kda, kda, true)}
       {cell(SB_COL.acs, acs, true)}
       {cell(SB_COL.rating, rating, true, head ? undefined : OG.accent)}
@@ -249,25 +290,89 @@ function SbLine({
 }
 
 /** Ligne de titres des colonnes, posée une fois au-dessus des deux camps. */
-export function ScoreboardColumns() {
-  return <SbLine tone="head" name="JOUEUR" agent="AGENT" kda="K / D / A" acs="ACS" rating="R" />;
+export function ScoreboardColumns({ agentWidth }: { agentWidth: number }) {
+  return (
+    <SbLine
+      tone="head"
+      name="JOUEUR"
+      agent="AGENT"
+      agentWidth={agentWidth}
+      kda="K/D/A"
+      acs="ACS"
+      rating="R"
+    />
+  );
+}
+
+/**
+ * Un agent : son icône, ou ses trois premières lettres quand le CDN n'a pas
+ * répondu. Le gabarit reste le même dans les deux cas, pour que les colonnes
+ * ne bougent pas d'une ligne à l'autre.
+ */
+function AgentBadge({ name, icon }: { name: string; icon: string | null }) {
+  if (icon) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={icon}
+        alt=""
+        width={AGENT_PX}
+        height={AGENT_PX}
+        style={{ width: AGENT_PX, height: AGENT_PX, flexShrink: 0, borderRadius: 6 }}
+      />
+    );
+  }
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: AGENT_PX,
+        height: AGENT_PX,
+        flexShrink: 0,
+        borderRadius: 6,
+        backgroundColor: OG.category,
+        fontFamily: MONO,
+        fontSize: 15,
+        color: OG.subtle,
+      }}
+    >
+      {name.slice(0, 3).toUpperCase()}
+    </div>
+  );
 }
 
 /** Un joueur du scoreboard, chiffres déjà arrondis à l'affichage. */
 export function ScoreboardRow({
   name,
-  agent,
+  agents,
+  agentWidth,
   kda,
   acs,
   rating,
 }: {
   name: string;
-  agent: string;
+  /** Agents joués, du plus joué au moins joué, avec leur icône si elle a pu être chargée. */
+  agents: readonly { name: string; icon: string | null }[];
+  agentWidth: number;
   kda: string;
   acs: string;
   rating: string;
 }) {
-  return <SbLine tone="body" name={name} agent={agent} kda={kda} acs={acs} rating={rating} />;
+  return (
+    <SbLine
+      tone="body"
+      name={name}
+      agentWidth={agentWidth}
+      agent={agents.slice(0, AGENTS_MAX).map((a) => (
+        <AgentBadge key={a.name} name={a.name} icon={a.icon} />
+      ))}
+      kda={kda}
+      acs={acs}
+      rating={rating}
+    />
+  );
 }
 
 /**
