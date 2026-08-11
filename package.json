@@ -1,6 +1,6 @@
 {
   "name": "the-hub-website",
-  "version": "1.22.0",
+  "version": "1.23.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,7 +22,8 @@
     "db:seed:formats": "tsx prisma/seed-formats.ts",
     "db:sync:tournaments": "node scripts/sync-tournament-statuses.mjs",
     "images:prune": "node scripts/prune-orphan-images.mjs",
-    "ratings:recalibrate": "node scripts/recalibrate-ratings.mjs"
+    "ratings:recalibrate": "node scripts/recalibrate-ratings.mjs",
+    "db:seed:fixtures": "tsx prisma/seed-fixtures.ts"
   },
   "overrides": {
     "sharp": "^0.35.3",

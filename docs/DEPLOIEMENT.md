@@ -272,6 +272,8 @@ cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
 
   Les scripts d'amorçage (`seed-*`) restent en TypeScript et ne sont
   volontairement **pas** livrés : ce sont des données de démonstration.
+  `seed-fixtures.ts` en fait partie — c'est un jeu de cas limites destiné
+  à la CI et au développement, jamais à la production.
 
 - **Images orphelines** : avant la correction du finding RGPD-01 (v1.15.0), une
   suppression ne retirait que la ligne en base et laissait le fichier sur le
