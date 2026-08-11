@@ -29,6 +29,11 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "player-saved": { title: "Joueur enregistré", message: "La fiche joueur a été mise à jour." },
   "left-team": { title: "Équipe quittée", message: "Tu as quitté ton équipe." },
   "riot-saved": { title: "Riot ID enregistré", message: "Ton compte Valorant est bien lié." },
+  // Inscription d'un coach ou d'un manager, qui la termine sans lier de Riot ID.
+  "onboarding-done": {
+    title: "Bienvenue",
+    message: "Ton compte est prêt. Tu peux lier un Riot ID à tout moment depuis tes paramètres.",
+  },
   "fiche-claimed": {
     title: "Fiche récupérée",
     message: "Tes stats et tes équipes des tournois déjà archivés sont sur ton profil.",

@@ -2,6 +2,7 @@
 // page /lft. Isolée de Prisma et du rendu pour être testable directement.
 
 import { VALORANT_ROLES, type ValorantRoleKey } from "@/lib/roles";
+import { ACCOUNT_TYPES, type AccountTypeKey } from "@/lib/account-types";
 
 export type LftState = { lft: boolean; lftSince: Date | null };
 
@@ -103,7 +104,18 @@ export function normalizeLftSearch(raw: string | undefined): string | undefined 
 
 // --- Agrégat ---------------------------------------------------------------
 
+/**
+ * Ne retient un type de compte que s'il existe. `undefined` vaut « tous »,
+ * plutôt qu'un filtre qui ne renverrait rien.
+ */
+export function normalizeAccountType(raw: string | undefined): AccountTypeKey | undefined {
+  return (ACCOUNT_TYPES as readonly string[]).includes(raw ?? "")
+    ? (raw as AccountTypeKey)
+    : undefined;
+}
+
 export type LftFilters = {
+  type?: AccountTypeKey;
   role?: ValorantRoleKey;
   country?: string;
   age?: AgeBracketKey;

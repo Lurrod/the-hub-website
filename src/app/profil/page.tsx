@@ -9,7 +9,7 @@ import {
   toggleMyDiscordVisibilityAction,
 } from "@/app/profil/actions";
 import RiotIdForm from "@/components/riot-id-form";
-import ProfileFields from "@/components/profile-fields";
+import AccountTypeFields from "@/components/account-type-fields";
 import { NOINDEX } from "@/lib/metadata";
 
 export const metadata = { title: "Mon profil", ...NOINDEX };
@@ -175,27 +175,26 @@ export default async function ProfilePage() {
           />
         </section>
 
-        <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-            Informations
-          </h2>
-          <form action={updateMyProfileAction} className="grid gap-4">
-            <ProfileFields
-              values={{
-                pseudo: player.pseudo,
-                nationality,
-                valorantRole: player.valorantRole ?? "",
-                birthdate: birthdateValue,
-                twitter: socials.twitter ?? "",
-                twitch: socials.twitch ?? "",
-                photo: player.photo,
-              }}
-            />
-            <button className="mt-1 justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
-              Enregistrer
-            </button>
-          </form>
-        </section>
+        {/* Le type de compte et les informations partagent le même formulaire :
+            le type commande l'affichage du rôle Valorant, les séparer ferait
+            enregistrer un rôle qui n'est plus à l'écran. */}
+        <form action={updateMyProfileAction} className="grid gap-6">
+          <AccountTypeFields
+            defaultType={player.accountType}
+            values={{
+              pseudo: player.pseudo,
+              nationality,
+              valorantRole: player.valorantRole ?? "",
+              birthdate: birthdateValue,
+              twitter: socials.twitter ?? "",
+              twitch: socials.twitch ?? "",
+              photo: player.photo,
+            }}
+          />
+          <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+            Enregistrer
+          </button>
+        </form>
       </div>
     </main>
   );

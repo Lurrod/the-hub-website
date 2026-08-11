@@ -108,6 +108,10 @@ model Team {
   updatedAt   DateTime     @updatedAt
 
   @@index([region])
+  // Créé par la migration 20260805180000_team_lfp mais jamais déclaré ici :
+  // le schéma et la base avaient divergé, et la migration suivante proposait
+  // de supprimer l'index. Il sert la page LFP, qui filtre sur ce drapeau.
+  @@index([lfp])
 }
 
 /**
@@ -138,6 +142,15 @@ enum MembershipRole {
   MANAGER
 }
 
+/// Ce que la personne vient faire sur le site, déclaré à l'inscription.
+/// Distinct de `MembershipRole`, qui dit le rôle tenu dans une équipe donnée :
+/// on peut se déclarer coach et rejoindre une équipe comme joueur.
+enum AccountType {
+  JOUEUR
+  COACH
+  MANAGER
+}
+
 model Player {
   id          String           @id @default(cuid())
   pseudo      String
@@ -153,6 +166,12 @@ model Player {
   region      String?
   valorantRole ValorantRole?
   birthdate    DateTime?
+  accountType  AccountType      @default(JOUEUR)
+  /// Fin de l'inscription. C'était le Riot ID qui en tenait lieu ; il est
+  /// devenu facultatif pour un coach ou un manager, qui n'ont pas forcément
+  /// de compte de jeu à lier. Les fiches inscrites avant ce champ restent
+  /// reconnues par leur `puuid`, d'où l'absence de reprise de données.
+  onboardedAt  DateTime?
   lft          Boolean          @default(false)
   lftSince     DateTime?
   /// Le Discord du compte lié s'affiche d'office sur la fiche publique ; ce

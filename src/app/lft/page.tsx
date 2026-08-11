@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listLftPlayers, listLftCountries } from "@/lib/data/players";
 import { listLfpTeams } from "@/lib/data/teams";
 import {
+  normalizeAccountType,
   normalizeLftRole,
   normalizeLftCountry,
   normalizeAgeBracket,
@@ -35,6 +36,7 @@ export const metadata = pageMetadata({
 
 type Params = {
   vue?: string;
+  type?: string;
   role?: string;
   country?: string;
   age?: string;
@@ -97,6 +99,7 @@ async function LftView({ raw, page }: { raw: Params; page: number }) {
   // déclarés) avant d'interroger la base.
   const countries = await listLftCountries();
   const filters: LftFilters = {
+    type: normalizeAccountType(raw.type),
     role: normalizeLftRole(raw.role),
     country: normalizeLftCountry(raw.country, countries),
     age: normalizeAgeBracket(raw.age),
@@ -120,7 +123,7 @@ async function LftView({ raw, page }: { raw: Params; page: number }) {
 
       {players.length === 0 ? (
         <p className="text-sm text-[var(--text-muted)]">
-          Aucun joueur en recherche d&apos;équipe pour ces filtres.
+          Personne en recherche d&apos;équipe pour ces filtres.
         </p>
       ) : (
         <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -133,6 +136,7 @@ async function LftView({ raw, page }: { raw: Params; page: number }) {
                 photo: p.photo,
                 nationality: p.nationality,
                 valorantRole: p.valorantRole,
+                accountType: p.accountType,
               }}
             />
           ))}
@@ -142,6 +146,7 @@ async function LftView({ raw, page }: { raw: Params; page: number }) {
       <Pagination
         basePath="/lft"
         params={{
+          type: filters.type,
           role: filters.role,
           country: filters.country,
           age: filters.age,
