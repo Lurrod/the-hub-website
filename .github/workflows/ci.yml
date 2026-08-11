@@ -1,14 +1,43 @@
 name: CI
 
-# Contrôles exécutés sur chaque push et chaque pull request.
+# Contrôles exécutés sur chaque pull request, et sur `main` après un merge.
+#
+# `push` était branché sur toutes les branches : chaque poussée sur une branche
+# de PR déclenchait donc DEUX runs identiques, l'un pour le push, l'autre pour
+# la PR. Coût doublé, et deux fois plus d'occasions de tomber sur un check-run
+# fantôme — un `e2e` est resté bloqué en `in_progress` le 11 août alors que son
+# run était terminé, figeant la vue de la PR. Une branche est désormais
+# couverte par sa PR ; `main` l'est par le push qui suit le merge.
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
+
+# Une nouvelle poussée rend le run précédent caduc : l'annuler libère le runner
+# au lieu de faire la queue derrière un résultat que personne ne lira.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   checks:
     runs-on: ubuntu-latest
+    # Postgres sert uniquement de base d'ombre à la vérification de dérive :
+    # `prisma migrate diff` y rejoue les migrations pour les comparer au
+    # schéma. Aucune donnée du site n'y transite.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: drift
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +64,19 @@ jobs:
 
       - name: Vérification des types
         run: npx tsc --noEmit
+
+      - name: Dérive entre le schéma et les migrations
+        # `Team_lfp_idx` a vécu six jours en base sans être déclaré dans le
+        # schéma : créé par 20260805180000_team_lfp, jamais repris dans
+        # schema.prisma. Personne ne l'a vu, et la migration suivante proposait
+        # de le supprimer — en production, sur un index qui sert la page LFP.
+        #
+        # `--exit-code` renvoie 2 quand un écart subsiste : la CI échoue tant
+        # que les migrations ne reconstruisent pas exactement le schéma.
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/drift
+        run: |
+          npx prisma migrate diff             --from-migrations prisma/migrations             --to-schema-datamodel prisma/schema.prisma             --shadow-database-url "$DATABASE_URL"             --exit-code
 
       - name: Tests unitaires et couverture
         # Les seuils sont dans vitest.config.ts et font office de cliquet :
@@ -117,6 +159,16 @@ jobs:
         # supprime les autres (--prune) pour reproduire l'état de la base de
         # développement sur laquelle la suite est vérifiée.
         run: npm run db:seed:formats -- --prune
+
+      - name: Jeu de fixtures
+        # Après le prune, qui ne garde que les tournois qu'il déclare : lancé
+        # avant, ce seed serait effacé.
+        #
+        # Il apporte ce qu'aucun autre ne produit : des `PlayerGameStat`. Sans
+        # eux, aucun match de la CI n'avait de scoreboard, et le scoreboard,
+        # le sélecteur de cartes de partage, l'onglet cumulé et le rating
+        # n'étaient jamais rendus — donc jamais testés de bout en bout.
+        run: npm run db:seed:fixtures
 
       - name: Build de production
         run: npm run build
