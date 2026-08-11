@@ -26,10 +26,13 @@ export async function GET() {
   const user = await getSessionUser();
   if (!user) return redirectTo("/api/auth/signin");
 
-  // Le cookie n'est posé que si le Riot ID est réellement lié : sinon il
-  // suffirait de visiter cette URL pour sauter l'onboarding.
+  // Le cookie n'est posé que si l'inscription a bien été menée à son terme :
+  // sinon il suffirait de visiter cette URL pour la sauter. `onboardedAt`
+  // n'est écrit que par l'action d'inscription ; le `puuid` reste accepté pour
+  // les fiches créées avant ce champ, qui n'ont pas à repasser par le
+  // formulaire.
   const player = await getPlayerByUserId(user.id);
-  if (!player?.puuid) return redirectTo("/onboarding");
+  if (!player?.onboardedAt && !player?.puuid) return redirectTo("/onboarding");
 
   const res = redirectTo("/");
   res.cookies.set("onboarded", "1", {

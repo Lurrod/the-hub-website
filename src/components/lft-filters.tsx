@@ -2,6 +2,7 @@ import Link from "next/link";
 import Segmented from "@/components/segmented";
 import ClearableSearch from "@/components/clearable-search";
 import { VALORANT_ROLES, ROLE_LABELS, ROLE_ICONS } from "@/lib/roles";
+import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS } from "@/lib/account-types";
 import {
   AGE_BRACKETS,
   TEAM_STATUSES,
@@ -28,7 +29,7 @@ export default function LftFilters({
   countries: readonly string[];
   total: number;
 }) {
-  const { role, country, age, team, q } = filters;
+  const { type, role, country, age, team, q } = filters;
 
   return (
     <div className="grid gap-3">
@@ -73,6 +74,18 @@ export default function LftFilters({
           ariaLabel="Rechercher un pseudo"
           className="min-w-0 flex-1 sm:max-w-56"
         />
+
+        <label className="sr-only" htmlFor="lft-type">
+          Type de compte
+        </label>
+        <select id="lft-type" name="type" defaultValue={type ?? ""} className="field">
+          <option value="">Tous les profils</option>
+          {ACCOUNT_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {ACCOUNT_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </select>
 
         <label className="sr-only" htmlFor="lft-country">
           Pays
@@ -123,7 +136,7 @@ export default function LftFilters({
         )}
 
         <span className="ml-auto shrink-0 text-xs text-[var(--text-muted)]">
-          {total} joueur{total > 1 ? "s" : ""}
+          {total} profil{total > 1 ? "s" : ""}
         </span>
       </form>
     </div>

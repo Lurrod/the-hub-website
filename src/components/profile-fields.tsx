@@ -22,7 +22,18 @@ export type ProfileFieldValues = {
  * propre formulaire et sa propre server action (paramètres et onboarding
  * n'enregistrent pas la même chose).
  */
-export default function ProfileFields({ values }: { values: ProfileFieldValues }) {
+export default function ProfileFields({
+  values,
+  showValorantRole = true,
+}: {
+  values: ProfileFieldValues;
+  /**
+   * Le rôle Valorant ne concerne que les joueurs. Masqué, le champ n'est pas
+   * seulement caché : il n'est pas rendu, donc rien n'est envoyé — un coach ne
+   * doit pas conserver un rôle choisi avant de changer de type de compte.
+   */
+  showValorantRole?: boolean;
+}) {
   return (
     <>
       <label className={lbl}>
@@ -40,17 +51,19 @@ export default function ProfileFields({ values }: { values: ProfileFieldValues }
         <CountrySelect name="nationality" defaultValue={values.nationality} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className={lbl}>
-          Rôle principal
-          <select name="valorantRole" defaultValue={values.valorantRole} className={input}>
-            <option value="">Aucun</option>
-            {VALORANT_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABELS[r]}
-              </option>
-            ))}
-          </select>
-        </label>
+        {showValorantRole && (
+          <label className={lbl}>
+            Rôle principal
+            <select name="valorantRole" defaultValue={values.valorantRole} className={input}>
+              <option value="">Aucun</option>
+              {VALORANT_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {ROLE_LABELS[r]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className={lbl}>
           Date de naissance
           <input name="birthdate" type="date" defaultValue={values.birthdate} className={input} />

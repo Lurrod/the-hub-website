@@ -1,15 +1,11 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { ensurePlayerForUser } from "@/lib/data/players";
-import ProfileFields from "@/components/profile-fields";
+import AccountTypeFields from "@/components/account-type-fields";
 import { submitOnboarding } from "@/app/onboarding/actions";
 import { NOINDEX } from "@/lib/metadata";
 
 export const metadata = { title: "Bienvenue", ...NOINDEX };
-
-const input =
-  "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-[var(--accent)]";
-const lbl = "grid gap-1 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]";
 
 export default async function OnboardingPage() {
   const session = await auth();
@@ -24,7 +20,10 @@ export default async function OnboardingPage() {
 
   // Riot ID déjà lié : on passe par la route qui pose le cookie. Une page ne
   // peut pas écrire de cookie elle-même.
-  if (player.puuid) redirect("/api/onboarded");
+  // Inscription déjà terminée : on repasse par la route qui pose le cookie,
+  // une page ne pouvant pas en écrire. Le `puuid` vaut marqueur pour les
+  // fiches créées avant `onboardedAt`, qui n'ont donc pas à repasser ici.
+  if (player.onboardedAt || player.puuid) redirect("/api/onboarded");
 
   const socials = (player.socials ?? {}) as { twitter?: string; twitch?: string };
   const birthdateValue = player.birthdate
@@ -37,47 +36,24 @@ export default async function OnboardingPage() {
         Bienvenue
       </h1>
       <p className="mt-1 text-xs text-[var(--text-muted)]">
-        Complète ton profil joueur pour accéder au site. Seul le Riot ID est obligatoire.
+        Complète ton profil pour accéder au site. Dis-nous d&apos;abord ce que tu viens y faire : le
+        reste s&apos;adapte.
       </p>
 
       <form action={submitOnboarding} className="mt-6 grid gap-6">
-        <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-            Compte Valorant
-          </h2>
-          <p className="mb-4 text-xs text-[var(--text-muted)]">
-            Ton Riot ID sert à relier tes matchs et tes statistiques. On vérifie qu&apos;il existe
-            auprès de Riot.
-          </p>
-          <label className={lbl}>
-            Riot ID
-            <input
-              name="riotId"
-              required
-              placeholder="Nom#Tag (ex. Hub Player#EUW1)"
-              className={input}
-            />
-          </label>
-        </section>
-
-        <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-            Informations
-          </h2>
-          <div className="grid gap-4">
-            <ProfileFields
-              values={{
-                pseudo: player.pseudo,
-                nationality: player.nationality ?? "",
-                valorantRole: player.valorantRole ?? "",
-                birthdate: birthdateValue,
-                twitter: socials.twitter ?? "",
-                twitch: socials.twitch ?? "",
-                photo: player.photo,
-              }}
-            />
-          </div>
-        </section>
+        <AccountTypeFields
+          withRiotId
+          defaultType={player.accountType}
+          values={{
+            pseudo: player.pseudo,
+            nationality: player.nationality ?? "",
+            valorantRole: player.valorantRole ?? "",
+            birthdate: birthdateValue,
+            twitter: socials.twitter ?? "",
+            twitch: socials.twitch ?? "",
+            photo: player.photo,
+          }}
+        />
 
         <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">

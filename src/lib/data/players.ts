@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
 import { rankTopAgentsByPlayer } from "@/lib/agents";
 import type { PlayerInput } from "@/lib/validation/player";
-import type { MembershipRole, ValorantRole } from "@prisma/client";
+import type { AccountType, MembershipRole, ValorantRole } from "@prisma/client";
 import type { RiotAccount } from "@/lib/henrikdev";
 import type { LftState } from "@/lib/lft";
+import type { AccountTypeKey } from "@/lib/account-types";
 import { clampPage, pageOffset } from "@/lib/pagination";
 
 export function listPlayers() {
@@ -22,6 +23,8 @@ export async function listLftCountries(): Promise<string[]> {
 }
 
 export type LftQuery = {
+  /** Type de compte déclaré : un coach libre se cherche comme un joueur. */
+  type?: string;
   role?: string;
   country?: string;
   /** Intervalle de dates de naissance dérivé d'une tranche d'âge. */
@@ -43,6 +46,7 @@ export const LFT_PER_PAGE = 24;
 export async function listLftPlayers(filters?: LftQuery, page = 1) {
   const where = {
     lft: true,
+    ...(filters?.type ? { accountType: filters.type as AccountType } : {}),
     ...(filters?.role ? { valorantRole: filters.role as ValorantRole } : {}),
     ...(filters?.country ? { nationality: filters.country } : {}),
     ...(filters?.birthdate ? { birthdate: filters.birthdate } : {}),
@@ -89,6 +93,26 @@ export function setPlayerLft(playerId: string, state: LftState) {
   return db.player.update({
     where: { id: playerId },
     data: { lft: state.lft, lftSince: state.lftSince },
+  });
+}
+
+/** Type de compte déclaré par la personne : joueur, coach ou manager. */
+export function setPlayerAccountType(playerId: string, accountType: AccountTypeKey) {
+  return db.player.update({ where: { id: playerId }, data: { accountType } });
+}
+
+/**
+ * Marque l'inscription comme terminée.
+ *
+ * C'est le seul signal qui vaille pour un coach ou un manager, dont le Riot ID
+ * est facultatif : sans lui, ils seraient renvoyés indéfiniment vers
+ * `/onboarding`. Idempotent — la date n'est posée qu'une fois, pour rester
+ * celle de la première inscription.
+ */
+export function finishOnboarding(playerId: string) {
+  return db.player.updateMany({
+    where: { id: playerId, onboardedAt: null },
+    data: { onboardedAt: new Date() },
   });
 }
 

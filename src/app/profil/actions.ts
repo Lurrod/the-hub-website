@@ -13,7 +13,9 @@ import {
   setPlayerRiotAccount,
   setPlayerLft,
   setPlayerShowDiscord,
+  setPlayerAccountType,
 } from "@/lib/data/players";
+import { parseAccountType } from "@/lib/account-types";
 import { nextLftState } from "@/lib/lft";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
@@ -52,6 +54,7 @@ export async function updateMyProfileAction(formData: FormData) {
   const data = parsed.data;
 
   await updatePlayer(player.id, data);
+  await setPlayerAccountType(player.id, parseAccountType(formData.get("accountType")));
   await storePlayerPhotoFromForm(formData, player.id);
   revalidatePath("/profil");
   revalidatePath(`/joueurs/${player.id}`);
