@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Segmented from "@/components/segmented";
 import Link from "next/link";
 import AgentIcon from "@/components/agent-icon";
+import { seriesScore } from "@/lib/match-stats-core";
+import { aggregateSeries } from "@/lib/scoreboard-series";
 
 export type RoundEntry = { w: "A" | "B"; o: string };
 
@@ -184,6 +186,62 @@ function RoundTimeline({
   );
 }
 
+/**
+ * En-tête de l'onglet cumulé : les deux équipes, le score en maps, et le
+ * détail des maps retenues.
+ *
+ * Il remplace `RoundTimeline`, qui n'a pas de sens ici : les rounds
+ * appartiennent à une map, pas à une rencontre.
+ */
+function SeriesHeader({
+  maps,
+  teamAName,
+  teamBName,
+  teamATag,
+  teamBTag,
+  teamALogo,
+  teamBLogo,
+}: {
+  maps: ScoreboardMap[];
+  teamAName: string;
+  teamBName: string;
+  teamATag: string;
+  teamBTag: string;
+  teamALogo: string | null;
+  teamBLogo: string | null;
+}) {
+  const { scoreA, scoreB } = seriesScore(maps);
+  return (
+    <div className="mb-4">
+      <div className="mb-2 flex items-center justify-center gap-3 text-sm">
+        <span className="flex max-w-[40%] items-center justify-end gap-2 text-white">
+          <span className="truncate">{teamAName}</span>
+          <Crest url={teamALogo} tag={teamATag} size="h-6 w-6" />
+        </span>
+        <span className="stat shrink-0 text-lg font-semibold text-white">
+          <span className={scoreA > scoreB ? "text-[var(--accent)]" : ""}>{scoreA}</span>
+          <span className="mx-1.5 text-[var(--text-subtle)]">-</span>
+          <span className={scoreB > scoreA ? "text-[var(--accent)]" : ""}>{scoreB}</span>
+        </span>
+        <span className="flex max-w-[40%] items-center gap-2 text-white">
+          <Crest url={teamBLogo} tag={teamBTag} size="h-6 w-6" />
+          <span className="truncate">{teamBName}</span>
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center text-[11px] text-[var(--text-muted)]">
+        <span>{maps.length} maps</span>
+        {maps.map((m) => (
+          <span key={m.id} className="flex items-center">
+            <span className="dot-sep">·</span>
+            <span className="stat">{`${m.mapName} ${m.scoreA}-${m.scoreB}`}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const HEAD =
   "px-1.5 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";
 const CELL = "stat px-1.5 py-1.5 text-center text-sm text-white";
@@ -194,13 +252,39 @@ function Diff({ value }: { value: number }) {
   return <span className={cls}>{value > 0 ? `+${value}` : value}</span>;
 }
 
-function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
+/**
+ * Ligne affichable : celle d'une map, ou celle cumulée sur la rencontre, qui
+ * porte en plus la liste des agents joués.
+ */
+type DisplayRow = ScoreboardPlayerRow & { agents?: string[] };
+
+/** Côté d'une icône d'agent et écart entre deux icônes, en pixels. */
+const AGENT_PX = 24;
+const AGENT_GAP = 2;
+
+/**
+ * Nombre d'icônes à prévoir dans la colonne d'agents : un seul sur une map,
+ * autant que d'agents joués sur l'onglet cumulé.
+ *
+ * Il est calculé sur les deux équipes à la fois, et non bloc par bloc : les
+ * deux tableaux sont empilés, leurs colonnes doivent tomber en face.
+ */
+function agentSlots(rows: readonly DisplayRow[]): number {
+  return Math.max(1, ...rows.map((r) => r.agents?.length ?? 1));
+}
+
+function TeamBlock({ rows, slots }: { rows: DisplayRow[]; slots: number }) {
   const sorted = [...rows].sort((a, b) => b.rating - a.rating);
+  const agentWidth = slots * AGENT_PX + (slots - 1) * AGENT_GAP + 8;
+
   return (
     <div className="scroll-x scroll-x-on-bg">
-      <table className="w-full min-w-[720px] table-fixed border-collapse">
+      <table
+        className="w-full table-fixed border-collapse"
+        style={{ minWidth: 720 + agentWidth - 32 }}
+      >
         <colgroup>
-          <col className="w-8" />
+          <col style={{ width: agentWidth }} />
           <col />
           {Array.from({ length: 11 }).map((_, i) => (
             <col key={i} className="w-[48px]" />
@@ -257,8 +341,12 @@ function TeamBlock({ rows }: { rows: ScoreboardPlayerRow[] }) {
               key={r.id}
               className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--table-row-hover)]"
             >
-              <td className="w-7 py-1.5 pl-2">
-                <AgentIcon agent={r.agent} />
+              <td className="py-1.5 pl-2">
+                <span className="flex items-center gap-0.5">
+                  {(r.agents ?? [r.agent]).map((agent, i) => (
+                    <AgentIcon key={agent ?? `sans-agent-${i}`} agent={agent} />
+                  ))}
+                </span>
               </td>
               <td className="max-w-[130px] truncate py-1.5 pl-2 pr-2 text-left text-sm">
                 {r.playerId ? (
@@ -316,7 +404,16 @@ export default function MatchScoreboard({
   teamALogo: string | null;
   teamBLogo: string | null;
 }) {
-  const [active, setActive] = useState(0);
+  // L'onglet cumulé n'a d'intérêt qu'à partir de deux maps réellement
+  // stattées : sur une seule, il répéterait l'onglet de cette map.
+  const stattedMaps = maps.filter((m) => m.stats.length > 0);
+  const canAggregate = stattedMaps.length > 1;
+
+  // `"all"` désigne l'onglet cumulé sur toute la rencontre ; les autres
+  // valeurs sont l'indice de la map affichée. C'est le cumul qui s'ouvre par
+  // défaut : sur une rencontre en plusieurs maps, c'est la lecture d'ensemble
+  // qu'on cherche d'abord, le détail d'une map vient ensuite.
+  const [active, setActive] = useState<number | "all">(canAggregate ? "all" : 0);
   // Le panneau doit repasser par « fermé » avant de se rouvrir, sinon rien ne
   // transitionne au changement de carte.
   //
@@ -345,7 +442,13 @@ export default function MatchScoreboard({
   }, [active]);
 
   if (maps.length === 0) return null;
-  const map = maps[Math.min(active, maps.length - 1)];
+
+  const showAll = active === "all" && canAggregate;
+
+  const map = showAll ? null : maps[Math.min(active === "all" ? 0 : active, maps.length - 1)];
+  const rows: DisplayRow[] = showAll
+    ? aggregateSeries(stattedMaps.map((m) => m.stats))
+    : (map?.stats ?? []);
 
   return (
     // overflow-hidden : le panneau entre depuis 100px plus bas, il doit être
@@ -354,6 +457,17 @@ export default function MatchScoreboard({
       {maps.length > 1 && (
         <div className="border-b border-[var(--border)] px-2">
           <Segmented activeKey={String(active)} variant="underline">
+            {canAggregate && (
+              <button
+                type="button"
+                onClick={() => setActive("all")}
+                role="tab"
+                aria-selected={showAll}
+                className="t-tab shrink-0"
+              >
+                Toutes les maps
+              </button>
+            )}
             {maps.map((m, i) => (
               <button
                 key={m.id}
@@ -371,23 +485,35 @@ export default function MatchScoreboard({
       )}
 
       <div ref={panelRef} data-open="true" className="t-panel-slide p-4">
-        <RoundTimeline
-          rounds={map.rounds}
-          teamAName={teamAName}
-          teamBName={teamBName}
-          teamATag={teamATag}
-          teamBTag={teamBTag}
-          teamALogo={teamALogo}
-          teamBLogo={teamBLogo}
-          scoreA={map.scoreA}
-          scoreB={map.scoreB}
-          durationSec={map.durationSec}
-        />
+        {map ? (
+          <RoundTimeline
+            rounds={map.rounds}
+            teamAName={teamAName}
+            teamBName={teamBName}
+            teamATag={teamATag}
+            teamBTag={teamBTag}
+            teamALogo={teamALogo}
+            teamBLogo={teamBLogo}
+            scoreA={map.scoreA}
+            scoreB={map.scoreB}
+            durationSec={map.durationSec}
+          />
+        ) : (
+          <SeriesHeader
+            maps={stattedMaps}
+            teamAName={teamAName}
+            teamBName={teamBName}
+            teamATag={teamATag}
+            teamBTag={teamBTag}
+            teamALogo={teamALogo}
+            teamBLogo={teamBLogo}
+          />
+        )}
 
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2">
-          <TeamBlock rows={map.stats.filter((s) => s.teamSide === "A")} />
+          <TeamBlock rows={rows.filter((s) => s.teamSide === "A")} slots={agentSlots(rows)} />
           <div className="my-2 h-px bg-[var(--border)]" />
-          <TeamBlock rows={map.stats.filter((s) => s.teamSide === "B")} />
+          <TeamBlock rows={rows.filter((s) => s.teamSide === "B")} slots={agentSlots(rows)} />
         </div>
       </div>
     </div>
