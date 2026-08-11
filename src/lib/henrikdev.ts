@@ -1,3 +1,5 @@
+import { logger, describeError } from "@/lib/logger";
+
 export type RiotIdErrorCode = "NOT_FOUND" | "RATE_LIMITED" | "API_ERROR" | "TAKEN";
 
 export class RiotIdError extends Error {
@@ -25,7 +27,11 @@ export async function verifyRiotId(name: string, tag: string): Promise<RiotAccou
   let res: Response;
   try {
     res = await fetch(url, { headers: { Authorization: key }, signal: controller.signal });
-  } catch {
+  } catch (e) {
+    // Le type `API_ERROR` suffit à l'appelant, mais pas à qui doit comprendre
+    // une panne : un DNS injoignable, un dépassement de délai et une erreur TLS
+    // s'y confondaient sans laisser la moindre trace.
+    logger.warn("henrikdev.unreachable", { url, ...describeError(e) });
     throw new RiotIdError("API_ERROR");
   } finally {
     clearTimeout(timeout);
@@ -143,7 +149,11 @@ export async function getPlayerCustomMatches(
   let res: Response;
   try {
     res = await fetch(url, { headers: { Authorization: key }, signal: controller.signal });
-  } catch {
+  } catch (e) {
+    // Le type `API_ERROR` suffit à l'appelant, mais pas à qui doit comprendre
+    // une panne : un DNS injoignable, un dépassement de délai et une erreur TLS
+    // s'y confondaient sans laisser la moindre trace.
+    logger.warn("henrikdev.unreachable", { url, ...describeError(e) });
     throw new RiotIdError("API_ERROR");
   } finally {
     clearTimeout(timeout);
@@ -171,7 +181,11 @@ export async function getCustomMatchById(region: string, matchId: string): Promi
   let res: Response;
   try {
     res = await fetch(url, { headers: { Authorization: key }, signal: controller.signal });
-  } catch {
+  } catch (e) {
+    // Le type `API_ERROR` suffit à l'appelant, mais pas à qui doit comprendre
+    // une panne : un DNS injoignable, un dépassement de délai et une erreur TLS
+    // s'y confondaient sans laisser la moindre trace.
+    logger.warn("henrikdev.unreachable", { url, ...describeError(e) });
     throw new RiotIdError("API_ERROR");
   } finally {
     clearTimeout(timeout);

@@ -73,12 +73,33 @@ export function agentShares(rows: readonly PlayerStatRow[]): AgentShare[] {
   const played = rows.filter((r) => r.agent);
   const counts = new Map<string, number>();
   for (const r of played) counts.set(r.agent!, (counts.get(r.agent!) ?? 0) + 1);
-  return [...counts.entries()]
-    .map(([agent, maps]) => ({
-      agent,
-      maps,
-      pct: played.length > 0 ? Math.round((maps / played.length) * 100) : 0,
-    }))
+  const total = played.length;
+  if (total === 0) return [];
+
+  // Méthode du plus fort reste : chaque part est d'abord tronquée, puis les
+  // points qui manquent pour atteindre 100 vont aux plus gros restes.
+  //
+  // Arrondir chaque part indépendamment ne ferme pas le disque : neuf agents
+  // sur quarante maps donnaient 102 %, quatre parts à 12,5 % ayant toutes été
+  // arrondies vers le haut. Le total est ici exact par construction.
+  const parts = [...counts.entries()].map(([agent, maps]) => {
+    const exact = (maps / total) * 100;
+    const base = Math.floor(exact);
+    return { agent, maps, pct: base, reste: exact - base };
+  });
+
+  let restants = 100 - parts.reduce((n, p) => n + p.pct, 0);
+  const parReste = [...parts].sort(
+    (a, b) => b.reste - a.reste || b.maps - a.maps || a.agent.localeCompare(b.agent)
+  );
+  for (const p of parReste) {
+    if (restants <= 0) break;
+    p.pct += 1;
+    restants -= 1;
+  }
+
+  return parts
+    .map(({ agent, maps, pct }) => ({ agent, maps, pct }))
     .sort((a, b) => b.maps - a.maps || a.agent.localeCompare(b.agent));
 }
 
