@@ -32,26 +32,26 @@ test.describe("en-tête de fiche joueur", () => {
   test("les textes sous le pseudo sont à 14 px, sans toucher aux icônes", async ({ page }) => {
     await page.goto("/joueurs/fx-a0");
 
-    const mesures = await page.evaluate(() => {
-      const meta = document.querySelector("h1")!.parentElement!.nextElementSibling!;
-      const taille = (el: Element | null) => (el ? getComputedStyle(el).fontSize : null);
-      const boite = (el: Element | null) => {
-        if (!el) return null;
-        const r = el.getBoundingClientRect();
-        return `${Math.round(r.width)}x${Math.round(r.height)}`;
-      };
-      return {
-        equipe: taille(meta.querySelector("a span.text-white")),
-        age: taille(meta.querySelector("span.stat")),
-        monogramme: boite(meta.querySelector("span.monogram")),
-        roleIcone: boite(meta.querySelector("img.h-4")),
-      };
-    });
+    const meta = page.locator("h1").locator("xpath=../following-sibling::div[1]");
+    const equipe = meta.locator("a span.text-white");
+    const age = meta.locator("span.stat");
+    const monogramme = meta.locator("span.monogram");
+    const roleIcone = meta.locator("img.h-4");
 
-    expect(mesures.equipe).toBe("14px");
-    expect(mesures.age).toBe("14px");
+    // `toBeVisible` patiente que la mise en page soit posée. Sans cette
+    // attente, la mesure pouvait tomber avant l'application des feuilles et
+    // lire une boîte vide — ce qui a fait échouer ce test en CI, sur une
+    // machine plus lente que le poste de développement.
+    await expect(monogramme).toBeVisible();
+    await expect(roleIcone).toBeVisible();
+
+    await expect(equipe).toHaveCSS("font-size", "14px");
+    await expect(age).toHaveCSS("font-size", "14px");
+
     // Les pastilles gardent leur gabarit : seul le texte grandit.
-    expect(mesures.monogramme).toBe("16x16");
-    expect(mesures.roleIcone).toBe("16x16");
+    for (const icone of [monogramme, roleIcone]) {
+      await expect(icone).toHaveCSS("width", "16px");
+      await expect(icone).toHaveCSS("height", "16px");
+    }
   });
 });
