@@ -197,10 +197,32 @@ export function computeImpact(
 }
 
 /**
+ * Constante de recentrage du rating.
+ *
+ * HLTV 2.0 porte un terme constant de `+0.1587`, calibré sur Counter-Strike.
+ * Le portage Valorant en avait hérité une valeur de `-0.001`, ce qui tassait
+ * toute l'échelle : le joueur moyen sortait à 0,90, et un joueur à 46/40/22 —
+ * K/D positif, beaucoup d'assists — restait sous 1,00, ce qu'une échelle
+ * centrée sur 1 ne devrait jamais produire.
+ *
+ * La valeur ci-dessous est ajustée pour que la ligne de statistiques moyenne
+ * du site tombe exactement sur 1,00. Elle a été mesurée le 2026-08-11 sur les
+ * scoreboards en base.
+ *
+ * Elle se remesure avec `node scripts/recalibrate-ratings.mjs`, qui affiche la
+ * valeur qu'appellent les données du moment. Si l'écart devient sensible — le
+ * niveau moyen d'une base qui grossit peut dériver — il suffit de reporter la
+ * valeur ici, puis de relancer le script avec `--apply` pour recalculer les
+ * ratings déjà stockés.
+ */
+export const RATING_BASELINE = 0.099;
+
+/**
  * Rating 2.0 — portage de la formule HLTV 2.0 adaptée à Valorant utilisée sur
  * le site flhub (`services/rating.py`). Le coefficient ADR est rescalé de CS
- * (0.0032) à Valorant (0.00171) pour recentrer le joueur moyen autour de ~1.00.
- * Plancher à 0.01, jamais négatif ni nul.
+ * (0.0032) à Valorant (0.00171), l'ADR y étant environ deux fois plus élevé :
+ * le terme pèse ainsi autant dans les deux jeux. Le recentrage sur 1,00 est
+ * porté par `RATING_BASELINE`. Plancher à 0.01, jamais négatif ni nul.
  */
 export function computeRating(s: {
   rounds: number;
@@ -216,7 +238,12 @@ export function computeRating(s: {
   const apr = s.assists / s.rounds;
   const impact = 2.13 * kpr + 0.42 * apr - 0.41;
   const rating =
-    0.0073 * s.kastPct + 0.3591 * kpr - 0.5329 * dpr + 0.2372 * impact + 0.00171 * s.adr - 0.001;
+    0.0073 * s.kastPct +
+    0.3591 * kpr -
+    0.5329 * dpr +
+    0.2372 * impact +
+    0.00171 * s.adr +
+    RATING_BASELINE;
   return Math.round(Math.max(0.01, rating) * 100) / 100;
 }
 
