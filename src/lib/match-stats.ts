@@ -18,6 +18,7 @@ import {
   type Side,
 } from "@/lib/match-stats-core";
 import type { MatchMapImportInput } from "@/lib/validation/match";
+import { logger, describeError } from "@/lib/logger";
 
 const MATCH_THRESHOLD = 8;
 const MAX_PLAYER_QUERIES = 4;
@@ -150,11 +151,23 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
   }
 
   const byId = new Map<string, CustomMatch>();
-  for (const k of known.slice(0, MAX_PLAYER_QUERIES)) {
+  // Une interrogation qui échoue est simplement sautée — un joueur injoignable
+  // ne doit pas condamner l'import. Mais si TOUTES échouent, le résultat est
+  // un « NOT_FOUND » indiscernable d'un match qui n'existe pas : on compte les
+  // échecs pour pouvoir le dire.
+  const interrogations = known.slice(0, MAX_PLAYER_QUERIES);
+  let echecs = 0;
+  for (const k of interrogations) {
     let list: CustomMatch[] = [];
     try {
       list = await getPlayerCustomMatches(k.region, k.name, k.tag);
-    } catch {
+    } catch (e) {
+      echecs += 1;
+      logger.warn("match-stats.player_query_failed", {
+        matchId,
+        riotName: `${k.name}#${k.tag}`,
+        ...describeError(e),
+      });
       continue;
     }
     for (const m of list) if (m.matchId) byId.set(m.matchId, m);
@@ -176,6 +189,16 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
     match.date
   );
   if (series.length === 0) {
+    // Aucune interrogation n'a abouti : le match n'est pas « introuvable », on
+    // n'a simplement pas pu chercher. Sans cette distinction, une panne de
+    // l'API se lit comme un match inexistant, et on relance l'import en boucle
+    // en cherchant l'erreur du mauvais côté.
+    if (echecs > 0 && echecs === interrogations.length) {
+      logger.error("match-stats.all_queries_failed", {
+        matchId,
+        interrogations: interrogations.length,
+      });
+    }
     await setStatus(match.id, "NOT_FOUND");
     return "NOT_FOUND";
   }

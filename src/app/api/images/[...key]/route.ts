@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import { imageEtag, resolveUploadPath } from "@/lib/images";
+import { logger, describeError } from "@/lib/logger";
 
 // Une journée en cache navigateur, puis revalidation conditionnelle : passé ce
 // délai le client renvoie son ETag et reçoit un 304 vide tant que l'image n'a
@@ -41,7 +42,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ key: str
         ETag: etag,
       },
     });
-  } catch {
+  } catch (e) {
+    // Le `stat` juste au-dessus a réussi : le fichier existait il y a un
+    // instant et n'est plus lisible. C'est un incident de disque ou de
+    // permissions, pas une image absente — le 404 rendu au visiteur reste le
+    // bon comportement, mais il ne doit pas être la seule trace.
+    logger.error("images.unreadable", { key: key.join("/"), ...describeError(e) });
     return new Response("Not found", { status: 404 });
   }
 }
