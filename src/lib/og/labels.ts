@@ -89,13 +89,100 @@ export function mapDiffLabel(diff: number): string {
 
 const DIACRITICS = /[\u0300-\u036f]/g;
 
+/** Retire les accents sans toucher aux lettres qu'ils portent. */
+function deaccent(value: string): string {
+  return value.normalize("NFD").replace(DIACRITICS, "");
+}
+
+/**
+ * Nom du fichier propos\u00e9 au t\u00e9l\u00e9chargement d'une carte de partage.
+ *
+ * Les accents sont retir\u00e9s plut\u00f4t que remplac\u00e9s, sinon \u00ab \u00c9quipe \u00bb deviendrait
+ * \u00ab quipe \u00bb. Tout le reste de ce qui n'est pas alphanum\u00e9rique se replie en un
+ * tiret unique : c'est le seul jeu de caract\u00e8res qu'aucun syst\u00e8me de fichiers
+ * ne discute.
+ *
+ * @param parts segments \u00e0 encha\u00eener, par exemple `[nomA, "vs", nomB]`.
+ */
+export function shareCardFilename(parts: readonly string[]): string {
+  const slug = deaccent(parts.join(" "))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  // Un nom r\u00e9duit au seul pr\u00e9fixe reste un fichier valide : mieux vaut \u00e7a
+  // qu'un \u00ab -.png \u00bb quand le pseudo ne contient aucun caract\u00e8re latin.
+  return slug ? `the-hub-${slug}.png` : "the-hub.png";
+}
+
+/** Statistique d'un joueur sur une map, telle que stock\u00e9e en base. */
+export type MvpStat = {
+  pseudo: string | null;
+  riotName: string | null;
+  rating: number;
+  acs: number;
+};
+
+/**
+ * Meilleure performance de la rencontre : \u00ab Sh1n \u00b7 1.42 rating \u00b7 312 ACS \u00bb.
+ *
+ * Le comparateur est strict, donc \u00e0 \u00e9galit\u00e9 de rating c'est le premier nomm\u00e9
+ * qui reste \u2014 l'ordre des maps fait foi, sans d\u00e9partage arbitraire.
+ * Cha\u00eene vide quand aucun scoreboard n'a \u00e9t\u00e9 import\u00e9.
+ */
+export function mvpLabel(stats: readonly MvpStat[]): string {
+  if (stats.length === 0) return "";
+  const best = stats.reduce((a, b) => (b.rating > a.rating ? b : a));
+  // Le Riot ID prend le relais quand la ligne n'est rattach\u00e9e \u00e0 aucune fiche ;
+  // le tag apr\u00e8s \u00ab # \u00bb n'apporte rien sur une carte.
+  const name = best.pseudo ?? best.riotName?.split("#")[0] ?? "";
+  return `${name} \u00b7 ${best.rating.toFixed(2)} rating \u00b7 ${Math.round(best.acs)} ACS`;
+}
+
+/** Nombre d'agents montr\u00e9s sur une carte : au-del\u00e0, la ligne d\u00e9borde. */
+const AGENTS_SHOWN = 3;
+
+/** \u00ab Jett 41% \u00b7 Raze 33% \u00b7 Neon 12% \u00bb. Cha\u00eene vide sans agent renseign\u00e9. */
+export function agentsLabel(agents: readonly { agent: string; pct: number }[]): string {
+  return agents
+    .slice(0, AGENTS_SHOWN)
+    .map((a) => `${a.agent} ${Math.round(a.pct)}%`)
+    .join(" \u00b7 ");
+}
+
+/** Une case de la grille de chiffres : la valeur, et ce qu'elle mesure. */
+export type StatCellValue = { value: string; label: string };
+
+/**
+ * Les six chiffres de carri\u00e8re affich\u00e9s sur la carte d'un joueur, dans l'ordre
+ * de lecture. Grille vide tant qu'aucune map n'est enregistr\u00e9e : six z\u00e9ros
+ * d\u00e9criraient un joueur mauvais, l\u00e0 o\u00f9 la donn\u00e9e est simplement absente.
+ */
+export function statGridValues(overview: {
+  avgRating: number;
+  avgAcs: number;
+  kd: number;
+  avgKast: number;
+  avgHs: number;
+  maps: number;
+}): StatCellValue[] {
+  if (overview.maps === 0) return [];
+  return [
+    { value: overview.avgRating.toFixed(2), label: "RATING" },
+    { value: String(Math.round(overview.avgAcs)), label: "ACS" },
+    { value: overview.kd.toFixed(2), label: "K/D" },
+    { value: `${Math.round(overview.avgKast)}%`, label: "KAST" },
+    { value: `${Math.round(overview.avgHs)}%`, label: "HS" },
+    { value: String(overview.maps), label: "MAPS" },
+  ];
+}
+
 /**
  * Lettre de repli affichée quand une entité n'a ni logo ni photo. Prend le
  * premier caractère alphanumérique, accents retirés ; « ? » si le nom n'en
  * contient aucun.
  */
 export function monogram(name: string): string {
-  const flat = name.normalize("NFD").replace(DIACRITICS, "");
+  const flat = deaccent(name);
   const match = flat.match(/[a-zA-Z0-9]/);
   return match ? match[0].toUpperCase() : "?";
 }

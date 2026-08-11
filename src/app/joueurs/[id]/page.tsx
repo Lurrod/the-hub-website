@@ -22,8 +22,11 @@ import { playerDiscordSocial } from "@/lib/discord";
 
 import { playerTitle } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
+import ShareCardButton from "@/components/share-card-button";
 import { playerJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
+import { shareCardFilename } from "@/lib/og/labels";
+import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -284,6 +287,16 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                 )}
                 {age != null && <span className="stat">{age} ans</span>}
               </div>
+            </div>
+
+            <div className="sm:ml-auto">
+              <ShareCardButton
+                imageUrl={`/joueurs/${player.id}/carte`}
+                pageUrl={`${SITE_URL}/joueurs/${player.id}`}
+                filename={shareCardFilename([player.pseudo])}
+                title="Partager la fiche"
+                alt={`Carte du joueur ${player.pseudo}`}
+              />
             </div>
           </div>
         }

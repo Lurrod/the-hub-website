@@ -3,10 +3,23 @@ import path from "node:path";
 import { Children, Fragment, isValidElement } from "react";
 import { ImageResponse } from "next/og";
 import { ogFonts } from "@/lib/og/fonts";
-import { size } from "@/lib/og/size";
+import { shareSize, size } from "@/lib/og/size";
 import { DISPLAY, MONO, OG } from "@/lib/og/theme";
 
 const SITE_HOST = "the-hub-vrc.fr";
+
+/** Dimensions de l'image et marge intérieure du cadre. */
+export type OgFormat = { size: { width: number; height: number }; padding: number };
+
+/** Aperçu de lien 1200×630, format par défaut de `renderOg`. */
+export const LANDSCAPE: OgFormat = { size, padding: 56 };
+
+/**
+ * Carte carrée téléchargeable. La marge est plus large : sur un carré, le
+ * contenu monte moins haut et un cadre trop serré donne une image compacte,
+ * là où le format vit de son air.
+ */
+export const SQUARE: OgFormat = { size: shareSize, padding: 72 };
 
 let wordmarkCache: Promise<string> | null = null;
 
@@ -37,7 +50,15 @@ function flattenFragments(node: React.ReactNode): React.ReactNode[] {
  * Cadre commun à toutes les cartes : halo, bandeau de marque, badge de type,
  * pied de page. Le contenu propre à chaque page passe par `children`.
  */
-async function Frame({ badge, children }: { badge: string; children: React.ReactNode }) {
+async function Frame({
+  badge,
+  padding,
+  children,
+}: {
+  badge: string;
+  padding: number;
+  children: React.ReactNode;
+}) {
   const logo = await wordmark();
   return (
     <div
@@ -48,7 +69,7 @@ async function Frame({ badge, children }: { badge: string; children: React.React
         height: "100%",
         backgroundColor: OG.bg,
         backgroundImage: `radial-gradient(circle at 16% 12%, ${OG.glow} 0%, rgba(237,94,41,0) 42%)`,
-        padding: 56,
+        padding,
         position: "relative",
         fontFamily: DISPLAY,
       }}
@@ -91,7 +112,8 @@ async function Frame({ badge, children }: { badge: string; children: React.React
  */
 export async function renderOg(
   badge: string,
-  build: () => Promise<React.ReactNode> | React.ReactNode
+  build: () => Promise<React.ReactNode> | React.ReactNode,
+  format: OgFormat = LANDSCAPE
 ): Promise<ImageResponse> {
   let body: React.ReactNode;
   try {
@@ -100,8 +122,8 @@ export async function renderOg(
     body = null;
   }
 
-  return new ImageResponse(await Frame({ badge, children: body }), {
-    ...size,
+  return new ImageResponse(await Frame({ badge, padding: format.padding, children: body }), {
+    ...format.size,
     fonts: await ogFonts(),
     headers: {
       "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=600",

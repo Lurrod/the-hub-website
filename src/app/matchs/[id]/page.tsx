@@ -13,8 +13,11 @@ import MatchScoreboard, {
 
 import { matchTitle } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
+import ShareCardButton from "@/components/share-card-button";
 import { matchJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
+import { shareCardFilename } from "@/lib/og/labels";
+import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -218,6 +221,13 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             <span className="stat rounded bg-[var(--bg)] px-1.5 py-0.5 text-[10px] font-medium">
               BO{match.bestOf}
             </span>
+            <ShareCardButton
+              imageUrl={`/matchs/${match.id}/carte`}
+              pageUrl={`${SITE_URL}/matchs/${match.id}`}
+              filename={shareCardFilename([match.teamA.name, "vs", match.teamB.name])}
+              title="Partager le match"
+              alt={`Carte du match ${match.teamA.name} contre ${match.teamB.name}`}
+            />
             {canManage && (
               <Link
                 href={`/tournois/${match.tournamentId}/gestion/matchs/${match.id}`}
