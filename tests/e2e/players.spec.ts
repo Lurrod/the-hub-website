@@ -23,3 +23,35 @@ test("la gestion de roster renvoie un visiteur non connecté vers la connexion",
   await page.goto("/equipes/seed-team-alpha/gestion/roster");
   await expect(page).toHaveURL(/\/api\/auth\/signin/);
 });
+
+test.describe("en-tête de fiche joueur", () => {
+  // La contrainte typographique globale de components.css n'est pas dans un
+  // `@layer` et prime sur les utilitaires : une taille posée par une classe y
+  // est silencieusement ramenée à 12 px. Ces tailles-ci sont donc posées en
+  // ligne, et ce test veille à ce qu'elles le restent.
+  test("les textes sous le pseudo sont à 14 px, sans toucher aux icônes", async ({ page }) => {
+    await page.goto("/joueurs/fx-a0");
+
+    const mesures = await page.evaluate(() => {
+      const meta = document.querySelector("h1")!.parentElement!.nextElementSibling!;
+      const taille = (el: Element | null) => (el ? getComputedStyle(el).fontSize : null);
+      const boite = (el: Element | null) => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return `${Math.round(r.width)}x${Math.round(r.height)}`;
+      };
+      return {
+        equipe: taille(meta.querySelector("a span.text-white")),
+        age: taille(meta.querySelector("span.stat")),
+        monogramme: boite(meta.querySelector("span.monogram")),
+        roleIcone: boite(meta.querySelector("img.h-4")),
+      };
+    });
+
+    expect(mesures.equipe).toBe("14px");
+    expect(mesures.age).toBe("14px");
+    // Les pastilles gardent leur gabarit : seul le texte grandit.
+    expect(mesures.monogramme).toBe("16x16");
+    expect(mesures.roleIcone).toBe("16x16");
+  });
+});

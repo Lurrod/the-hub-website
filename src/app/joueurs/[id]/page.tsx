@@ -273,7 +273,14 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                         {currentTeam.team.tag.slice(0, 2).toUpperCase()}
                       </span>
                     )}
-                    <span className="text-white">{currentTeam.team.name}</span>
+                    {/* Taille posée en ligne : la contrainte typographique
+                        globale de components.css n'est pas dans un `@layer` et
+                        prime donc sur les utilitaires, y compris sur un
+                        `text-sm` porté par le parent. Même échappatoire que le
+                        pseudo juste au-dessus. */}
+                    <span style={{ fontSize: "14px" }} className="text-white">
+                      {currentTeam.team.name}
+                    </span>
                   </Link>
                 )}
                 {roleIcon && (
@@ -285,7 +292,11 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                     className="h-4 w-4 shrink-0"
                   />
                 )}
-                {age != null && <span className="stat">{age} ans</span>}
+                {age != null && (
+                  <span style={{ fontSize: "14px" }} className="stat">
+                    {age} ans
+                  </span>
+                )}
               </div>
             </div>
 

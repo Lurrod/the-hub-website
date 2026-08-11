@@ -78,6 +78,7 @@ async function upsertPlayer(
     nationality?: string | null;
     photo?: string | null;
     socials?: Record<string, string>;
+    birthdate?: Date | null;
   } = {}
 ) {
   const data = {
@@ -89,6 +90,7 @@ async function upsertPlayer(
     nationality: extra.nationality ?? "France",
     photo: extra.photo ?? null,
     socials: extra.socials ?? undefined,
+    birthdate: extra.birthdate ?? null,
     onboardedAt: new Date("2026-07-01T00:00:00Z"),
   };
   await db.player.upsert({ where: { id }, update: data, create: { id, ...data } });
@@ -234,6 +236,9 @@ async function main() {
   for (let i = 0; i < 5; i++) {
     await upsertPlayer(`fx-a${i}`, `AlphaJoueur${i}`, {
       valorantRole: roles[i],
+      // Le premier porte aussi une date de naissance : c'est la fiche
+      // « complète » — drapeau, équipe, rôle, âge et réseaux réunis.
+      birthdate: i === 0 ? new Date("2004-03-15T00:00:00Z") : null,
       // Le premier porte les trois réseaux : l'en-tête de fiche doit les
       // aligner avec le pseudo, et c'était invérifiable sans ces données.
       socials:
