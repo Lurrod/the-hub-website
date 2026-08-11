@@ -447,7 +447,11 @@ export default function MatchScoreboard({
 
   const map = showAll ? null : maps[Math.min(active === "all" ? 0 : active, maps.length - 1)];
   const rows: DisplayRow[] = showAll
-    ? aggregateSeries(stattedMaps.map((m) => m.stats))
+    ? aggregateSeries(
+        // Le nombre de rounds pondère les moyennes de la série : sans lui, une
+        // map de 17 rounds compterait autant qu'une de 24.
+        stattedMaps.map((m) => ({ rounds: m.scoreA + m.scoreB, stats: m.stats }))
+      )
     : (map?.stats ?? []);
 
   return (

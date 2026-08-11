@@ -1,5 +1,6 @@
 import type { Side } from "@/lib/match-stats-core";
 import { displayName } from "@/lib/og/labels";
+import { aggregateSeries, type SeriesMap } from "@/lib/scoreboard-series";
 
 /**
  * Ligne de statistiques telle qu'elle sort de la base (`PlayerGameStat` et sa
@@ -78,47 +79,24 @@ export function mapRows(stats: readonly RawStat[]): CardStatRow[] {
 }
 
 /**
- * Agents joués sur la série, du plus joué au moins joué, sans doublon. À
- * égalité de maps, l'ordre alphabétique : deux rendus de la même carte doivent
- * aligner les icônes dans le même ordre.
- */
-function rankAgents(agents: readonly (string | null)[]): string[] {
-  const counts = new Map<string, number>();
-  for (const agent of agents) {
-    if (agent) counts.set(agent, (counts.get(agent) ?? 0) + 1);
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"))
-    .map(([agent]) => agent);
-}
-
-/**
  * Statistiques cumulées d'une série, une ligne par joueur.
  *
- * Les frags s'additionnent, l'ACS et le rating se moyennent sur les maps
- * réellement jouées par ce joueur : un remplaçant entré sur une seule map ne
- * doit pas voir sa moyenne diluée par les maps où il n'était pas là.
+ * Le cumul lui-même vit dans `@/lib/scoreboard-series`, partagé avec l'onglet
+ * « Toutes les maps » du scoreboard : les deux affichages doivent donner le
+ * même chiffre pour la même rencontre.
  */
-export function seriesRows(stats: readonly RawStat[]): CardStatRow[] {
-  const grouped = new Map<string, RawStat[]>();
-  for (const stat of stats) {
-    const key = rowKey(stat);
-    const bucket = grouped.get(key);
-    if (bucket) bucket.push(stat);
-    else grouped.set(key, [stat]);
-  }
-
-  return [...grouped.entries()]
-    .map(([key, rows]) => ({
-      key,
-      name: displayName(rows[0].pseudo, rows[0].riotName),
-      side: side(rows[0]),
-      agents: rankAgents(rows.map((r) => r.agent)),
-      kills: rows.reduce((n, r) => n + r.kills, 0),
-      deaths: rows.reduce((n, r) => n + r.deaths, 0),
-      assists: rows.reduce((n, r) => n + r.assists, 0),
-      acs: rows.reduce((n, r) => n + r.acs, 0) / rows.length,
-      rating: rows.reduce((n, r) => n + r.rating, 0) / rows.length,
+export function seriesRows(maps: readonly SeriesMap[]): CardStatRow[] {
+  return aggregateSeries(maps)
+    .map((row) => ({
+      key: row.id,
+      name: displayName(row.pseudo, row.riotName),
+      side: row.teamSide === "A" ? ("A" as const) : ("B" as const),
+      agents: row.agents,
+      kills: row.kills,
+      deaths: row.deaths,
+      assists: row.assists,
+      acs: row.acs,
+      rating: row.rating,
     }))
     .sort(byRating);
 }
