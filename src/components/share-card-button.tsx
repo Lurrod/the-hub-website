@@ -1,0 +1,267 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
+
+interface ShareCardButtonProps {
+  /** Route qui rend la carte carrée (ex. `/matchs/<id>/carte`). */
+  imageUrl: string;
+  /** Adresse absolue de la fiche, celle qu'on copie. */
+  pageUrl: string;
+  /** Nom proposé au téléchargement (ex. `the-hub-navi-vs-kc.png`). */
+  filename: string;
+  /** Titre de la boîte de dialogue (ex. « Partager le match »). */
+  title: string;
+  /** Texte alternatif de l'aperçu. */
+  alt: string;
+}
+
+/** Durée d'affichage du retour « Lien copié », en millisecondes. */
+const COPIED_MS = 2000;
+
+/**
+ * Bouton « Partager » et sa boîte de dialogue : aperçu de la carte,
+ * téléchargement du PNG, copie du lien de la fiche, et partage natif sur les
+ * appareils qui savent recevoir un fichier.
+ *
+ * Même mécanique que `ConfirmDeleteButton` et `NavDrawer` : portail dans
+ * `<body>`, trois états (`open` monté, `shown` déployé, `closing` en repli)
+ * pour laisser la fermeture s'animer, fermeture à Échap et au clic hors du
+ * panneau, verrou du défilement, focus confiné.
+ *
+ * L'aperçu n'est monté qu'avec le panneau : une fiche consultée sans clic sur
+ * « Partager » ne déclenche aucune génération d'image côté serveur.
+ */
+export default function ShareCardButton({
+  imageUrl,
+  pageUrl,
+  filename,
+  title,
+  alt,
+}: ShareCardButtonProps) {
+  const [open, setOpen] = useState(false);
+  const [shown, setShown] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [canShareFiles, setCanShareFiles] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+  const copiedTimer = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
+
+  // `canShare` avec un fichier factice : c'est la seule façon de savoir si
+  // l'appareil accepte le partage de fichiers avant d'avoir téléchargé
+  // l'image. Sur navigateur de bureau, l'API existe souvent sans accepter les
+  // fichiers — d'où le test sur un `File`, et non sur la seule présence de
+  // `navigator.share`.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.canShare || !navigator.share) return;
+    try {
+      const probe = new File([new Blob()], filename, { type: "image/png" });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCanShareFiles(navigator.canShare({ files: [probe] }));
+    } catch {
+      // Un environnement sans constructeur `File` n'est pas un cas d'erreur :
+      // il n'a simplement pas le partage de fichiers.
+    }
+  }, [filename]);
+
+  const close = useCallback(() => {
+    setShown(false);
+    setClosing(true);
+    const closeMs =
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue("--modal-close-dur")
+      ) || 150;
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => {
+      setClosing(false);
+      setOpen(false);
+    }, closeMs);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const raf = requestAnimationFrame(() => setShown(true));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, close]);
+
+  useFocusTrap(panelRef, open);
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+      if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
+    },
+    []
+  );
+
+  // C'est le lien de la *page* qui est copié, pas celui de l'image : lui seul
+  // déclenche un aperçu chez le destinataire et le ramène sur le site.
+  const copyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(pageUrl);
+      setCopied(true);
+      if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
+      copiedTimer.current = window.setTimeout(() => setCopied(false), COPIED_MS);
+    } catch {
+      // Presse-papiers refusé (contexte non sécurisé, permission déniée) : le
+      // lien reste accessible dans la barre d'adresse, on n'alarme pas.
+    }
+  }, [pageUrl]);
+
+  const shareFile = useCallback(async () => {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) return;
+      const file = new File([await response.blob()], filename, { type: "image/png" });
+      if (!navigator.canShare({ files: [file] })) return;
+      await navigator.share({ files: [file], title, url: pageUrl });
+    } catch {
+      // Un partage annulé par l'utilisateur lève, comme un échec réseau. Ni
+      // l'un ni l'autre ne mérite un message : la boîte reste ouverte, les
+      // deux autres sorties restent disponibles.
+    }
+  }, [imageUrl, filename, title, pageUrl]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex shrink-0 items-center gap-1.5 rounded border border-[var(--border)] px-2.5 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-white"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-3.5 w-3.5"
+          aria-hidden="true"
+        >
+          <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+          <path d="M12 15V3" />
+          <path d="m8 7 4-4 4 4" />
+        </svg>
+        Partager
+      </button>
+
+      {open &&
+        mounted &&
+        createPortal(
+          <div
+            className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm transition-opacity duration-200 ${
+              shown ? "opacity-100" : "opacity-0"
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            onClick={close}
+          >
+            <div
+              ref={panelRef}
+              tabIndex={-1}
+              className={`t-modal w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl outline-none ${
+                shown ? "is-open" : closing ? "is-closing" : ""
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-base font-semibold text-white">{title}</h2>
+                <button
+                  type="button"
+                  onClick={close}
+                  aria-label="Fermer"
+                  className="-mr-1 -mt-1 grid h-8 w-8 shrink-0 place-items-center rounded text-[var(--text-muted)] transition-colors hover:text-white"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  >
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-lg border border-[var(--border)]">
+                {failed ? (
+                  <p className="grid aspect-square place-items-center px-6 text-center text-sm text-[var(--text-muted)]">
+                    L&apos;aperçu n&apos;a pas pu être chargé. Le téléchargement reste possible.
+                  </p>
+                ) : (
+                  <>
+                    {/* Le carré est réservé avant l'arrivée de l'image : sans
+                        lui, le panneau se redimensionne sous le curseur au
+                        moment où l'aperçu se pose. */}
+                    {!loaded && <div className="aspect-square animate-pulse bg-[var(--card)]" />}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imageUrl}
+                      alt={alt}
+                      width={1080}
+                      height={1080}
+                      onLoad={() => setLoaded(true)}
+                      onError={() => setFailed(true)}
+                      className={`block w-full ${loaded ? "" : "hidden"}`}
+                    />
+                  </>
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2">
+                <a
+                  href={imageUrl}
+                  download={filename}
+                  className="rounded-lg bg-[var(--accent)] px-4 py-2 text-center text-sm font-semibold text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent-hover)]"
+                >
+                  Télécharger le PNG
+                </a>
+
+                {canShareFiles && (
+                  <button
+                    type="button"
+                    onClick={shareFile}
+                    className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-white transition-colors hover:bg-[var(--card-hover)]"
+                  >
+                    Partager l&apos;image
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-white transition-colors hover:bg-[var(--card-hover)]"
+                >
+                  {copied ? "Lien copié" : "Copier le lien"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
