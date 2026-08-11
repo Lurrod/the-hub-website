@@ -1,6 +1,8 @@
 import { getMatch } from "@/lib/data/matches";
 import { dayLabel, timeLabel } from "@/lib/dates";
+import { agentIcons } from "@/lib/og/agent-icon";
 import {
+  agentColumnWidth,
   Meta,
   ScoreRow,
   ScoreboardColumns,
@@ -99,11 +101,15 @@ function TeamBlock({
   name,
   score,
   rows,
+  icons,
+  agentWidth,
 }: {
   src: string | null;
   name: string;
   score: string;
   rows: readonly CardStatRow[];
+  icons: ReadonlyMap<string, string>;
+  agentWidth: number;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -112,7 +118,8 @@ function TeamBlock({
         <ScoreboardRow
           key={row.key}
           name={row.name}
-          agent={row.agent ?? "—"}
+          agentWidth={agentWidth}
+          agents={row.agents.map((agent) => ({ name: agent, icon: icons.get(agent) ?? null }))}
           kda={kdaLabel(row)}
           acs={String(Math.round(row.acs))}
           rating={row.rating.toFixed(2)}
@@ -133,15 +140,33 @@ function scoreboardCard(
   rows: readonly CardStatRow[],
   scoreA: number,
   scoreB: number,
-  context: string
+  context: string,
+  icons: ReadonlyMap<string, string>
 ) {
   const { a, b } = bySide(rows);
+  // La colonne d'agents est taillée sur le joueur qui en a le plus : sur une
+  // map c'est un seul, sur une série jusqu'à cinq.
+  const agentWidth = agentColumnWidth(Math.max(...rows.map((r) => r.agents.length), 1));
   return (
     <>
       <Meta>{context}</Meta>
-      <ScoreboardColumns />
-      <TeamBlock src={logoA} name={match.teamA.name} score={String(scoreA)} rows={a} />
-      <TeamBlock src={logoB} name={match.teamB.name} score={String(scoreB)} rows={b} />
+      <ScoreboardColumns agentWidth={agentWidth} />
+      <TeamBlock
+        src={logoA}
+        name={match.teamA.name}
+        score={String(scoreA)}
+        rows={a}
+        icons={icons}
+        agentWidth={agentWidth}
+      />
+      <TeamBlock
+        src={logoB}
+        name={match.teamB.name}
+        score={String(scoreB)}
+        rows={b}
+        icons={icons}
+        agentWidth={agentWidth}
+      />
     </>
   );
 }
@@ -170,46 +195,34 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const view = parseView(new URL(request.url).searchParams.get("vue"), match.maps.length);
   const context = metaLine([match.tournament.name, match.round]);
 
-  if (view.kind === "map") {
-    const map = match.maps[view.index];
-    return renderOg(
-      `SCOREBOARD · ${map.mapName.toUpperCase()}`,
-      () =>
-        scoreboardCard(
-          match,
-          logoA,
-          logoB,
-          mapRows(
-            map.stats.map((s) => ({ ...s, pseudo: s.player?.pseudo ?? null, riotName: s.riotName }))
-          ),
-          map.scoreA,
-          map.scoreB,
-          context
-        ),
-      SQUARE
+  if (view.kind !== "resume") {
+    const map = view.kind === "map" ? match.maps[view.index] : null;
+    const source = map ? [map] : match.maps;
+    const raw = source.flatMap((m) =>
+      m.stats.map((s) => ({ ...s, pseudo: s.player?.pseudo ?? null, riotName: s.riotName }))
     );
-  }
 
-  if (view.kind === "serie") {
+    const rows = map ? mapRows(raw) : seriesRows(raw);
+    // Les icônes sont résolues avant le rendu : Satori ne va pas chercher les
+    // images distantes lui-même, il lui faut des data URI.
+    const icons = await agentIcons(rows.flatMap((r) => r.agents));
+
+    const badge = map
+      ? `SCOREBOARD · ${map.mapName.toUpperCase()}`
+      : `SÉRIE · ${bestOfLabel(match.bestOf).toUpperCase()}`;
+
     return renderOg(
-      `SÉRIE · ${bestOfLabel(match.bestOf).toUpperCase()}`,
+      badge,
       () =>
         scoreboardCard(
           match,
           logoA,
           logoB,
-          seriesRows(
-            match.maps.flatMap((m) =>
-              m.stats.map((s) => ({
-                ...s,
-                pseudo: s.player?.pseudo ?? null,
-                riotName: s.riotName,
-              }))
-            )
-          ),
-          match.scoreA,
-          match.scoreB,
-          metaLine([context, mapsLabel(match.maps)])
+          rows,
+          map ? map.scoreA : match.scoreA,
+          map ? map.scoreB : match.scoreB,
+          map ? context : metaLine([context, mapsLabel(match.maps)]),
+          icons
         ),
       SQUARE
     );
