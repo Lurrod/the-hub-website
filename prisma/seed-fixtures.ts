@@ -77,6 +77,7 @@ async function upsertPlayer(
     lft?: boolean;
     nationality?: string | null;
     photo?: string | null;
+    socials?: Record<string, string>;
   } = {}
 ) {
   const data = {
@@ -87,6 +88,7 @@ async function upsertPlayer(
     lftSince: extra.lft ? new Date("2026-08-01T00:00:00Z") : null,
     nationality: extra.nationality ?? "France",
     photo: extra.photo ?? null,
+    socials: extra.socials ?? undefined,
     onboardedAt: new Date("2026-07-01T00:00:00Z"),
   };
   await db.player.upsert({ where: { id }, update: data, create: { id, ...data } });
@@ -230,7 +232,19 @@ async function main() {
   // --- Joueurs -----------------------------------------------------------
   const roles = ["DUELIST", "CONTROLLER", "INITIATOR", "SENTINEL", null] as const;
   for (let i = 0; i < 5; i++) {
-    await upsertPlayer(`fx-a${i}`, `AlphaJoueur${i}`, { valorantRole: roles[i] });
+    await upsertPlayer(`fx-a${i}`, `AlphaJoueur${i}`, {
+      valorantRole: roles[i],
+      // Le premier porte les trois réseaux : l'en-tête de fiche doit les
+      // aligner avec le pseudo, et c'était invérifiable sans ces données.
+      socials:
+        i === 0
+          ? {
+              twitter: "https://x.com/exemple",
+              twitch: "https://twitch.tv/exemple",
+              discord: "https://discord.gg/exemple",
+            }
+          : undefined,
+    });
     await upsertPlayer(`fx-b${i}`, `BravoJoueur${i}`, { valorantRole: roles[4 - i] });
   }
   // Pseudo long, sans photo ni nationalité : éprouve monogramme et repli.
@@ -266,6 +280,11 @@ async function main() {
     startDate: new Date("2026-08-01T00:00:00Z"),
     endDate: new Date("2026-08-31T00:00:00Z"),
     bestOf: 3,
+    socials: {
+      twitter: "https://x.com/exemple",
+      twitch: "https://twitch.tv/exemple",
+      website: "https://exemple.test",
+    },
   };
   await db.tournament.upsert({
     where: { id: TID },

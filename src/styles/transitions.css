@@ -773,7 +773,13 @@
 /* --- Tooltip open/close (17) ---------------------------------------------- */
 .t-tt-wrap {
   position: relative;
-  display: inline-block;
+  /* `inline-flex` et non `inline-block` : ce conteneur n'enveloppe que des
+     icônes, et un bloc en ligne construit autour d'elles une ligne de texte.
+     L'icône se posait alors sur la ligne de base, laissant sous elle la place
+     du jambage — 5 px de talon pour une icône de 20. Le conteneur mesurait 25,
+     l'icône était collée en haut, et paraissait remonter par rapport au titre
+     qu'elle accompagne. En flex, la boîte épouse l'icône. */
+  display: inline-flex;
 }
 .t-tt {
   position: absolute;
