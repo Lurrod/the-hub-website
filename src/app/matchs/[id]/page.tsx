@@ -16,7 +16,7 @@ import JsonLdScript from "@/components/json-ld";
 import ShareCardButton from "@/components/share-card-button";
 import { matchJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
-import { shareCardFilename } from "@/lib/og/labels";
+import { matchShareVariants } from "@/lib/og/share-variants";
 import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -65,6 +65,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
       firstDeaths: s.firstDeaths,
     })),
   }));
+  const shareVariants = matchShareVariants({
+    ...match,
+    maps: match.maps.map((m) => ({ mapName: m.mapName, statCount: m.stats.length })),
+  });
+
   const stageLabel =
     match.stage === "BRACKET" ? MATCH_STAGE_LABELS.BRACKET : MATCH_STAGE_LABELS.GROUP;
   const stageExtra = match.stage === "BRACKET" ? match.round : (match.group?.name ?? null);
@@ -176,7 +181,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         )}
 
         {/* Bas du bandeau : à gauche le tournoi, à droite le stage + le BO */}
-        <div className="mt-6 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
+        {/* `flex-wrap` : la ligne porte le tournoi, la date, le stage, le
+            format, le partage et parfois « Gérer ». Sur un écran étroit elle
+            ne tient pas, et sans repli c'est la page entière qui défilait à
+            l'horizontale. */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-4">
           <Link
             href={`/tournois/${match.tournamentId}`}
             className="group flex min-w-0 items-center gap-2"
@@ -197,7 +206,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               {match.tournament.name}
             </span>
           </Link>
-          <div className="flex shrink-0 items-center gap-2 text-xs text-[var(--text-muted)]">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
             {match.date && (
               <span className="flex items-center">
                 {dayLabel(match.date)}
@@ -222,9 +231,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               BO{match.bestOf}
             </span>
             <ShareCardButton
-              imageUrl={`/matchs/${match.id}/carte`}
+              variants={shareVariants}
               pageUrl={`${SITE_URL}/matchs/${match.id}`}
-              filename={shareCardFilename([match.teamA.name, "vs", match.teamB.name])}
               title="Partager le match"
               alt={`Carte du match ${match.teamA.name} contre ${match.teamB.name}`}
             />

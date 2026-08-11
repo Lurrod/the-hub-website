@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { Children, Fragment, isValidElement } from "react";
 import { ImageResponse } from "next/og";
+import { logger, describeError } from "@/lib/logger";
 import { ogFonts } from "@/lib/og/fonts";
 import { shareSize, size } from "@/lib/og/size";
 import { DISPLAY, MONO, OG } from "@/lib/og/theme";
@@ -118,7 +119,11 @@ export async function renderOg(
   let body: React.ReactNode;
   try {
     body = await build();
-  } catch {
+  } catch (e) {
+    // Le repli sur le cadre nu est volontaire, mais il ne doit pas être muet :
+    // sans cette trace, une carte qui perd son contenu se lit comme un choix
+    // de mise en page et non comme l'incident qu'elle est.
+    logger.warn("og.render.failed", { badge, ...describeError(e) });
     body = null;
   }
 
