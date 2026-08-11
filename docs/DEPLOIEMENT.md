@@ -266,6 +266,8 @@ cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
   node scripts/sync-tournament-statuses.mjs
   node scripts/prune-orphan-images.mjs            # aperçu, ne supprime rien
   node scripts/prune-orphan-images.mjs --apply    # effacement
+  node scripts/recalibrate-ratings.mjs            # mesure, n'écrit rien
+  node scripts/recalibrate-ratings.mjs --apply    # recalcule les ratings stockés
   ```
 
   Les scripts d'amorçage (`seed-*`) restent en TypeScript et ne sont
@@ -276,6 +278,16 @@ cd "$APP/current" && pm2 reload ecosystem.config.cjs --update-env
   disque, toujours servi par `/api/images`. Les suppressions l'effacent
   désormais ; `prune-orphan-images.mjs` est là pour rattraper l'historique, à
   passer une fois. Toujours lire l'aperçu avant `--apply`.
+
+- **Centrage du rating** : le rating est une échelle centrée sur 1,00, portée
+  par la constante `RATING_BASELINE` de `src/lib/match-stats-core.ts`. Elle est
+  ajustée sur les données du site, et le niveau moyen peut dériver à mesure que
+  la base grossit. `recalibrate-ratings.mjs` sans option ne fait que mesurer :
+  il affiche le rating de la ligne moyenne du moment et la constante qu'elle
+  appellerait. Si l'écart devient sensible, reporter la valeur dans le code,
+  déployer, puis relancer avec `--apply` pour réécrire les ratings déjà
+  stockés — sinon deux échelles coexistent sur le site. Le passage `--apply`
+  est idempotent : relancé, il ne réécrit plus rien.
 
 - **Migrations destructives** : `prisma migrate deploy` tourne avant la bascule.
   Une migration qui supprime une colonne cassera l'ancienne version pendant le

@@ -68,6 +68,7 @@ jobs:
           mkdir -p release/scripts
           cp scripts/prune-orphan-images.mjs release/scripts/
           cp scripts/sync-tournament-statuses.mjs release/scripts/
+          cp scripts/recalibrate-ratings.mjs release/scripts/
           # Le traçage de fichiers de Next embarque un dossier `uploads` s'il
           # existe au moment du build. Il doit être un lien vers le volume
           # persistant du serveur, pas un vrai dossier livré avec la release.

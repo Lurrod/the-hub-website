@@ -1,6 +1,6 @@
 {
   "name": "the-hub-website",
-  "version": "1.19.1",
+  "version": "1.20.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -21,7 +21,8 @@
     "test:coverage": "vitest run --coverage",
     "db:seed:formats": "tsx prisma/seed-formats.ts",
     "db:sync:tournaments": "node scripts/sync-tournament-statuses.mjs",
-    "images:prune": "node scripts/prune-orphan-images.mjs"
+    "images:prune": "node scripts/prune-orphan-images.mjs",
+    "ratings:recalibrate": "node scripts/recalibrate-ratings.mjs"
   },
   "overrides": {
     "sharp": "^0.35.3",
