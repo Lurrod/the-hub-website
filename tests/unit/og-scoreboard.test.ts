@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { bySide, kdaLabel, mapRows, seriesRows, type RawStat } from "@/lib/og/scoreboard";
+import type { SeriesInputRow } from "@/lib/scoreboard-series";
 
 const stat = (over: Partial<RawStat> = {}): RawStat => ({
   playerId: "p1",
@@ -60,67 +61,59 @@ describe("mapRows", () => {
 });
 
 describe("seriesRows", () => {
-  it("cumule les frags et moyenne les indicateurs sur l'ensemble des maps", () => {
-    const rows = seriesRows([
-      stat({ kills: 20, deaths: 10, assists: 4, acs: 240, rating: 1.2 }),
-      stat({ kills: 16, deaths: 14, assists: 6, acs: 200, rating: 1.0 }),
-    ]);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-      name: "Sh1n",
-      kills: 36,
-      deaths: 24,
-      assists: 10,
-      acs: 220,
-      rating: 1.1,
-    });
+  /*
+   * Le cumul lui-même est couvert dans tests/unit/scoreboard-series.test.ts :
+   * `seriesRows` n'est plus qu'un adaptateur vers la forme des cartes.
+   */
+  const serieRow = (over: Partial<SeriesInputRow> = {}): SeriesInputRow => ({
+    id: "x",
+    playerId: "p1",
+    pseudo: "Sh1n",
+    riotName: "Sh1n#EUW",
+    teamSide: "A",
+    agent: "Jett",
+    kills: 20,
+    deaths: 10,
+    assists: 5,
+    acs: 250,
+    adr: 160,
+    rating: 1.2,
+    kast: 74,
+    firstKills: 4,
+    firstDeaths: 2,
+    ...over,
   });
 
-  it("garde les joueurs distincts séparés", () => {
+  it("met le cumul à la forme d'une carte, classé du meilleur rating au moins bon", () => {
     const rows = seriesRows([
-      stat({ playerId: "a", pseudo: "Alpha", rating: 1.4 }),
-      stat({ playerId: "b", pseudo: "Bravo", rating: 0.8 }),
-      stat({ playerId: "a", pseudo: "Alpha", rating: 1.0 }),
+      {
+        rounds: 24,
+        stats: [
+          serieRow({ playerId: "a", pseudo: "Alpha", kills: 30, deaths: 8 }),
+          serieRow({ playerId: "b", pseudo: "Bravo", kills: 8, deaths: 25, teamSide: "B" }),
+        ],
+      },
+      {
+        rounds: 20,
+        stats: [
+          serieRow({ playerId: "a", pseudo: "Alpha", kills: 25, deaths: 9 }),
+          serieRow({ playerId: "b", pseudo: "Bravo", kills: 7, deaths: 22, teamSide: "B" }),
+        ],
+      },
     ]);
+
     expect(rows.map((r) => r.name)).toEqual(["Alpha", "Bravo"]);
-    expect(rows[0].rating).toBeCloseTo(1.2);
+    expect(rows[0]).toMatchObject({ kills: 55, deaths: 17, side: "A" });
+    expect(rows[1]).toMatchObject({ kills: 15, deaths: 47, side: "B" });
   });
 
-  it("regroupe sur le Riot ID quand le joueur n'a pas de fiche", () => {
+  it("reprend la liste des agents du cumul", () => {
     const rows = seriesRows([
-      stat({ playerId: null, pseudo: null, riotName: "Nivera#0000", kills: 10 }),
-      stat({ playerId: null, pseudo: null, riotName: "Nivera#0000", kills: 12 }),
-    ]);
-    expect(rows).toHaveLength(1);
-    expect(rows[0].kills).toBe(22);
-  });
-
-  it("liste tous les agents joués, du plus joué au moins joué", () => {
-    const rows = seriesRows([
-      stat({ agent: "Jett" }),
-      stat({ agent: "Raze" }),
-      stat({ agent: "Raze" }),
+      { rounds: 24, stats: [serieRow({ agent: "Jett" })] },
+      { rounds: 24, stats: [serieRow({ agent: "Raze" })] },
+      { rounds: 24, stats: [serieRow({ agent: "Raze" })] },
     ]);
     expect(rows[0].agents).toEqual(["Raze", "Jett"]);
-  });
-
-  it("départage deux agents à égalité par leur nom", () => {
-    const rows = seriesRows([stat({ agent: "Raze" }), stat({ agent: "Jett" })]);
-    expect(rows[0].agents).toEqual(["Jett", "Raze"]);
-  });
-
-  it("ne répète pas un agent joué sur plusieurs maps", () => {
-    const rows = seriesRows([stat({ agent: "Jett" }), stat({ agent: "Jett" })]);
-    expect(rows[0].agents).toEqual(["Jett"]);
-  });
-
-  it("ignore les maps sans agent renseigné dans ce décompte", () => {
-    const rows = seriesRows([
-      stat({ agent: null }),
-      stat({ agent: null }),
-      stat({ agent: "Jett" }),
-    ]);
-    expect(rows[0].agents).toEqual(["Jett"]);
   });
 
   it("renvoie une liste vide sans statistique", () => {

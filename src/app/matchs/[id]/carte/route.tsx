@@ -198,11 +198,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (view.kind !== "resume") {
     const map = view.kind === "map" ? match.maps[view.index] : null;
     const source = map ? [map] : match.maps;
-    const raw = source.flatMap((m) =>
-      m.stats.map((s) => ({ ...s, pseudo: s.player?.pseudo ?? null, riotName: s.riotName }))
-    );
+    // Le nombre de rounds pondère les moyennes de la série : sans lui, une map
+    // de 17 rounds compterait autant qu'une de 24.
+    const played = source.map((m) => ({
+      rounds: m.scoreA + m.scoreB,
+      stats: m.stats.map((s) => ({ ...s, pseudo: s.player?.pseudo ?? null })),
+    }));
 
-    const rows = map ? mapRows(raw) : seriesRows(raw);
+    const rows = map ? mapRows(played[0].stats) : seriesRows(played);
     // Les icônes sont résolues avant le rendu : Satori ne va pas chercher les
     // images distantes lui-même, il lui faut des data URI.
     const icons = await agentIcons(rows.flatMap((r) => r.agents));

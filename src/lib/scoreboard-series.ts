@@ -2,8 +2,10 @@
  * Cumul des statistiques d'un joueur sur toutes les maps d'une rencontre.
  *
  * Module pur, sans dépendance à la base ni au rendu : il alimente l'onglet
- * « Toutes les maps » du scoreboard de la fiche match.
+ * « Toutes les maps » du scoreboard de la fiche match et la carte de partage
+ * de la série.
  */
+import { computeRating } from "@/lib/match-stats-core";
 
 /**
  * Ligne de statistiques d'un joueur sur une map. La forme est celle de
@@ -28,12 +30,21 @@ export type SeriesInputRow = {
   firstDeaths: number;
 };
 
+/** Une map de la rencontre : sa longueur, et les lignes qu'elle porte. */
+export type SeriesMap = {
+  /** Nombre de rounds joués, soit la somme des deux scores. */
+  rounds: number;
+  stats: readonly SeriesInputRow[];
+};
+
 /** Ligne cumulée : la même forme, plus les agents joués et le nombre de maps. */
 export type SeriesRow = SeriesInputRow & {
   /** Agents joués, du plus joué au moins joué. */
   agents: string[];
   /** Nombre de maps sur lesquelles ce joueur a des statistiques. */
   mapsPlayed: number;
+  /** Rounds cumulés des maps que ce joueur a jouées. */
+  rounds: number;
 };
 
 /**
@@ -45,9 +56,25 @@ function playerKey(row: SeriesInputRow): string {
   return row.playerId ?? row.riotName;
 }
 
-/** Moyenne entière d'un champ, pour les indicateurs affichés sans décimale. */
-function avgRounded(rows: readonly SeriesInputRow[], pick: (r: SeriesInputRow) => number): number {
-  return Math.round(rows.reduce((n, r) => n + pick(r), 0) / rows.length);
+/** Une ligne et la longueur de la map sur laquelle elle a été jouée. */
+type PlayedRow = { row: SeriesInputRow; rounds: number };
+
+/**
+ * Moyenne pondérée par les rounds.
+ *
+ * L'ACS, l'ADR et le KAST sont des grandeurs *par round* : les moyenner à
+ * poids égaux reviendrait à faire compter une map de 17 rounds autant qu'une
+ * map de 24, et à surévaluer la performance sur la plus courte.
+ *
+ * Le repli sur la moyenne simple couvre les maps sans round enregistré, où la
+ * pondération n'aurait aucun sens et diviserait par zéro.
+ */
+function weightedAvg(played: readonly PlayedRow[], pick: (r: SeriesInputRow) => number): number {
+  const rounds = played.reduce((n, p) => n + p.rounds, 0);
+  if (rounds === 0) {
+    return played.reduce((n, p) => n + pick(p.row), 0) / played.length;
+  }
+  return played.reduce((n, p) => n + pick(p.row) * p.rounds, 0) / rounds;
 }
 
 /**
@@ -55,9 +82,9 @@ function avgRounded(rows: readonly SeriesInputRow[], pick: (r: SeriesInputRow) =
  * l'ordre alphabétique : deux affichages successifs doivent aligner les
  * icônes dans le même ordre.
  */
-function rankAgents(rows: readonly SeriesInputRow[]): string[] {
+function rankAgents(played: readonly PlayedRow[]): string[] {
   const counts = new Map<string, number>();
-  for (const row of rows) {
+  for (const { row } of played) {
     if (row.agent) counts.set(row.agent, (counts.get(row.agent) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -68,45 +95,56 @@ function rankAgents(rows: readonly SeriesInputRow[]): string[] {
 /**
  * Cumule les statistiques de chaque joueur sur l'ensemble des maps.
  *
- * Les compteurs s'additionnent (frags, assists, entrées). Les indicateurs de
- * performance se moyennent **sur les seules maps jouées par ce joueur** : un
+ * Les compteurs s'additionnent (frags, assists, entrées). L'ACS, l'ADR et le
+ * KAST se moyennent **pondérés par les rounds**, et le rating est **recalculé
+ * sur les totaux de la série** plutôt que moyenné : c'est la seule valeur
+ * cohérente avec les chiffres affichés à côté de lui. Moyenner les ratings de
+ * map donnait jusqu'à 0,04 d'écart sur les données du site, en faveur des
+ * joueurs ayant brillé sur une map courte.
+ *
+ * Tout ne porte que sur les **maps réellement jouées par ce joueur** : un
  * remplaçant entré sur une map ne doit pas voir sa moyenne diluée par celles
  * où il n'était pas là.
- *
- * @param maps les listes de statistiques, une par map de la rencontre.
  */
-export function aggregateSeries(maps: readonly (readonly SeriesInputRow[])[]): SeriesRow[] {
-  const grouped = new Map<string, SeriesInputRow[]>();
-  for (const rows of maps) {
-    for (const row of rows) {
+export function aggregateSeries(maps: readonly SeriesMap[]): SeriesRow[] {
+  const grouped = new Map<string, PlayedRow[]>();
+  for (const { rounds, stats } of maps) {
+    for (const row of stats) {
       const key = playerKey(row);
       const bucket = grouped.get(key);
-      if (bucket) bucket.push(row);
-      else grouped.set(key, [row]);
+      if (bucket) bucket.push({ row, rounds });
+      else grouped.set(key, [{ row, rounds }]);
     }
   }
 
-  return [...grouped.entries()].map(([key, rows]) => {
-    const agents = rankAgents(rows);
+  return [...grouped.entries()].map(([key, played]) => {
+    const agents = rankAgents(played);
+    const rounds = played.reduce((n, p) => n + p.rounds, 0);
+    const kills = played.reduce((n, p) => n + p.row.kills, 0);
+    const deaths = played.reduce((n, p) => n + p.row.deaths, 0);
+    const assists = played.reduce((n, p) => n + p.row.assists, 0);
+    const kast = weightedAvg(played, (r) => r.kast);
+    const adr = weightedAvg(played, (r) => r.adr);
+
     return {
-      ...rows[0],
+      ...played[0].row,
       // L'identifiant ne peut pas être celui d'une ligne de map : il doit
       // rester le même quel que soit le nombre de maps agrégées, sans quoi
       // React remonterait la ligne à chaque changement d'onglet.
       id: `serie-${key}`,
       agents,
       agent: agents[0] ?? null,
-      mapsPlayed: rows.length,
-      kills: rows.reduce((n, r) => n + r.kills, 0),
-      deaths: rows.reduce((n, r) => n + r.deaths, 0),
-      assists: rows.reduce((n, r) => n + r.assists, 0),
-      firstKills: rows.reduce((n, r) => n + r.firstKills, 0),
-      firstDeaths: rows.reduce((n, r) => n + r.firstDeaths, 0),
-      acs: avgRounded(rows, (r) => r.acs),
-      adr: avgRounded(rows, (r) => r.adr),
-      kast: avgRounded(rows, (r) => r.kast),
-      // Le rating garde ses décimales : il est affiché avec deux chiffres.
-      rating: rows.reduce((n, r) => n + r.rating, 0) / rows.length,
+      mapsPlayed: played.length,
+      rounds,
+      kills,
+      deaths,
+      assists,
+      firstKills: played.reduce((n, p) => n + p.row.firstKills, 0),
+      firstDeaths: played.reduce((n, p) => n + p.row.firstDeaths, 0),
+      acs: Math.round(weightedAvg(played, (r) => r.acs)),
+      adr: Math.round(adr),
+      kast: Math.round(kast),
+      rating: computeRating({ rounds, kills, deaths, assists, kastPct: kast, adr }),
     };
   });
 }
