@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { optionalTwitterUrl, optionalTwitchUrl } from "@/lib/validation/common";
 import { VALORANT_ROLES } from "@/lib/roles";
+import { MEMBERSHIP_ROLES } from "@/lib/membership-roles";
 
-export const MEMBERSHIP_ROLES = ["JOUEUR", "SUB", "COACH", "MANAGER"] as const;
+export { MEMBERSHIP_ROLES };
 
 export const playerInputSchema = z.object({
   pseudo: z.string().trim().min(1, "Pseudo requis").max(40),

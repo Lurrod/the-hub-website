@@ -2,14 +2,9 @@ import Link from "next/link";
 import Flag from "@/components/flag";
 import { agentIconUrl } from "@/lib/agents";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
+import MembershipRoleIcon from "@/components/membership-role-icon";
+import { hasOwnIcon, MEMBERSHIP_ROLE_LABELS, type MembershipRoleKey } from "@/lib/membership-roles";
 import { computeAge, durationShort } from "@/lib/dates";
-
-const MEMBERSHIP_LABELS: Record<string, string> = {
-  JOUEUR: "Joueur",
-  SUB: "Remplaçant",
-  COACH: "Coach",
-  MANAGER: "Manager",
-};
 
 export type TeamPlayerCardData = {
   id: string;
@@ -40,10 +35,16 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
       className="card card-interactive relative flex h-full flex-col p-3"
     >
       {/* Le rôle flotte sur le coin haut gauche : la photo occupe tout le haut
-          de la carte. L'icône porte le rôle à elle seule ; le libellé ne sert
-          que pour le staff, qui n'a pas d'icône de rôle Valorant. */}
+          de la carte.
+
+          L'encadrement et les remplaçants ont leur propre pictogramme, qui
+          prend la place du rôle Valorant : sur un roster, savoir qu'un membre
+          est sur le banc prime sur son poste. Le titre reste porté par
+          l'attribut `title`, pour qui survole. */}
       <div className="absolute left-3 top-3 z-10 flex items-center uppercase tracking-wide text-[var(--text-subtle)] tp-label">
-        {roleIcon ? (
+        {hasOwnIcon(player.membershipRole) ? (
+          <MembershipRoleIcon role={player.membershipRole} />
+        ) : roleIcon ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             loading="lazy"
@@ -54,7 +55,7 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
             className="h-5 w-5"
           />
         ) : (
-          <span>{MEMBERSHIP_LABELS[player.membershipRole] ?? player.membershipRole}</span>
+          <span>{MEMBERSHIP_ROLE_LABELS[player.membershipRole as MembershipRoleKey]}</span>
         )}
       </div>
 
