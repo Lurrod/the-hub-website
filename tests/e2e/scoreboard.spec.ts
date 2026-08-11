@@ -160,3 +160,31 @@ test.describe("page LFT", () => {
     await expect(carte).toContainText("Coach");
   });
 });
+
+test.describe("alignement des liens réseaux", () => {
+  // L'infobulle qui enveloppe chaque icône était un bloc en ligne : elle
+  // construisait autour d'elle une ligne de texte, l'icône se posait sur la
+  // ligne de base et laissait 5 px de talon sous elle. Elle paraissait donc
+  // remonter de 2,5 px par rapport au titre qu'elle accompagne.
+  for (const [nom, url] of [
+    ["fiche joueur", "/joueurs/fx-a0"],
+    ["fiche tournoi", "/tournois/fx-tournoi"],
+  ] as const) {
+    test(`les icônes sont centrées sur le titre — ${nom}`, async ({ page }) => {
+      await page.goto(url);
+
+      const ecart = await page.evaluate(() => {
+        const titre = document.querySelector("h1")!;
+        const rangee = titre.parentElement!;
+        const icone = rangee.querySelector("a svg");
+        if (!icone) return null;
+        const r = rangee.getBoundingClientRect();
+        const i = icone.getBoundingClientRect();
+        return i.top + i.height / 2 - (r.top + r.height / 2);
+      });
+
+      expect(ecart, "aucune icône trouvée").not.toBeNull();
+      expect(Math.abs(ecart!)).toBeLessThan(1);
+    });
+  }
+});
