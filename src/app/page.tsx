@@ -1,6 +1,8 @@
 import { auth, signIn } from "@/lib/auth";
 import { getPlayerByUserId } from "@/lib/data/players";
 import LandingHero from "@/components/landing-hero";
+import LandingShowcase from "@/components/landing-showcase";
+import LandingClosing from "@/components/landing-closing";
 import LandingFeed from "@/components/landing-feed";
 import { pageMetadata } from "@/lib/metadata";
 import JsonLdScript from "@/components/json-ld";
@@ -30,6 +32,12 @@ export default async function HomePage() {
     <main>
       <JsonLdScript data={siteJsonLd()} />
       <LandingHero isLoggedIn={isLoggedIn} primaryHref={profileHref} signInAction={signInDiscord} />
+      <LandingShowcase />
+      <LandingClosing
+        isLoggedIn={isLoggedIn}
+        primaryHref={profileHref}
+        signInAction={signInDiscord}
+      />
       {SHOW_FEED && <LandingFeed isLoggedIn={isLoggedIn} />}
     </main>
   );
