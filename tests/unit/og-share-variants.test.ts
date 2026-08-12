@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { matchShareVariants, playerShareVariants } from "@/lib/og/share-variants";
+import {
+  matchShareVariants,
+  playerShareVariants,
+  tournamentShareVariants,
+} from "@/lib/og/share-variants";
 
 const match = (maps: { mapName: string; statCount: number }[], bestOf = 3) => ({
   id: "m1",
@@ -86,6 +90,29 @@ describe("playerShareVariants", () => {
         label: "Fiche",
         imageUrl: "/joueurs/p1/carte",
         filename: "the-hub-sh1n.png",
+      },
+    ]);
+  });
+});
+
+describe("tournamentShareVariants", () => {
+  it("ne propose rien tant que le bracket est vide", () => {
+    // Proposer le téléchargement d'une image sans arbre serait une fausse
+    // promesse : le bouton doit disparaître, pas rendre un cadre nu.
+    expect(tournamentShareVariants({ id: "t1", name: "Hub Open", bracketMatchCount: 0 })).toEqual(
+      []
+    );
+  });
+
+  it("propose la carte de bracket dès la première rencontre", () => {
+    expect(
+      tournamentShareVariants({ id: "t1", name: "Hub Open #3", bracketMatchCount: 1 })
+    ).toEqual([
+      {
+        key: "bracket",
+        label: "Bracket",
+        imageUrl: "/tournois/t1/carte",
+        filename: "the-hub-hub-open-3-bracket.png",
       },
     ]);
   });

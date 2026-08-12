@@ -153,6 +153,10 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
               </h2>
               <p className="mb-4 text-xs text-[var(--text-muted)]">
                 Moyenne sur la période : {overview.avgRating.toFixed(2)}
+                <span className="dot-sep">·</span>
+                <Link href="/rating" className="hover:text-[var(--accent)] hover:underline">
+                  comment est-il calculé ?
+                </Link>
               </p>
               <RatingTrend points={overview.trend} />
             </section>
