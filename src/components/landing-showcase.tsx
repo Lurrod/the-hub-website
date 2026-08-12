@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "@/components/icons";
-import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
-import { PlayerPanel, SharePanel } from "@/components/landing-panels-player";
+import {
+  RecruitPanel,
+  ScoreboardPanel,
+  SharePanel,
+  TournamentPanel,
+} from "@/components/landing-panels";
+import { PlayerPanel } from "@/components/landing-panels-player";
 import { getShowcaseData, type ShowcaseData } from "@/lib/data/landing-showcase";
 
 type Feature = {
@@ -103,7 +108,7 @@ const FEATURES: readonly Feature[] = [
     num: "05",
     eyebrow: "Partage",
     title: "Un lien qui se présente tout seul",
-    body: "Collez l'adresse d'une fiche dans Discord ou sur X : elle se déplie en une carte qui porte le pseudo, l'équipe et les moyennes de carrière. Rien à capturer, rien à recadrer.",
+    body: "Collez l'adresse d'un match dans Discord ou sur X : elle se déplie en une carte qui porte les deux équipes, le score et le détail des cartes. Rien à capturer, rien à recadrer.",
     points: [
       {
         t: "Fabriquée à la demande",
@@ -111,15 +116,15 @@ const FEATURES: readonly Feature[] = [
       },
       {
         t: "Une carte par page",
-        d: "Joueur, équipe, tournoi et match ont chacun la leur.",
+        d: "Match, joueur, équipe et tournoi ont chacun la leur.",
       },
       {
         t: "Une version carrée à télécharger",
         d: "Le format qu'attendent une story ou un post, depuis la fiche elle-même.",
       },
     ],
-    cta: { label: "Voir une fiche à partager", href: "/joueurs" },
-    panel: (d) => <SharePanel data={d.player} />,
+    cta: { label: "Voir un match à partager", href: "/matchs" },
+    panel: (d) => <SharePanel data={d.matchCard} />,
   },
 ];
 

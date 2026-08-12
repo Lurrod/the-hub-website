@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { buildBracket } from "@/lib/bracket";
+import { bestOfLabel, mapsLabel, matchBadge, metaLine, scoreLabel } from "@/lib/og/labels";
+import type { MatchStatus } from "@/lib/constants";
 import { computeAge } from "@/lib/dates";
 import { describeError, logger } from "@/lib/logger";
 import { getPlayerOverview } from "@/lib/data/player-overview";
@@ -196,8 +198,6 @@ export type ShowcasePlayer = {
   /** Ratings carte par carte, la plus ancienne d'abord. */
   trend: number[];
   avgRating: number;
-  /** Moyenne d'ACS, affichée par la carte de partage comme sur la vraie fiche. */
-  avgAcs: number;
   mapRecords: { mapName: string; winratePct: number; wins: number; maps: number }[];
 };
 
@@ -273,7 +273,6 @@ export function getShowcasePlayer(): Promise<ShowcasePlayer | null> {
       // sa FIN pour avoir les dernières cartes, pas son début.
       trend: overview.trend.slice(-TREND_POINTS).map((t) => t.rating),
       avgRating: overview.avgRating,
-      avgAcs: Math.round(overview.avgAcs),
       mapRecords: overview.mapRecords.slice(0, MAP_ROWS),
     };
   });
@@ -519,20 +518,85 @@ export function getShowcaseAds(): Promise<ShowcaseAd[] | null> {
   });
 }
 
+export type ShowcaseMatchCard = {
+  id: string;
+  /** « MATCH · TERMINÉ », comme sur l'image réelle. */
+  badge: string;
+  teamA: ShowcaseTeam;
+  teamB: ShowcaseTeam;
+  /** « 2 – 1 », ou « VS » tant que le match n'a pas commencé. */
+  center: string;
+  /** Tournoi, tour et format, sur une ligne. */
+  meta: string;
+  /** « Ascent 13-9 · Haven 11-13 ». */
+  maps: string;
+};
+
+/**
+ * Le dernier match, tel que sa carte de partage le présente.
+ *
+ * Les quatre lignes de texte sont composées ici avec les helpers de
+ * `lib/og/labels` — ceux-là mêmes qu'emploie `matchs/[id]/opengraph-image`.
+ * La maquette ne réécrit donc aucun libellé : elle dit mot pour mot ce que
+ * dirait l'image, et suivra ses évolutions sans qu'on y pense.
+ *
+ * C'est le même match que l'aperçu de scoreboard, à dessein : celui-ci montre
+ * une carte de la série, celle-là la série entière vue de l'extérieur.
+ */
+export function getShowcaseMatchCard(): Promise<ShowcaseMatchCard | null> {
+  return safely("landing.matchCard", async () => {
+    const match = await db.match.findFirst({
+      where: { status: { not: "SCHEDULED" } },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        status: true,
+        scoreA: true,
+        scoreB: true,
+        round: true,
+        bestOf: true,
+        teamA: { select: { tag: true, name: true, logo: true } },
+        teamB: { select: { tag: true, name: true, logo: true } },
+        tournament: { select: { name: true } },
+        maps: {
+          orderBy: { order: "asc" },
+          select: { mapName: true, scoreA: true, scoreB: true },
+        },
+      },
+    });
+    if (!match) return null;
+
+    const status = match.status as MatchStatus;
+    return {
+      id: match.id,
+      badge: matchBadge(status),
+      teamA: match.teamA,
+      teamB: match.teamB,
+      // Avant le coup d'envoi, la carte annonce l'affiche : un « 0 – 0 » se
+      // lirait comme un résultat.
+      center: status === "SCHEDULED" ? "VS" : scoreLabel(match.scoreA, match.scoreB),
+      meta: metaLine([match.tournament.name, match.round, bestOfLabel(match.bestOf)]),
+      maps: mapsLabel(match.maps),
+    };
+  });
+}
+
 export type ShowcaseData = {
   scoreboard: ShowcaseScoreboard | null;
   player: ShowcasePlayer | null;
   tournament: ShowcaseTournament | null;
   ads: ShowcaseAd[] | null;
+  matchCard: ShowcaseMatchCard | null;
 };
 
 /** Les quatre aperçus, chargés de front : aucun ne dépend d'un autre. */
 export async function getShowcaseData(): Promise<ShowcaseData> {
-  const [scoreboard, player, tournament, ads] = await Promise.all([
+  const [scoreboard, player, tournament, ads, matchCard] = await Promise.all([
     getShowcaseScoreboard(),
     getShowcasePlayer(),
     getShowcaseTournament(),
     getShowcaseAds(),
+    getShowcaseMatchCard(),
   ]);
-  return { scoreboard, player, tournament, ads };
+  return { scoreboard, player, tournament, ads, matchCard };
 }

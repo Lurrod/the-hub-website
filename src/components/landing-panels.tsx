@@ -2,6 +2,7 @@ import AgentIcon from "@/components/agent-icon";
 import type {
   ShowcaseAd,
   ShowcaseBout,
+  ShowcaseMatchCard,
   ShowcaseScoreboard,
   ShowcaseTeam,
   ShowcaseTournament,
@@ -452,6 +453,118 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
           </li>
         ))}
       </ul>
+    </Panel>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 05 — Carte de partage                                               */
+/* ------------------------------------------------------------------ */
+
+const EXAMPLE_MATCH_CARD: ShowcaseMatchCard = {
+  id: "cm7x2k9d40001",
+  badge: "MATCH · TERMINÉ",
+  teamA: { tag: "VRM", name: "Vermeil", logo: null },
+  teamB: { tag: "NRD", name: "Nordique", logo: null },
+  center: "2 – 1",
+  meta: "Hub Open #3 · Demi-finales · Bo3",
+  maps: "Ascent 13-9 · Haven 11-13 · Lotus 13-7",
+};
+
+/** Un camp du duel : logo au-dessus, nom en dessous, sur une colonne égale. */
+function Side({ team }: { team: ShowcaseTeam }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+      <Tag tag={team.tag} logo={team.logo} size="h-10 w-10" />
+      <span className="lf-t11 w-full truncate text-center font-semibold text-white">
+        {team.name}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Rejoue la carte de partage d'un match : bandeau de marque et badge en haut,
+ * le duel au centre, tournoi et cartes en dessous, domaine en pied.
+ *
+ * La composition et les rôles de couleur viennent de `matchs/[id]/
+ * opengraph-image` et de `lib/og/fields`. Les quatre lignes de texte, elles,
+ * sont composées en amont par `getShowcaseMatchCard` avec les helpers de
+ * `lib/og/labels` : la maquette ne réécrit aucun libellé, elle affiche mot
+ * pour mot ce que dirait l'image.
+ *
+ * Ce n'est volontairement pas l'image elle-même : l'afficher demanderait un
+ * rendu Satori par visiteur sur la page la plus servie du site, pour un
+ * résultat identique à l'œil.
+ *
+ * Elle est montrée là où on la voit vraiment, dans un message : c'est ce qui
+ * la distingue d'une simple illustration de fiche.
+ */
+export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
+  const m = data ?? EXAMPLE_MATCH_CARD;
+
+  return (
+    <Panel>
+      <PanelHead
+        label="Carte de partage"
+        right={<span className="lf-t10 shrink-0 text-[var(--text-subtle)]">Lien collé</span>}
+      />
+
+      {/* Le message qui contient le lien. */}
+      <div className="flex min-w-0 gap-2.5">
+        <span className="monogram lf-t10 grid h-8 w-8 shrink-0 place-items-center rounded-full font-semibold">
+          LU
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className="lf-t11 font-semibold text-white">Lurrod</span>
+            <span className="lf-t10 text-[var(--text-subtle)]">aujourd&apos;hui</span>
+          </div>
+          <p className="lf-t11 mt-0.5 truncate text-[var(--accent)]">
+            the-hub-vrc.fr/matchs/{m.id}
+          </p>
+
+          {/* L'aperçu déplié, liseré d'accent à gauche comme dans un client de
+              discussion. */}
+          <div className="mt-2 overflow-hidden rounded-[var(--r-md)] border border-l-2 border-[var(--border)] border-l-[var(--accent)] bg-[var(--bg)]">
+            {/* La proportion réelle de la carte (1200×630) n'est tenue qu'à
+                partir de `sm` : sous 400 px de large, elle réduirait la hauteur
+                au point d'écraser le contenu. En dessous, la carte prend la
+                hauteur qu'il lui faut. */}
+            <div className="flex min-w-0 flex-col justify-between gap-3 p-3.5 sm:aspect-[1200/630]">
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.png"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-5 w-5 shrink-0 rounded-[4px] object-cover"
+                />
+                <span className="stat lf-t10 truncate tracking-[0.22em] text-[var(--accent)]">
+                  {m.badge}
+                </span>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <Side team={m.teamA} />
+                  <span className="lf-og-title shrink-0 text-[var(--accent)]">{m.center}</span>
+                  <Side team={m.teamB} />
+                </div>
+                {m.meta && (
+                  <span className="stat lf-t10 truncate text-[var(--text-muted)]">{m.meta}</span>
+                )}
+                {m.maps && (
+                  <span className="stat lf-t10 truncate text-[var(--accent)]">{m.maps}</span>
+                )}
+              </div>
+
+              <span className="stat lf-t10 text-[var(--accent)]">the-hub-vrc.fr</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </Panel>
   );
 }

@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Les valeurs de base sont posées dans `beforeEach`.
 const db = {
   matchMap: { findFirst: vi.fn() },
+  match: { findFirst: vi.fn() },
   player: { findUnique: vi.fn(), findMany: vi.fn() },
   team: { findMany: vi.fn() },
   tournament: { findMany: vi.fn() },
@@ -32,6 +33,7 @@ vi.mock("@/lib/logger", async (importOriginal) => ({
 }));
 
 const {
+  getShowcaseMatchCard,
   getShowcaseScoreboard,
   getShowcasePlayer,
   getShowcaseTournament,
@@ -61,6 +63,7 @@ beforeEach(() => {
   db.player.findMany.mockResolvedValue([]);
   db.team.findMany.mockResolvedValue([]);
   db.tournament.findMany.mockResolvedValue([]);
+  db.match.findFirst.mockResolvedValue(null);
   db.$queryRaw.mockResolvedValue([]);
 });
 
@@ -325,6 +328,54 @@ describe("getShowcaseAds", () => {
   });
 });
 
+describe("getShowcaseMatchCard", () => {
+  const match = (over: Record<string, unknown> = {}) => ({
+    id: "m1",
+    status: "FINISHED",
+    scoreA: 2,
+    scoreB: 1,
+    round: "Demi-finales",
+    bestOf: 3,
+    teamA: team("AAA"),
+    teamB: team("BBB"),
+    tournament: { name: "Hub Open" },
+    maps: [
+      { mapName: "Ascent", scoreA: 13, scoreB: 9 },
+      { mapName: "Haven", scoreA: 11, scoreB: 13 },
+    ],
+    ...over,
+  });
+
+  it("compose ses libellés comme la carte réelle", async () => {
+    db.match.findFirst.mockResolvedValue(match());
+
+    const c = await getShowcaseMatchCard();
+
+    expect(c?.badge).toBe("MATCH · TERMINÉ");
+    expect(c?.center).toBe("2 – 1");
+    expect(c?.meta).toBe("Hub Open · Demi-finales · Bo3");
+    expect(c?.maps).toBe("Ascent 13-9 · Haven 11-13");
+  });
+
+  it("annonce l'affiche plutôt qu'un score tant que rien n'est joué", async () => {
+    // `getShowcaseMatchCard` écarte déjà les matchs programmés ; la règle est
+    // vérifiée ici pour qu'un élargissement du filtre ne la perde pas.
+    db.match.findFirst.mockResolvedValue(match({ status: "SCHEDULED", scoreA: 0, scoreB: 0 }));
+
+    expect((await getShowcaseMatchCard())?.center).toBe("VS");
+  });
+
+  it("laisse la ligne des cartes vide quand aucune n'est saisie", async () => {
+    db.match.findFirst.mockResolvedValue(match({ maps: [] }));
+
+    expect((await getShowcaseMatchCard())?.maps).toBe("");
+  });
+
+  it("se tait quand aucun match n'a été joué", async () => {
+    expect(await getShowcaseMatchCard()).toBeNull();
+  });
+});
+
 describe("getShowcaseData", () => {
   it("rend les quatre aperçus à null plutôt que d'échouer quand tout est vide", async () => {
     db.matchMap.findFirst.mockResolvedValue(null);
@@ -334,6 +385,7 @@ describe("getShowcaseData", () => {
       player: null,
       tournament: null,
       ads: null,
+      matchCard: null,
     });
   });
 });
