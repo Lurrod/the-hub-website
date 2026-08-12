@@ -1,3 +1,4 @@
+import { EmptyLine } from "@/components/empty-state";
 import MatchMiniList, { type MiniMatch } from "@/components/match-mini-list";
 
 /**
@@ -48,7 +49,7 @@ export default function MatchSideColumn({
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
             Matchs
           </h2>
-          <p className="text-sm text-[var(--text-muted)]">Aucun match.</p>
+          <EmptyLine>Aucun match, ni joué ni programmé.</EmptyLine>
         </section>
       )}
     </div>

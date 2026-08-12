@@ -5,6 +5,7 @@ import TournamentTabs from "@/components/tournament-tabs";
 import PlayerMatches from "@/components/player-matches";
 import PlayerCareerTable from "@/components/player-career-table";
 import { notFound } from "next/navigation";
+import EmptyState, { StatsDecor } from "@/components/empty-state";
 import { getPlayer } from "@/lib/data/players";
 import { getPlayerMatches } from "@/lib/data/player-matches";
 import { getPlayerCareer } from "@/lib/data/player-career";
@@ -103,43 +104,49 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
       />
 
       <div className="flex min-w-0 flex-col gap-10">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <StatTile
-            label="Agent le plus joué"
-            value={overview.topAgent?.agent ?? "-"}
-            sub={
-              overview.topAgent
-                ? `${overview.topAgent.maps} carte${overview.topAgent.maps > 1 ? "s" : ""} · ${overview.topAgent.pct} % du temps de jeu`
-                : "Aucune carte jouée"
-            }
-            icon={overview.topAgent && <AgentIcon agent={overview.topAgent.agent} size="h-7 w-7" />}
-          />
-          <StatTile
-            label="K/D"
-            value={hasStats ? overview.kd.toFixed(2) : "-"}
-            sub={
-              hasStats ? `${overview.kills} kills · ${overview.deaths} morts` : "Aucune carte jouée"
-            }
-          />
-          <StatTile
-            label="Meilleure partie"
-            value={overview.bestGame ? `${overview.bestGame.kills} kills` : "-"}
-            sub={
-              overview.bestGame
-                ? `${overview.bestGame.mapName}${overview.bestGame.opponentTag ? ` vs ${overview.bestGame.opponentTag}` : ""} · ${overview.bestGame.kills}/${overview.bestGame.deaths}/${overview.bestGame.assists}`
-                : "Aucune carte jouée"
-            }
-            href={overview.bestGame ? `/matchs/${overview.bestGame.matchId}` : undefined}
-          />
-        </div>
-
+        {/* Sans une seule carte, les trois tuiles n'affichaient que des tirets
+            et trois fois « Aucune carte jouée ». On les retire au profit d'un
+            seul état vide, qui occupe la place que prendront les graphiques et
+            annonce ce qui les fera apparaître. */}
         {!hasStats ? (
-          <p className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
-            Aucune statistique pour l&apos;instant. Les graphiques apparaîtront dès la première
-            carte jouée avec un scoreboard importé.
-          </p>
+          <EmptyState
+            title="Aucune statistique pour l'instant"
+            description="Les moyennes, la courbe de rating et le détail par map apparaîtront dès qu'un match où ce joueur figure sera enregistré avec son scoreboard."
+            action={{ label: "Voir les matchs enregistrés", href: "/matchs" }}
+            decor={<StatsDecor />}
+          />
         ) : (
           <>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StatTile
+                label="Agent le plus joué"
+                value={overview.topAgent?.agent ?? "—"}
+                sub={
+                  overview.topAgent
+                    ? `${overview.topAgent.maps} carte${overview.topAgent.maps > 1 ? "s" : ""} · ${overview.topAgent.pct} % du temps de jeu`
+                    : "Agent non renseigné sur les cartes jouées"
+                }
+                icon={
+                  overview.topAgent && <AgentIcon agent={overview.topAgent.agent} size="h-7 w-7" />
+                }
+              />
+              <StatTile
+                label="K/D"
+                value={overview.kd.toFixed(2)}
+                sub={`${overview.kills} kills · ${overview.deaths} morts`}
+              />
+              <StatTile
+                label="Meilleure partie"
+                value={overview.bestGame ? `${overview.bestGame.kills} kills` : "—"}
+                sub={
+                  overview.bestGame
+                    ? `${overview.bestGame.mapName}${overview.bestGame.opponentTag ? ` vs ${overview.bestGame.opponentTag}` : ""} · ${overview.bestGame.kills}/${overview.bestGame.deaths}/${overview.bestGame.assists}`
+                    : "Aucune partie relevée"
+                }
+                href={overview.bestGame ? `/matchs/${overview.bestGame.matchId}` : undefined}
+              />
+            </div>
+
             <section>
               <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
                 Rating sur les {overview.trend.length} dernières cartes

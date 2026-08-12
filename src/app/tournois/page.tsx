@@ -1,4 +1,5 @@
 import { listTournaments } from "@/lib/data/tournaments";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import { REGIONS, TOURNAMENT_STATUSES } from "@/lib/constants";
 import TournamentFilters from "@/components/tournament-filters";
 import TournamentListRow from "@/components/tournament-list-row";
@@ -54,7 +55,11 @@ export default async function TournamentsPage({
         </div>
 
         {tournaments.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Aucun tournoi pour ce filtre.</p>
+          <EmptyState
+            title="Aucun tournoi pour ce filtre"
+            description="Les compétitions inscrites sur The Hub apparaissent ici, de la phase de poules à la finale."
+            decor={<ListDecor />}
+          />
         ) : (
           <div className="space-y-6">
             {months.map((mo) => (
