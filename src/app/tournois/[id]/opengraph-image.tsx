@@ -2,7 +2,7 @@ import { TOURNAMENT_FORMAT_LABELS, type TournamentFormat } from "@/lib/constants
 import { getTournament } from "@/lib/data/tournaments";
 import { Avatar, Meta, Stats, Title } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
-import { uploadAsPngDataUri } from "@/lib/og/image";
+import { imageAsPngDataUri } from "@/lib/og/image";
 import { dateRangeLabel, metaLine, teamCountLabel, tournamentBadge } from "@/lib/og/labels";
 
 export const alt = "Tournoi";
@@ -13,7 +13,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const tournament = await getTournament(id);
   if (!tournament) return renderOg("TOURNOI", () => null);
 
-  const logo = await uploadAsPngDataUri(tournament.logo);
+  const logo = await imageAsPngDataUri(tournament.logo);
 
   return renderOg(tournamentBadge(tournament.status), () => (
     <>

@@ -2,7 +2,7 @@ import { getActiveMembership, getPlayer } from "@/lib/data/players";
 import { db } from "@/lib/db";
 import { Avatar, Meta, Stats, Title } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
-import { uploadAsPngDataUri } from "@/lib/og/image";
+import { imageAsPngDataUri } from "@/lib/og/image";
 import { metaLine } from "@/lib/og/labels";
 import { ROLE_LABELS, type ValorantRoleKey } from "@/lib/roles";
 
@@ -34,7 +34,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   if (!player) return renderOg("JOUEUR", () => null);
 
   const [photo, membership, stats] = await Promise.all([
-    uploadAsPngDataUri(player.photo),
+    imageAsPngDataUri(player.photo),
     getActiveMembership(id),
     careerAverages(id),
   ]);

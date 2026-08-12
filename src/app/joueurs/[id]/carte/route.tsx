@@ -2,7 +2,7 @@ import { getActiveMembership, getPlayer } from "@/lib/data/players";
 import { getPlayerOverview } from "@/lib/data/player-overview";
 import { Avatar, Meta, Stats, StatGrid, Title } from "@/lib/og/fields";
 import { renderOg, SQUARE } from "@/lib/og/frame";
-import { uploadAsPngDataUri } from "@/lib/og/image";
+import { imageAsPngDataUri } from "@/lib/og/image";
 import { agentsLabel, metaLine, statGridValues } from "@/lib/og/labels";
 import { ROLE_LABELS, type ValorantRoleKey } from "@/lib/roles";
 
@@ -19,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!player) return new Response("Joueur introuvable", { status: 404 });
 
   const [photo, membership, overview] = await Promise.all([
-    uploadAsPngDataUri(player.photo, 320),
+    imageAsPngDataUri(player.photo, 320),
     getActiveMembership(id),
     getPlayerOverview(id),
   ]);
