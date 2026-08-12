@@ -455,6 +455,164 @@ body :is(h1, h2, h3, h4, h5, h6) {
   }
 }
 
+/* ============================================================
+   Landing - démonstration des fonctionnalités (`.lf-*`)
+   Même contrainte que le hero : hors @layer et accrochées à une
+   classe pour primer sur la règle globale qui plafonne le site à
+   12/16px. Chaque sélecteur vise aussi ses descendants (`X *`),
+   sinon les <span> internes retombent à 12px.
+   Corollaire : ne jamais imbriquer deux de ces classes, la
+   descendante perdrait contre l'ascendante déclarée plus bas.
+   ============================================================ */
+
+.lf-eyebrow,
+.lf-eyebrow * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.lf-h2,
+.lf-h2 * {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.5vw, 2.9rem);
+  line-height: 1.07;
+  letter-spacing: -0.035em;
+}
+.lf-h3,
+.lf-h3 * {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.35rem, 2.2vw, 1.95rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+.lf-lede,
+.lf-lede * {
+  font-size: clamp(0.875rem, 1vw, 1rem);
+  line-height: 1.75;
+}
+.lf-body,
+.lf-body * {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.lf-point-t,
+.lf-point-t * {
+  font-size: 13px;
+}
+.lf-point-d,
+.lf-point-d * {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.lf-act,
+.lf-act * {
+  font-size: 13px;
+}
+
+/* Numéro d'ordre, posé en filigrane derrière le titre du bloc. */
+.lf-num {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: clamp(4.5rem, 8.5vw, 9rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: rgba(255, 255, 255, 0.045);
+}
+
+/* Tailles internes des maquettes : elles rejouent l'interface réelle, qui
+   descend sous le plancher de 12px (en-têtes de colonnes, libellés de tuile).
+   À poser sur l'élément qui porte le texte, jamais sur un conteneur dont les
+   enfants ont des tailles différentes. */
+.lf-t10,
+.lf-t10 * {
+  font-size: 10px;
+}
+.lf-t11,
+.lf-t11 * {
+  font-size: 11px;
+}
+.lf-t13,
+.lf-t13 * {
+  font-size: 13px;
+}
+.lf-t18,
+.lf-t18 * {
+  font-size: 18px;
+}
+
+/* --- Cadre des maquettes --- */
+.lf-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 30px 80px -42px rgba(0, 0, 0, 0.9);
+}
+/* Liseré lumineux sur l'arête haute : détache le cadre du fond de page. */
+.lf-panel::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+}
+/* Nappes d'accent + trame de points, sous le contenu. */
+.lf-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 62% at 10% 0%, rgba(237, 94, 41, 0.16), transparent 70%),
+    radial-gradient(55% 70% at 100% 100%, rgba(242, 146, 94, 0.08), transparent 70%),
+    radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    18px 18px;
+}
+
+/* Filet dégradé qui ouvre l'en-tête de section. */
+.lf-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.55;
+}
+
+/* --- Apparition au défilement, sans JavaScript ---
+   `animation-timeline: view()` pilote l'animation par la position de
+   l'élément dans le viewport. Les navigateurs qui ne l'implémentent pas
+   sautent tout le bloc @supports : le contenu reste simplement visible,
+   sans jamais dépendre d'un script pour s'afficher. */
+@keyframes lf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lf-reveal {
+      animation: lf-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 4% cover 24%;
+    }
+  }
+}
+
 /* Crédit du footer : tailles imposées. Hors @layer et accrochées à une classe
    pour primer sur la règle globale `body *` qui plafonne le site à 12px. */
 .f-by {
