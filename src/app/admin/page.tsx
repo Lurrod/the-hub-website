@@ -3,8 +3,13 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/server-auth";
 import { isAdmin } from "@/lib/permissions";
 import { db } from "@/lib/db";
+import { getAudienceSummary } from "@/lib/data/audience";
+import AdminAudience from "@/components/admin-audience";
 
 export const metadata = { title: "Administration" };
+
+/** Fenêtre de la zone de fréquentation. */
+const AUDIENCE_DAYS = 30;
 
 type AdminSection = {
   href: string;
@@ -19,11 +24,12 @@ export default async function AdminDashboardPage() {
   const user = await getSessionUser();
   if (!isAdmin(user)) redirect("/");
 
-  const [teams, players, tournaments, matches] = await Promise.all([
+  const [teams, players, tournaments, matches, audience] = await Promise.all([
     db.team.count(),
     db.player.count(),
     db.tournament.count(),
     db.match.count(),
+    getAudienceSummary(AUDIENCE_DAYS),
   ]);
 
   const sections: AdminSection[] = [
@@ -86,6 +92,8 @@ export default async function AdminDashboardPage() {
           </div>
         ))}
       </div>
+
+      <AdminAudience summary={audience} days={AUDIENCE_DAYS} />
     </main>
   );
 }

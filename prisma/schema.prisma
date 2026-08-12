@@ -393,3 +393,46 @@ model PlayerGameStat {
   // compte Riot, et le rattachement à l'import se fait par ce même champ.
   @@index([puuid])
 }
+
+/**
+ * Mesure d'audience — trois tables, aucune donnée personnelle conservée.
+ *
+ * Le principe : on n'écrit jamais une ligne par visite, seulement des
+ * compteurs. Rien ne permet de reconstituer un parcours, ni de relier deux
+ * jours entre eux.
+ */
+
+/// Total du site pour une journée. `visitors` est incrémenté à la première
+/// apparition d'une empreinte, `views` à chaque page vue.
+model AudienceDay {
+  day      DateTime @id @db.Date
+  views    Int      @default(0)
+  visitors Int      @default(0)
+}
+
+/// Pages vues par jour et par page. Le chemin est normalisé — un identifiant
+/// est remplacé par son gabarit (`/joueurs/[id]`) — sinon la table grossirait
+/// d'une ligne par fiche consultée.
+model AudiencePage {
+  day   DateTime @db.Date
+  path  String
+  views Int      @default(0)
+
+  @@id([day, path])
+  @@index([day])
+}
+
+/// Empreintes déjà vues aujourd'hui, à seule fin de ne pas compter deux fois
+/// le même visiteur.
+///
+/// L'empreinte est un SHA-256 d'IP + navigateur salé par un secret ET par la
+/// date : elle est donc invérifiable sans le secret, et incomparable d'un jour
+/// à l'autre. Les lignes sont purgées passé quelques jours — le total, lui,
+/// vit dans `AudienceDay`.
+model AudienceVisitor {
+  day  DateTime @db.Date
+  hash String
+
+  @@id([day, hash])
+  @@index([day])
+}
