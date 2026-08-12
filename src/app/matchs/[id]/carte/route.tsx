@@ -11,7 +11,7 @@ import {
   Stats,
 } from "@/lib/og/fields";
 import { renderOg, SQUARE } from "@/lib/og/frame";
-import { uploadAsPngDataUri } from "@/lib/og/image";
+import { imageAsPngDataUri } from "@/lib/og/image";
 import { bestOfLabel, matchBadge, mapsLabel, metaLine, mvpLabel } from "@/lib/og/labels";
 import { bySide, kdaLabel, mapRows, seriesRows, type CardStatRow } from "@/lib/og/scoreboard";
 import { DISPLAY, MONO, OG } from "@/lib/og/theme";
@@ -188,8 +188,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!match) return new Response("Match introuvable", { status: 404 });
 
   const [logoA, logoB] = await Promise.all([
-    uploadAsPngDataUri(match.teamA.logo),
-    uploadAsPngDataUri(match.teamB.logo),
+    imageAsPngDataUri(match.teamA.logo),
+    imageAsPngDataUri(match.teamB.logo),
   ]);
 
   const view = parseView(new URL(request.url).searchParams.get("vue"), match.maps.length);

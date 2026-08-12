@@ -33,7 +33,7 @@ export function Stats({ children }: { children: string }) {
 
 /**
  * Logo d'une entité, ou son monogramme quand l'image est absente.
- * `src` vient de `uploadAsPngDataUri`, qui renvoie `null` en cas d'échec.
+ * `src` vient de `imageAsPngDataUri`, qui renvoie `null` en cas d'échec.
  */
 export function Avatar({
   src,

@@ -1,7 +1,7 @@
 import { getMatch } from "@/lib/data/matches";
 import { Avatar, Meta, Stats } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
-import { uploadAsPngDataUri } from "@/lib/og/image";
+import { imageAsPngDataUri } from "@/lib/og/image";
 import { bestOfLabel, mapsLabel, matchBadge, metaLine, scoreLabel } from "@/lib/og/labels";
 import { DISPLAY, OG } from "@/lib/og/theme";
 
@@ -41,8 +41,8 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   if (!match) return renderOg("MATCH", () => null);
 
   const [logoA, logoB] = await Promise.all([
-    uploadAsPngDataUri(match.teamA.logo),
-    uploadAsPngDataUri(match.teamB.logo),
+    imageAsPngDataUri(match.teamA.logo),
+    imageAsPngDataUri(match.teamB.logo),
   ]);
 
   // Le score n'a de sens qu'une fois le match commencé : avant, la carte
