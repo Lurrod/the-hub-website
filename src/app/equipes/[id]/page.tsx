@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SocialLinks from "@/components/social-links";
+import EmptyState, { RosterDecor } from "@/components/empty-state";
 import { notFound } from "next/navigation";
 import { getTeam } from "@/lib/data/teams";
 import { getTeamRosterCards, getTeamAlumni } from "@/lib/data/players";
@@ -105,7 +106,11 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
               Roster
             </h2>
             {players.length === 0 ? (
-              <p className="text-[var(--text-muted)]">Aucun joueur enregistré pour cette équipe.</p>
+              <EmptyState
+                title="Aucun joueur enregistré"
+                description="L'effectif se remplit quand un manager invite ses joueurs. Leurs statistiques de match remontent ensuite d'elles-mêmes sur la fiche."
+                decor={<RosterDecor />}
+              />
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {players.map(playerCard)}

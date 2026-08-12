@@ -1,3 +1,4 @@
+import { EmptyLine } from "@/components/empty-state";
 import {
   MANAGER_ROLES,
   MANAGER_ROLE_HINTS,
@@ -39,7 +40,11 @@ export default function ManagerList({
   return (
     <>
       <ul className="mb-6 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
-        {managers.length === 0 && <li className="p-3 text-[var(--text-muted)]">Aucun manager.</li>}
+        {managers.length === 0 && (
+          <li className="p-3">
+            <EmptyLine>Aucun manager désigné.</EmptyLine>
+          </li>
+        )}
         {managers.map((m) => {
           const isOwner = m.role === "OWNER";
           // Le dernier propriétaire ne peut être ni rétrogradé ni retiré :

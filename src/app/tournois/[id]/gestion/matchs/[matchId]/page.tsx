@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { EmptyLine } from "@/components/empty-state";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
@@ -132,7 +133,9 @@ export default async function EditMatchPage({
         </p>
         <ul className="mb-4 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
           {match.maps.length === 0 && (
-            <li className="p-3 text-[var(--text-muted)]">Aucune map saisie.</li>
+            <li className="p-3">
+              <EmptyLine>Aucune map saisie.</EmptyLine>
+            </li>
           )}
           {match.maps.map((m) => {
             const removeWith = removeMatchMapAction.bind(null, id, matchId, m.id);

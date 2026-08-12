@@ -1,5 +1,6 @@
 import MatchRow, { type MatchRowData } from "@/components/match-row";
 import SummaryLink from "@/components/summary-link";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 
 export type MatchGroup = {
   tournamentId: string;
@@ -38,7 +39,14 @@ export default function TeamMatchGroups({
   teamId: string;
 }) {
   if (groups.length === 0) {
-    return <p className="text-[var(--text-muted)]">Aucun match joué pour le moment.</p>;
+    return (
+      <EmptyState
+        title="Aucun match joué"
+        description="Les rencontres de l'équipe apparaîtront ici dès qu'un organisateur les enregistrera."
+        action={{ label: "Voir les tournois", href: "/tournois" }}
+        decor={<ListDecor />}
+      />
+    );
   }
 
   return (

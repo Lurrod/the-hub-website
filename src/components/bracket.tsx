@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState, { BracketDecor } from "@/components/empty-state";
 import BracketGrandFinalLines from "@/components/bracket-grand-final-lines";
 import {
   buildBracket,
@@ -27,7 +28,13 @@ export default function Bracket({
 }) {
   const { layout, sections } = buildBracket(matches, format);
   if (sections.length === 0) {
-    return <p className="text-[var(--text-muted)]">Aucun match de bracket saisi.</p>;
+    return (
+      <EmptyState
+        title="Aucun bracket saisi"
+        description="L'arbre se dessine dès que l'organisateur enregistre les rencontres à élimination directe, tour par tour."
+        decor={<BracketDecor />}
+      />
+    );
   }
 
   // Double élimination : upper + lower empilés à gauche, grande finale à droite,

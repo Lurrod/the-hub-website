@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import Flag from "@/components/flag";
 import AgentDonut from "@/components/charts/agent-donut";
 import MapHeatmap from "@/components/charts/map-heatmap";
@@ -137,9 +138,11 @@ function SideBar({
 export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
   if (teams.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
-        Aucun match terminé pour l&apos;instant.
-      </p>
+      <EmptyState
+        title="Aucun match terminé"
+        description="Le classement des équipes se construit à partir des rencontres jouées : victoires, différentiel de cartes et de rounds."
+        decor={<ListDecor />}
+      />
     );
   }
 

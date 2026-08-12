@@ -19,6 +19,7 @@ import {
   type LfpFilters,
 } from "@/lib/lfp";
 import LftCard from "@/components/lft-card";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import LftFiltersBar from "@/components/lft-filters";
 import LfpCard from "@/components/lfp-card";
 import LfpFiltersBar from "@/components/lfp-filters";
@@ -178,9 +179,11 @@ async function LfpView({ raw, page }: { raw: Params; page: number }) {
       </div>
 
       {teams.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">
-          Aucune équipe ne recrute pour ces filtres.
-        </p>
+        <EmptyState
+          title="Aucune équipe ne recrute pour ces filtres"
+          description="Les annonces d'équipes en recherche de joueurs apparaissent ici. Une équipe peut en publier une depuis son écran de gestion."
+          decor={<ListDecor />}
+        />
       ) : (
         <div className="stagger-in grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {teams.map((t) => (

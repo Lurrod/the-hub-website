@@ -1,10 +1,11 @@
 import type { StandingDisplayRow } from "@/lib/standings";
+import { EmptyLine } from "@/components/empty-state";
 
 export type { StandingDisplayRow };
 
 export default function StandingsTable({ rows }: { rows: StandingDisplayRow[] }) {
   if (rows.length === 0) {
-    return <p className="text-[var(--text-muted)]">Aucune équipe dans cette poule.</p>;
+    return <EmptyLine>Aucune équipe dans cette poule.</EmptyLine>;
   }
   // La colonne des nuls n'apparaît que s'il y en a : en élimination directe et
   // dans la plupart des poules, elle ne serait qu'une colonne de zéros.

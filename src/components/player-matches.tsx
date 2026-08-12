@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import AgentIcon from "@/components/agent-icon";
 import type { PlayerMatchDay, PlayerMapRow, TeamAgents } from "@/lib/data/player-matches";
 
@@ -156,7 +157,14 @@ function MapRow({ mp }: { mp: PlayerMapRow }) {
 
 export default function PlayerMatches({ days }: { days: PlayerMatchDay[] }) {
   if (days.length === 0) {
-    return <p className="text-[var(--text-muted)]">Aucun match joué pour le moment.</p>;
+    return (
+      <EmptyState
+        title="Aucun match joué"
+        description="Chaque rencontre enregistrée où ce joueur figure viendra s'ajouter ici, avec son scoreboard carte par carte."
+        action={{ label: "Voir les matchs enregistrés", href: "/matchs" }}
+        decor={<ListDecor />}
+      />
+    );
   }
 
   // Tout dans une seule zone : les bandeaux date+tournoi font les séparations.

@@ -1,4 +1,5 @@
 import { searchAll } from "@/lib/data/search";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import TeamCard from "@/components/team-card";
 import PlayerCard from "@/components/player-card";
 import TournamentCard from "@/components/tournament-card";
@@ -38,7 +39,11 @@ export default async function SearchPage({
             Saisis un terme pour lancer la recherche.
           </p>
         ) : total === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Aucun résultat pour « {q} ».</p>
+          <EmptyState
+            title={`Aucun résultat pour « ${q} »`}
+            description="La recherche porte sur les joueurs, les équipes et les tournois. Vérifie l'orthographe, ou essaie un terme plus court."
+            decor={<ListDecor />}
+          />
         ) : (
           <div className="space-y-6">
             {results.teams.length > 0 && (

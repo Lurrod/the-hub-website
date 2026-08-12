@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { EmptyLine } from "@/components/empty-state";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
@@ -60,7 +61,9 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
             <h2 className="mb-3 text-lg font-semibold text-white">Poules</h2>
             <ul className="mb-3 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
               {groups.length === 0 && (
-                <li className="p-3 text-[var(--text-muted)]">Aucune poule.</li>
+                <li className="p-3">
+                  <EmptyLine>Aucune poule créée.</EmptyLine>
+                </li>
               )}
               {groups.map((g) => {
                 const deleteGroupWith = deleteGroupAction.bind(null, id, g.id);
@@ -93,7 +96,9 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
             </h2>
             <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
               {tournament.participants.length === 0 && (
-                <li className="p-3 text-[var(--text-muted)]">Aucune équipe inscrite.</li>
+                <li className="p-3">
+                  <EmptyLine>Aucune équipe inscrite.</EmptyLine>
+                </li>
               )}
               {tournament.participants.map((p) => {
                 const assignWith = assignParticipantGroupAction.bind(null, id, p.teamId);
@@ -124,7 +129,11 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
       <section className="mb-10">
         <h2 className="mb-3 text-lg font-semibold text-white">Matchs</h2>
         <ul className="mb-4 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
-          {matches.length === 0 && <li className="p-3 text-[var(--text-muted)]">Aucun match.</li>}
+          {matches.length === 0 && (
+            <li className="p-3">
+              <EmptyLine>Aucun match saisi.</EmptyLine>
+            </li>
+          )}
           {matches.map((m) => {
             const deleteMatchWith = deleteMatchAction.bind(null, id, m.id);
             return (

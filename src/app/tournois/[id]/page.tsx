@@ -9,6 +9,7 @@ import {
 import { getTournamentStats } from "@/lib/data/tournament-stats";
 import { getTournamentTeamStats } from "@/lib/data/tournament-teams";
 import TournamentTabs from "@/components/tournament-tabs";
+import EmptyState, { RosterDecor, StatsDecor } from "@/components/empty-state";
 import TournamentStats from "@/components/tournament-stats";
 import MatchMiniList from "@/components/match-mini-list";
 import TournamentMatchList from "@/components/tournament-match-list";
@@ -194,7 +195,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             />
           </div>
           {participants.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">Aucune équipe inscrite.</p>
+            <EmptyState
+              title="Aucune équipe inscrite"
+              description="Les équipes inscrites apparaîtront ici, avec leur effectif. L'inscription se fait depuis cette page tant qu'elle est ouverte."
+              decor={<RosterDecor />}
+            />
           ) : (
             <div className="flex flex-wrap gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
               {participants.map((p) => (
@@ -252,9 +257,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       players={stats.players}
     />
   ) : (
-    <div className="rounded-lg border border-dashed border-[var(--border)] p-10 text-center text-sm text-[var(--text-muted)]">
-      Aucune statistique disponible pour le moment.
-    </div>
+    <EmptyState
+      title="Aucune statistique pour l'instant"
+      description="Les classements de joueurs, les moyennes et les records du tournoi se remplissent à mesure que les scoreboards des matchs sont importés."
+      decor={<StatsDecor />}
+    />
   );
 
   return (

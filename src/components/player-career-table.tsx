@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AgentIcon from "@/components/agent-icon";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import LiveDuration from "@/components/live-duration";
 import { lengthLabel } from "@/lib/duration";
 import type { CareerStint } from "@/lib/data/player-career";
@@ -14,7 +15,14 @@ const TD = "px-3 py-2.5 align-middle";
 
 export default function PlayerCareerTable({ stints }: { stints: CareerStint[] }) {
   if (stints.length === 0) {
-    return <p className="text-[var(--text-muted)]">Aucune équipe enregistrée.</p>;
+    return (
+      <EmptyState
+        title="Aucun passage en équipe"
+        description="Le parcours se construit à mesure que le joueur rejoint des équipes : chaque passage y figure avec ses dates d'entrée et de sortie."
+        action={{ label: "Voir les équipes", href: "/equipes" }}
+        decor={<ListDecor rows={2} />}
+      />
+    );
   }
   return (
     <div

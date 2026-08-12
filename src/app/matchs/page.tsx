@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Segmented from "@/components/segmented";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import { listTournamentsWithMatches } from "@/lib/data/matches";
 import { MatchListItem } from "@/components/tournament-match-list";
 import Pagination from "@/components/pagination";
@@ -69,7 +70,12 @@ export default async function MatchesPage({
         </Segmented>
 
         {tournaments.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Aucun match pour ce filtre.</p>
+          <EmptyState
+            title="Aucun match pour ce filtre"
+            description="Les rencontres apparaissent ici dès qu'un organisateur les enregistre, avec leur scoreboard carte par carte."
+            action={{ label: "Voir les tournois", href: "/tournois" }}
+            decor={<ListDecor />}
+          />
         ) : (
           <div className="space-y-6">
             {tournaments.map((t) => (

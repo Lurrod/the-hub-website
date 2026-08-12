@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import { getMatch } from "@/lib/data/matches";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
@@ -263,7 +264,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             teamBLogo={match.teamB.logo}
           />
         ) : match.maps.length === 0 ? (
-          <p className="text-[var(--text-muted)]">Aucun détail carte par carte saisi.</p>
+          <EmptyState
+            title="Aucun détail carte par carte"
+            description="Le scoreboard de chaque carte — rating, ACS, KAST, ADR, premiers duels — apparaîtra ici une fois la partie importée depuis Riot."
+            decor={<ListDecor />}
+          />
         ) : (
           <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
             {match.maps.map((m) => (
