@@ -5,6 +5,7 @@ import "./globals.css";
 import NavBar from "@/components/nav-bar";
 import Footer from "@/components/footer";
 import FlashToast from "@/components/flash-toast";
+import AudienceBeacon from "@/components/audience-beacon";
 import SkipLink from "@/components/skip-link";
 import { SITE_URL } from "@/lib/site";
 import { SITE_DESCRIPTION } from "@/lib/metadata";
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <FlashToast />
         </Suspense>
+        <AudienceBeacon />
       </body>
     </html>
   );

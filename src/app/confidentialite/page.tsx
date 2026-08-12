@@ -29,8 +29,9 @@ export default function ConfidentialitePage() {
 
       <Section title="Données collectées">
         <p>
-          Aucune donnée n&apos;est collectée tant que vous naviguez sans compte. La création
-          d&apos;un compte et l&apos;usage des fonctionnalités entraînent les traitements suivants.
+          Tant que vous naviguez sans compte, seule la mesure de fréquentation décrite plus bas
+          s&apos;applique : elle ne conserve rien qui vous concerne. La création d&apos;un compte et
+          l&apos;usage des fonctionnalités entraînent les traitements suivants.
         </p>
 
         <h3 className="pt-2 font-semibold text-white">1. Connexion via Discord</h3>
@@ -173,9 +174,45 @@ export default function ConfidentialitePage() {
           </li>
         </Ul>
         <p>
-          Il n&apos;y a ni mesure d&apos;audience, ni cookie publicitaire, ni traceur tiers : ces
-          deux cookies étant nécessaires au service que vous demandez, aucun consentement préalable
-          n&apos;est requis et aucune bannière n&apos;est affichée.
+          Il n&apos;y a ni cookie publicitaire, ni traceur tiers, et la mesure de fréquentation
+          décrite ci-dessous n&apos;en dépose aucun : ces deux cookies étant nécessaires au service
+          que vous demandez, aucun consentement préalable n&apos;est requis et aucune bannière
+          n&apos;est affichée.
+        </p>
+      </Section>
+
+      <Section title="Mesure de fréquentation">
+        <p>
+          Le site compte ses pages vues et ses visiteurs quotidiens, pour savoir ce qui est
+          consulté. Cette mesure est interne : aucune donnée ne part vers un service tiers, et aucun
+          cookie n&apos;est déposé pour l&apos;effectuer.
+        </p>
+        <p>
+          À chaque page affichée, votre navigateur transmet l&apos;adresse de la page. Votre adresse
+          IP et votre navigateur servent uniquement, sur l&apos;instant, à calculer une empreinte
+          qui permet de ne pas vous compter deux fois dans la même journée. Cette empreinte est
+          chiffrée à sens unique avec un secret du serveur et la date du jour : elle change chaque
+          jour, ne peut pas être rapprochée d&apos;une autre journée, et ne permet pas de remonter
+          jusqu&apos;à vous. Ni votre adresse IP ni votre navigateur ne sont enregistrés.
+        </p>
+        <Ul>
+          <li>
+            Les adresses de pages sont réduites à leur gabarit : une fiche de joueur est comptée
+            comme <span className="text-white">/joueurs/[id]</span>, sans l&apos;identifiant.
+          </li>
+          <li>
+            Seuls des totaux par jour sont conservés. Aucune ligne n&apos;est écrite par visite : il
+            n&apos;existe donc aucun historique de navigation, ni pour vous ni pour personne.
+          </li>
+          <li>
+            Les empreintes du jour sont supprimées au bout de trois jours ; les totaux, qui ne
+            concernent personne en particulier, sont conservés.
+          </li>
+        </Ul>
+        <p>
+          Cette mesure ne suit personne d&apos;un site à l&apos;autre et ne sert qu&apos;à
+          l&apos;exploitation du site. Elle repose sur l&apos;intérêt légitime de l&apos;éditeur à
+          connaître la fréquentation de son service.
         </p>
       </Section>
 
