@@ -196,6 +196,8 @@ export type ShowcasePlayer = {
   /** Ratings carte par carte, la plus ancienne d'abord. */
   trend: number[];
   avgRating: number;
+  /** Moyenne d'ACS, affichée par la carte de partage comme sur la vraie fiche. */
+  avgAcs: number;
   mapRecords: { mapName: string; winratePct: number; wins: number; maps: number }[];
 };
 
@@ -271,6 +273,7 @@ export function getShowcasePlayer(): Promise<ShowcasePlayer | null> {
       // sa FIN pour avoir les dernières cartes, pas son début.
       trend: overview.trend.slice(-TREND_POINTS).map((t) => t.rating),
       avgRating: overview.avgRating,
+      avgAcs: Math.round(overview.avgAcs),
       mapRecords: overview.mapRecords.slice(0, MAP_ROWS),
     };
   });

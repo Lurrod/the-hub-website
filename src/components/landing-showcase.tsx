@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "@/components/icons";
-import {
-  PlayerPanel,
-  RecruitPanel,
-  ScoreboardPanel,
-  TournamentPanel,
-} from "@/components/landing-panels";
+import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
+import { PlayerPanel, SharePanel } from "@/components/landing-panels-player";
 import { getShowcaseData, type ShowcaseData } from "@/lib/data/landing-showcase";
 
 type Feature = {
@@ -103,11 +99,32 @@ const FEATURES: readonly Feature[] = [
     cta: { label: "Voir les annonces", href: "/lft" },
     panel: (d) => <RecruitPanel data={d.ads} />,
   },
+  {
+    num: "05",
+    eyebrow: "Partage",
+    title: "Un lien qui se présente tout seul",
+    body: "Collez l'adresse d'une fiche dans Discord ou sur X : elle se déplie en une carte qui porte le pseudo, l'équipe et les moyennes de carrière. Rien à capturer, rien à recadrer.",
+    points: [
+      {
+        t: "Fabriquée à la demande",
+        d: "L'image est produite au moment où le lien est lu : elle porte les chiffres du jour.",
+      },
+      {
+        t: "Une carte par page",
+        d: "Joueur, équipe, tournoi et match ont chacun la leur.",
+      },
+      {
+        t: "Une version carrée à télécharger",
+        d: "Le format qu'attendent une story ou un post, depuis la fiche elle-même.",
+      },
+    ],
+    cta: { label: "Voir une fiche à partager", href: "/joueurs" },
+    panel: (d) => <SharePanel data={d.player} />,
+  },
 ];
 
 const ALSO = [
   { t: "Recherche unifiée", d: "Joueurs, équipes et tournois dans un seul champ." },
-  { t: "Cartes de partage", d: "Une image propre pour Discord et X, générée à la volée." },
   { t: "Gestion de roster", d: "Invitations, départs et managers, sans passer par nous." },
   { t: "Profils reliés", d: "Riot ID, Discord, X et Twitch sur la fiche." },
 ] as const;
@@ -208,7 +225,7 @@ export default async function LandingShowcase() {
           <span className="lf-eyebrow shrink-0 text-[var(--text-subtle)]">Aussi dans le Hub</span>
           <div className="lf-rule min-w-0 flex-1" aria-hidden="true" />
         </div>
-        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-8 grid gap-3 sm:grid-cols-3">
           {ALSO.map((a) => (
             <li key={a.t} className="card p-4">
               <div className="lf-point-t font-semibold text-white">{a.t}</div>

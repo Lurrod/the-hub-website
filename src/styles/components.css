@@ -522,6 +522,16 @@ body :is(h1, h2, h3, h4, h5, h6) {
   color: rgba(255, 255, 255, 0.045);
 }
 
+/* Titre de la carte de partage rejouée. Bricolage comme sur l'image réelle
+   (`lib/og/fields`), à l'échelle du panneau. */
+.lf-og-title {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
 /* Tailles internes des maquettes : elles rejouent l'interface réelle, qui
    descend sous le plancher de 12px (en-têtes de colonnes, libellés de tuile).
    À poser sur l'élément qui porte le texte, jamais sur un conteneur dont les
