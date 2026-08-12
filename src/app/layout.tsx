@@ -4,7 +4,6 @@ import { Plus_Jakarta_Sans, Geist_Mono, Bricolage_Grotesque } from "next/font/go
 import "./globals.css";
 import NavBar from "@/components/nav-bar";
 import Footer from "@/components/footer";
-import FooterSlot from "@/components/footer-slot";
 import FlashToast from "@/components/flash-toast";
 import SkipLink from "@/components/skip-link";
 import { SITE_URL } from "@/lib/site";
@@ -69,9 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div id="contenu" className="flex-1">
             {children}
           </div>
-          <FooterSlot>
-            <Footer />
-          </FooterSlot>
+          <Footer />
         </div>
         <Suspense fallback={null}>
           <FlashToast />
