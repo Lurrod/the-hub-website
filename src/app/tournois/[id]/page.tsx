@@ -9,6 +9,9 @@ import {
 import { getTournamentStats } from "@/lib/data/tournament-stats";
 import { getTournamentTeamStats } from "@/lib/data/tournament-teams";
 import TournamentTabs from "@/components/tournament-tabs";
+import ShareCardButton from "@/components/share-card-button";
+import { tournamentShareVariants } from "@/lib/og/share-variants";
+import { SITE_URL } from "@/lib/site";
 import EmptyState, { RosterDecor, StatsDecor } from "@/components/empty-state";
 import TournamentStats from "@/components/tournament-stats";
 import MatchMiniList from "@/components/match-mini-list";
@@ -123,6 +126,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       ),
     });
   }
+
+  // La carte de bracket n'est proposée que si l'arbre porte une rencontre.
+  const shareVariants = tournamentShareVariants({
+    id: tournament.id,
+    name: tournament.name,
+    bracketMatchCount: bracket.length,
+  });
 
   const upcoming = allMatches.filter((m) => m.status === "SCHEDULED" || m.status === "LIVE");
   const stageLabel = (m: (typeof allMatches)[number]) =>
@@ -311,6 +321,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
                   cash prize
                 </div>
               </div>
+              {shareVariants.length > 0 && (
+                <ShareCardButton
+                  variants={shareVariants}
+                  pageUrl={`${SITE_URL}/tournois/${tournament.id}`}
+                  title="Partager le tournoi"
+                  alt={`Bracket de ${tournament.name}`}
+                />
+              )}
               {canManage && (
                 <Link
                   href={`/tournois/${id}/gestion`}

@@ -32,6 +32,10 @@ export default function Footer() {
         {/* Coin droit : liens légaux puis réseaux */}
         <div className="flex items-center gap-4 justify-self-end">
           <div className="hidden items-center gap-x-3 text-xs sm:flex">
+            <Link href="/rating" className="transition-colors hover:text-white">
+              Rating
+            </Link>
+            <span className="text-[var(--text-subtle)]">·</span>
             <Link href="/mentions-legales" className="transition-colors hover:text-white">
               Mentions légales
             </Link>

@@ -85,3 +85,26 @@ export function playerShareVariants(player: { id: string; pseudo: string }): Sha
     },
   ];
 }
+
+/**
+ * Cartes proposées depuis la page d'un tournoi.
+ *
+ * La carte de bracket n'est offerte que si l'arbre porte au moins une
+ * rencontre : proposer le téléchargement d'une image vide serait une fausse
+ * promesse, et le sélecteur ne s'affiche pas pour une seule variante.
+ */
+export function tournamentShareVariants(tournament: {
+  id: string;
+  name: string;
+  bracketMatchCount: number;
+}): ShareVariant[] {
+  if (tournament.bracketMatchCount === 0) return [];
+  return [
+    {
+      key: "bracket",
+      label: "Bracket",
+      imageUrl: `/tournois/${tournament.id}/carte`,
+      filename: shareCardFilename([tournament.name, "bracket"]),
+    },
+  ];
+}
