@@ -141,3 +141,27 @@ export function RosterDecor() {
     </div>
   );
 }
+
+/** Silhouette d'un arbre : deux confrontations menant à une troisième. */
+export function BracketDecor() {
+  return (
+    <div className="flex h-full w-full items-center justify-center gap-3 px-8">
+      <span className="flex flex-col gap-3">
+        {[0, 1].map((i) => (
+          <span
+            key={i}
+            className="flex flex-col gap-1 rounded-lg border border-[var(--border)] p-2"
+          >
+            <span className="h-1.5 w-24 rounded-full bg-[var(--text-subtle)]" />
+            <span className="h-1.5 w-20 rounded-full bg-[var(--text-subtle)]" />
+          </span>
+        ))}
+      </span>
+      <span className="h-px w-6 bg-[var(--border-strong)]" />
+      <span className="flex flex-col gap-1 rounded-lg border border-[var(--border)] p-2">
+        <span className="h-1.5 w-24 rounded-full bg-[var(--accent)]" />
+        <span className="h-1.5 w-20 rounded-full bg-[var(--text-subtle)]" />
+      </span>
+    </div>
+  );
+}

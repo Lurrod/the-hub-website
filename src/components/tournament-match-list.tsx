@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import { dayKey, dayLabel, timeLabel } from "@/lib/dates";
 
 type Team = { name: string; logo: string | null } | null;
@@ -67,7 +68,13 @@ export function MatchListItem({ m }: { m: MatchEntry }) {
 /** Liste des matchs groupée par jour (séparateur à chaque changement de jour). */
 export default function TournamentMatchList({ matches }: { matches: MatchEntry[] }) {
   if (matches.length === 0) {
-    return <p className="text-sm text-[var(--text-muted)]">Aucun match programmé.</p>;
+    return (
+      <EmptyState
+        title="Aucun match programmé"
+        description="Le calendrier se remplit quand l'organisateur saisit les rencontres. Chaque match affichera ensuite son score et son scoreboard carte par carte."
+        decor={<ListDecor />}
+      />
+    );
   }
 
   const groups: { key: string; label: string; items: MatchEntry[] }[] = [];

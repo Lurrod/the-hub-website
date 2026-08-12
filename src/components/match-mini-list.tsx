@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyLine } from "@/components/empty-state";
 import { shortDate, timeLabel } from "@/lib/dates";
 
 type Side = { tag: string; logo: string | null } | null;
@@ -55,7 +56,7 @@ export default function MatchMiniList({
   empty?: string;
 }) {
   if (matches.length === 0) {
-    return <p className="text-sm text-[var(--text-muted)]">{empty}</p>;
+    return <EmptyLine>{empty}</EmptyLine>;
   }
   return (
     <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">

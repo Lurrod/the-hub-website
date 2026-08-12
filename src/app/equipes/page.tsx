@@ -1,4 +1,5 @@
 import { listTeamsWithRoster } from "@/lib/data/teams";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import { REGIONS } from "@/lib/constants";
 import ParticipantCard from "@/components/participant-card";
 import RegionFilter from "@/components/region-filter";
@@ -55,7 +56,12 @@ export default async function TeamsPage({
         </div>
 
         {teams.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Aucune équipe pour ce filtre.</p>
+          <EmptyState
+            title="Aucune équipe pour ce filtre"
+            description="Les équipes inscrites sur The Hub apparaissent ici, avec leur effectif et leurs résultats."
+            action={{ label: "Voir toutes les équipes", href: "/equipes" }}
+            decor={<ListDecor />}
+          />
         ) : (
           <div className="space-y-6">
             {groups.map((g) => (

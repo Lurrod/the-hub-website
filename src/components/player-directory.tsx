@@ -1,4 +1,5 @@
 import Link from "next/link";
+import EmptyState, { ListDecor } from "@/components/empty-state";
 import Flag from "@/components/flag";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
 import type { DirectoryRow } from "@/lib/data/players-directory";
@@ -21,7 +22,14 @@ export default function PlayerDirectory({
   ranked: boolean;
 }) {
   if (players.length === 0) {
-    return <p className="text-sm text-[var(--text-muted)]">Aucun joueur pour ces filtres.</p>;
+    return (
+      <EmptyState
+        title="Aucun joueur pour ces filtres"
+        description="Élargis la recherche, ou parcours l'annuaire complet — chaque joueur inscrit y figure, avec ou sans statistique."
+        action={{ label: "Voir tout l'annuaire", href: "/joueurs" }}
+        decor={<ListDecor />}
+      />
+    );
   }
 
   const num = "stat py-2.5 pr-3 text-right";
