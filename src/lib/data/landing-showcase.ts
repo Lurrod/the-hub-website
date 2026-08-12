@@ -33,8 +33,13 @@ import {
 /** Nombre de lignes affichées dans l'aperçu de scoreboard. */
 const SCOREBOARD_LINES = 5;
 
-/** Cartes minimum pour qu'un joueur soit mis en vitrine (cf. `getShowcasePlayer`). */
-const MIN_MAPS_FOR_SHOWCASE = 5;
+/**
+ * Cartes minimum pour qu'un joueur soit mis en vitrine.
+ *
+ * Deux : c'est ce qu'il faut pour tracer une courbe de rating. En dessous, le
+ * panneau perdrait sa moitié basse et n'illustrerait plus grand-chose.
+ */
+const MIN_MAPS_FOR_SHOWCASE = 2;
 
 /** Points de la courbe de rating de l'aperçu joueur. */
 const TREND_POINTS = 12;
@@ -195,12 +200,15 @@ export type ShowcasePlayer = {
 };
 
 /**
- * Le joueur le mieux noté du site, parmi ceux qui ont assez de cartes.
+ * Le joueur dont la fiche est la mieux remplie : celui qui a le plus de cartes.
  *
- * Le choix se veut défendable plutôt que malin : c'est exactement le premier
- * de l'annuaire trié par rating, donc quelque chose qu'un visiteur peut
- * retrouver. Le plancher de cartes évite qu'une seule bonne partie place
- * quelqu'un en vitrine.
+ * Trier par rating serait plus flatteur mais injuste et instable : sur un site
+ * jeune, trois bonnes parties suffisent à passer devant un joueur régulier, et
+ * la vitrine changerait de tête à chaque import. Le nombre de cartes désigne
+ * au contraire la fiche qui a le plus à montrer — une courbe fournie, plusieurs
+ * maps, un vrai historique — ce que ce bloc raconte précisément. Le rating
+ * départage les ex æquo, le pseudo tranche le reste pour que le choix soit
+ * reproductible.
  */
 export function getShowcasePlayer(): Promise<ShowcasePlayer | null> {
   return safely("landing.player", async () => {
@@ -210,7 +218,7 @@ export function getShowcasePlayer(): Promise<ShowcasePlayer | null> {
       JOIN "PlayerGameStat" s ON s."playerId" = p."id"
       GROUP BY p."id"
       HAVING COUNT(s."id") >= ${MIN_MAPS_FOR_SHOWCASE}
-      ORDER BY AVG(s."rating") DESC, p."pseudo" ASC
+      ORDER BY COUNT(s."id") DESC, AVG(s."rating") DESC, p."pseudo" ASC
       LIMIT 1
     `;
     if (!best) return null;
