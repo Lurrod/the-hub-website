@@ -254,3 +254,33 @@ Deux parcours sur `/matchs/[id]`, appuyés sur les fixtures existantes :
   justement parce que des matchs ont été saisis sans horaire signifiant. Le
   comportement retenu (borne désactivée) est cohérent, mais il faut vérifier
   sur des données réelles qu'il ne produit pas de fiche absurde.
+
+## Addendum — arbitré en cours d'implémentation
+
+Cette spec n'est pas réécrite : elle garde la trace de la conception d'origine.
+Quatre points ont été tranchés autrement pendant la réalisation.
+
+- **Le bilan est un en-tête, pas une ligne de texte.** Prévu comme une ligne
+  centrée portant les tags, il est devenu un bandeau sur `--card-hover` avec
+  les logos et les noms complets, à l'intérieur d'une zone `--surface` qui
+  englobe la liste. La zone `--surface` coiffe aussi la forme récente, pour que
+  les deux blocs se lisent comme un seul ensemble sous le scoreboard.
+- **Les dates des confrontations portent l'année**, en JJ/MM/AAAA. Une liste de
+  confrontations couvre plusieurs saisons, où « 27/07 » seul ne dit rien. La
+  forme récente garde le format court : elle ne remonte que cinq matchs.
+- **Une rencontre de la forme récente tient sur une ligne** — date, adversaire,
+  score du côté de l'équipe regardée — au lieu des trois lignes de
+  `MatchMiniList`. Le composant reçoit désormais les rencontres brutes et son
+  identifiant d'équipe, et calcule lui-même sa frise : quand la liste et la
+  frise venaient de deux appels séparés, rien n'empêchait de les nourrir de
+  sources différentes.
+- **`MatchRow` a été rendu tenable sur mobile.** Ses deux côtés étaient figés à
+  128 px sans rétrécissement : la ligne réclamait environ 426 px et débordait
+  de l'écran. Le défaut était latent dans le composant partagé ; la première
+  liste affichée au chargement sur un téléphone l'a rendu visible. Sous `sm`,
+  les côtés passent à 64 px et montrent le tag plutôt qu'un nom tronqué. La
+  page d'accueil et l'onglet Matchs d'une fiche d'équipe en héritent.
+
+Trois tests annoncés dans « Tests » n'ont pas été écrits, faute d'outillage :
+le projet n'a ni jsdom ni bibliothèque de rendu React, et `src/lib/data/**` est
+hors couverture. Le détail est dans le plan.
