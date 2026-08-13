@@ -62,6 +62,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={`${jakarta.variable} ${geistMono.variable} ${bricolage.variable}`}
     >
+      {/* Habillage du menu déroulant ouvert. La feuille est servie depuis
+          public/ et non importée : Lightning CSS, qui compile le CSS de
+          l'app, rejette encore `::picker(select)`. React remonte le lien
+          dans le <head>. */}
+      {/* eslint-disable-next-line @next/next/no-css-tags */}
+      <link rel="stylesheet" href="/select-picker.css" precedence="default" />
       <body>
         <SkipLink />
         <div className="flex min-h-screen flex-col">

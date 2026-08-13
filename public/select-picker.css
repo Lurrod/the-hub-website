@@ -1,0 +1,128 @@
+/* Habillage du menu déroulant ouvert d'un <select>.
+ *
+ * Cette feuille est servie telle quelle depuis `public/` au lieu de rejoindre
+ * `src/styles/components.css` : Turbopack compile le CSS de l'application avec
+ * Lightning CSS, qui ne connaît pas encore le sélecteur `::picker(select)` et
+ * refuse alors la feuille entière. Le fichier est chargé par un <link> dans
+ * `src/app/layout.tsx`. À rapatrier dans components.css dès que Lightning CSS
+ * sait parser `::picker()`.
+ *
+ * `appearance: base-select` (Chromium 135+) sort le menu du rendu natif et le
+ * rend stylable. On lui donne la forme du menu de `country-select.tsx`
+ * (panneau --card, bord fort, coins arrondis, ligne survolée en --card-hover,
+ * ligne choisie en accent) pour que les deux listes déroulantes du site se
+ * ressemblent. Les navigateurs sans `base-select` ignorent le bloc et gardent
+ * le menu système ; la flèche, elle, est déjà uniformisée dans components.css.
+ */
+
+@supports (appearance: base-select) {
+  select:not([multiple]):not([size]),
+  select::picker(select) {
+    appearance: base-select;
+  }
+
+  /* Le chevron posé en fond reste la seule flèche : celle qu'ajoute
+     base-select ferait doublon. */
+  select:not([multiple]):not([size])::picker-icon {
+    display: none;
+  }
+
+  /* Spécificité volontairement plus forte que la règle :hover de
+     components.css : les deux feuilles peuvent arriver dans n'importe quel
+     ordre, et c'est l'état ouvert qui doit gagner. */
+  select:not([multiple]):not([size]):open {
+    border-color: var(--accent);
+    --select-chevron: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ed5e29' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'><path d='m18 15-6-6-6 6'/></svg>");
+  }
+
+  select::picker(select) {
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--card);
+    box-shadow:
+      0 20px 44px -16px rgba(0, 0, 0, 0.75),
+      0 2px 8px rgba(0, 0, 0, 0.35);
+    padding: 4px;
+    margin-block-start: 6px;
+    max-height: 17rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+    opacity: 0;
+    translate: 0 -4px;
+    transition:
+      opacity 130ms var(--ease),
+      translate 130ms var(--ease),
+      overlay 130ms allow-discrete,
+      display 130ms allow-discrete;
+  }
+  select::picker(select):popover-open {
+    opacity: 1;
+    translate: 0 0;
+  }
+  @starting-style {
+    select::picker(select):popover-open {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+
+  /* Les lignes sont visées directement : Chromium ne fait pas correspondre les
+     descendants écrits derrière `::picker(select)`. Le bloc @supports suffit à
+     cantonner ces règles aux navigateurs où le menu est stylable. */
+  option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: transparent;
+    font-size: 12px;
+    line-height: 1.25;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition:
+      background-color var(--hover-fast) var(--ease),
+      color var(--hover-fast) var(--ease);
+  }
+  /* La ligne sous le curseur et celle parcourue au clavier prennent le même
+     appui : au clavier, ce sont les flèches qui déplacent `:focus`. */
+  option:hover,
+  option:focus {
+    background: var(--card-hover);
+    color: var(--text);
+    outline: none;
+  }
+  option:checked {
+    color: var(--accent);
+  }
+  /* La coche par défaut se place avant le libellé et décale toutes les
+     lignes ; un point à droite marque le choix sans rien déplacer. */
+  option::checkmark {
+    display: none;
+  }
+  option:checked::after {
+    content: "";
+    margin-inline-start: auto;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  optgroup {
+    padding: 6px 10px 2px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    select::picker(select),
+    option {
+      transition: none;
+    }
+  }
+}
