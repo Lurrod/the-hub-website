@@ -359,7 +359,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                 {/* Le bilan reprend l'affiche du bandeau — logo, nom, score — sur
                     un fond plus clair : c'est l'en-tête de la liste qui suit, pas
                     une ligne parmi elles. */}
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[var(--r-sm)] bg-[var(--card-hover)] p-3">
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[var(--r-sm)] bg-[var(--card-hover)] px-3 py-1.5">
                   <TallySide team={match.teamA} align="left" />
                   <p className="stat flex items-center gap-1.5 text-lg">
                     {/* Les noms d'équipe vivent maintenant dans les deux
@@ -406,11 +406,13 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <TeamFormColumn
-                  name={match.teamA.name}
+                  team={match.teamA}
+                  align="left"
                   entries={formEntries(recentA, match.teamAId)}
                 />
                 <TeamFormColumn
-                  name={match.teamB.name}
+                  team={match.teamB}
+                  align="right"
                   entries={formEntries(recentB, match.teamBId)}
                 />
               </div>

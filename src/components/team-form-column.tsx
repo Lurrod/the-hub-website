@@ -75,12 +75,51 @@ function FormRow({ entry }: { entry: FormEntry }) {
  * le regarde — il reçoit des entrées déjà bornées, déjà ordonnées et déjà
  * tournées de son côté.
  */
-export default function TeamFormColumn({ name, entries }: { name: string; entries: FormEntry[] }) {
+export default function TeamFormColumn({
+  team,
+  align,
+  entries,
+}: {
+  team: { name: string; tag: string; logo: string | null };
+  /**
+   * Côté occupé par la colonne. À droite, la ligne d'en-tête est rendue en
+   * miroir : les deux logos se retrouvent aux bords extérieurs de la grille,
+   * comme le bandeau du haut de page.
+   *
+   * Le miroir ne vaut qu'à partir de `sm` : sous ce point de rupture les deux
+   * colonnes s'empilent, et une seconde ligne inversée ne renvoie plus à rien.
+   */
+  align: "left" | "right";
+  entries: FormEntry[];
+}) {
+  const { name } = team;
   const streak = formStreak(entries);
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="truncate text-sm font-medium text-white">{name}</span>
+      <div
+        className={`mb-2 flex items-center justify-between gap-2 rounded-[var(--r-sm)] bg-[var(--card-hover)] px-2 py-1.5 ${
+          align === "right" ? "sm:flex-row-reverse" : ""
+        }`}
+      >
+        <span
+          className={`flex min-w-0 items-center gap-2 ${align === "right" ? "sm:flex-row-reverse" : ""}`}
+        >
+          {team.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              loading="lazy"
+              decoding="async"
+              src={team.logo}
+              alt=""
+              className="h-5 w-5 shrink-0 rounded object-cover"
+            />
+          ) : (
+            <span className="monogram grid h-5 w-5 shrink-0 place-items-center rounded text-[8px]">
+              {team.tag.slice(0, 3).toUpperCase()}
+            </span>
+          )}
+          <span className="truncate text-sm font-medium text-white">{name}</span>
+        </span>
         {streak.length > 0 && (
           // Les pastilles sont illisibles une par une pour un lecteur d'écran :
           // la série entière porte donc un nom, et chaque pastille est masquée.
