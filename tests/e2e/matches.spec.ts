@@ -47,10 +47,14 @@ test("la fiche de match affiche le bilan des confrontations directes et la forme
 }) => {
   await page.goto("/matchs/fmt-league-m-aller-4");
   await expect(page.getByRole("heading", { name: "Confrontations directes" })).toBeVisible();
-  // Le bilan est éclaté en plusieurs `span` (dont un `sr-only`) : le texte
-  // concaténé du paragraphe est vérifié tel quel plutôt qu'un fragment.
+  // Le bilan est éclaté en plusieurs `span` (dont un `sr-only` qui rappelle
+  // les deux équipes) : le texte concaténé du paragraphe est vérifié tel quel
+  // plutôt qu'un fragment, sinon un « 1 » matcherait la moitié de la page.
   const bilan = page.locator("p", { hasText: "Bilan des confrontations" });
-  await expect(bilan).toHaveText("Bilan des confrontations : VIT 1-4 FNC");
+  await expect(bilan).toHaveText("Bilan des confrontations, Team Vitality contre FNATIC : 1-4");
+  // Les dates des rencontres passées portent l'année : plusieurs saisons
+  // peuvent se suivre dans cette liste.
+  await expect(page.getByText("30/09/2026")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Forme récente" })).toBeVisible();
   // Le match consulté ne doit figurer dans aucune de ses propres listes
   // (bilan ou forme) : les requêtes excluent explicitement son id.
