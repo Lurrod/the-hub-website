@@ -55,8 +55,10 @@ describe("formResults", () => {
   // forme se lit dans le sens du temps. La fonction porte cette inversion,
   // pour que ni la requête ni le composant n'aient à s'en soucier.
   it("rend la suite du plus ancien au plus récent", () => {
-    const rows = [{ winnerId: "a" }, { winnerId: "b" }, { winnerId: "a" }];
-    expect(formResults(rows, "a")).toEqual(["WIN", "LOSS", "WIN"]);
+    // Jeu volontairement non symétrique : une suite palindrome passerait le
+    // test avec ou sans l'inversion, et ne verrouillerait donc rien.
+    const rows = [{ winnerId: "a" }, { winnerId: "a" }, { winnerId: "b" }];
+    expect(formResults(rows, "a")).toEqual(["LOSS", "WIN", "WIN"]);
   });
 
   it("qualifie une victoire, une défaite et un match sans vainqueur", () => {
