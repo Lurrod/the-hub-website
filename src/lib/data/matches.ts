@@ -381,6 +381,13 @@ export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchC
 export const HEAD_TO_HEAD_LIMIT = 10;
 
 /**
+ * Longueur de la série de forme affichée par équipe. Cinq plutôt que les
+ * quatre de la fiche d'équipe : ici la forme est une lecture en soi, pas un
+ * aperçu qui renvoie ailleurs.
+ */
+export const TEAM_FORM_LIMIT = 5;
+
+/**
  * Rencontres passées entre deux équipes, de la plus récente à la plus
  * ancienne, accompagnées du bilan.
  */

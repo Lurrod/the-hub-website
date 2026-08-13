@@ -6,6 +6,7 @@ import {
   getMatch,
   listTeamRecentMatches,
   HEAD_TO_HEAD_LIMIT,
+  TEAM_FORM_LIMIT,
 } from "@/lib/data/matches";
 import { formResults, type MatchCutoff } from "@/lib/match-context-core";
 import MatchRow from "@/components/match-row";
@@ -34,6 +35,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return pageMetadata({ path: `/matchs/${id}`, title: name ?? "Match" });
 }
 
+/** Le camp qui mène est mis en avant ; l'autre reste blanc, comme au bandeau. */
+function tallyClass(mine: number, theirs: number) {
+  return mine > theirs ? "font-bold text-[var(--accent)]" : "text-white";
+}
+
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const match = await getMatch(id);
@@ -46,14 +52,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     getSessionUser(),
     getTournamentManagerIds(match.tournamentId),
     getHeadToHead(match.teamAId, match.teamBId, cutoff),
-    listTeamRecentMatches(match.teamAId, 5, cutoff),
-    listTeamRecentMatches(match.teamBId, 5, cutoff),
+    listTeamRecentMatches(match.teamAId, TEAM_FORM_LIMIT, cutoff),
+    listTeamRecentMatches(match.teamBId, TEAM_FORM_LIMIT, cutoff),
   ]);
   const canManage = canManageTournament(sessionUser, managerIds);
 
-  // Deux équipes qui se sont déjà rencontrées ont forcément de la forme ; la
-  // réciproque est fausse. Les deux drapeaux restent distincts parce qu'ils
-  // pilotent deux rendus différents.
   const hasHeadToHead = h2h.matches.length > 0;
   const hasForm = recentA.length > 0 || recentB.length > 0;
 
@@ -306,7 +309,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         )}
       </section>
 
-      {(hasHeadToHead || hasForm) && (
+      {/* Pas de forme implique pas de confrontation : les deux requêtes portent les
+          mêmes bornes, donc ce seul drapeau suffit à masquer les deux sections. */}
+      {hasForm && (
         <>
           <section className="mt-10">
             <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">
@@ -314,29 +319,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             </h2>
             {hasHeadToHead ? (
               <>
-                {/* Le bilan est éclaté en plusieurs `span` pour la couleur :
-                    seul le libellé le rend lisible d'un lecteur d'écran. */}
-                <p
-                  className="stat mb-3 text-center text-sm"
-                  role="img"
-                  aria-label={`Bilan des confrontations : ${match.teamA.tag} ${h2h.winsA}, ${match.teamB.tag} ${h2h.winsB}`}
-                >
+                <p className="stat mb-3 text-center text-sm">
+                  <span className="sr-only">Bilan des confrontations : </span>
                   <span className="text-[var(--text-muted)]">{match.teamA.tag}</span>{" "}
-                  <span
-                    className={
-                      h2h.winsA > h2h.winsB ? "font-bold text-[var(--accent)]" : "text-white"
-                    }
-                  >
-                    {h2h.winsA}
-                  </span>
+                  <span className={tallyClass(h2h.winsA, h2h.winsB)}>{h2h.winsA}</span>
                   <span className="mx-1.5 text-[var(--text-subtle)]">-</span>
-                  <span
-                    className={
-                      h2h.winsB > h2h.winsA ? "font-bold text-[var(--accent)]" : "text-white"
-                    }
-                  >
-                    {h2h.winsB}
-                  </span>{" "}
+                  <span className={tallyClass(h2h.winsB, h2h.winsA)}>{h2h.winsB}</span>{" "}
                   <span className="text-[var(--text-muted)]">{match.teamB.tag}</span>
                 </p>
                 {h2h.truncated && (
@@ -351,6 +339,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                 </div>
               </>
             ) : (
+              // Une équipe n'a jamais rencontré l'autre : c'est une information,
+              // pas un manque. Un `EmptyState` avec décor serait disproportionné
+              // pour cette seule phrase de constat.
               <EmptyLine>Première rencontre entre les deux équipes.</EmptyLine>
             )}
           </section>

@@ -61,6 +61,11 @@ export default function EmptyState({
 /**
  * Variante d'une colonne étroite : une ligne, sans préfiguration ni action.
  * Un cadre complet y prendrait toute la hauteur pour dire qu'il n'y a rien.
+ *
+ * Sert aussi, en pleine largeur, à un simple constat sans action possible
+ * (« Première rencontre entre les deux équipes. ») : le contenu manquant
+ * n'y est pas un trou à combler mais une information en soi, qui ne
+ * justifie pas la préfiguration d'un `EmptyState` complet.
  */
 export function EmptyLine({ children }: { children: React.ReactNode }) {
   return (
