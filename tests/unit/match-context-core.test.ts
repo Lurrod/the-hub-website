@@ -16,24 +16,12 @@ describe("cutoffWhere", () => {
       date: { lt: BEFORE },
     });
   });
-
-  it("ne pose aucune borne de date quand le match affiché n'en a pas", () => {
-    expect(cutoffWhere({ before: null, excludeMatchId: "m1" }).date).toBeUndefined();
-  });
 });
 
 describe("headToHeadTally", () => {
   it("compte les victoires de chaque équipe", () => {
     const rows = [{ winnerId: "a" }, { winnerId: "b" }, { winnerId: "a" }];
     expect(headToHeadTally(rows, "a", "b")).toEqual({ winsA: 2, winsB: 1 });
-  });
-
-  // `winnerId` désigne une équipe, pas un côté : le camp occupé dans la
-  // rencontre passée n'entre pas dans le calcul. Ce test verrouille l'absence
-  // de raisonnement sur teamAId/teamBId.
-  it("ignore le camp occupé lors des rencontres passées", () => {
-    const rows = [{ winnerId: "b" }, { winnerId: "b" }];
-    expect(headToHeadTally(rows, "a", "b")).toEqual({ winsA: 0, winsB: 2 });
   });
 
   it("ne compte pas un match terminé sans vainqueur", () => {

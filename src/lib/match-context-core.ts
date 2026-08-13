@@ -19,11 +19,7 @@ export type MatchCutoff = {
    * disparaît alors et seule l'exclusion du match lui-même subsiste.
    */
   before: Date | null;
-  /**
-   * Identifiant du match affiché. Toujours écarté : un match terminé figure
-   * dans les résultats de ses propres équipes et apparaîtrait sinon dans sa
-   * propre liste de forme récente.
-   */
+  /** Identifiant du match affiché, toujours écarté de ses propres résultats. */
   excludeMatchId: string;
 };
 
@@ -36,15 +32,15 @@ export type CutoffWhere = {
  * Fragment de clause `where` correspondant à la borne.
  *
  * `date: { lt: … }` écarte au passage les matchs sans date : en SQL, une
- * comparaison avec NULL n'est jamais vraie. C'est exactement le comportement
- * voulu — on ne peut pas affirmer qu'un match sans date précède celui affiché.
+ * comparaison avec NULL n'est jamais vraie.
  */
 export function cutoffWhere(cutoff: MatchCutoff): CutoffWhere {
   const base: CutoffWhere = { id: { not: cutoff.excludeMatchId } };
-  return cutoff.before ? { ...base, date: { lt: cutoff.before } } : base;
+  return cutoff.before !== null ? { ...base, date: { lt: cutoff.before } } : base;
 }
 
-export type TallyRow = { winnerId: string | null };
+/** Le seul champ dont ce module a besoin pour juger d'une rencontre. */
+export type MatchOutcomeRow = { winnerId: string | null };
 
 export type HeadToHeadTally = {
   /** Rencontres gagnées par la première équipe passée en argument. */
@@ -58,13 +54,18 @@ export type HeadToHeadTally = {
  * une requête d'agrégat de plus ne se justifierait pas pour dix lignes au
  * maximum.
  *
- * Un match terminé sans vainqueur — `winnerId` nul, ce que le schéma
- * autorise — figure dans la liste mais dans aucun total : le match nul
- * n'existe pas en Valorant, et lui inventer une colonne embrouillerait le
- * bilan plus qu'il ne l'éclairerait.
+ * Le comptage ne regarde que `winnerId` : le camp occupé lors des rencontres
+ * passées n'entre jamais en jeu.
+ *
+ * Un match terminé sans vainqueur — `winnerId` nul, ce que le schéma autorise
+ * pour une série à égalité — figure dans la liste mais dans aucun total : une
+ * troisième colonne pour un cas rare chargerait le bilan plus qu'elle ne
+ * l'éclairerait. `formResults` fait l'inverse et le rend en `DRAW`, parce
+ * qu'une frise a la place d'un troisième symbole là où un bilan « 3-2 » n'a
+ * pas celle d'un troisième nombre.
  */
 export function headToHeadTally(
-  rows: readonly TallyRow[],
+  rows: readonly MatchOutcomeRow[],
   teamAId: string,
   teamBId: string
 ): HeadToHeadTally {
@@ -79,14 +80,12 @@ export function headToHeadTally(
 
 export type FormResult = "WIN" | "LOSS" | "DRAW";
 
-export type FormRow = { winnerId: string | null };
-
 /**
  * Suite de résultats d'une équipe, du plus ancien au plus récent — l'ordre
  * dans lequel se lit une série de forme. Les lignes arrivent dans l'ordre
  * inverse, celui de la requête, d'où le `reverse`.
  */
-export function formResults(rows: readonly FormRow[], teamId: string): FormResult[] {
+export function formResults(rows: readonly MatchOutcomeRow[], teamId: string): FormResult[] {
   return rows
     .map((row): FormResult => {
       if (row.winnerId === teamId) return "WIN";
