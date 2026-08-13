@@ -360,10 +360,10 @@ export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchC
       ...bounds,
     },
     include: {
-      // Seuls le nom, le tag et le logo sont consommés — pas de raison de
-      // faire circuler `inviteToken` et `inviteExpiresAt` avec le reste.
-      teamA: { select: { id: true, name: true, tag: true, logo: true } },
-      teamB: { select: { id: true, name: true, tag: true, logo: true } },
+      // Seuls le tag et le logo sont consommés — pas de raison de faire
+      // circuler `inviteToken` et `inviteExpiresAt` avec le reste.
+      teamA: { select: { tag: true, logo: true } },
+      teamB: { select: { tag: true, logo: true } },
     },
     // `nulls: "last"` évite qu'un match affiché sans date — cutoff réduit à sa
     // seule exclusion — fasse remonter en tête les autres matchs sans date.
@@ -422,6 +422,10 @@ export async function getHeadToHead(
   return {
     matches,
     truncated: rows.length > limit,
+    // Le plafond voyage avec le résultat : la page annonce « sur les N
+    // dernières rencontres » et mentirait si elle lisait la constante alors
+    // qu'un appelant a passé un autre `limit`.
+    limit,
     ...headToHeadTally(matches, teamAId, teamBId),
   };
 }

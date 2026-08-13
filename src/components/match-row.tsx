@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatSite } from "@/lib/timezone";
+import { fullDate } from "@/lib/dates";
 
 export type MatchRowData = {
   id: string;
@@ -32,9 +33,7 @@ function formatSchedule(
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return null;
   return {
-    day: withYear
-      ? formatSite(d, { day: "2-digit", month: "2-digit", year: "numeric" })
-      : formatSite(d, { day: "2-digit", month: "short" }),
+    day: withYear ? fullDate(d) : formatSite(d, { day: "2-digit", month: "short" }),
     time: hasTime ? formatSite(d, { hour: "2-digit", minute: "2-digit" }) : "",
   };
 }
