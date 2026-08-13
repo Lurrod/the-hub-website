@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cutoffWhere, headToHeadTally } from "@/lib/match-context-core";
+import { cutoffWhere, headToHeadTally, formResults } from "@/lib/match-context-core";
 
 const BEFORE = new Date("2026-11-02T18:00:00.000Z");
 
@@ -47,5 +47,24 @@ describe("headToHeadTally", () => {
 
   it("rend un bilan nul sur une liste vide", () => {
     expect(headToHeadTally([], "a", "b")).toEqual({ winsA: 0, winsB: 0 });
+  });
+});
+
+describe("formResults", () => {
+  // La requête rend les matchs du plus récent au plus ancien ; une série de
+  // forme se lit dans le sens du temps. La fonction porte cette inversion,
+  // pour que ni la requête ni le composant n'aient à s'en soucier.
+  it("rend la suite du plus ancien au plus récent", () => {
+    const rows = [{ winnerId: "a" }, { winnerId: "b" }, { winnerId: "a" }];
+    expect(formResults(rows, "a")).toEqual(["WIN", "LOSS", "WIN"]);
+  });
+
+  it("qualifie une victoire, une défaite et un match sans vainqueur", () => {
+    const rows = [{ winnerId: null }, { winnerId: "b" }, { winnerId: "a" }];
+    expect(formResults(rows, "a")).toEqual(["WIN", "LOSS", "DRAW"]);
+  });
+
+  it("rend une suite vide sur une liste vide", () => {
+    expect(formResults([], "a")).toEqual([]);
   });
 });

@@ -76,3 +76,21 @@ export function headToHeadTally(
   }
   return { winsA, winsB };
 }
+
+export type FormResult = "WIN" | "LOSS" | "DRAW";
+
+export type FormRow = { winnerId: string | null };
+
+/**
+ * Suite de résultats d'une équipe, du plus ancien au plus récent — l'ordre
+ * dans lequel se lit une série de forme. Les lignes arrivent dans l'ordre
+ * inverse, celui de la requête, d'où le `reverse`.
+ */
+export function formResults(rows: readonly FormRow[], teamId: string): FormResult[] {
+  return rows
+    .map((row): FormResult => {
+      if (row.winnerId === teamId) return "WIN";
+      return row.winnerId === null ? "DRAW" : "LOSS";
+    })
+    .reverse();
+}
