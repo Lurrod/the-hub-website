@@ -73,7 +73,11 @@ export async function getTournamentTeamStats(tournamentId: string): Promise<Team
       const teamId = side === "A" ? m.teamAId : m.teamBId;
       const mine = side === "A" ? m.scoreA : m.scoreB;
       const opp = side === "A" ? m.scoreB : m.scoreA;
-      teamMatches.push({ teamId, matchId: m.id, won: mine > opp });
+      teamMatches.push({
+        teamId,
+        matchId: m.id,
+        result: mine > opp ? "WIN" : mine < opp ? "LOSS" : "DRAW",
+      });
     }
 
     for (const mp of m.maps) {

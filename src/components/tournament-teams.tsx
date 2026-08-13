@@ -3,6 +3,7 @@ import EmptyState, { ListDecor } from "@/components/empty-state";
 import Flag from "@/components/flag";
 import AgentDonut from "@/components/charts/agent-donut";
 import MapHeatmap from "@/components/charts/map-heatmap";
+import FormStreak from "@/components/form-streak";
 import type { TeamStats } from "@/lib/tournament-teams-core";
 
 const SECTION = "mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]";
@@ -42,25 +43,6 @@ function Crest({ team }: { team: TeamStats["team"] }) {
   ) : (
     <span className="monogram grid h-6 w-6 shrink-0 place-items-center rounded text-[9px]">
       {team.tag.slice(0, 2).toUpperCase()}
-    </span>
-  );
-}
-
-/** Suite de résultats, du plus ancien au plus récent. */
-function Form({ form }: { form: boolean[] }) {
-  if (form.length === 0) return <span className="text-[var(--text-subtle)]">–</span>;
-  return (
-    <span className="flex gap-1" title={form.map((w) => (w ? "V" : "D")).join(" ")}>
-      {form.map((won, i) => (
-        <span
-          key={i}
-          className={`grid h-4 w-4 place-items-center rounded-sm text-[9px] font-bold ${
-            won ? "bg-[var(--accent)] text-white" : "bg-[var(--bg)] text-[var(--text-subtle)]"
-          }`}
-        >
-          {won ? "V" : "D"}
-        </span>
-      ))}
     </span>
   );
 }
@@ -187,11 +169,13 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
                 </span>
 
                 <Cell label="Forme">
-                  <Form form={t.form} />
+                  <FormStreak results={t.form} teamName={t.team.name} size="sm" />
                 </Cell>
                 <Cell label="Bilan">
+                  {/* `matchesLost` est compté, pas déduit de la différence : une
+                      série à égalité passerait sinon pour une défaite. */}
                   <span className="stat text-white">
-                    {t.matchesWon}–{t.matchesPlayed - t.matchesWon}
+                    {t.matchesWon}–{t.matchesLost}
                   </span>
                 </Cell>
                 <Cell label="Cartes">

@@ -133,8 +133,8 @@ describe("biggestComeback", () => {
 describe("buildTeamStats", () => {
   it("cumule matchs, cartes et rounds", () => {
     const matches: TeamMatchEntry[] = [
-      { teamId: TEAM.id, matchId: "m1", won: true },
-      { teamId: TEAM.id, matchId: "m2", won: false },
+      { teamId: TEAM.id, matchId: "m1", result: "WIN" },
+      { teamId: TEAM.id, matchId: "m2", result: "LOSS" },
     ];
     const maps = [
       map("Ascent", [round(true), round(true), round(false)]),
@@ -143,12 +143,29 @@ describe("buildTeamStats", () => {
     const s = buildTeamStats(TEAM, matches, maps, [player()]);
     expect(s.matchesPlayed).toBe(2);
     expect(s.matchesWon).toBe(1);
+    expect(s.matchesLost).toBe(1);
     expect(s.mapsPlayed).toBe(2);
     expect(s.mapsWon).toBe(1);
     expect(s.roundsFor).toBe(3);
     expect(s.roundsAgainst).toBe(3);
     expect(s.roundDiff).toBe(0);
-    expect(s.form).toEqual([true, false]);
+    expect(s.form).toEqual(["WIN", "LOSS"]);
+  });
+
+  // Une série à égalité était comptée en défaite, faute d'un troisième état :
+  // le bilan affiché « 1–2 » sur la page tournoi en aurait fait « 1–1 » de
+  // trop, et la frise trois pastilles rouges au lieu de deux.
+  it("ne compte une série à égalité ni en victoire ni en défaite", () => {
+    const matches: TeamMatchEntry[] = [
+      { teamId: TEAM.id, matchId: "m1", result: "WIN" },
+      { teamId: TEAM.id, matchId: "m2", result: "DRAW" },
+      { teamId: TEAM.id, matchId: "m3", result: "LOSS" },
+    ];
+    const s = buildTeamStats(TEAM, matches, [], [player()]);
+    expect(s.matchesPlayed).toBe(3);
+    expect(s.matchesWon).toBe(1);
+    expect(s.matchesLost).toBe(1);
+    expect(s.form).toEqual(["WIN", "DRAW", "LOSS"]);
   });
 
   it("classe les cartes par nombre de parties puis par nom", () => {

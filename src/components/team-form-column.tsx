@@ -1,29 +1,8 @@
 import Link from "next/link";
 import { EmptyLine } from "@/components/empty-state";
 import { shortDate } from "@/lib/dates";
+import FormStreak from "@/components/form-streak";
 import { formStreak, type FormEntry, type FormResult } from "@/lib/match-context-core";
-
-/**
- * Mêmes jetons que les bilans de `team-match-groups.tsx`, dont cette colonne
- * est le pendant détaillé : le même résultat ne doit pas y changer de couleur.
- */
-const PILLS: Record<FormResult, { label: string; description: string; className: string }> = {
-  WIN: {
-    label: "V",
-    description: "victoire",
-    className: "bg-[var(--success-soft)] text-[var(--success)]",
-  },
-  LOSS: {
-    label: "D",
-    description: "défaite",
-    className: "bg-[var(--destructive-soft)] text-[var(--destructive)]",
-  },
-  DRAW: {
-    label: "-",
-    description: "sans vainqueur",
-    className: "bg-[var(--bg)] text-[var(--text-muted)]",
-  },
-};
 
 const SCORE_COLOR: Record<FormResult, string> = {
   WIN: "text-[var(--success)]",
@@ -129,28 +108,7 @@ export default function TeamFormColumn({
           )}
           <span className="truncate text-sm font-medium text-white">{name}</span>
         </span>
-        {streak.length > 0 && (
-          // Les pastilles sont illisibles une par une pour un lecteur d'écran :
-          // la série entière porte donc un nom, et chaque pastille est masquée.
-          <span
-            role="img"
-            className="flex shrink-0 items-center gap-1"
-            title={streak.map((r) => PILLS[r].description).join(", ")}
-            aria-label={`Forme de ${name}, du plus ancien au plus récent : ${streak
-              .map((r) => PILLS[r].description)
-              .join(", ")}`}
-          >
-            {streak.map((result, index) => (
-              <span
-                key={index}
-                aria-hidden
-                className={`stat grid h-5 w-5 place-items-center rounded text-[10px] font-semibold ${PILLS[result].className}`}
-              >
-                {PILLS[result].label}
-              </span>
-            ))}
-          </span>
-        )}
+        {streak.length > 0 && <FormStreak results={streak} teamName={name} />}
       </div>
       {entries.length === 0 ? (
         <EmptyLine>Aucun match joué avant celui-ci.</EmptyLine>
