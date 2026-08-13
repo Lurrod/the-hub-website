@@ -43,3 +43,36 @@ export function cutoffWhere(cutoff: MatchCutoff): CutoffWhere {
   const base: CutoffWhere = { id: { not: cutoff.excludeMatchId } };
   return cutoff.before ? { ...base, date: { lt: cutoff.before } } : base;
 }
+
+export type TallyRow = { winnerId: string | null };
+
+export type HeadToHeadTally = {
+  /** Rencontres gagnées par la première équipe passée en argument. */
+  winsA: number;
+  /** Rencontres gagnées par la seconde. */
+  winsB: number;
+};
+
+/**
+ * Bilan des rencontres, calculé en mémoire sur les lignes déjà chargées —
+ * une requête d'agrégat de plus ne se justifierait pas pour dix lignes au
+ * maximum.
+ *
+ * Un match terminé sans vainqueur — `winnerId` nul, ce que le schéma
+ * autorise — figure dans la liste mais dans aucun total : le match nul
+ * n'existe pas en Valorant, et lui inventer une colonne embrouillerait le
+ * bilan plus qu'il ne l'éclairerait.
+ */
+export function headToHeadTally(
+  rows: readonly TallyRow[],
+  teamAId: string,
+  teamBId: string
+): HeadToHeadTally {
+  let winsA = 0;
+  let winsB = 0;
+  for (const row of rows) {
+    if (row.winnerId === teamAId) winsA++;
+    else if (row.winnerId === teamBId) winsB++;
+  }
+  return { winsA, winsB };
+}
