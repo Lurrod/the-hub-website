@@ -1,5 +1,6 @@
 "use client";
 
+import DateField from "@/components/date-field";
 import ErrorShake from "@/components/error-shake";
 import { useState } from "react";
 import {
@@ -212,21 +213,11 @@ export default function TournamentForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={lbl}>
             Date de début
-            <input
-              type="date"
-              name="startDate"
-              defaultValue={values?.startDate ?? ""}
-              className={input}
-            />
+            <DateField name="startDate" defaultValue={values?.startDate ?? ""} className={input} />
           </label>
           <label className={lbl}>
             Date de fin
-            <input
-              type="date"
-              name="endDate"
-              defaultValue={values?.endDate ?? ""}
-              className={input}
-            />
+            <DateField name="endDate" defaultValue={values?.endDate ?? ""} className={input} />
           </label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
