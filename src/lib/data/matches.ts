@@ -4,6 +4,7 @@ import type { MatchStage, MatchStatus } from "@/lib/constants";
 import type { MatchInput, MatchMapInput } from "@/lib/validation/match";
 import { syncTournamentStatusesIfStale } from "@/lib/tournament-status";
 import { seriesScore } from "@/lib/match-stats-core";
+import { cutoffWhere, headToHeadTally, type MatchCutoff } from "@/lib/match-context-core";
 import { clampPage, pageOffset } from "@/lib/pagination";
 
 function deriveWinnerId(data: {
@@ -328,14 +329,71 @@ export function listTeamUpcomingMatches(teamId: string, limit = 4) {
   });
 }
 
-/** Derniers résultats d'une équipe, du plus récent au plus ancien. */
-export function listTeamRecentMatches(teamId: string, limit = 4) {
+/**
+ * Derniers résultats d'une équipe, du plus récent au plus ancien.
+ *
+ * `cutoff` restreint aux matchs antérieurs à un match donné : c'est ce dont a
+ * besoin la fiche de match, alors que la fiche d'équipe veut les plus récents
+ * en date. Le paramètre est optionnel pour que l'appel existant depuis
+ * `src/app/equipes/[id]/page.tsx` garde son comportement — une seconde
+ * fonction pour une clause `where` de plus finirait par diverger de celle-ci.
+ */
+export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchCutoff) {
+  // `satisfies` est la seule chose qui relie la forme rendue par le noyau au
+  // schéma Prisma : le noyau ne connaît pas `@prisma/client`, et TypeScript ne
+  // contrôle pas les propriétés étalées dans un littéral. Sans cette ligne, un
+  // renommage de `Match.date` compilerait et casserait à l'exécution.
+  const bounds = cutoff ? (cutoffWhere(cutoff) satisfies Prisma.MatchWhereInput) : {};
   return db.match.findMany({
-    where: { status: "FINISHED", OR: [{ teamAId: teamId }, { teamBId: teamId }] },
+    where: {
+      status: "FINISHED",
+      OR: [{ teamAId: teamId }, { teamBId: teamId }],
+      ...bounds,
+    },
     include: { teamA: true, teamB: true },
     orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
     take: limit,
   });
+}
+
+/**
+ * Plafond des rencontres remontées. Le bilan affiché porte sur ces
+ * rencontres-là et pas sur l'historique entier : un total qui ne
+ * correspondrait pas aux lignes juste en dessous serait plus déroutant qu'un
+ * total tronqué. La page le dit quand le plafond a joué.
+ */
+export const HEAD_TO_HEAD_LIMIT = 10;
+
+/**
+ * Rencontres passées entre deux équipes, de la plus récente à la plus
+ * ancienne, accompagnées du bilan.
+ */
+export async function getHeadToHead(
+  teamAId: string,
+  teamBId: string,
+  cutoff: MatchCutoff,
+  limit = HEAD_TO_HEAD_LIMIT
+) {
+  const bounds = cutoffWhere(cutoff) satisfies Prisma.MatchWhereInput;
+  const matches = await db.match.findMany({
+    where: {
+      status: "FINISHED",
+      OR: [
+        { teamAId, teamBId },
+        { teamAId: teamBId, teamBId: teamAId },
+      ],
+      ...bounds,
+    },
+    include: {
+      teamA: { select: { name: true, tag: true, logo: true } },
+      teamB: { select: { name: true, tag: true, logo: true } },
+      // Sans le nom du tournoi, dix lignes de score ne se distinguent pas.
+      tournament: { select: { name: true } },
+    },
+    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+  });
+  return { matches, ...headToHeadTally(matches, teamAId, teamBId) };
 }
 
 /**
