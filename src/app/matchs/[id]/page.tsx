@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import EmptyState, { ListDecor } from "@/components/empty-state";
-import { getMatch } from "@/lib/data/matches";
+import EmptyState, { EmptyLine, ListDecor } from "@/components/empty-state";
+import {
+  getHeadToHead,
+  getMatch,
+  listTeamRecentMatches,
+  HEAD_TO_HEAD_LIMIT,
+} from "@/lib/data/matches";
+import { formResults, type MatchCutoff } from "@/lib/match-context-core";
+import MatchRow from "@/components/match-row";
+import TeamFormColumn from "@/components/team-form-column";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { MATCH_STAGE_LABELS } from "@/lib/constants";
@@ -31,11 +39,23 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const match = await getMatch(id);
   if (!match) notFound();
 
-  const sessionUser = await getSessionUser();
-  const canManage = canManageTournament(
-    sessionUser,
-    await getTournamentManagerIds(match.tournamentId)
-  );
+  const cutoff: MatchCutoff = { before: match.date, excludeMatchId: match.id };
+  // Les cinq requêtes sont indépendantes : les enchaîner allongeait le rendu
+  // pour rien.
+  const [sessionUser, managerIds, h2h, recentA, recentB] = await Promise.all([
+    getSessionUser(),
+    getTournamentManagerIds(match.tournamentId),
+    getHeadToHead(match.teamAId, match.teamBId, cutoff),
+    listTeamRecentMatches(match.teamAId, 5, cutoff),
+    listTeamRecentMatches(match.teamBId, 5, cutoff),
+  ]);
+  const canManage = canManageTournament(sessionUser, managerIds);
+
+  // Deux équipes qui se sont déjà rencontrées ont forcément de la forme ; la
+  // réciproque est fausse. Les deux drapeaux restent distincts parce qu'ils
+  // pilotent deux rendus différents.
+  const hasHeadToHead = h2h.matches.length > 0;
+  const hasForm = recentA.length > 0 || recentB.length > 0;
 
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
@@ -285,6 +305,74 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </ul>
         )}
       </section>
+
+      {(hasHeadToHead || hasForm) && (
+        <>
+          <section className="mt-10">
+            <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">
+              Confrontations directes
+            </h2>
+            {hasHeadToHead ? (
+              <>
+                {/* Le bilan est éclaté en plusieurs `span` pour la couleur :
+                    seul le libellé le rend lisible d'un lecteur d'écran. */}
+                <p
+                  className="stat mb-3 text-center text-sm"
+                  role="img"
+                  aria-label={`Bilan des confrontations : ${match.teamA.tag} ${h2h.winsA}, ${match.teamB.tag} ${h2h.winsB}`}
+                >
+                  <span className="text-[var(--text-muted)]">{match.teamA.tag}</span>{" "}
+                  <span
+                    className={
+                      h2h.winsA > h2h.winsB ? "font-bold text-[var(--accent)]" : "text-white"
+                    }
+                  >
+                    {h2h.winsA}
+                  </span>
+                  <span className="mx-1.5 text-[var(--text-subtle)]">-</span>
+                  <span
+                    className={
+                      h2h.winsB > h2h.winsA ? "font-bold text-[var(--accent)]" : "text-white"
+                    }
+                  >
+                    {h2h.winsB}
+                  </span>{" "}
+                  <span className="text-[var(--text-muted)]">{match.teamB.tag}</span>
+                </p>
+                {h2h.truncated && (
+                  <p className="mb-3 text-center text-xs text-[var(--text-muted)]">
+                    Sur les {HEAD_TO_HEAD_LIMIT} dernières rencontres.
+                  </p>
+                )}
+                <div className="space-y-1 rounded-lg border border-[var(--border)] p-1">
+                  {h2h.matches.map((m) => (
+                    <MatchRow key={m.id} bare match={{ ...m, contextLabel: m.tournament.name }} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <EmptyLine>Première rencontre entre les deux équipes.</EmptyLine>
+            )}
+          </section>
+
+          <section className="mt-10">
+            <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">Forme récente</h2>
+            {/* Même point de rupture que le bandeau du haut de page. */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TeamFormColumn
+                name={match.teamA.name}
+                form={formResults(recentA, match.teamAId)}
+                matches={recentA}
+              />
+              <TeamFormColumn
+                name={match.teamB.name}
+                form={formResults(recentB, match.teamBId)}
+                matches={recentB}
+              />
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }
