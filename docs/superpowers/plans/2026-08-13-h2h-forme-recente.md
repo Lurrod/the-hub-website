@@ -18,7 +18,7 @@ Spec de référence : `docs/superpowers/specs/2026-08-13-h2h-forme-recente-desig
 - La couverture (`npm run test:coverage`) ne mesure que `src/lib/**`, en excluant `src/lib/data/**`. C'est la raison d'être des modules `*-core.ts` : `match-stats-core.ts`, `player-overview-core.ts`, `tournament-teams-core.ts` isolent la logique pure des modules de données qui, eux, touchent la base. **Le module créé ici suit exactement ce motif.**
 - Les seuils de couverture sont un cliquet : `statements 82, branches 77, functions 83, lines 83`. Un nouveau fichier dans `src/lib/` mal testé fait échouer la CI.
 - L'alias `@/` pointe sur `src/`.
-- Les commentaires du dépôt sont en français et expliquent le *pourquoi*, pas le *quoi*. Les messages de commit aussi.
+- Les commentaires du dépôt sont en français et expliquent le _pourquoi_, pas le _quoi_. Les messages de commit aussi.
 
 **Trois écarts assumés par rapport à la section « Tests » de la spec.** Ils tiennent tous à la même cause : l'outillage du projet ne teste en unitaire que du code pur.
 
@@ -30,20 +30,21 @@ Spec de référence : `docs/superpowers/specs/2026-08-13-h2h-forme-recente-desig
 
 ## Structure des fichiers
 
-| Fichier | Rôle |
-|---|---|
-| `src/lib/match-context-core.ts` *(créé)* | Logique pure : type `MatchCutoff`, fragment de clause `where`, comptage du bilan, suite de résultats. Aucun accès à la base. |
-| `tests/unit/match-context-core.test.ts` *(créé)* | Couvre intégralement le module ci-dessus. |
-| `src/lib/data/matches.ts` *(modifié)* | Ajoute `getHeadToHead`, étend `listTeamRecentMatches` d'un paramètre de borne optionnel. |
-| `src/components/team-form-column.tsx` *(créé)* | Une colonne de forme : nom d'équipe, pastilles V/D, liste des matchs. Ne fait aucune requête. |
-| `src/app/matchs/[id]/page.tsx` *(modifié)* | Charge les trois requêtes en parallèle et rend les deux sections. |
-| `tests/e2e/matches.spec.ts` *(modifié)* | Trois parcours, un par cas de remplissage. |
+| Fichier                                          | Rôle                                                                                                                         |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/match-context-core.ts` _(créé)_         | Logique pure : type `MatchCutoff`, fragment de clause `where`, comptage du bilan, suite de résultats. Aucun accès à la base. |
+| `tests/unit/match-context-core.test.ts` _(créé)_ | Couvre intégralement le module ci-dessus.                                                                                    |
+| `src/lib/data/matches.ts` _(modifié)_            | Ajoute `getHeadToHead`, étend `listTeamRecentMatches` d'un paramètre de borne optionnel.                                     |
+| `src/components/team-form-column.tsx` _(créé)_   | Une colonne de forme : nom d'équipe, pastilles V/D, liste des matchs. Ne fait aucune requête.                                |
+| `src/app/matchs/[id]/page.tsx` _(modifié)_       | Charge les trois requêtes en parallèle et rend les deux sections.                                                            |
+| `tests/e2e/matches.spec.ts` _(modifié)_          | Trois parcours, un par cas de remplissage.                                                                                   |
 
 ---
 
 ## Tâche 1 : la borne de sélection
 
 **Files:**
+
 - Create: `src/lib/match-context-core.ts`
 - Test: `tests/unit/match-context-core.test.ts`
 
@@ -151,6 +152,7 @@ git commit -m "feat: borne de sélection des matchs antérieurs à une fiche de 
 ## Tâche 2 : le bilan des confrontations
 
 **Files:**
+
 - Modify: `src/lib/match-context-core.ts`
 - Test: `tests/unit/match-context-core.test.ts`
 
@@ -255,6 +257,7 @@ git commit -m "feat: bilan des confrontations directes entre deux équipes"
 ## Tâche 3 : la suite de résultats
 
 **Files:**
+
 - Modify: `src/lib/match-context-core.ts`
 - Test: `tests/unit/match-context-core.test.ts`
 
@@ -274,8 +277,10 @@ describe("formResults", () => {
   // forme se lit dans le sens du temps. La fonction porte cette inversion,
   // pour que ni la requête ni le composant n'aient à s'en soucier.
   it("rend la suite du plus ancien au plus récent", () => {
-    const rows = [{ winnerId: "a" }, { winnerId: "b" }, { winnerId: "a" }];
-    expect(formResults(rows, "a")).toEqual(["WIN", "LOSS", "WIN"]);
+    // Jeu volontairement non symétrique : une suite palindrome passerait le
+    // test avec ou sans l'inversion, et ne verrouillerait donc rien.
+    const rows = [{ winnerId: "a" }, { winnerId: "a" }, { winnerId: "b" }];
+    expect(formResults(rows, "a")).toEqual(["LOSS", "WIN", "WIN"]);
   });
 
   it("qualifie une victoire, une défaite et un match sans vainqueur", () => {
@@ -340,6 +345,7 @@ git commit -m "feat: suite de résultats chronologique pour la forme d'une équi
 ## Tâche 4 : les deux requêtes
 
 **Files:**
+
 - Modify: `src/lib/data/matches.ts`
 
 Ce module n'est pas testé en unitaire — il est exclu de la couverture parce qu'il touche la base. La logique qu'il porte a été extraite dans le noyau et testée aux tâches 1 à 3 ; ce qui reste ici est de la requête, vérifiée par les parcours de la tâche 7.
@@ -442,6 +448,7 @@ git commit -m "feat: requêtes des confrontations directes et de la forme borné
 ## Tâche 5 : la colonne de forme
 
 **Files:**
+
 - Create: `src/components/team-form-column.tsx`
 
 Composant serveur, comme `match-row.tsx` et `match-mini-list.tsx` : pas de directive `"use client"`.
@@ -540,6 +547,7 @@ git commit -m "feat: colonne de forme récente d'une équipe"
 ## Tâche 6 : brancher la fiche de match
 
 **Files:**
+
 - Modify: `src/app/matchs/[id]/page.tsx`
 
 - [ ] **Étape 1 : compléter les imports**
@@ -557,7 +565,12 @@ par
 
 ```tsx
 import EmptyState, { EmptyLine, ListDecor } from "@/components/empty-state";
-import { getHeadToHead, getMatch, listTeamRecentMatches, HEAD_TO_HEAD_LIMIT } from "@/lib/data/matches";
+import {
+  getHeadToHead,
+  getMatch,
+  listTeamRecentMatches,
+  HEAD_TO_HEAD_LIMIT,
+} from "@/lib/data/matches";
 import { formResults, type MatchCutoff } from "@/lib/match-context-core";
 import MatchRow from "@/components/match-row";
 import TeamFormColumn from "@/components/team-form-column";
@@ -568,33 +581,33 @@ import TeamFormColumn from "@/components/team-form-column";
 Remplacer
 
 ```tsx
-  const sessionUser = await getSessionUser();
-  const canManage = canManageTournament(
-    sessionUser,
-    await getTournamentManagerIds(match.tournamentId)
-  );
+const sessionUser = await getSessionUser();
+const canManage = canManageTournament(
+  sessionUser,
+  await getTournamentManagerIds(match.tournamentId)
+);
 ```
 
 par
 
 ```tsx
-  const cutoff: MatchCutoff = { before: match.date, excludeMatchId: match.id };
-  // Les cinq requêtes sont indépendantes : les enchaîner allongeait le rendu
-  // pour rien.
-  const [sessionUser, managerIds, h2h, recentA, recentB] = await Promise.all([
-    getSessionUser(),
-    getTournamentManagerIds(match.tournamentId),
-    getHeadToHead(match.teamAId, match.teamBId, cutoff),
-    listTeamRecentMatches(match.teamAId, 5, cutoff),
-    listTeamRecentMatches(match.teamBId, 5, cutoff),
-  ]);
-  const canManage = canManageTournament(sessionUser, managerIds);
+const cutoff: MatchCutoff = { before: match.date, excludeMatchId: match.id };
+// Les cinq requêtes sont indépendantes : les enchaîner allongeait le rendu
+// pour rien.
+const [sessionUser, managerIds, h2h, recentA, recentB] = await Promise.all([
+  getSessionUser(),
+  getTournamentManagerIds(match.tournamentId),
+  getHeadToHead(match.teamAId, match.teamBId, cutoff),
+  listTeamRecentMatches(match.teamAId, 5, cutoff),
+  listTeamRecentMatches(match.teamBId, 5, cutoff),
+]);
+const canManage = canManageTournament(sessionUser, managerIds);
 
-  // Deux équipes qui se sont déjà rencontrées ont forcément de la forme ; la
-  // réciproque est fausse. Les deux drapeaux restent distincts parce qu'ils
-  // pilotent deux rendus différents.
-  const hasHeadToHead = h2h.matches.length > 0;
-  const hasForm = recentA.length > 0 || recentB.length > 0;
+// Deux équipes qui se sont déjà rencontrées ont forcément de la forme ; la
+// réciproque est fausse. Les deux drapeaux restent distincts parce qu'ils
+// pilotent deux rendus différents.
+const hasHeadToHead = h2h.matches.length > 0;
+const hasForm = recentA.length > 0 || recentB.length > 0;
 ```
 
 - [ ] **Étape 3 : ajouter les deux sections**
@@ -602,72 +615,70 @@ par
 Toujours dans `src/app/matchs/[id]/page.tsx`, insérer juste avant la balise fermante `</main>`, après la `</section>` du scoreboard :
 
 ```tsx
-      {(hasHeadToHead || hasForm) && (
-        <>
-          <section className="mt-10">
-            <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">
-              Confrontations directes
-            </h2>
-            {hasHeadToHead ? (
-              <>
-                {/* Le bilan est éclaté en plusieurs `span` pour la couleur :
+{
+  (hasHeadToHead || hasForm) && (
+    <>
+      <section className="mt-10">
+        <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">
+          Confrontations directes
+        </h2>
+        {hasHeadToHead ? (
+          <>
+            {/* Le bilan est éclaté en plusieurs `span` pour la couleur :
                     seul le libellé le rend lisible d'un lecteur d'écran. */}
-                <p
-                  className="stat mb-3 text-center text-sm"
-                  aria-label={`Bilan des confrontations : ${match.teamA.tag} ${h2h.winsA}, ${match.teamB.tag} ${h2h.winsB}`}
-                >
-                  <span className="text-[var(--text-muted)]">{match.teamA.tag}</span>{" "}
-                  <span
-                    className={
-                      h2h.winsA > h2h.winsB ? "font-bold text-[var(--accent)]" : "text-white"
-                    }
-                  >
-                    {h2h.winsA}
-                  </span>
-                  <span className="mx-1.5 text-[var(--text-subtle)]">-</span>
-                  <span
-                    className={
-                      h2h.winsB > h2h.winsA ? "font-bold text-[var(--accent)]" : "text-white"
-                    }
-                  >
-                    {h2h.winsB}
-                  </span>{" "}
-                  <span className="text-[var(--text-muted)]">{match.teamB.tag}</span>
-                </p>
-                {h2h.matches.length === HEAD_TO_HEAD_LIMIT && (
-                  <p className="mb-3 text-center text-xs text-[var(--text-muted)]">
-                    Sur les {HEAD_TO_HEAD_LIMIT} dernières rencontres.
-                  </p>
-                )}
-                <div className="space-y-1 rounded-lg border border-[var(--border)] p-1">
-                  {h2h.matches.map((m) => (
-                    <MatchRow key={m.id} bare match={{ ...m, contextLabel: m.tournament.name }} />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <EmptyLine>Première rencontre entre les deux équipes.</EmptyLine>
+            <p
+              className="stat mb-3 text-center text-sm"
+              aria-label={`Bilan des confrontations : ${match.teamA.tag} ${h2h.winsA}, ${match.teamB.tag} ${h2h.winsB}`}
+            >
+              <span className="text-[var(--text-muted)]">{match.teamA.tag}</span>{" "}
+              <span
+                className={h2h.winsA > h2h.winsB ? "font-bold text-[var(--accent)]" : "text-white"}
+              >
+                {h2h.winsA}
+              </span>
+              <span className="mx-1.5 text-[var(--text-subtle)]">-</span>
+              <span
+                className={h2h.winsB > h2h.winsA ? "font-bold text-[var(--accent)]" : "text-white"}
+              >
+                {h2h.winsB}
+              </span>{" "}
+              <span className="text-[var(--text-muted)]">{match.teamB.tag}</span>
+            </p>
+            {h2h.matches.length === HEAD_TO_HEAD_LIMIT && (
+              <p className="mb-3 text-center text-xs text-[var(--text-muted)]">
+                Sur les {HEAD_TO_HEAD_LIMIT} dernières rencontres.
+              </p>
             )}
-          </section>
-
-          <section className="mt-10">
-            <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">Forme récente</h2>
-            {/* Même point de rupture que le bandeau du haut de page. */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TeamFormColumn
-                name={match.teamA.name}
-                form={formResults(recentA, match.teamAId)}
-                matches={recentA}
-              />
-              <TeamFormColumn
-                name={match.teamB.name}
-                form={formResults(recentB, match.teamBId)}
-                matches={recentB}
-              />
+            <div className="space-y-1 rounded-lg border border-[var(--border)] p-1">
+              {h2h.matches.map((m) => (
+                <MatchRow key={m.id} bare match={{ ...m, contextLabel: m.tournament.name }} />
+              ))}
             </div>
-          </section>
-        </>
-      )}
+          </>
+        ) : (
+          <EmptyLine>Première rencontre entre les deux équipes.</EmptyLine>
+        )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">Forme récente</h2>
+        {/* Même point de rupture que le bandeau du haut de page. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TeamFormColumn
+            name={match.teamA.name}
+            form={formResults(recentA, match.teamAId)}
+            matches={recentA}
+          />
+          <TeamFormColumn
+            name={match.teamB.name}
+            form={formResults(recentB, match.teamBId)}
+            matches={recentB}
+          />
+        </div>
+      </section>
+    </>
+  );
+}
 ```
 
 - [ ] **Étape 4 : vérifier types et lint**
@@ -678,6 +689,7 @@ Expected: aucune erreur.
 - [ ] **Étape 5 : vérifier à l'œil dans le navigateur**
 
 Run: `npm run dev` puis ouvrir successivement
+
 - `http://localhost:3200/matchs/fmt-league-m-aller-4` — bilan `VIT 1 - 4 FNC`, cinq rencontres listées, deux colonnes de forme ;
 - `http://localhost:3200/matchs/fmt-round-robin-m-rr-13` — « Première rencontre entre les deux équipes. » puis les deux colonnes ;
 - `http://localhost:3200/matchs/fmt-round-robin-m-rr-1` — ni l'une ni l'autre section.
@@ -696,6 +708,7 @@ git commit -m "feat: affiche les confrontations directes et la forme sur la fich
 ## Tâche 7 : les parcours Playwright
 
 **Files:**
+
 - Modify: `tests/e2e/matches.spec.ts`
 
 Les identifiants ci-dessous viennent de `prisma/seed-formats.ts`, rejoué en CI par `npm run db:seed:formats -- --prune`. Ils ont été vérifiés en base : `fmt-league-m-aller-4` compte cinq rencontres antérieures entre Team Vitality et FNATIC, dont une gagnée par Vitality et quatre par FNATIC.
@@ -746,6 +759,7 @@ git commit -m "test: couvre les trois états des blocs de contexte d'un match"
 ## Tâche 8 : vérification complète et version
 
 **Files:**
+
 - Modify: `package.json`
 
 - [ ] **Étape 1 : passer toute la chaîne de vérification**

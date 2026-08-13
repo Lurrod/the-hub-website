@@ -79,7 +79,7 @@ export async function getHeadToHead(
   teamAId: string,
   teamBId: string,
   cutoff: MatchCutoff,
-  limit = 10,
+  limit = 10
 );
 ```
 
@@ -115,11 +115,7 @@ est appelée depuis la fiche d'équipe (`src/app/equipes/[id]/page.tsx`). On lui
 ajoute un troisième paramètre optionnel :
 
 ```ts
-export function listTeamRecentMatches(
-  teamId: string,
-  limit = 4,
-  cutoff?: MatchCutoff,
-);
+export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchCutoff);
 ```
 
 L'appel existant n'est pas touché : sans `cutoff`, le comportement actuel est
