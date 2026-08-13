@@ -379,16 +379,16 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                     Sur les {h2h.limit} dernières rencontres.
                   </p>
                 )}
-                <div className="mt-3 space-y-1">
+                {/* Même filet que l'index des matchs et que la colonne de
+                    forme juste en dessous : cinq lignes de score identiques se
+                    distinguent mal sans séparation. */}
+                <ul className="mt-3 divide-y divide-[var(--border)]">
                   {h2h.matches.map((m) => (
-                    <MatchRow
-                      key={m.id}
-                      bare
-                      withYear
-                      match={{ ...m, contextLabel: m.tournament.name }}
-                    />
+                    <li key={m.id}>
+                      <MatchRow bare withYear match={{ ...m, contextLabel: m.tournament.name }} />
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             ) : (
               // Une équipe n'a jamais rencontré l'autre : c'est une information,
