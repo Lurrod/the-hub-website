@@ -360,10 +360,10 @@ export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchC
       ...bounds,
     },
     include: {
-      // Seuls le tag et le logo sont consommés — pas de raison de faire
-      // circuler `inviteToken` et `inviteExpiresAt` avec le reste.
-      teamA: { select: { tag: true, logo: true } },
-      teamB: { select: { tag: true, logo: true } },
+      // Seuls le nom, le tag et le logo sont consommés — pas de raison de
+      // faire circuler `inviteToken` et `inviteExpiresAt` avec le reste.
+      teamA: { select: { name: true, tag: true, logo: true } },
+      teamB: { select: { name: true, tag: true, logo: true } },
     },
     // `nulls: "last"` évite qu'un match affiché sans date — cutoff réduit à sa
     // seule exclusion — fasse remonter en tête les autres matchs sans date.

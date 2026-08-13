@@ -66,7 +66,7 @@ function FormRow({ entry, align }: { entry: FormEntry; align: "left" | "right" }
           </div>
         )}
         <span className={`flex-1 truncate text-xs text-white ${mirrored ? "sm:text-right" : ""}`}>
-          {entry.opponent.tag}
+          {entry.opponent.name}
         </span>
         <span className={`stat shrink-0 text-xs font-semibold ${SCORE_COLOR[entry.result]}`}>
           {entry.scoreFor} - {entry.scoreAgainst}

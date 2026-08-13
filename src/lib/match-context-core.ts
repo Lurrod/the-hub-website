@@ -80,7 +80,7 @@ export function headToHeadTally(
 
 export type FormResult = "WIN" | "LOSS" | "DRAW";
 
-export type FormSide = { tag: string; logo: string | null };
+export type FormSide = { name: string; tag: string; logo: string | null };
 
 export type FormMatchRow = MatchOutcomeRow & {
   id: string;

@@ -44,8 +44,8 @@ describe("headToHeadTally", () => {
   });
 });
 
-const ALPHA = { tag: "ALP", logo: null };
-const BETA = { tag: "BET", logo: "/beta.png" };
+const ALPHA = { name: "Alpha Esports", tag: "ALP", logo: null };
+const BETA = { name: "Beta Gaming", tag: "BET", logo: "/beta.png" };
 
 /** Rencontre minimale : seuls les camps, le score et le vainqueur importent. */
 function row(over: Partial<FormMatchRow> = {}): FormMatchRow {
