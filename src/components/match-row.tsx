@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatSite } from "@/lib/timezone";
+import { fullDate } from "@/lib/dates";
 
 export type MatchRowData = {
   id: string;
@@ -25,13 +26,14 @@ export type MatchRowData = {
  */
 function formatSchedule(
   date: Date | string | null | undefined,
-  hasTime: boolean
+  hasTime: boolean,
+  withYear: boolean
 ): { day: string; time: string } | null {
   if (!date) return null;
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return null;
   return {
-    day: formatSite(d, { day: "2-digit", month: "short" }),
+    day: withYear ? fullDate(d) : formatSite(d, { day: "2-digit", month: "short" }),
     time: hasTime ? formatSite(d, { hour: "2-digit", minute: "2-digit" }) : "",
   };
 }
@@ -46,8 +48,10 @@ function Side({
   align: "left" | "right";
 }) {
   return (
+    // Largeur réduite sous `sm` : à 128 px de chaque côté, la ligne réclamait
+    // plus que la largeur d'un téléphone et débordait de la page.
     <div
-      className={`flex w-32 items-center justify-end gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}
+      className={`flex w-16 items-center justify-end gap-2 sm:w-32 ${align === "right" ? "flex-row-reverse" : ""}`}
     >
       {team?.logo ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -63,10 +67,13 @@ function Side({
           {(team?.tag ?? "?").slice(0, 3).toUpperCase()}
         </div>
       )}
+      {/* Le tag sur mobile, le nom complet à partir de `sm` : dans 80 px, un
+          nom d'équipe tronqué à trois lettres en dit moins que son tag. */}
       <span
         className={`truncate text-sm ${isWinner ? "font-semibold text-white" : "text-[var(--text-muted)]"}`}
       >
-        {team?.name ?? "-"}
+        <span className="sm:hidden">{team?.tag ?? "-"}</span>
+        <span className="hidden sm:inline">{team?.name ?? "-"}</span>
       </span>
     </div>
   );
@@ -75,14 +82,22 @@ function Side({
 export default function MatchRow({
   match,
   bare = false,
+  withYear = false,
 }: {
   match: MatchRowData;
   /** Sans contour ni fond : pour les listes déjà encadrées par leur conteneur. */
   bare?: boolean;
+  /**
+   * Date en JJ/MM/AAAA plutôt qu'en « 27 juil. ». Réservé aux listes qui
+   * couvrent plusieurs saisons — les confrontations directes entre deux
+   * équipes — où le mois seul ne dit pas de quelle année il s'agit. Les listes
+   * de matchs à venir gardent le format court, plus lisible.
+   */
+  withYear?: boolean;
 }) {
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
-  const schedule = formatSchedule(match.date, match.hasTime ?? false);
+  const schedule = formatSchedule(match.date, match.hasTime ?? false, withYear);
   return (
     <Link
       href={`/matchs/${match.id}`}
@@ -90,10 +105,11 @@ export default function MatchRow({
         bare
           ? "cursor-pointer rounded-lg transition-colors hover:bg-[var(--card-hover)]"
           : "card card-interactive"
-      } grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 py-1.5`}
+      } grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 py-1.5 sm:gap-3 sm:px-3`}
     >
-      {/* Horaires (gauche) */}
-      <div className="w-14 shrink-0 text-xs leading-tight">
+      {/* Horaires (gauche) — plus large avec l'année, sinon « 27/07/2026 » se
+          coupe en deux lignes. */}
+      <div className={`${withYear ? "w-[4.6rem]" : "w-14"} shrink-0 text-xs leading-tight`}>
         {schedule ? (
           <>
             <div className="text-[var(--text-muted)]">{schedule.day}</div>
@@ -105,7 +121,7 @@ export default function MatchRow({
       </div>
 
       {/* Équipes + score (centrés dans la ligne) */}
-      <div className="flex shrink-0 items-center gap-3 justify-self-center">
+      <div className="flex shrink-0 items-center gap-2 justify-self-center sm:gap-3">
         <Side team={match.teamA} isWinner={aWin} align="left" />
         <div className="stat flex items-center gap-1.5 text-sm">
           <span

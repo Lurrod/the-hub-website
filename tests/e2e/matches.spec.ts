@@ -38,3 +38,49 @@ test("l'index des matchs groupe les matchs par tournoi (accordéon)", async ({ p
   await expect(page.getByText(TOURNOI).first()).toBeVisible();
   await expect(page.getByText("Team Heretics").first()).toBeVisible();
 });
+
+// fmt-league-m-aller-4 (prisma/seed-formats.ts) : journée aller de « Hub Pro
+// League - Saison 1 », Team Vitality (VIT) contre FNATIC (FNC). Les deux
+// équipes se sont déjà affrontées cinq fois avant ce match.
+test("la fiche de match affiche le bilan des confrontations directes et la forme récente", async ({
+  page,
+}) => {
+  await page.goto("/matchs/fmt-league-m-aller-4");
+  await expect(page.getByRole("heading", { name: "Confrontations directes" })).toBeVisible();
+  // Le bilan est éclaté en plusieurs `span` (dont un `sr-only` qui rappelle
+  // les deux équipes) : le texte concaténé du paragraphe est vérifié tel quel
+  // plutôt qu'un fragment, sinon un « 1 » matcherait la moitié de la page.
+  const bilan = page.locator("p", { hasText: "Bilan des confrontations" });
+  await expect(bilan).toHaveText("Bilan des confrontations, Team Vitality contre FNATIC : 1-4");
+  // Les dates des rencontres passées portent l'année : plusieurs saisons
+  // peuvent se suivre dans cette liste.
+  await expect(page.getByText("30/09/2026")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forme récente" })).toBeVisible();
+  // Le match consulté ne doit figurer dans aucune de ses propres listes
+  // (bilan ou forme) : les requêtes excluent explicitement son id.
+  await expect(page.locator('a[href="/matchs/fmt-league-m-aller-4"]')).toHaveCount(0);
+  // Cinq rencontres antérieures, sous la limite de 10 : pas de mention de
+  // troncature.
+  await expect(page.getByText("Sur les 10 dernières rencontres")).toHaveCount(0);
+});
+
+// fmt-round-robin-m-rr-13 (prisma/seed-formats.ts) : « Hub Round Robin Cup »,
+// Team Liquid contre FUT Esports. Ces deux équipes ne se sont jamais
+// affrontées, mais chacune a trois matchs de forme antérieurs.
+test("la fiche de match signale une première rencontre quand seule la forme est connue", async ({
+  page,
+}) => {
+  await page.goto("/matchs/fmt-round-robin-m-rr-13");
+  await expect(page.getByText("Première rencontre entre les deux équipes.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forme récente" })).toBeVisible();
+});
+
+// fmt-round-robin-m-rr-1 (prisma/seed-formats.ts) : le tout premier match du
+// jeu de données (day -60), donc aucune des deux équipes n'a de passé.
+test("la fiche de match masque les confrontations et la forme sans antécédent", async ({
+  page,
+}) => {
+  await page.goto("/matchs/fmt-round-robin-m-rr-1");
+  await expect(page.getByRole("heading", { name: "Confrontations directes" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Forme récente" })).toHaveCount(0);
+});

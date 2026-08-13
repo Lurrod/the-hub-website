@@ -60,6 +60,18 @@ export function shortDate(date: Date | null): string {
 }
 
 /**
+ * Date numérique complète (« 27/07/2026 »), "--/--/----" si absente.
+ *
+ * L'année distingue `shortDate` : elle ne sert que là où des rencontres de
+ * plusieurs saisons se suivent dans la même liste, où « 27/07 » seul ne dit
+ * pas de quelle année il s'agit.
+ */
+export function fullDate(date: Date | null): string {
+  if (!date) return "--/--/----";
+  return formatSite(new Date(date), { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+/**
  * Heure de coup d'envoi (« 18:30 »), heure de Paris.
  *
  * `hasTime` distingue un créneau réellement fixé d'une simple date : afficher

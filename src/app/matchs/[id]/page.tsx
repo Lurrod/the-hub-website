@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import EmptyState, { ListDecor } from "@/components/empty-state";
-import { getMatch } from "@/lib/data/matches";
+import EmptyState, { EmptyLine, ListDecor } from "@/components/empty-state";
+import {
+  getHeadToHead,
+  getMatch,
+  listTeamRecentMatches,
+  TEAM_FORM_LIMIT,
+} from "@/lib/data/matches";
+import { formEntries, type MatchCutoff } from "@/lib/match-context-core";
+import MatchRow from "@/components/match-row";
+import TeamFormColumn from "@/components/team-form-column";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { MATCH_STAGE_LABELS } from "@/lib/constants";
@@ -26,16 +34,68 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return pageMetadata({ path: `/matchs/${id}`, title: name ?? "Match" });
 }
 
+/** Le camp qui mène est mis en avant ; l'autre reste blanc, comme au bandeau. */
+function tallyClass(mine: number, theirs: number) {
+  return mine > theirs ? "font-bold text-[var(--accent)]" : "text-white";
+}
+
+/**
+ * Un côté de l'en-tête des confrontations : logo et nom, tournés vers le
+ * score. Le nom passe au tag sous `sm` — « Team Vitality » et « FNATIC » de
+ * part et d'autre d'un score ne tiennent pas sur un téléphone.
+ */
+function TallySide({
+  team,
+  align,
+}: {
+  team: { name: string; tag: string; logo: string | null };
+  align: "left" | "right";
+}) {
+  return (
+    <div
+      className={`flex min-w-0 items-center gap-2 ${
+        align === "left" ? "flex-row-reverse justify-start" : "justify-start"
+      }`}
+    >
+      {team.logo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          loading="lazy"
+          decoding="async"
+          src={team.logo}
+          alt=""
+          className="h-5 w-5 shrink-0 rounded object-cover"
+        />
+      ) : (
+        <div className="monogram grid h-5 w-5 shrink-0 place-items-center rounded text-[8px]">
+          {team.tag.slice(0, 3).toUpperCase()}
+        </div>
+      )}
+      <span className="hidden truncate text-sm font-medium text-white sm:block">{team.name}</span>
+      <span className="stat truncate text-xs text-[var(--text-muted)] sm:hidden">{team.tag}</span>
+    </div>
+  );
+}
+
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const match = await getMatch(id);
   if (!match) notFound();
 
-  const sessionUser = await getSessionUser();
-  const canManage = canManageTournament(
-    sessionUser,
-    await getTournamentManagerIds(match.tournamentId)
-  );
+  const cutoff: MatchCutoff = { before: match.date, excludeMatchId: match.id };
+  // Les cinq requêtes sont indépendantes : les enchaîner allongeait le rendu
+  // pour rien.
+  const [sessionUser, managerIds, h2h, recentA, recentB] = await Promise.all([
+    getSessionUser(),
+    getTournamentManagerIds(match.tournamentId),
+    getHeadToHead(match.teamAId, match.teamBId, cutoff),
+    listTeamRecentMatches(match.teamAId, TEAM_FORM_LIMIT, cutoff),
+    listTeamRecentMatches(match.teamBId, TEAM_FORM_LIMIT, cutoff),
+  ]);
+  const canManage = canManageTournament(sessionUser, managerIds);
+
+  const hasHeadToHead = h2h.matches.length > 0;
+  const hasForm = recentA.length > 0 || recentB.length > 0;
 
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
@@ -285,6 +345,81 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </ul>
         )}
       </section>
+
+      {/* Pas de forme implique pas de confrontation : les deux requêtes portent les
+          mêmes bornes, donc ce seul drapeau suffit à masquer les deux sections. */}
+      {hasForm && (
+        <>
+          <section className="mt-10">
+            <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">
+              Confrontations directes
+            </h2>
+            {hasHeadToHead ? (
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-4">
+                {/* Le bilan reprend l'affiche du bandeau — logo, nom, score — sur
+                    un fond plus clair : c'est l'en-tête de la liste qui suit, pas
+                    une ligne parmi elles. */}
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[var(--r-sm)] bg-[var(--card-hover)] px-3 py-1.5">
+                  <TallySide team={match.teamA} align="left" />
+                  <p className="stat flex items-center gap-1.5 text-lg">
+                    {/* Les noms d'équipe vivent maintenant dans les deux
+                        colonnes voisines : sans ce rappel, le bilan se lirait
+                        « 1 - 4 » sans dire de qui. */}
+                    <span className="sr-only">
+                      Bilan des confrontations, {match.teamA.name} contre {match.teamB.name} :{" "}
+                    </span>
+                    <span className={tallyClass(h2h.winsA, h2h.winsB)}>{h2h.winsA}</span>
+                    <span className="text-[var(--text-subtle)]">-</span>
+                    <span className={tallyClass(h2h.winsB, h2h.winsA)}>{h2h.winsB}</span>
+                  </p>
+                  <TallySide team={match.teamB} align="right" />
+                </div>
+                {h2h.truncated && (
+                  <p className="mt-3 text-center text-xs text-[var(--text-muted)]">
+                    Sur les {h2h.limit} dernières rencontres.
+                  </p>
+                )}
+                {/* Même filet que l'index des matchs et que la colonne de
+                    forme juste en dessous : cinq lignes de score identiques se
+                    distinguent mal sans séparation. */}
+                <ul className="mt-3 divide-y divide-[var(--border)]">
+                  {h2h.matches.map((m) => (
+                    <li key={m.id}>
+                      <MatchRow bare withYear match={{ ...m, contextLabel: m.tournament.name }} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              // Une équipe n'a jamais rencontré l'autre : c'est une information,
+              // pas un manque. Un `EmptyState` avec décor serait disproportionné
+              // pour cette seule phrase de constat.
+              <EmptyLine>Première rencontre entre les deux équipes.</EmptyLine>
+            )}
+          </section>
+
+          <section className="mt-10">
+            <h2 className="mb-3 text-base font-semibold text-[var(--accent)]">Forme récente</h2>
+            {/* Même encadré que les confrontations, pour que les deux blocs de
+                contexte se lisent comme une seule zone sous le scoreboard.
+                Point de rupture aligné sur le bandeau du haut de page. */}
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 sm:p-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TeamFormColumn
+                  team={match.teamA}
+                  align="left"
+                  entries={formEntries(recentA, match.teamAId)}
+                />
+                <TeamFormColumn
+                  team={match.teamB}
+                  align="right"
+                  entries={formEntries(recentB, match.teamBId)}
+                />
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }

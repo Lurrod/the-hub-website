@@ -73,7 +73,20 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
       }}
     />
   );
-  const miniMatch = (m: (typeof upcoming)[number], played: boolean) => ({
+  // Forme minimale requise par `MiniMatch` : `upcoming` et `recent` viennent
+  // de deux requêtes aux `select` désormais différents (la seconde ne charge
+  // plus l'équipe en entier), donc un type calé sur l'une des deux ne
+  // conviendrait plus à l'autre.
+  type MiniMatchSource = {
+    id: string;
+    date: Date | null;
+    hasTime: boolean;
+    teamA: { tag: string; logo: string | null };
+    teamB: { tag: string; logo: string | null };
+    scoreA: number;
+    scoreB: number;
+  };
+  const miniMatch = (m: MiniMatchSource, played: boolean) => ({
     id: m.id,
     date: m.date,
     hasTime: m.hasTime,
