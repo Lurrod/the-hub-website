@@ -11,15 +11,18 @@ const BEFORE = new Date("2026-11-02T18:00:00.000Z");
 
 describe("cutoffWhere", () => {
   it("écarte toujours le match affiché", () => {
-    expect(cutoffWhere({ before: null, excludeMatchId: "m1" })).toEqual({
+    expect(cutoffWhere({ notAfter: null, excludeMatchId: "m1" })).toEqual({
       id: { not: "m1" },
     });
   });
 
-  it("borne sur la date quand le match affiché en a une", () => {
-    expect(cutoffWhere({ before: BEFORE, excludeMatchId: "m1" })).toEqual({
+  // La comparaison est inclusive : deux matchs sans heure d'une même journée
+  // portent le même horodatage (minuit), et une borne stricte les aurait fait
+  // disparaître l'un de l'autre. Le match affiché reste écarté par son id.
+  it("inclut l'instant du match affiché plutôt que de l'exclure", () => {
+    expect(cutoffWhere({ notAfter: BEFORE, excludeMatchId: "m1" })).toEqual({
       id: { not: "m1" },
-      date: { lt: BEFORE },
+      date: { lte: BEFORE },
     });
   });
 });
