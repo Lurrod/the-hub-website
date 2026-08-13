@@ -31,13 +31,22 @@ const SCORE_COLOR: Record<FormResult, string> = {
   DRAW: "text-[var(--text-muted)]",
 };
 
-/** Une rencontre sur une ligne : la date, l'adversaire, le score. */
-function FormRow({ entry }: { entry: FormEntry }) {
+/**
+ * Une rencontre sur une ligne : la date, l'adversaire, le score.
+ *
+ * En miroir, c'est le tag qui absorbe l'espace libre et non une marge
+ * automatique : `ml-auto` pousserait le score vers le centre au lieu du bord
+ * dès que la ligne s'inverse.
+ */
+function FormRow({ entry, align }: { entry: FormEntry; align: "left" | "right" }) {
+  const mirrored = align === "right";
   return (
     <li>
       <Link
         href={`/matchs/${entry.id}`}
-        className="flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--card-hover)]"
+        className={`flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--card-hover)] ${
+          mirrored ? "sm:flex-row-reverse" : ""
+        }`}
       >
         <span className="stat w-11 shrink-0 text-[10px] text-[var(--text-muted)]">
           {shortDate(entry.date)}
@@ -56,10 +65,10 @@ function FormRow({ entry }: { entry: FormEntry }) {
             {entry.opponent.tag.slice(0, 1).toUpperCase()}
           </div>
         )}
-        <span className="truncate text-xs text-white">{entry.opponent.tag}</span>
-        <span
-          className={`stat ml-auto shrink-0 text-xs font-semibold ${SCORE_COLOR[entry.result]}`}
-        >
+        <span className={`flex-1 truncate text-xs text-white ${mirrored ? "sm:text-right" : ""}`}>
+          {entry.opponent.tag}
+        </span>
+        <span className={`stat shrink-0 text-xs font-semibold ${SCORE_COLOR[entry.result]}`}>
           {entry.scoreFor} - {entry.scoreAgainst}
         </span>
       </Link>
@@ -148,7 +157,7 @@ export default function TeamFormColumn({
       ) : (
         <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
           {entries.map((entry) => (
-            <FormRow key={entry.id} entry={entry} />
+            <FormRow key={entry.id} entry={entry} align={align} />
           ))}
         </ul>
       )}
