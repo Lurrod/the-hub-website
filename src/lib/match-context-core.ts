@@ -80,16 +80,61 @@ export function headToHeadTally(
 
 export type FormResult = "WIN" | "LOSS" | "DRAW";
 
+export type FormSide = { tag: string; logo: string | null };
+
+export type FormMatchRow = MatchOutcomeRow & {
+  id: string;
+  date: Date | null;
+  teamAId: string;
+  teamBId: string;
+  scoreA: number;
+  scoreB: number;
+  teamA: FormSide;
+  teamB: FormSide;
+};
+
 /**
- * Suite de résultats d'une équipe, du plus ancien au plus récent — l'ordre
- * dans lequel se lit une série de forme. Les lignes arrivent dans l'ordre
- * inverse, celui de la requête, d'où le `reverse`.
+ * Une rencontre vue du côté d'une équipe : son adversaire, son score à elle
+ * d'abord, et l'issue.
  */
-export function formResults(rows: readonly MatchOutcomeRow[], teamId: string): FormResult[] {
-  return rows
-    .map((row): FormResult => {
-      if (row.winnerId === teamId) return "WIN";
-      return row.winnerId === null ? "DRAW" : "LOSS";
-    })
-    .reverse();
+export type FormEntry = {
+  id: string;
+  date: Date | null;
+  opponent: FormSide;
+  scoreFor: number;
+  scoreAgainst: number;
+  result: FormResult;
+};
+
+/**
+ * Retourne les rencontres du point de vue d'une équipe, dans l'ordre où elles
+ * arrivent — de la plus récente à la plus ancienne.
+ *
+ * Une seule fonction rend à la fois la liste et la matière de la frise :
+ * quand c'étaient deux appels séparés, rien n'empêchait l'appelant de les
+ * nourrir de sources différentes et d'afficher une frise qui ne correspondait
+ * pas aux matchs listés en dessous.
+ */
+export function formEntries(rows: readonly FormMatchRow[], teamId: string): FormEntry[] {
+  return rows.map((row) => {
+    const isA = row.teamAId === teamId;
+    return {
+      id: row.id,
+      date: row.date,
+      opponent: isA ? row.teamB : row.teamA,
+      scoreFor: isA ? row.scoreA : row.scoreB,
+      scoreAgainst: isA ? row.scoreB : row.scoreA,
+      result:
+        row.winnerId === teamId ? "WIN" : row.winnerId === null ? "DRAW" : ("LOSS" as FormResult),
+    };
+  });
+}
+
+/**
+ * Suite de résultats, du plus ancien au plus récent — l'ordre dans lequel se
+ * lit une série de forme. Les entrées arrivent dans l'ordre inverse, celui de
+ * la requête, d'où le `reverse`.
+ */
+export function formStreak(entries: readonly FormEntry[]): FormResult[] {
+  return entries.map((e) => e.result).reverse();
 }

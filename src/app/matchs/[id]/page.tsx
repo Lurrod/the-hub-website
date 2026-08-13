@@ -5,10 +5,9 @@ import {
   getHeadToHead,
   getMatch,
   listTeamRecentMatches,
-  HEAD_TO_HEAD_LIMIT,
   TEAM_FORM_LIMIT,
 } from "@/lib/data/matches";
-import { formResults, type MatchCutoff } from "@/lib/match-context-core";
+import { formEntries, type MatchCutoff } from "@/lib/match-context-core";
 import MatchRow from "@/components/match-row";
 import TeamFormColumn from "@/components/team-form-column";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
@@ -65,10 +64,10 @@ function TallySide({
           decoding="async"
           src={team.logo}
           alt=""
-          className="h-8 w-8 shrink-0 rounded object-cover"
+          className="h-5 w-5 shrink-0 rounded object-cover"
         />
       ) : (
-        <div className="monogram grid h-8 w-8 shrink-0 place-items-center rounded text-[10px]">
+        <div className="monogram grid h-5 w-5 shrink-0 place-items-center rounded text-[8px]">
           {team.tag.slice(0, 3).toUpperCase()}
         </div>
       )}
@@ -377,7 +376,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                 </div>
                 {h2h.truncated && (
                   <p className="mt-3 text-center text-xs text-[var(--text-muted)]">
-                    Sur les {HEAD_TO_HEAD_LIMIT} dernières rencontres.
+                    Sur les {h2h.limit} dernières rencontres.
                   </p>
                 )}
                 <div className="mt-3 space-y-1">
@@ -408,13 +407,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <div className="grid gap-4 sm:grid-cols-2">
                 <TeamFormColumn
                   name={match.teamA.name}
-                  form={formResults(recentA, match.teamAId)}
-                  matches={recentA}
+                  entries={formEntries(recentA, match.teamAId)}
                 />
                 <TeamFormColumn
                   name={match.teamB.name}
-                  form={formResults(recentB, match.teamBId)}
-                  matches={recentB}
+                  entries={formEntries(recentB, match.teamBId)}
                 />
               </div>
             </div>

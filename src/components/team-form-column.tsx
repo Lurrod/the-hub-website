@@ -1,9 +1,11 @@
-import MatchMiniList, { type MiniMatch } from "@/components/match-mini-list";
-import type { FormResult } from "@/lib/match-context-core";
+import Link from "next/link";
+import { EmptyLine } from "@/components/empty-state";
+import { shortDate } from "@/lib/dates";
+import { formStreak, type FormEntry, type FormResult } from "@/lib/match-context-core";
 
 /**
- * Mêmes jetons que les bilans de `team-match-groups.tsx` : la couleur d'une
- * victoire ne doit pas changer d'une page à l'autre.
+ * Mêmes jetons que les bilans de `team-match-groups.tsx`, dont cette colonne
+ * est le pendant détaillé : le même résultat ne doit pas y changer de couleur.
  */
 const PILLS: Record<FormResult, { label: string; description: string; className: string }> = {
   WIN: {
@@ -23,47 +25,74 @@ const PILLS: Record<FormResult, { label: string; description: string; className:
   },
 };
 
+const SCORE_COLOR: Record<FormResult, string> = {
+  WIN: "text-[var(--success)]",
+  LOSS: "text-[var(--destructive)]",
+  DRAW: "text-[var(--text-muted)]",
+};
+
+/** Une rencontre sur une ligne : la date, l'adversaire, le score. */
+function FormRow({ entry }: { entry: FormEntry }) {
+  return (
+    <li>
+      <Link
+        href={`/matchs/${entry.id}`}
+        className="flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-[var(--card-hover)]"
+      >
+        <span className="stat w-11 shrink-0 text-[10px] text-[var(--text-muted)]">
+          {shortDate(entry.date)}
+        </span>
+        {entry.opponent.logo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            loading="lazy"
+            decoding="async"
+            src={entry.opponent.logo}
+            alt=""
+            className="h-4 w-4 shrink-0 rounded object-cover"
+          />
+        ) : (
+          <div className="grid h-4 w-4 shrink-0 place-items-center rounded bg-[var(--bg)] text-[8px] text-[var(--text-muted)]">
+            {entry.opponent.tag.slice(0, 1).toUpperCase()}
+          </div>
+        )}
+        <span className="truncate text-xs text-white">{entry.opponent.tag}</span>
+        <span
+          className={`stat ml-auto shrink-0 text-xs font-semibold ${SCORE_COLOR[entry.result]}`}
+        >
+          {entry.scoreFor} - {entry.scoreAgainst}
+        </span>
+      </Link>
+    </li>
+  );
+}
+
 /**
  * L'état de forme d'une équipe : son nom, sa série de résultats et ses
- * derniers matchs. Le composant ne fait aucune requête et ignore tout du match
- * depuis lequel on le regarde — il reçoit une liste déjà bornée et déjà
- * ordonnée.
+ * dernières rencontres, chacune tenant sur une ligne.
+ *
+ * Le composant ne fait aucune requête et ignore tout du match depuis lequel on
+ * le regarde — il reçoit des entrées déjà bornées, déjà ordonnées et déjà
+ * tournées de son côté.
  */
-export default function TeamFormColumn({
-  name,
-  form,
-  matches,
-}: {
-  name: string;
-  /**
-   * Du plus ancien au plus récent, tel que le rend `formResults`. Décrit les
-   * mêmes rencontres que `matches` — rien ne lie leurs longueurs, un appelant
-   * distrait ne verrait rien exploser.
-   */
-  form: FormResult[];
-  /** Du plus récent au plus ancien, tel que le rend la requête. */
-  matches: MiniMatch[];
-}) {
-  const formLabel = `Forme de ${name}, du plus ancien au plus récent : ${form
-    .map((r) => PILLS[r].description)
-    .join(", ")}`;
+export default function TeamFormColumn({ name, entries }: { name: string; entries: FormEntry[] }) {
+  const streak = formStreak(entries);
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="truncate text-sm font-medium text-white">{name}</span>
-        {form.length > 0 && (
+        {streak.length > 0 && (
           // Les pastilles sont illisibles une par une pour un lecteur d'écran :
-          // la série entière porte donc un rôle et un nom accessibles, et
-          // chaque pastille est masquée. `role="img"` est nécessaire : un
-          // `<span>` n'a pas de rôle implicite qui porte de nom accessible, et
-          // sans lui l'`aria-label` serait ignoré par les lecteurs d'écran.
+          // la série entière porte donc un nom, et chaque pastille est masquée.
           <span
             role="img"
-            title={formLabel}
-            aria-label={formLabel}
             className="flex shrink-0 items-center gap-1"
+            title={streak.map((r) => PILLS[r].description).join(", ")}
+            aria-label={`Forme de ${name}, du plus ancien au plus récent : ${streak
+              .map((r) => PILLS[r].description)
+              .join(", ")}`}
           >
-            {form.map((result, index) => (
+            {streak.map((result, index) => (
               <span
                 key={index}
                 aria-hidden
@@ -75,7 +104,15 @@ export default function TeamFormColumn({
           </span>
         )}
       </div>
-      <MatchMiniList matches={matches} empty="Aucun match joué avant celui-ci." />
+      {entries.length === 0 ? (
+        <EmptyLine>Aucun match joué avant celui-ci.</EmptyLine>
+      ) : (
+        <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
+          {entries.map((entry) => (
+            <FormRow key={entry.id} entry={entry} />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
