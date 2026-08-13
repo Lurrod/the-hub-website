@@ -122,4 +122,54 @@ test.describe("paramètres", () => {
     await expect(page.locator('input[value="MANAGER"]')).toBeChecked();
     await expect(page.locator('select[name="valorantRole"]')).toHaveCount(0);
   });
+
+  /*
+   * La date de naissance ne passe plus par un `<input type="date">` mais par le
+   * calendrier maison, qui écrit dans un champ caché. Les deux chemins de
+   * saisie — clavier et calendrier — doivent aboutir en base.
+   */
+  test("la date de naissance se saisit au clavier et part en base", async ({ context, page }) => {
+    const account = await compte({ onboarded: true });
+    await signIn(context, account);
+
+    await page.goto("/profil");
+    const champ = page.getByPlaceholder("JJ/MM/AAAA");
+    await champ.fill("09/03/1998");
+    await champ.blur();
+    await expect(page.locator('input[name="birthdate"]')).toHaveValue("1998-03-09");
+
+    await page.getByRole("button", { name: "Enregistrer" }).click();
+    await expect
+      .poll(async () => (await readPlayer(account.playerId))?.birthdate?.toISOString().slice(0, 10))
+      .toBe("1998-03-09");
+
+    // La valeur enregistrée revient à l'écran au format français.
+    await page.goto("/profil");
+    await expect(page.getByPlaceholder("JJ/MM/AAAA")).toHaveValue("09/03/1998");
+  });
+
+  test("la date de naissance se choisit dans le calendrier", async ({ context, page }) => {
+    const account = await compte({ onboarded: true });
+    await signIn(context, account);
+
+    await page.goto("/profil");
+    await page.getByLabel("Ouvrir le calendrier").click();
+    const calendrier = page.getByRole("dialog", { name: "Calendrier" });
+    await expect(calendrier).toBeVisible();
+
+    // Un jour du mois affiché, choisi par son libellé complet : la grille
+    // déborde sur les mois voisins, viser « 12 » seul serait ambigu.
+    const jour = await calendrier.locator("button[aria-label]").nth(20).getAttribute("aria-label");
+    await calendrier.getByRole("button", { name: jour! }).click();
+
+    await expect(calendrier).toBeHidden();
+    await expect(page.getByPlaceholder("JJ/MM/AAAA")).toHaveValue(jour!);
+
+    const attendu = jour!.split("/").reverse().join("-");
+    await expect(page.locator('input[name="birthdate"]')).toHaveValue(attendu);
+    await page.getByRole("button", { name: "Enregistrer" }).click();
+    await expect
+      .poll(async () => (await readPlayer(account.playerId))?.birthdate?.toISOString().slice(0, 10))
+      .toBe(attendu);
+  });
 });

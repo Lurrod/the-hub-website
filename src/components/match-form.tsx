@@ -1,3 +1,4 @@
+import DateField from "@/components/date-field";
 import ErrorShake from "@/components/error-shake";
 import {
   MATCH_STAGES,
@@ -172,12 +173,7 @@ export default function MatchForm({
       </div>
       <label className={lbl}>
         Date et heure (optionnel)
-        <input
-          type="datetime-local"
-          name="date"
-          defaultValue={values?.date ?? ""}
-          className={input}
-        />
+        <DateField name="date" defaultValue={values?.date ?? ""} withTime className={input} />
         <span className="text-xs text-[var(--text-subtle)]">
           Heure de Paris. Laisser l&apos;heure vide si le créneau n&apos;est pas fixé.
         </span>

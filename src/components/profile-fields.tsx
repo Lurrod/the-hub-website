@@ -1,4 +1,5 @@
 import CountrySelect from "@/components/country-select";
+import DateField from "@/components/date-field";
 import ErrorShake from "@/components/error-shake";
 import ImageUpload from "@/components/image-upload";
 import { VALORANT_ROLES, ROLE_LABELS } from "@/lib/roles";
@@ -66,7 +67,7 @@ export default function ProfileFields({
         )}
         <label className={lbl}>
           Date de naissance
-          <input name="birthdate" type="date" defaultValue={values.birthdate} className={input} />
+          <DateField name="birthdate" defaultValue={values.birthdate} className={input} />
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

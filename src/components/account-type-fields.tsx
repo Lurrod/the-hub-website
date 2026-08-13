@@ -4,7 +4,6 @@ import { useState } from "react";
 import ProfileFields, { type ProfileFieldValues } from "@/components/profile-fields";
 import {
   ACCOUNT_TYPES,
-  ACCOUNT_TYPE_HINTS,
   ACCOUNT_TYPE_LABELS,
   hasValorantRole,
   requiresRiotId,
@@ -45,13 +44,9 @@ export default function AccountTypeFields({
   return (
     <>
       <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
           Type de compte
         </h2>
-        <p className="mb-4 text-xs text-[var(--text-muted)]">
-          Il adapte ce qu&apos;on te demande, et comment tu apparais sur le site. Tu pourras en
-          changer à tout moment.
-        </p>
 
         <div className="grid gap-2 sm:grid-cols-3">
           {ACCOUNT_TYPES.map((t) => {
@@ -59,26 +54,21 @@ export default function AccountTypeFields({
             return (
               <label
                 key={t}
-                className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
                   active
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                    : "border-[var(--border)] hover:border-[var(--border-strong)]"
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-white"
+                    : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-white"
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="accountType"
-                    value={t}
-                    checked={active}
-                    onChange={() => setType(t)}
-                    className="h-4 w-4 shrink-0 accent-[var(--accent)]"
-                  />
-                  <span className="text-sm font-semibold text-white">{ACCOUNT_TYPE_LABELS[t]}</span>
-                </span>
-                <span className="mt-1.5 block text-xs leading-relaxed text-[var(--text-muted)]">
-                  {ACCOUNT_TYPE_HINTS[t]}
-                </span>
+                <input
+                  type="radio"
+                  name="accountType"
+                  value={t}
+                  checked={active}
+                  onChange={() => setType(t)}
+                  className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+                />
+                {ACCOUNT_TYPE_LABELS[t]}
               </label>
             );
           })}

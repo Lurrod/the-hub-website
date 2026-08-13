@@ -102,7 +102,14 @@ export async function signIn(
 export function readPlayer(playerId: string) {
   return db.player.findUnique({
     where: { id: playerId },
-    select: { accountType: true, onboardedAt: true, valorantRole: true, puuid: true, lft: true },
+    select: {
+      accountType: true,
+      onboardedAt: true,
+      valorantRole: true,
+      puuid: true,
+      lft: true,
+      birthdate: true,
+    },
   });
 }
 

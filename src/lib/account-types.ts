@@ -17,15 +17,6 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountTypeKey, string> = {
   MANAGER: "Manager",
 };
 
-/** Phrase d'aide affichée sous chaque choix, à l'inscription et au profil. */
-export const ACCOUNT_TYPE_HINTS: Record<AccountTypeKey, string> = {
-  JOUEUR:
-    "Tu joues, en équipe ou en cherchant la tienne. Ton Riot ID relie tes matchs et tes statistiques.",
-  COACH:
-    "Tu encadres une équipe. Le Riot ID reste facultatif : tu n'as pas forcément de stats à relier.",
-  MANAGER: "Tu gères une équipe ou un tournoi. Le Riot ID reste facultatif.",
-};
-
 /**
  * Seul un joueur doit lier un Riot ID pour terminer son inscription : lui seul
  * a des matchs et des statistiques à rattacher. L'exiger d'un coach le

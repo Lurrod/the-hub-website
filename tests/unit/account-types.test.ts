@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   ACCOUNT_TYPES,
-  ACCOUNT_TYPE_HINTS,
   ACCOUNT_TYPE_LABELS,
   hasValorantRole,
   parseAccountType,
@@ -44,7 +43,6 @@ describe("libellés", () => {
   it("couvre les trois types, sans trou", () => {
     for (const type of ACCOUNT_TYPES) {
       expect(ACCOUNT_TYPE_LABELS[type]).toBeTruthy();
-      expect(ACCOUNT_TYPE_HINTS[type]).toBeTruthy();
     }
   });
 });

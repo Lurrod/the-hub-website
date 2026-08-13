@@ -35,6 +35,7 @@
 
   /* Couleurs sémantiques (rft.gg) */
   --success: #4ac97e;
+  --success-soft: rgba(74, 201, 126, 0.12);
   --destructive: #f7665e;
   --destructive-soft: rgba(247, 102, 94, 0.12);
   --legendary: #ffd47d;

@@ -717,3 +717,88 @@ body :is(h1, h2, h3, h4, h5, h6) {
 .scroll-accent::-webkit-scrollbar-thumb:hover {
   background: var(--accent-hover);
 }
+
+/* Listes déroulantes natives.
+   La flèche que dessine le navigateur se colle au bord droit du champ : son
+   retrait ne correspond pas à celui du texte à gauche, et son dessin n'est
+   celui d'aucun autre chevron du site. On la remplace par le chevron maison,
+   posé en fond et aligné sur le padding du champ. Hors @layer pour primer sur
+   les utilitaires Tailwind (px-3, py-2) posés sur les selects, et `:where()`
+   garde la spécificité à celle d'un simple sélecteur d'élément pour qu'une
+   règle plus précise puisse encore reprendre la main. */
+select:where(:not([multiple]):not([size])) {
+  --select-chevron: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f7178' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: var(--select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px 14px;
+  padding-inline-end: 28px;
+  cursor: pointer;
+  /* Un select natif coupe toujours son libellé sur une ligne ; en mode
+     `base-select` (voir public/select-picker.css) le libellé revient à la
+     ligne et fait grandir le champ. On lui rend la coupe d'origine. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+select:where(:not([multiple]):not([size])):hover,
+select:where(:not([multiple]):not([size])):focus {
+  --select-chevron: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239b9c9e' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+
+/* Champs numériques. Les deux flèches +1/-1 du navigateur sont dessinées par
+   lui : elles collent au bord, gardent leur gris système et n'existent pas sur
+   mobile. Les scores et les seeds se tapent au clavier — on les retire, la
+   molette et les flèches du clavier continuent d'incrémenter. */
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Saisie d'heure du calendrier maison (voir date-field.tsx) : `color-scheme`
+   rend les chiffres et le menu natif lisibles sur fond sombre, et l'icône
+   d'ouverture est masquée puisque le panneau est déjà ouvert. */
+.time-input {
+  color-scheme: dark;
+}
+.time-input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+/* Le segment en cours d'édition est surligné en bleu système : on le repasse
+   dans l'accent, comme le reste des sélections du site. */
+.time-input::-webkit-datetime-edit-hour-field:focus,
+.time-input::-webkit-datetime-edit-minute-field:focus {
+  background: var(--accent);
+  border-radius: 3px;
+  color: #fff;
+  outline: none;
+}
+
+/* Cases et boutons radio. Sans `color-scheme`, le navigateur les dessine pour
+   un fond clair : décochés, ce sont trois pastilles blanches qui pèsent plus
+   que le libellé qu'elles accompagnent. */
+input[type="radio"],
+input[type="checkbox"] {
+  color-scheme: dark;
+}
+
+/* Filet de sécurité pour un champ date natif qui échapperait à DateField :
+   `color-scheme` suffit à blanchir l'icône du navigateur et à assombrir son
+   calendrier, faute de pouvoir l'habiller. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  color-scheme: dark;
+}
+
+/* L'habillage du menu une fois ouvert vit dans `public/select-picker.css` :
+   Lightning CSS, qui compile cette feuille, ne sait pas encore lire le
+   sélecteur `::picker(select)` et rejette tout le fichier s'il l'y trouve. */
