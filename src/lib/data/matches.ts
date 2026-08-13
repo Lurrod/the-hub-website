@@ -330,6 +330,19 @@ export function listTeamUpcomingMatches(teamId: string, limit = 4) {
 }
 
 /**
+ * Traduit la borne du noyau en fragment de `where` Prisma.
+ *
+ * Le littéral est reconstruit ici plutôt qu'étalé tel quel : c'est ce qui fait
+ * vérifier par TypeScript que `id` et `date` existent encore au schéma. Un
+ * `satisfies` sur la valeur rendue par `cutoffWhere` ne le ferait pas — le
+ * contrôle des propriétés en trop ne s'applique qu'aux littéraux frais.
+ */
+function cutoffBounds(cutoff: MatchCutoff): Prisma.MatchWhereInput {
+  const { id, date } = cutoffWhere(cutoff);
+  return date ? { id, date } : { id };
+}
+
+/**
  * Derniers résultats d'une équipe, du plus récent au plus ancien.
  *
  * `cutoff` restreint aux matchs antérieurs à un match donné : c'est ce dont a
@@ -339,19 +352,22 @@ export function listTeamUpcomingMatches(teamId: string, limit = 4) {
  * fonction pour une clause `where` de plus finirait par diverger de celle-ci.
  */
 export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchCutoff) {
-  // `satisfies` est la seule chose qui relie la forme rendue par le noyau au
-  // schéma Prisma : le noyau ne connaît pas `@prisma/client`, et TypeScript ne
-  // contrôle pas les propriétés étalées dans un littéral. Sans cette ligne, un
-  // renommage de `Match.date` compilerait et casserait à l'exécution.
-  const bounds = cutoff ? (cutoffWhere(cutoff) satisfies Prisma.MatchWhereInput) : {};
+  const bounds = cutoff ? cutoffBounds(cutoff) : {};
   return db.match.findMany({
     where: {
       status: "FINISHED",
       OR: [{ teamAId: teamId }, { teamBId: teamId }],
       ...bounds,
     },
-    include: { teamA: true, teamB: true },
-    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+    include: {
+      // Seuls le nom, le tag et le logo sont consommés — pas de raison de
+      // faire circuler `inviteToken` et `inviteExpiresAt` avec le reste.
+      teamA: { select: { id: true, name: true, tag: true, logo: true } },
+      teamB: { select: { id: true, name: true, tag: true, logo: true } },
+    },
+    // `nulls: "last"` évite qu'un match affiché sans date — cutoff réduit à sa
+    // seule exclusion — fasse remonter en tête les autres matchs sans date.
+    orderBy: [{ date: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }],
     take: limit,
   });
 }
@@ -374,8 +390,8 @@ export async function getHeadToHead(
   cutoff: MatchCutoff,
   limit = HEAD_TO_HEAD_LIMIT
 ) {
-  const bounds = cutoffWhere(cutoff) satisfies Prisma.MatchWhereInput;
-  const matches = await db.match.findMany({
+  const bounds = cutoffBounds(cutoff);
+  const rows = await db.match.findMany({
     where: {
       status: "FINISHED",
       OR: [
@@ -390,10 +406,17 @@ export async function getHeadToHead(
       // Sans le nom du tournoi, dix lignes de score ne se distinguent pas.
       tournament: { select: { name: true } },
     },
-    orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
-    take: limit,
+    orderBy: [{ date: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }],
+    // Une ligne de plus que le plafond : c'est ce qui distingue « exactement
+    // dix rencontres » de « plus de dix, tronquées ».
+    take: limit + 1,
   });
-  return { matches, ...headToHeadTally(matches, teamAId, teamBId) };
+  const matches = rows.slice(0, limit);
+  return {
+    matches,
+    truncated: rows.length > limit,
+    ...headToHeadTally(matches, teamAId, teamBId),
+  };
 }
 
 /**
