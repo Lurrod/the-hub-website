@@ -281,6 +281,15 @@ Quatre points ont été tranchés autrement pendant la réalisation.
   les côtés passent à 64 px et montrent le tag plutôt qu'un nom tronqué. La
   page d'accueil et l'onglet Matchs d'une fiche d'équipe en héritent.
 
+- **La borne est inclusive, pas strictement antérieure.** Écrite « strictement
+  avant » plus haut, elle est devenue « pas après » (`lte`) après un audit :
+  un match saisi sans heure est stocké à minuit, donc deux matchs sans heure
+  d'une même journée portent le même horodatage et une comparaison stricte les
+  faisait disparaître l'un de l'autre. Deux rencontres simultanées étant
+  indiscernables, les montrer vaut mieux que les taire ; le match affiché reste
+  écarté par son identifiant. Le champ `before` a été renommé `notAfter` pour
+  que le nom cesse de mentir.
+
 Trois tests annoncés dans « Tests » n'ont pas été écrits, faute d'outillage :
 le projet n'a ni jsdom ni bibliothèque de rendu React, et `src/lib/data/**` est
 hors couverture. Le détail est dans le plan.

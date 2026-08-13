@@ -18,25 +18,32 @@ export type MatchCutoff = {
    * optionnel, et un match sans date ne peut borner personne. La borne
    * disparaît alors et seule l'exclusion du match lui-même subsiste.
    */
-  before: Date | null;
+  notAfter: Date | null;
   /** Identifiant du match affiché, toujours écarté de ses propres résultats. */
   excludeMatchId: string;
 };
 
 export type CutoffWhere = {
   id: { not: string };
-  date?: { lt: Date };
+  date?: { lte: Date };
 };
 
 /**
  * Fragment de clause `where` correspondant à la borne.
  *
- * `date: { lt: … }` écarte au passage les matchs sans date : en SQL, une
+ * La comparaison inclut l'instant du match affiché, d'où `lte` et le nom
+ * `notAfter`. Un match saisi sans heure est stocké à minuit : deux matchs sans
+ * heure d'une même journée portent donc le même horodatage, et une comparaison
+ * stricte les aurait fait disparaître l'un de l'autre. Deux rencontres
+ * simultanées étant de toute façon indiscernables, mieux vaut les montrer que
+ * les taire — le match affiché, lui, reste écarté par son identifiant.
+ *
+ * `date: { lte: … }` écarte au passage les matchs sans date : en SQL, une
  * comparaison avec NULL n'est jamais vraie.
  */
 export function cutoffWhere(cutoff: MatchCutoff): CutoffWhere {
   const base: CutoffWhere = { id: { not: cutoff.excludeMatchId } };
-  return cutoff.before !== null ? { ...base, date: { lt: cutoff.before } } : base;
+  return cutoff.notAfter !== null ? { ...base, date: { lte: cutoff.notAfter } } : base;
 }
 
 /** Le seul champ dont ce module a besoin pour juger d'une rencontre. */
@@ -60,7 +67,7 @@ export type HeadToHeadTally = {
  * Un match terminé sans vainqueur — `winnerId` nul, ce que le schéma autorise
  * pour une série à égalité — figure dans la liste mais dans aucun total : une
  * troisième colonne pour un cas rare chargerait le bilan plus qu'elle ne
- * l'éclairerait. `formResults` fait l'inverse et le rend en `DRAW`, parce
+ * l'éclairerait. `formEntries` fait l'inverse et le rend en `DRAW`, parce
  * qu'une frise a la place d'un troisième symbole là où un bilan « 3-2 » n'a
  * pas celle d'un troisième nombre.
  */

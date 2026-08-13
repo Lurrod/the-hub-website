@@ -82,7 +82,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const match = await getMatch(id);
   if (!match) notFound();
 
-  const cutoff: MatchCutoff = { before: match.date, excludeMatchId: match.id };
+  const cutoff: MatchCutoff = { notAfter: match.date, excludeMatchId: match.id };
   // Les cinq requêtes sont indépendantes : les enchaîner allongeait le rendu
   // pour rien.
   const [sessionUser, managerIds, h2h, recentA, recentB] = await Promise.all([

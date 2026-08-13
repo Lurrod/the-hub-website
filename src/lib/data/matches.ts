@@ -345,7 +345,7 @@ function cutoffBounds(cutoff: MatchCutoff): Prisma.MatchWhereInput {
 /**
  * Derniers résultats d'une équipe, du plus récent au plus ancien.
  *
- * `cutoff` restreint aux matchs antérieurs à un match donné : c'est ce dont a
+ * `cutoff` restreint à ce qui n'est pas postérieur à un match donné : c'est ce dont a
  * besoin la fiche de match, alors que la fiche d'équipe veut les plus récents
  * en date. Le paramètre est optionnel pour que l'appel existant depuis
  * `src/app/equipes/[id]/page.tsx` garde son comportement — une seconde

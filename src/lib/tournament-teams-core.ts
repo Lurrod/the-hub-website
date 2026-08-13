@@ -3,6 +3,8 @@
  * lignes à plat, donc il se teste sans base et survit à un changement de source.
  */
 
+import type { FormResult } from "@/lib/match-context-core";
+
 /** Un round vu du côté d'une équipe. */
 export type TeamRound = {
   won: boolean;
@@ -25,8 +27,14 @@ export type TeamMapEntry = {
   rounds: TeamRound[];
 };
 
-/** Un match joué par une équipe, dans l'ordre chronologique. */
-export type TeamMatchEntry = { teamId: string; matchId: string; won: boolean };
+/**
+ * Un match joué par une équipe, dans l'ordre chronologique.
+ *
+ * L'issue est un résultat à trois états et non un booléen : une série à
+ * égalité — un Bo2 à 1-1 — n'est pas une défaite, et l'était devenue faute de
+ * pouvoir le dire.
+ */
+export type TeamMatchEntry = { teamId: string; matchId: string; result: FormResult };
 
 /** Cumul d'un joueur sur le tournoi, rattaché à son équipe. */
 export type TeamPlayerEntry = {
@@ -73,12 +81,17 @@ export type TeamStats = {
   matchesPlayed: number;
   matchesWon: number;
   mapsPlayed: number;
+  /**
+   * Matchs perdus. Compté et non déduit de `matchesPlayed - matchesWon` : une
+   * série à égalité tomberait sinon dans les défaites.
+   */
+  matchesLost: number;
   mapsWon: number;
   roundsFor: number;
   roundsAgainst: number;
   roundDiff: number;
   /** Résultats des matchs, du plus ancien au plus récent. */
-  form: boolean[];
+  form: FormResult[];
   avgRating: number;
   avgAcs: number;
   firstKills: number;
@@ -214,13 +227,14 @@ export function buildTeamStats(
   return {
     team: identity,
     matchesPlayed: matches.length,
-    matchesWon: matches.filter((m) => m.won).length,
+    matchesWon: matches.filter((m) => m.result === "WIN").length,
+    matchesLost: matches.filter((m) => m.result === "LOSS").length,
     mapsPlayed: maps.length,
     mapsWon: maps.filter((m) => m.won).length,
     roundsFor,
     roundsAgainst,
     roundDiff: roundsFor - roundsAgainst,
-    form: matches.map((m) => m.won),
+    form: matches.map((m) => m.result),
     avgRating:
       mapsPlayedByPlayers > 0
         ? round2(players.reduce((n, p) => n + p.ratingSum, 0) / mapsPlayedByPlayers)
