@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { resolveFlash, type FlashKind } from "@/lib/flash-messages";
 
-function Icon({ kind, drawn }: { kind: FlashKind; drawn: boolean }) {
+/** Temps de lecture accordé : une erreur demande plus qu'une confirmation. */
+const DURATIONS: Record<FlashKind, number> = { success: 4000, error: 6000 };
+
+type Flash = NonNullable<ReturnType<typeof resolveFlash>> & { id: number };
+
+function Icon({ kind }: { kind: FlashKind }) {
   const color = kind === "success" ? "var(--success)" : "var(--destructive)";
   const svg = (
     <svg
@@ -14,7 +19,7 @@ function Icon({ kind, drawn }: { kind: FlashKind; drawn: boolean }) {
       strokeWidth={2.5}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-4 w-4 shrink-0"
+      className="h-3.5 w-3.5 shrink-0"
       aria-hidden="true"
     >
       {kind === "success" ? (
@@ -33,97 +38,121 @@ function Icon({ kind, drawn }: { kind: FlashKind; drawn: boolean }) {
   // hors du wrapper, sinon ses trois tracés hériteraient du stroke-dasharray.
   if (kind !== "success") return svg;
   return (
-    <span className="t-success-check shrink-0" data-state={drawn ? "in" : "out"} aria-hidden="true">
+    <span className="t-success-check shrink-0" data-state="in" aria-hidden="true">
       {svg}
     </span>
   );
 }
 
 /**
- * Petit toast de retour : lit `?ok=` / `?error=`, s'affiche brièvement en bas
- * à droite puis disparaît. Nettoie l'URL immédiatement pour ne pas ré-apparaître.
+ * Toast de retour : lit `?ok=` / `?error=`, s'affiche en bas à droite, puis
+ * s'efface quand sa barre de temps est vide.
+ *
+ * Le compte à rebours n'est pas un `setTimeout` mais l'animation de la barre
+ * elle-même : c'est elle qui, en finissant, ferme le toast. Les deux ne peuvent
+ * donc pas se désynchroniser, et suspendre la barre au survol suspend aussi la
+ * fermeture. Les minuteurs JavaScript précédents, eux, étaient annulés à chaque
+ * navigation faite pendant l'affichage — le toast restait alors figé à l'écran.
  */
 export default function FlashToast() {
   const params = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
-  const [flash, setFlash] = useState<ReturnType<typeof resolveFlash>>(null);
-  const [show, setShow] = useState(false);
-  // Départ à froid en "out" : la coche ne se dessine qu'au frame suivant,
-  // sinon elle naît déjà en état final et l'animation ne joue pas.
-  const [drawn, setDrawn] = useState(false);
+  const [flash, setFlash] = useState<Flash | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const seq = useRef(0);
 
   const ok = params.get("ok");
   const error = params.get("error");
 
   useEffect(() => {
     const f = resolveFlash(ok, error);
-    if (!f) {
-      // L'URL n'a plus de code flash : le toast ne doit pas lui survivre.
-      // Sans ça, toute navigation pendant l'affichage (un filtre sur /tournois
-      // ou /equipes, par exemple) relançait l'effet, sortait ici, et laissait
-      // le toast figé à l'écran indéfiniment - ses minuteurs venant d'être
-      // annulés par le nettoyage de l'exécution précédente.
-      // l'état du toast est dérivé de la querystring, qui change par
-      // navigation ; le synchroniser ailleurs laissait le toast figé (voir
-      // ci-dessus).
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFlash(null);
-      setShow(false);
-      return;
-    }
-    setFlash(f);
-    setShow(true);
+    // Pas de code dans l'URL : rien à annoncer, et surtout rien à retirer — le
+    // toast en cours vit désormais sa vie sans dépendre de la querystring.
+    if (!f) return;
 
-    // Querystring sans les codes flash, appliqué SEULEMENT à la fin (sinon le
-    // changement d'URL relance l'effet et annule les timers → toast figé).
-    const next = new URLSearchParams(params.toString());
-    next.delete("ok");
-    next.delete("error");
-    const strippedQs = next.toString();
-
-    const hide = setTimeout(() => setShow(false), 2000);
-    const clear = setTimeout(() => {
-      setFlash(null);
-      router.replace(strippedQs ? `${pathname}?${strippedQs}` : pathname, { scroll: false });
-    }, 2300);
-    return () => {
-      clearTimeout(hide);
-      clearTimeout(clear);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    seq.current += 1;
+    setFlash({ ...f, id: seq.current });
+    setLeaving(false);
   }, [ok, error]);
 
-  useEffect(() => {
-    if (flash?.kind !== "success") {
-      // remise à zéro du tracé de la coche avant de le relancer au frame
-      // suivant.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDrawn(false);
-      return;
-    }
-    const raf = requestAnimationFrame(() => setDrawn(true));
-    return () => cancelAnimationFrame(raf);
-  }, [flash]);
+  /**
+   * Retire le code de l'URL une fois le message lu, pour qu'un rechargement ne
+   * le rejoue pas. On relit l'adresse courante plutôt que la querystring du
+   * rendu : entre l'affichage et la fermeture, le toast survit aux navigations,
+   * et il ne doit pas réécrire l'URL d'une page qui n'est plus la sienne.
+   */
+  const cleanUrl = () => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("ok") && !url.searchParams.has("error")) return;
+    url.searchParams.delete("ok");
+    url.searchParams.delete("error");
+    const qs = url.searchParams.toString();
+    router.replace(qs ? `${url.pathname}?${qs}` : url.pathname, { scroll: false });
+  };
 
   if (!flash) return null;
 
-  const accent = flash.kind === "success" ? "var(--success)" : "var(--destructive)";
+  const tone = flash.kind === "success" ? "var(--success)" : "var(--destructive)";
+  const halo = flash.kind === "success" ? "var(--success-soft)" : "var(--destructive-soft)";
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50">
+    <div className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex justify-end sm:inset-x-auto sm:bottom-5 sm:right-5">
       <div
-        className={`flex max-w-xs items-start gap-2.5 rounded-lg border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-2.5 shadow-xl transition-[opacity,transform] duration-300 ${
-          show ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-        }`}
-        style={{ borderLeft: `3px solid ${accent}` }}
+        key={flash.id}
         role="status"
+        data-state={leaving ? "out" : "in"}
+        onAnimationEnd={(e) => {
+          if (e.animationName.includes("toast-out") || e.animationName.includes("toast-fade-out")) {
+            setFlash(null);
+            setLeaving(false);
+            cleanUrl();
+          }
+        }}
+        style={{ "--toast-duration": `${DURATIONS[flash.kind]}ms` } as CSSProperties}
+        className="t-toast pointer-events-auto relative w-full overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--card)] shadow-[var(--shadow-elev)] sm:w-[336px]"
       >
-        <Icon kind={flash.kind} drawn={drawn} />
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-white">{flash.title}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-muted)]">{flash.message}</p>
+        <div className="flex items-start gap-3 p-3.5 pr-9">
+          <span
+            className="mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+            style={{ background: halo }}
+          >
+            <Icon kind={flash.kind} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-white">{flash.title}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-muted)]">
+              {flash.message}
+            </p>
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setLeaving(true)}
+          aria-label="Fermer"
+          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-subtle)] transition-colors hover:bg-[var(--card-hover)] hover:text-white"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            className="h-3.5 w-3.5"
+            aria-hidden="true"
+          >
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+
+        <span
+          aria-hidden="true"
+          className="t-toast-timer absolute inset-x-0 bottom-0 h-[2px]"
+          style={{ background: tone }}
+          onAnimationEnd={(e) => {
+            if (e.animationName.includes("toast-timer")) setLeaving(true);
+          }}
+        />
       </div>
     </div>
   );

@@ -959,3 +959,83 @@
     transition: none !important;
   }
 }
+
+/* --- Toast de retour ------------------------------------------------------ */
+/* Le toast est monté puis démonté par React. C'est une *animation* qui le fait
+   entrer, pas une transition : une transition n'a rien à interpoler sur un
+   élément qui vient d'apparaître, et l'ancien toast surgissait donc d'un coup,
+   son état « caché » n'ayant jamais été peint. */
+@keyframes t-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes t-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.t-toast {
+  animation: t-toast-in 300ms var(--ease) both;
+  will-change: transform, opacity;
+}
+.t-toast[data-state="out"] {
+  animation: t-toast-out 200ms var(--ease) forwards;
+}
+
+/* La barre EST le minuteur : sa fin ferme le toast (voir flash-toast.tsx).
+   Survoler ou tabuler dedans met l'animation en pause, donc le compte à
+   rebours avec — un message ne doit pas filer sous le curseur de qui le lit. */
+@keyframes t-toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+.t-toast-timer {
+  transform-origin: left;
+  animation: t-toast-timer var(--toast-duration, 4000ms) linear forwards;
+}
+.t-toast:hover .t-toast-timer,
+.t-toast:focus-within .t-toast-timer {
+  animation-play-state: paused;
+}
+
+/* Mouvement réduit : le fondu reste, le glissement part. L'animation n'est pas
+   supprimée — c'est sa fin qui démonte le toast. */
+@keyframes t-toast-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes t-toast-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-toast {
+    animation: t-toast-fade-in 140ms linear both;
+  }
+  .t-toast[data-state="out"] {
+    animation: t-toast-fade-out 140ms linear forwards;
+  }
+}
