@@ -5,6 +5,7 @@ import {
   monthKey,
   monthLabel,
   dayKey,
+  fullDate,
   computeAge,
   durationShort,
 } from "@/lib/dates";
@@ -70,6 +71,23 @@ describe("dayKey", () => {
     expect(dayKey(new Date("2026-07-25T18:00:00Z"))).toBe(
       dayKey(new Date(Date.UTC(2026, 6, 25, 18, 0, 0)))
     );
+  });
+});
+
+describe("fullDate", () => {
+  it("rend le jour, le mois et l'année sur deux et quatre chiffres", () => {
+    expect(fullDate(new Date("2026-07-27T18:00:00Z"))).toBe("27/07/2026");
+    expect(fullDate(new Date("2026-01-05T12:00:00Z"))).toBe("05/01/2026");
+  });
+
+  it("marque l'absence de date sans inventer de valeur", () => {
+    expect(fullDate(null)).toBe("--/--/----");
+  });
+
+  it("rend le jour de Paris, pas celui d'UTC", () => {
+    // 22h30 UTC en juillet, c'est déjà le lendemain à Paris : la même erreur
+    // de fuseau que celle corrigée sur `dayKey` décalerait la date d'un jour.
+    expect(fullDate(new Date("2026-07-25T22:30:00Z"))).toBe("26/07/2026");
   });
 });
 
