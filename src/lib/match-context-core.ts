@@ -60,7 +60,7 @@ export type HeadToHeadTally = {
  * Un match terminé sans vainqueur — `winnerId` nul, ce que le schéma autorise
  * pour une série à égalité — figure dans la liste mais dans aucun total : une
  * troisième colonne pour un cas rare chargerait le bilan plus qu'elle ne
- * l'éclairerait. `formResults` fait l'inverse et le rend en `DRAW`, parce
+ * l'éclairerait. `formEntries` fait l'inverse et le rend en `DRAW`, parce
  * qu'une frise a la place d'un troisième symbole là où un bilan « 3-2 » n'a
  * pas celle d'un troisième nombre.
  */
