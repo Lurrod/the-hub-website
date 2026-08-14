@@ -6,6 +6,7 @@ import {
   STAGES_BY_FORMAT,
   formatAllowsGroups,
   formatUsesGroupSize,
+  isPremierFormat,
 } from "@/lib/constants";
 
 describe("formats Premier", () => {
@@ -29,6 +30,11 @@ describe("formats Premier", () => {
   it("ne propose pas de taille de poule", () => {
     expect(formatUsesGroupSize("PREMIER_CONTENDER")).toBe(false);
     expect(formatUsesGroupSize("PREMIER_INVITE")).toBe(false);
+  });
+
+  it("reconnaît les deux formats Premier, et eux seuls", () => {
+    const premier = TOURNAMENT_FORMATS.filter(isPremierFormat);
+    expect(premier).toEqual(["PREMIER_CONTENDER", "PREMIER_INVITE"]);
   });
 });
 

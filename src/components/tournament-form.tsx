@@ -14,6 +14,7 @@ import {
   SEEDING_TYPES,
   SEEDING_TYPE_LABELS,
   formatUsesGroupSize,
+  isPremierFormat,
   type TournamentFormat,
 } from "@/lib/constants";
 import ImageUpload from "@/components/image-upload";
@@ -86,7 +87,7 @@ export default function TournamentForm({
    */
   function chooseFormat(next: TournamentFormat) {
     setFormat(next);
-    if (bestOf === "" && (next === "PREMIER_CONTENDER" || next === "PREMIER_INVITE")) {
+    if (bestOf === "" && isPremierFormat(next)) {
       setBestOf("1");
     }
   }

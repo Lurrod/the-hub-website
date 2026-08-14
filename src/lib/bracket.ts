@@ -1,4 +1,4 @@
-import type { TournamentFormat } from "@/lib/constants";
+import { isPremierFormat, type TournamentFormat } from "@/lib/constants";
 
 export type BracketMatchData = {
   id: string;
@@ -158,9 +158,6 @@ export function bracketLayoutFor(format: TournamentFormat): BracketLayout {
   return "flat";
 }
 
-/** Les deux divisions hautes du Premier, seules à imposer un Bo par tour. */
-const PREMIER_FORMATS: readonly TournamentFormat[] = ["PREMIER_CONTENDER", "PREMIER_INVITE"];
-
 /**
  * Bo proposé par défaut à la saisie d'un match.
  *
@@ -169,7 +166,7 @@ const PREMIER_FORMATS: readonly TournamentFormat[] = ["PREMIER_CONTENDER", "PREM
  * répond alors Bo1, qui est juste pour tous les tours sauf un.
  */
 export function defaultBestOfFor(format: TournamentFormat, round: string | null): number {
-  if (!PREMIER_FORMATS.includes(format)) return 1;
+  if (!isPremierFormat(format)) return 1;
   return roundSizeFromLabel(round ?? "") === 1 ? 3 : 1;
 }
 

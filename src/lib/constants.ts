@@ -325,6 +325,18 @@ export function formatUsesGroupSize(format: TournamentFormat): boolean {
   return format === "GROUPS" || format === "GROUPS_THEN_ELIM";
 }
 
+/**
+ * Le format est-il un playoff Premier ?
+ *
+ * Les deux divisions hautes partagent leurs règles de série (Bo1 partout, Bo3
+ * en finale) : la liste vivait en double, dans `bracket.ts` et dans le
+ * formulaire de tournoi, avec le risque qu'un troisième format n'arrive que
+ * dans l'une des deux.
+ */
+export function isPremierFormat(format: TournamentFormat): boolean {
+  return format === "PREMIER_CONTENDER" || format === "PREMIER_INVITE";
+}
+
 /** Méthodes de seeding (placement des équipes) proposées à la création. */
 export const SEEDING_TYPES = ["MANUAL", "RANDOM", "RANKING"] as const;
 export type SeedingType = (typeof SEEDING_TYPES)[number];
