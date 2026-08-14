@@ -9,6 +9,9 @@ export type BracketMatchData = {
   scoreB: number;
   winnerId: string | null;
   position?: number | null;
+  /// Bracket parallèle auquel le match appartient (Premier Contender).
+  groupId?: string | null;
+  groupName?: string | null;
   teamA: { tag: string } | null;
   teamB: { tag: string } | null;
 };
@@ -22,6 +25,10 @@ export type BracketRound = { name: string; slots: BracketSlot[] };
 export type BracketSectionKey = "single" | "upper" | "lower" | "final";
 export type BracketSection = {
   key: BracketSectionKey;
+  /// Identité propre quand plusieurs sections partagent la même `key` : c'est
+  /// le cas des brackets parallèles, tous clavetés « single » pour que la
+  /// vitrine et la carte OG continuent d'en trouver un.
+  id?: string;
   title: string;
   rounds: BracketRound[];
 };
@@ -317,6 +324,43 @@ function mergeRounds(...lists: (RawRound[] | undefined)[]): RawRound[] {
   );
 }
 
+/** Les matchs d'un bracket parallèle, avant mise en arbre. */
+type BracketBoard = { id: string | null; title: string; matches: BracketMatchData[] };
+
+/**
+ * Répartit les matchs par bracket parallèle, par nom croissant. Les matchs sans
+ * groupe forment un dernier bloc plutôt que de disparaître : un rattachement
+ * oublié doit se voir sur la page, pas se perdre.
+ */
+function partitionByBracket(matches: BracketMatchData[]): BracketBoard[] {
+  const byId = new Map<string, BracketBoard>();
+  const orphans: BracketMatchData[] = [];
+  for (const m of matches) {
+    if (!m.groupId) {
+      orphans.push(m);
+      continue;
+    }
+    const board = byId.get(m.groupId) ?? {
+      id: m.groupId,
+      title: m.groupName ?? m.groupId,
+      matches: [],
+    };
+    byId.set(m.groupId, { ...board, matches: [...board.matches, m] });
+  }
+  const boards = [...byId.values()].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+  return orphans.length > 0
+    ? [...boards, { id: null, title: "Hors bracket", matches: orphans }]
+    : boards;
+}
+
+/** Rounds d'arbre d'un paquet de matchs : la logique de `tree`, réutilisable. */
+function treeRoundsOf(matches: BracketMatchData[]): BracketRound[] {
+  const bySection = groupBySection(matches);
+  return buildTreeRounds(
+    mergeRounds(bySection.get("single"), bySection.get("upper"), bySection.get("final"))
+  );
+}
+
 /**
  * Construit l'arbre de playoffs à partir des matchs et du format du tournoi.
  * Le format choisit la géométrie ; les données peuvent la corriger (un lower
@@ -346,14 +390,31 @@ export function buildBracket(matches: BracketMatchData[], format: TournamentForm
   if (layout === "tree") {
     // Élimination directe : tout tient dans un seul arbre, y compris un match
     // libellé « Grande finale ».
-    const all = mergeRounds(
-      bySection.get("single"),
-      bySection.get("upper"),
-      bySection.get("final")
-    );
+    const rounds = treeRoundsOf(matches);
+    return { layout, sections: rounds.length > 0 ? [{ key: "single", title: "", rounds }] : [] };
+  }
+
+  if (layout === "multi") {
+    const boards = partitionByBracket(matches);
+    // Contender dont les brackets ne sont pas encore découpés : un arbre simple
+    // vaut mieux qu'une unique section « Hors bracket ».
+    if (boards.length === 1 && boards[0].id === null) {
+      const rounds = treeRoundsOf(matches);
+      return {
+        layout: "tree",
+        sections: rounds.length > 0 ? [{ key: "single", title: "", rounds }] : [],
+      };
+    }
     return {
       layout,
-      sections: all.length > 0 ? [{ key: "single", title: "", rounds: buildTreeRounds(all) }] : [],
+      sections: boards
+        .map((b) => ({
+          key: "single" as const,
+          id: b.id ?? "hors-bracket",
+          title: b.title,
+          rounds: treeRoundsOf(b.matches),
+        }))
+        .filter((s) => s.rounds.length > 0),
     };
   }
 

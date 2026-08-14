@@ -23,6 +23,14 @@ const mk = (id: string, round: string | null, position?: number | null): Bracket
   teamB: { tag: "B" },
 });
 
+/** Comme `mk`, mais rattaché à un bracket parallèle. */
+const mkg = (
+  id: string,
+  round: string | null,
+  groupId: string | null,
+  groupName: string | null
+): BracketMatchData => ({ ...mk(id, round), groupId, groupName });
+
 const names = (rounds: BracketRound[]) => rounds.map((r) => r.name);
 const sizes = (rounds: BracketRound[]) => rounds.map((r) => r.slots.length);
 const kinds = (round: BracketRound) => round.slots.map((s) => s.kind);
@@ -203,6 +211,69 @@ describe("géométrie des formats Premier", () => {
   it("dessine l'Invite en arbre simple et le Contender en brackets parallèles", () => {
     expect(bracketLayoutFor("PREMIER_INVITE")).toBe("tree");
     expect(bracketLayoutFor("PREMIER_CONTENDER")).toBe("multi");
+  });
+});
+
+describe("brackets parallèles (Premier Contender)", () => {
+  const deuxBrackets = [
+    mkg("b1", "Demi-finales", "gb", "Bracket B"),
+    mkg("b2", "Demi-finales", "gb", "Bracket B"),
+    mkg("b3", "Finale", "gb", "Bracket B"),
+    mkg("a1", "Demi-finales", "ga", "Bracket A"),
+    mkg("a2", "Demi-finales", "ga", "Bracket A"),
+    mkg("a3", "Finale", "ga", "Bracket A"),
+  ];
+
+  it("rend un arbre par bracket, triés par nom", () => {
+    const tree = buildBracket(deuxBrackets, "PREMIER_CONTENDER");
+    expect(tree.layout).toBe("multi");
+    expect(tree.sections.map((s) => s.title)).toEqual(["Bracket A", "Bracket B"]);
+    expect(tree.sections.map((s) => s.id)).toEqual(["ga", "gb"]);
+  });
+
+  it("donne à chaque bracket la profondeur d'un arbre binaire", () => {
+    const tree = buildBracket(deuxBrackets, "PREMIER_CONTENDER");
+    expect(sizes(tree.sections[0].rounds)).toEqual([2, 1]);
+    expect(names(tree.sections[0].rounds)).toEqual(["Demi-finales", "Finale"]);
+  });
+
+  it("garde la clé « single » sur chaque section", () => {
+    // landing-showcase.ts et carte/route.tsx cherchent `key === "single"` :
+    // claveter les sections sur l'id de groupe les ferait échouer en silence,
+    // et un tournoi Contender disparaîtrait de la vitrine sans erreur.
+    const tree = buildBracket(deuxBrackets, "PREMIER_CONTENDER");
+    expect(tree.sections.every((s) => s.key === "single")).toBe(true);
+  });
+
+  it("range les matchs sans bracket dans un bloc placé en dernier", () => {
+    const tree = buildBracket(
+      [mkg("z", "Finale", "gz", "Bracket Z"), mkg("x", "Finale", null, null)],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.sections.map((s) => s.title)).toEqual(["Bracket Z", "Hors bracket"]);
+  });
+
+  it("retombe sur un arbre simple quand aucun match n'est rattaché", () => {
+    // Un Contender dont l'organisateur n'a pas encore découpé ses brackets doit
+    // se dessiner, pas afficher une section « Hors bracket » solitaire.
+    const tree = buildBracket([mk("d1", "Demi-finales"), mk("f", "Finale")], "PREMIER_CONTENDER");
+    expect(tree.layout).toBe("tree");
+    expect(tree.sections).toHaveLength(1);
+    expect(tree.sections[0].title).toBe("");
+  });
+
+  it("laisse un lower bracket forcer la double élimination", () => {
+    // Garde-fou existant : les données corrigent le format déclaré.
+    const tree = buildBracket(
+      [mkg("u", "UB Finale", "ga", "Bracket A"), mkg("l", "LB Finale", "ga", "Bracket A")],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.layout).toBe("double");
+  });
+
+  it("ne rend aucune section sans match", () => {
+    const tree = buildBracket([], "PREMIER_CONTENDER");
+    expect(tree.sections).toEqual([]);
   });
 });
 
