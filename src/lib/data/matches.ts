@@ -129,7 +129,10 @@ export function getMatch(id: string) {
 export function listBracketMatches(tournamentId: string) {
   return db.match.findMany({
     where: { tournamentId, stage: "BRACKET" },
-    include: { teamA: true, teamB: true },
+    // Le groupe porte le bracket parallèle en Premier Contender : sans lui,
+    // `buildBracket` verrait tous les matchs comme orphelins et n'en ferait
+    // qu'un seul arbre.
+    include: { teamA: true, teamB: true, group: true },
     orderBy: [{ bracketPosition: "asc" }],
   });
 }
