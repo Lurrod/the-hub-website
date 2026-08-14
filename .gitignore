@@ -65,7 +65,10 @@ next-env.d.ts
 .superpowers/
 .claude-mem/
 
-# Note de conception locale (charte, decisions visuelles).
+# Direction artistique (charte complete, decisions visuelles). Local.
+# Les deux casses sont listees : la CI tourne sous Linux, ou la comparaison
+# est sensible a la casse.
+/DESIGN.md
 /design.md
 
 # Rapports d'audit : livrables ponctuels, transmis hors depot.
