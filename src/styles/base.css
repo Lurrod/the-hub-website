@@ -22,6 +22,34 @@ body {
   color: #fff;
 }
 
+/* Indicateur de focus clavier, uniforme sur tout le site.
+   `:focus-visible` et non `:focus` : le navigateur ne le déclenche qu'au
+   clavier, la souris ne fait donc apparaître aucun contour. Un vrai contour de
+   2 px avec décalage plutôt qu'un changement de bordure de 1 px — ce dernier
+   satisfait le contraste (1.4.11) mais reste indécelable sur un formulaire
+   dense, et ne tient pas l'aire minimale du critère 2.4.13. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Le champ de recherche effaçable délègue son habillage à un conteneur : c'est
+   lui qui doit porter le contour, l'`<input>` nu qu'il enveloppe étant sans
+   bordure. */
+.field:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Les conteneurs de dialogue reçoivent le focus par programme, pour amorcer le
+   piège de tabulation. Les cerner désignerait la boîte entière au lieu de
+   l'élément actif : c'est le premier champ à l'intérieur qui doit se voir. La
+   règle est explicite ici plutôt que laissée à l'utilitaire `outline-none`,
+   qui vit dans une couche et perdrait contre la règle ci-dessus. */
+[role="dialog"]:focus-visible {
+  outline: none;
+}
+
 @layer base {
   h1 {
     font-family: var(--font-display), var(--font-jakarta), sans-serif;

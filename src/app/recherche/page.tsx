@@ -30,7 +30,7 @@ export default async function SearchPage({
             defaultValue={q}
             placeholder="Équipe, joueur ou tournoi…"
             aria-label="Rechercher"
-            className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[#191c22] px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+            className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-white placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]"
           />
         </form>
 
@@ -48,7 +48,7 @@ export default async function SearchPage({
           <div className="space-y-6">
             {results.teams.length > 0 && (
               <section>
-                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2">
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[var(--card-hover)] px-3 py-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-white">
                     Équipes
                   </span>
@@ -65,7 +65,7 @@ export default async function SearchPage({
             )}
             {results.players.length > 0 && (
               <section>
-                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2">
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[var(--card-hover)] px-3 py-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-white">
                     Joueurs
                   </span>
@@ -82,7 +82,7 @@ export default async function SearchPage({
             )}
             {results.tournaments.length > 0 && (
               <section>
-                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2">
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[var(--card-hover)] px-3 py-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-white">
                     Tournois
                   </span>

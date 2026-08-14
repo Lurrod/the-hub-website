@@ -25,7 +25,7 @@ export default function LftCard({ player }: { player: LftPlayerCardData }) {
   return (
     <Link
       href={`/joueurs/${player.id}`}
-      className="card card-interactive flex items-center gap-3 bg-[#242832] p-4"
+      className="card card-interactive flex items-center gap-3 bg-[var(--card-hover)] p-4"
     >
       {player.photo ? (
         // eslint-disable-next-line @next/next/no-img-element

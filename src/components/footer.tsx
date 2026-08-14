@@ -16,7 +16,9 @@ export default function Footer() {
       <div className="grid h-[47px] grid-cols-[1fr_auto_1fr] items-center px-4 text-sm text-[var(--text-muted)]">
         {/* Coin gauche : « made by » centré au-dessus du pseudo */}
         <div className="flex flex-col items-center justify-self-start leading-none">
-          <span className="f-by text-[#9b9c9e]">made by</span>
+          {/* La couleur vient du conteneur : elle valait déjà --text-muted, écrit
+              en dur. */}
+          <span className="f-by">made by</span>
           <a
             href="https://x.com/lurrod"
             target="_blank"

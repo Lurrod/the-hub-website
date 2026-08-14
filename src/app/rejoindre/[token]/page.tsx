@@ -110,7 +110,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
             defaultValue={currentRiotId}
             required
             placeholder="Nom#Tag"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white focus:border-[var(--accent)]"
           />
         </label>
         <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">

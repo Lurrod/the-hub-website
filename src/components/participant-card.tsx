@@ -15,7 +15,7 @@ export default function ParticipantCard({ p }: { p: P }) {
     // Deux cartes par ligne en mobile : à 160 px fixes, la seconde ne tenait pas
     // dans les ~326 px utiles et chaque carte occupait sa propre ligne, laissant
     // une colonne vide. Largeur figée à partir de `sm`, comme avant.
-    <div className="card group relative flex h-40 w-[calc(50%-0.375rem)] max-w-40 flex-col items-center bg-[#242832] p-3 text-center sm:w-40">
+    <div className="card group relative flex h-40 w-[calc(50%-0.375rem)] max-w-40 flex-col items-center bg-[var(--card-hover)] p-3 text-center sm:w-40">
       <div className="relative flex w-full flex-1 items-center justify-center">
         <Link href={`/equipes/${p.teamId}`} aria-label={p.name}>
           {p.logo ? (
@@ -34,7 +34,7 @@ export default function ParticipantCard({ p }: { p: P }) {
           )}
         </Link>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 rounded bg-[#242832]/95 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 rounded bg-[var(--card-hover)]/95 opacity-0 backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100">
           {p.players.length > 0 ? (
             p.players.map((pl) => (
               <Link

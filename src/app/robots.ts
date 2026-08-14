@@ -12,7 +12,10 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
-        ...PRIVATE_PATHS.map((p) => `${p}/`),
+        // Les deux formes de chaque chemin. Un motif robots.txt se compare par
+        // préfixe : `/admin/` seul laissait `/admin` explorable, de même que
+        // `/profil`, `/onboarding`, `/rejoindre` et `/api`.
+        ...PRIVATE_PATHS.flatMap((p) => [p, `${p}/`]),
         // Pages de gestion, imbriquées sous les fiches publiques.
         "/equipes/*/gestion",
         "/tournois/*/gestion",

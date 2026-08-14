@@ -96,13 +96,26 @@ export function visitorHash(ip: string, userAgent: string, day: Date, secret: st
 /**
  * Adresse du client derrière le reverse proxy.
  *
- * Apache empile les adresses dans `x-forwarded-for` : la première est celle du
- * client, les suivantes sont les intermédiaires. On ne la garde jamais — elle
- * n'existe que le temps de calculer une empreinte.
+ * On lit le DERNIER maillon de `x-forwarded-for`, pas le premier. L'en-tête
+ * arrive du réseau : un client qui envoie lui-même `X-Forwarded-For: 1.2.3.4`
+ * voit mod_proxy_http y AJOUTER l'adresse qu'Apache a réellement vue, ce qui
+ * donne `1.2.3.4, <vraie adresse>`. Prendre le premier maillon revenait donc à
+ * retenir une valeur que l'appelant choisit : il suffisait de la faire varier
+ * pour passer sous le quota de `/api/audience` et pour compter autant de
+ * visiteurs distincts que d'envois. Le dernier maillon est celui posé par le
+ * proxy de confiance — le seul que le client ne peut pas écrire.
+ *
+ * Le corollaire est assumé : derrière un second proxy (un CDN placé devant
+ * Apache), c'est l'adresse du CDN qui serait retenue. Il faudrait alors compter
+ * les intermédiaires de confiance, ce qui n'a pas lieu d'être ici où Apache est
+ * seul en frontal.
+ *
+ * L'adresse n'est jamais conservée : elle ne sert qu'au calcul d'une empreinte.
  */
 export function clientIp(forwardedFor: string | null, realIp: string | null): string {
-  const first = forwardedFor?.split(",")[0]?.trim();
-  return first || realIp?.trim() || "inconnu";
+  const hops = forwardedFor?.split(",") ?? [];
+  const last = hops[hops.length - 1]?.trim();
+  return last || realIp?.trim() || "inconnu";
 }
 
 /**

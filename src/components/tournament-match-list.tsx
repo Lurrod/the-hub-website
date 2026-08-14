@@ -89,7 +89,7 @@ export default function TournamentMatchList({ matches }: { matches: MatchEntry[]
     <div className="space-y-6">
       {groups.map((g) => (
         <section key={g.key}>
-          <div className="mb-2 rounded-lg bg-[#242832] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white">
+          <div className="mb-2 rounded-lg bg-[var(--card-hover)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white">
             {g.label}
           </div>
           <ul className="divide-y divide-[var(--border)]">

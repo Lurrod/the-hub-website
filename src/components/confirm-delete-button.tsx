@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormStatus } from "react-dom";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useDialog } from "@/hooks/use-dialog";
 
 interface ConfirmDeleteButtonProps {
   /** Server action à exécuter une fois la suppression confirmée. */
@@ -37,6 +36,9 @@ function ConfirmButton({ label, pendingLabel }: { label: string; pendingLabel: s
 /**
  * Déclenche une suppression (server action) après confirmation dans une
  * boîte de dialogue custom - pas d'alerte native du navigateur.
+ *
+ * La mécanique de dialogue vient de `useDialog`, partagée avec `NavDrawer` et
+ * `ShareCardButton`.
  */
 export default function ConfirmDeleteButton({
   action,
@@ -46,75 +48,13 @@ export default function ConfirmDeleteButton({
   confirmLabel = "Supprimer",
   pendingLabel = "Suppression…",
 }: ConfirmDeleteButtonProps) {
-  // `open` = portail monté, `shown` = .is-open, `closing` = .is-closing.
-  // Trois états et non un seul : la modale doit rester montée le temps de son
-  // repli, et doit avoir été peinte à son état de repos avant de s'ouvrir.
-  const [open, setOpen] = useState(false);
-  const [shown, setShown] = useState(false);
-  const [closing, setClosing] = useState(false);
-  const closeTimer = useRef<number | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  // La modale est rendue dans <body> via un portail : `template.tsx` enveloppe
-  // chaque page dans un `.animate-in` qui anime `transform`. Avec
-  // `animation-fill-mode: both`, ce wrapper reste un bloc conteneur même une
-  // fois l'animation finie, et un `position: fixed` s'y ancre au lieu de la
-  // fenêtre - la modale se centrait alors au milieu de la page entière.
-  const [mounted, setMounted] = useState(false);
-  // drapeau de montage nécessaire au portail : il ne peut par définition pas
-  // être connu au premier rendu, serveur comme client.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setMounted(true), []);
-
-  const close = useCallback(() => {
-    setShown(false);
-    setClosing(true);
-    // Durée lue depuis la variable CSS pour rester en phase avec le snippet.
-    const closeMs =
-      parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue("--modal-close-dur")
-      ) || 150;
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => {
-      setClosing(false);
-      setOpen(false);
-    }, closeMs);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    // Un frame de latence : sans ce délai, l'élément naît déjà porteur de
-    // .is-open et se pose sans transition.
-    const raf = requestAnimationFrame(() => setShown(true));
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, close]);
-
-  // Le focus entre dans la modale, y est confiné et repart sur le bouton
-  // déclencheur à la fermeture (WCAG 2.1.2 / 2.4.3).
-  useFocusTrap(panelRef, open);
-
-  useEffect(
-    () => () => {
-      if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    },
-    []
-  );
+  const { open, shown, closing, mounted, panelRef, ouvrir, fermer } = useDialog();
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={ouvrir}
         className="rounded border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
       >
         {label}
@@ -130,7 +70,7 @@ export default function ConfirmDeleteButton({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            onClick={close}
+            onClick={fermer}
           >
             <div
               ref={panelRef}
@@ -145,7 +85,7 @@ export default function ConfirmDeleteButton({
               <div className="mt-5 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={close}
+                  onClick={fermer}
                   className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-white transition-colors hover:bg-[var(--card-hover)]"
                 >
                   Annuler

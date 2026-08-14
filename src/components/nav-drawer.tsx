@@ -1,16 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useDialog } from "@/hooks/use-dialog";
 
 /**
  * Tiroir de navigation mobile.
  *
- * Même mécanique que `ConfirmDeleteButton` et `UserMenu` : portail dans
- * `<body>`, trois états (`open` monté, `shown` déployé, `closing` en repli)
- * pour que la fermeture ait le temps de s'animer, fermeture à Échap et au clic
- * hors du panneau, verrou du défilement de la page pendant l'ouverture.
+ * La mécanique — portail dans `<body>`, trois états pour laisser la fermeture
+ * s'animer, Échap, verrou du défilement, focus confiné — vient de `useDialog`,
+ * partagée avec `ConfirmDeleteButton` et `ShareCardButton`. Ne reste ici que ce
+ * qui est propre au tiroir : sa durée de repli et son habillage.
  *
  * Le contenu est passé en `children` : ce sont des composants serveur (les
  * liens, qui dépendent de la session pour l'entrée Admin). Seul l'habillage
@@ -23,67 +22,16 @@ export default function NavDrawer({
   children: React.ReactNode;
   label?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [shown, setShown] = useState(false);
-  const [closing, setClosing] = useState(false);
-  const closeTimer = useRef<number | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  // Le portail ne peut pas exister au premier rendu, serveur comme client.
-  const [mounted, setMounted] = useState(false);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setMounted(true), []);
-
-  const close = useCallback(() => {
-    setShown(false);
-    setClosing(true);
-    const closeMs =
-      parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue("--drawer-close-dur")
-      ) || 150;
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => {
-      setClosing(false);
-      setOpen(false);
-    }, closeMs);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    // Une frame de latence : sans ce délai le panneau naît déjà déployé et se
-    // pose sans transition.
-    const raf = requestAnimationFrame(() => setShown(true));
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, close]);
-
-  // Le focus part sur le panneau à l'ouverture, y reste tant que le tiroir est
-  // déployé et revient au bouton hamburger à la fermeture : au clavier comme
-  // au lecteur d'écran, on ne doit jamais se retrouver à parcourir la page
-  // masquée derrière le voile.
-  useFocusTrap(panelRef, open);
-
-  useEffect(
-    () => () => {
-      if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    },
-    []
-  );
+  // Le tiroir a sa propre durée de repli : elle est plus courte que celle des
+  // modales centrées.
+  const { open, shown, closing, mounted, panelRef, fermer, basculer } =
+    useDialog("--drawer-close-dur");
 
   return (
     <>
       <button
         type="button"
-        onClick={() => (open ? close() : (setClosing(false), setOpen(true)))}
+        onClick={basculer}
         aria-label={label}
         aria-expanded={open}
         aria-haspopup="dialog"
@@ -109,7 +57,7 @@ export default function NavDrawer({
             className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 md:hidden ${
               shown ? "opacity-100" : "opacity-0"
             }`}
-            onClick={close}
+            onClick={fermer}
           >
             <div
               ref={panelRef}
@@ -128,7 +76,7 @@ export default function NavDrawer({
                 </span>
                 <button
                   type="button"
-                  onClick={close}
+                  onClick={fermer}
                   aria-label="Fermer le menu"
                   className="grid h-8 w-8 place-items-center rounded text-[var(--text-muted)] transition-colors hover:text-white"
                 >
@@ -153,7 +101,7 @@ export default function NavDrawer({
                 aria-label="Navigation principale"
                 className="min-h-0 flex-1 overflow-y-auto py-2"
                 onClickCapture={(e) => {
-                  if ((e.target as HTMLElement).closest("a")) close();
+                  if ((e.target as HTMLElement).closest("a")) fermer();
                 }}
               >
                 {children}

@@ -28,9 +28,36 @@ const PURGE_ODDS = 1000;
 
 const NO_CONTENT = new Response(null, { status: 204 });
 
+/**
+ * Le signalement vient-il d'une page du site ?
+ *
+ * Sans ce contrôle, n'importe quelle page tierce pouvait alimenter les
+ * compteurs : le point d'entrée acceptait tout POST portant un chemin. Les
+ * navigateurs posent `Origin` sur toute requête POST, `sendBeacon` compris —
+ * son absence désigne donc un appel qui ne vient pas d'une page, et son
+ * incohérence un appel qui vient d'un autre site.
+ *
+ * La comparaison porte sur l'hôte de la requête et non sur une URL de
+ * référence figée : le site répond aussi bien sur `the-hub-vrc.fr` que sur
+ * `www.the-hub-vrc.fr` (voir deploy/apache.conf) et sur `localhost:3200` en
+ * développement, sans qu'aucune liste n'ait à suivre.
+ */
+function estMemeOrigine(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+  const hote = request.headers.get("host") ?? new URL(request.url).host;
+  try {
+    return new URL(origin).host === hote;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request): Promise<Response> {
   const secret = process.env.AUTH_SECRET;
   if (!secret) return NO_CONTENT;
+
+  if (!estMemeOrigine(request)) return NO_CONTENT;
 
   const userAgent = request.headers.get("user-agent");
   if (isBot(userAgent)) return NO_CONTENT;

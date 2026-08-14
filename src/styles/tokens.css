@@ -40,6 +40,26 @@
   --destructive-soft: rgba(247, 102, 94, 0.12);
   --legendary: #ffd47d;
 
+  /* Variantes sourdes du couple sémantique, réservées aux APLATS portant une
+     icône ou un glyphe clair — la frise de rounds du scoreboard. Les teintes
+     vives ci-dessus sont calées pour du TEXTE sur fond sombre et deviennent
+     éblouissantes en aplat ; l'inverse est vrai pour celles-ci. Les deux
+     couples ne sont donc pas interchangeables : aplat sourd + glyphe clair,
+     ou texte vif sur fond sombre. */
+  --success-deep: #289a87;
+  --destructive-deep: #c05655;
+
+  /* Palette catégorielle des visualisations, distincte des couleurs
+     sémantiques : elle sert à SÉPARER des séries, pas à qualifier un résultat.
+     Le couple succès/destructif y est inutilisable — ΔE 5.4 en deutéranopie,
+     donc deux séries indiscernables. Ces trois teintes ont été retenues avec
+     --accent pour leur écart en vision déficiente et tiennent toutes au-dessus
+     de 3:1 sur la surface. Nommées par teinte et non par usage : elles servent
+     à des séries sans rapport d'un graphique à l'autre. */
+  --viz-blue: #3b9ad6;
+  --viz-amber: #c78500;
+  --viz-green: #1baf7a;
+
   /* Rayons (base rft.gg .625rem = 10px) */
   --r-sm: 6px;
   --r-md: 8px;
@@ -202,12 +222,9 @@
   --tt-out-ease: ease-out;
   --tt-bg: var(--card-hover);
   --tt-fg: var(--text);
-  /* Texts reveal */
-  --stagger-dur: 600ms;
-  --stagger-distance: 12px;
-  --stagger-stagger: 40ms;
-  --stagger-blur: 3px;
-  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* La famille « Texts reveal » (--stagger-*) a été retirée avec ses règles :
+     aucun `.t-stagger` n'a jamais été posé dans le balisage. Ne pas la
+     réintroduire sans le composant qui la consomme. */
 }
 
 @theme inline {

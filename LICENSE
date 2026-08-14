@@ -1,0 +1,51 @@
+Copyright (c) 2026 Titouan Borde. Tous droits réservés.
+All rights reserved.
+
+TOUS DROITS RÉSERVÉS — LOGICIEL PROPRIÉTAIRE
+
+Ce dépôt et l'ensemble de son contenu — code source, feuilles de style,
+schémas de base de données, textes, éléments graphiques originaux et
+documentation — sont la propriété exclusive de Titouan Borde et sont protégés
+par le code de la propriété intellectuelle ainsi que par les conventions
+internationales applicables.
+
+Aucune licence n'est concédée. En particulier, et sans que cette liste soit
+limitative, il est interdit, sans autorisation écrite préalable de l'auteur :
+
+  1. de reproduire, copier ou télécharger tout ou partie de ce dépôt à des
+     fins autres que la simple consultation ;
+  2. de modifier, adapter, traduire ou créer une œuvre dérivée ;
+  3. de distribuer, publier, sous-licencier, vendre ou louer tout ou partie
+     de ce dépôt ;
+  4. d'exécuter ou d'héberger ce logiciel, à titre gratuit ou onéreux ;
+  5. d'en retirer ou d'en altérer les mentions de paternité et de propriété.
+
+La visibilité éventuelle de ce dépôt ne vaut pas mise à disposition du public
+au sens d'une licence libre ou open source, ni renonciation à quelque droit
+que ce soit.
+
+MARQUES ET CONTENUS DE TIERS
+
+The Hub n'est pas affilié à Riot Games et n'est ni approuvé ni sponsorisé par
+Riot Games. VALORANT ainsi que l'ensemble des éléments associés (noms,
+marques, visuels, noms d'agents et de cartes) sont des marques ou des œuvres
+de Riot Games, Inc. et demeurent la propriété de leurs titulaires respectifs.
+Les logos d'équipes, visuels de tournois et photographies publiés par les
+utilisateurs restent la propriété de leurs titulaires respectifs et ne sont
+pas couverts par la présente notice.
+
+Les dépendances tierces installées depuis npm restent régies par leurs propres
+licences, consultables dans node_modules/.
+
+ABSENCE DE GARANTIE
+
+Le logiciel est fourni « en l'état », sans garantie d'aucune sorte, expresse
+ou implicite, y compris sans garantie de qualité marchande, d'adéquation à un
+usage particulier ou d'absence de contrefaçon. L'auteur ne saurait être tenu
+responsable de quelque dommage que ce soit résultant de l'utilisation du
+logiciel ou de l'impossibilité de l'utiliser.
+
+CONTACT
+
+Toute demande d'autorisation peut être adressée à l'auteur via le Discord du
+projet, indiqué en pied de page du site et dans les mentions légales.

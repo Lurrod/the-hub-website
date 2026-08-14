@@ -69,13 +69,15 @@ Toutes sont décrites dans `.env.example`.
 src/
   app/          routes App Router (pages, layouts, server actions, API)
   components/   composants React
+  hooks/        hooks React partagés (piège de focus, dialogues)
   lib/          logique métier pure, validation Zod, accès données (lib/data)
+  styles/       jetons de charte, base, composants, transitions
   proxy.ts      garde d'authentification, gate d'onboarding, CSP
 prisma/         schéma, migrations, jeux de données
 tests/unit/     Vitest — logique pure
 tests/e2e/      Playwright — parcours
 deploy/         configuration Apache de production
-docs/           déploiement et notes de conception
+docs/           déploiement et effacement RGPD
 ```
 
 ## Tests et qualité
@@ -94,6 +96,12 @@ Push sur `main` → `.github/workflows/deploy.yml` construit, envoie et bascule
 une release horodatée sur le Kimsufi, migrations comprises. La procédure
 complète, y compris la préparation initiale du serveur, est dans
 [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
+
+## Licence
+
+**Tous droits réservés.** Ce dépôt est un logiciel propriétaire : aucune
+licence d'utilisation, de copie, de modification ou de redistribution n'est
+concédée. Voir [LICENSE](LICENSE).
 
 ## Mentions
 

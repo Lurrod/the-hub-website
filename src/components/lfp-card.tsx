@@ -20,7 +20,7 @@ export default function LfpCard({ team }: { team: LfpTeamCardData }) {
   return (
     <Link
       href={`/equipes/${team.id}`}
-      className="card card-interactive flex flex-col gap-3 bg-[#242832] p-4"
+      className="card card-interactive flex flex-col gap-3 bg-[var(--card-hover)] p-4"
     >
       <div className="flex items-center gap-3">
         {team.logo ? (

@@ -64,7 +64,7 @@ export default async function TournamentsPage({
           <div className="space-y-6">
             {months.map((mo) => (
               <section key={mo.key}>
-                <div className="mb-2 rounded-lg bg-[#242832] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                <div className="mb-2 rounded-lg bg-[var(--card-hover)] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                   {mo.label}
                 </div>
                 <div className="stagger-in space-y-2">

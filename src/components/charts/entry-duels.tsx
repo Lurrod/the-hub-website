@@ -10,7 +10,7 @@ const TOP = 8;
  * du site tombait lui à 5.4 en deutéranopie — inutilisable pour deux séries.
  */
 const WON = "var(--accent)";
-const LOST = "#3b9ad6";
+const LOST = "var(--viz-blue)";
 
 /**
  * Duels d'entry : premiers kills à droite, premières morts à gauche, de part

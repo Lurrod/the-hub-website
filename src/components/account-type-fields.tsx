@@ -11,7 +11,7 @@ import {
 } from "@/lib/account-types";
 
 const input =
-  "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-[var(--accent)]";
+  "w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white transition-colors focus:border-[var(--accent)]";
 const lbl = "grid gap-1 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]";
 
 /**

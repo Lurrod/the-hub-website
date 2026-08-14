@@ -27,11 +27,14 @@ export default function PlayerCareerTable({ stints }: { stints: CareerStint[] })
   return (
     <div
       className="scroll-x rounded-lg border border-[var(--border)]"
-      style={{ backgroundColor: "#191c22" }}
+      style={{ backgroundColor: "var(--card)" }}
     >
       <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-[var(--border)]" style={{ backgroundColor: "#242832" }}>
+          <tr
+            className="border-b border-[var(--border)]"
+            style={{ backgroundColor: "var(--card-hover)" }}
+          >
             <th scope="col" className={`${TH} text-left`}>
               Équipe
             </th>

@@ -4,9 +4,11 @@ import EmptyState, { ListDecor } from "@/components/empty-state";
 import AgentIcon from "@/components/agent-icon";
 import type { PlayerMatchDay, PlayerMapRow, TeamAgents } from "@/lib/data/player-matches";
 
-const WIN = "#289a87";
-const LOSS = "#c05655";
-const BANNER = "#242832";
+// Teintes vives : ces deux couleurs habillent du texte (« Victoire » / le score),
+// pas un aplat. Les variantes sourdes sont réservées à la frise de rounds.
+const WIN = "var(--success)";
+const LOSS = "var(--destructive)";
+const BANNER = "var(--card-hover)";
 
 function fmtDuration(sec: number): string {
   const totalMin = Math.round(sec / 60);
@@ -177,7 +179,7 @@ export default function PlayerMatches({ days }: { days: PlayerMatchDay[] }) {
   return (
     <div
       className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]"
-      style={{ backgroundColor: "#191c22" }}
+      style={{ backgroundColor: "var(--card)" }}
     >
       {rows}
     </div>

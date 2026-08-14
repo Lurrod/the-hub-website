@@ -1,0 +1,110 @@
+/* Extrait de src/styles/transitions.css (finding PERF-03) : cette famille
+   n'a qu'un seul consommateur, elle est donc importée par lui plutôt que
+   servie sur toutes les pages. Les jetons `--clear-* / --glow-*` restent dans
+   tokens.css, avec le reste de la charte. */
+
+/* --- Input clear with dissolve (13) --------------------------------------- */
+/* The wrap clips the glow to its rounded box. The hairline
+   border is `inset` so it sits inside that clip — when the
+   glow's mix-blend-mode darkens its area, the border
+   underneath darkens with it. Bring your own width / height /
+   border-radius / surface color. */
+.t-clear {
+  position: relative;
+  overflow: hidden;
+}
+.t-clear-mirror,
+.t-clear-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 2;
+}
+.t-clear-mirror {
+  opacity: 0;
+}
+.t-clear.has-value .t-clear-mirror,
+.t-clear.is-clearing .t-clear-mirror {
+  opacity: 1;
+}
+/* Hide the input's own glyphs while the mirror owns them so
+   the cleared text doesn't double-render with the fly-up. */
+.t-clear.has-value > input,
+.t-clear.is-clearing > input {
+  -webkit-text-fill-color: transparent;
+}
+.t-clear.has-value .t-clear-placeholder {
+  opacity: 0;
+}
+/* The streak overlay: empty by default; JS writes a stack of
+   `radial-gradient(...)` layers into background during a clear,
+   then animates opacity. mix-blend-mode: multiply darkens the
+   underlying input + hairline; flip to `screen` in dark mode
+   so the same alpha values lighten instead of vanish. */
+.t-clear-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  mix-blend-mode: multiply;
+}
+
+/* The transitions live in JS (per-frame transform/opacity/
+   filter writes), so this stylesheet only owns the resting
+   state + the variables that JS reads. Read them with
+   `parseFloat(getComputedStyle(root).getPropertyValue(...))`
+   so live tweaks apply on the next clear without a reload. */
+
+@media (prefers-reduced-motion: reduce) {
+  .t-clear-glow {
+    opacity: 0 !important;
+  }
+}
+
+/* Adaptation projet : thème sombre. `multiply` sur #131619 fait disparaître
+   la traînée ; `screen` l'éclaircit avec les mêmes alphas. Le texte du miroir
+   et du placeholder reprend le retrait du champ. */
+.t-clear-glow {
+  mix-blend-mode: screen;
+}
+.t-clear-mirror,
+.t-clear-placeholder {
+  padding: 0 12px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+.t-clear-mirror {
+  color: var(--text);
+}
+.t-clear-placeholder {
+  color: var(--text-subtle);
+}
+
+/* WCAG 2.2 AA — 2.5.8 (taille de cible minimale). Le glyphe « × » ne mesure que
+   7,41 × 15 px, très en dessous des 24 × 24 px exigés.
+
+   La boîte du bouton est portée à 24 × 24 px et l'agrandissement est repris par
+   des marges négatives : son emprise dans le flux reste exactement celle du
+   glyphe et de sa marge de 4 px (11,41 × 15 px), et le caractère ne bouge pas
+   d'un pixel. Un pseudo-élément agrandirait bien la zone cliquable mais pas la
+   boîte de l'élément : axe-core continuerait — à juste titre — de signaler la
+   violation, faute de pouvoir la mesurer.
+   `place-items: center` recentre le glyphe dans la boîte élargie.
+   La marge gauche remplace le `ml-1` retiré du composant, pour que la
+   compensation vive à un seul endroit.
+   Les valeurs ne sont pas rondes : elles compensent la largeur réelle du glyphe
+   dans la police du site. À recalculer si la police ou la taille change — la
+   mesure se relit dans le rectangle de `.t-clear` et de son `input`, qui
+   doivent rester inchangés. */
+.t-clear-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -4.5px -8.295px -4.5px -4.295px;
+}

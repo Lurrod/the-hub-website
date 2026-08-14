@@ -111,8 +111,16 @@ describe("dayOf / dayKey", () => {
 });
 
 describe("clientIp", () => {
-  it("retient le client, pas les intermédiaires empilés par Apache", () => {
-    expect(clientIp("1.2.3.4, 10.0.0.1, 10.0.0.2", null)).toBe("1.2.3.4");
+  it("retient le maillon posé par Apache, seul non falsifiable", () => {
+    // Apache ajoute l'adresse qu'il a vue à la fin de l'en-tête.
+    expect(clientIp("1.2.3.4", null)).toBe("1.2.3.4");
+  });
+
+  it("ignore les maillons que le client a écrits lui-même", () => {
+    // Le client a envoyé « 9.9.9.9 » ; Apache a ajouté son adresse réelle.
+    expect(clientIp("9.9.9.9, 1.2.3.4", null)).toBe("1.2.3.4");
+    // Même tentative avec plusieurs faux maillons : seul le dernier compte.
+    expect(clientIp("1.1.1.1, 2.2.2.2, 3.3.3.3", null)).toBe("3.3.3.3");
   });
 
   it("retombe sur x-real-ip, puis sur une valeur neutre", () => {

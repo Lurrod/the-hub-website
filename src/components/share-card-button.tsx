@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Segmented from "@/components/segmented";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useDialog } from "@/hooks/use-dialog";
 import type { ShareVariant } from "@/lib/og/share-variants";
 
 interface ShareCardButtonProps {
@@ -25,18 +25,14 @@ const COPIED_MS = 2000;
  * téléchargement du PNG, copie du lien de la fiche, et partage natif sur les
  * appareils qui savent recevoir un fichier.
  *
- * Même mécanique que `ConfirmDeleteButton` et `NavDrawer` : portail dans
- * `<body>`, trois états (`open` monté, `shown` déployé, `closing` en repli)
- * pour laisser la fermeture s'animer, fermeture à Échap et au clic hors du
- * panneau, verrou du défilement, focus confiné.
+ * La mécanique de dialogue vient de `useDialog`, partagée avec
+ * `ConfirmDeleteButton` et `NavDrawer`.
  *
  * L'aperçu n'est monté qu'avec le panneau : une fiche consultée sans clic sur
  * « Partager » ne déclenche aucune génération d'image côté serveur.
  */
 export default function ShareCardButton({ variants, pageUrl, title, alt }: ShareCardButtonProps) {
-  const [open, setOpen] = useState(false);
-  const [shown, setShown] = useState(false);
-  const [closing, setClosing] = useState(false);
+  const { open, shown, closing, mounted, panelRef, ouvrir, fermer } = useDialog();
   const [copied, setCopied] = useState(false);
   const [active, setActive] = useState(variants[0].key);
   // Statut de chargement par variante : revenir sur une carte déjà vue ne doit
@@ -46,13 +42,7 @@ export default function ShareCardButton({ variants, pageUrl, title, alt }: Share
 
   const current = variants.find((v) => v.key === active) ?? variants[0];
   const state = status[current.key];
-  const closeTimer = useRef<number | null>(null);
   const copiedTimer = useRef<number | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  const [mounted, setMounted] = useState(false);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setMounted(true), []);
 
   // `canShare` avec un fichier factice : c'est la seule façon de savoir si
   // l'appareil accepte le partage de fichiers avant d'avoir téléchargé
@@ -71,41 +61,8 @@ export default function ShareCardButton({ variants, pageUrl, title, alt }: Share
     }
   }, []);
 
-  const close = useCallback(() => {
-    setShown(false);
-    setClosing(true);
-    const closeMs =
-      parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue("--modal-close-dur")
-      ) || 150;
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => {
-      setClosing(false);
-      setOpen(false);
-    }, closeMs);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const raf = requestAnimationFrame(() => setShown(true));
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, close]);
-
-  useFocusTrap(panelRef, open);
-
   useEffect(
     () => () => {
-      if (closeTimer.current) window.clearTimeout(closeTimer.current);
       if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
     },
     []
@@ -146,7 +103,7 @@ export default function ShareCardButton({ variants, pageUrl, title, alt }: Share
           porter. Sans lui, le bouton n'aurait plus de nom sur mobile. */}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={ouvrir}
         aria-label="Partager"
         className="flex shrink-0 items-center gap-1.5 rounded border border-[var(--border)] px-2 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-white sm:px-2.5"
       >
@@ -177,7 +134,7 @@ export default function ShareCardButton({ variants, pageUrl, title, alt }: Share
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            onClick={close}
+            onClick={fermer}
           >
             <div
               ref={panelRef}
@@ -191,7 +148,7 @@ export default function ShareCardButton({ variants, pageUrl, title, alt }: Share
                 <h2 className="text-base font-semibold text-white">{title}</h2>
                 <button
                   type="button"
-                  onClick={close}
+                  onClick={fermer}
                   aria-label="Fermer"
                   className="-mr-1 -mt-1 grid h-8 w-8 shrink-0 place-items-center rounded text-[var(--text-muted)] transition-colors hover:text-white"
                 >
