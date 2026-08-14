@@ -89,12 +89,20 @@ export default function Bracket({
     );
   }
 
-  // « tree » : élimination directe, un seul arbre avec connecteurs.
-  // « flat » : formats sans arbre, colonnes simples.
+  // « tree »  : élimination directe, un seul arbre avec connecteurs.
+  // « multi » : un arbre par bracket parallèle, empilés, mêmes connecteurs.
+  // « flat »  : formats sans arbre, colonnes simples.
+  //
+  // La clé React passe par `sec.id` : en « multi », toutes les sections portent
+  // la même `key` métier (« single »), qui ne les distinguerait pas.
   return (
     <div className="space-y-8">
       {sections.map((sec) => (
-        <SectionBlock key={sec.key} section={sec} connectors={layout === "tree"} />
+        <SectionBlock
+          key={sec.id ?? sec.key}
+          section={sec}
+          connectors={layout === "tree" || layout === "multi"}
+        />
       ))}
     </div>
   );
