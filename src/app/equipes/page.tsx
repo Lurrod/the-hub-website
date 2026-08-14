@@ -66,7 +66,7 @@ export default async function TeamsPage({
           <div className="space-y-6">
             {groups.map((g) => (
               <section key={g.region}>
-                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2">
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[var(--card-hover)] px-3 py-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-white">
                     {g.region}
                   </span>

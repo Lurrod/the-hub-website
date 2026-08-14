@@ -1,5 +1,6 @@
 "use client";
 
+import "./clearable-search.css";
 import { useEffect, useRef } from "react";
 
 /** Échantillonneur cubic-bezier minimal, pour que le JS suive la même

@@ -107,11 +107,11 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
 
       <div className="flex items-start justify-around gap-2 pt-2.5">
         <div className="text-center">
-          <div className="leading-tight text-[#9fa0a2] tp-label">Âge</div>
+          <div className="leading-tight text-[var(--text-muted)] tp-label">Âge</div>
           <div className="stat leading-tight text-white tp-value">{age ?? "—"}</div>
         </div>
         <div className="text-center">
-          <div className="leading-tight text-[#9fa0a2] tp-label">A rejoint</div>
+          <div className="leading-tight text-[var(--text-muted)] tp-label">A rejoint</div>
           <div className="stat leading-tight text-white tp-value">{since ?? "—"}</div>
         </div>
       </div>

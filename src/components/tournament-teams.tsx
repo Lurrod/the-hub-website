@@ -23,10 +23,10 @@ const COLS_HEAD =
  * au-dessus de 3:1 sur la surface.
  */
 const OUTCOME_COLORS: Record<string, string> = {
-  elim: "#ED5E29",
-  detonate: "#3b9ad6",
-  defuse: "#c78500",
-  time: "#1baf7a",
+  elim: "var(--accent)",
+  detonate: "var(--viz-blue)",
+  defuse: "var(--viz-amber)",
+  time: "var(--viz-green)",
 };
 const OUTCOME_LABEL: Record<string, string> = {
   elim: "Élimination",

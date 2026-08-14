@@ -213,7 +213,7 @@ export default function DateField({
                 type="time"
                 value={timePart(value)}
                 onChange={(e) => pickTime(e.target.value)}
-                className="time-input rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-xs text-white outline-none transition-colors focus:border-[var(--accent)]"
+                className="time-input rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-xs text-white transition-colors focus:border-[var(--accent)]"
               />
             </label>
           )}

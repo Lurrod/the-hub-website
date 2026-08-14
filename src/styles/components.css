@@ -120,8 +120,10 @@
   .field:hover {
     border-color: var(--border-strong);
   }
+  /* La bordure d'accent marque le champ actif quel que soit le mode de
+     saisie ; le contour de focus clavier, lui, vient de base.css et n'est plus
+     annulé ici. */
   .field:focus {
-    outline: none;
     border-color: var(--accent);
   }
   .field::placeholder {

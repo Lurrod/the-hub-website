@@ -533,9 +533,16 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
                 hauteur qu'il lui faut. */}
             <div className="flex min-w-0 flex-col justify-between gap-3 p-3.5 sm:aspect-[1200/630]">
               <div className="flex items-center gap-2">
+                {/* Rendu à 20 px : le PNG source de 1125 px (98 Ko) était
+                    téléchargé sur l'accueil pour cette seule vignette. Le webp
+                    fait 3,7 Ko, comme dans la barre de navigation. Le PNG reste
+                    nécessaire, mais côté serveur seulement, pour les images de
+                    partage (src/lib/og/frame.tsx). */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/logo.png"
+                  src="/logo.webp"
+                  width={130}
+                  height={128}
                   alt=""
                   loading="lazy"
                   decoding="async"

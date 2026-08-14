@@ -80,7 +80,7 @@ export default async function MatchesPage({
           <div className="space-y-6">
             {tournaments.map((t) => (
               <details key={t.id} open={t.status === "ONGOING"} className="t-resize-details group">
-                <summary className="mb-2 flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg bg-[#242832] px-3 py-2 [&::-webkit-details-marker]:hidden">
+                <summary className="mb-2 flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg bg-[var(--card-hover)] px-3 py-2 [&::-webkit-details-marker]:hidden">
                   <span className="truncate text-xs font-semibold uppercase tracking-wide text-white">
                     {t.name}
                   </span>

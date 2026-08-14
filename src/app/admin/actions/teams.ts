@@ -9,7 +9,7 @@ import { teamInputSchema, rosterEntrySchema } from "@/lib/validation/team";
 import {
   createTeam,
   updateTeam,
-  deleteTeam,
+  deleteTeamIfUnused,
   setTeamLogo,
   addTeamManager,
   removeTeamManagerIfNotLast,
@@ -99,13 +99,13 @@ export async function updateTeamAction(teamId: string, formData: FormData) {
 export async function deleteTeamAction(teamId: string) {
   // Supprimer l'équipe engage tout son historique : réservé au propriétaire.
   await assertCanAdministerTeam(teamId);
-  // Garde anti-cascade : supprimer une équipe efface en cascade ses matchs dans
-  // TOUS les tournois. On bloque tant qu'elle a des participations pour ne pas
-  // détruire l'historique de tournois gérés par d'autres (seul un admin peut
-  // d'abord la désinscrire).
-  const participations = await db.tournamentParticipant.count({ where: { teamId } });
-  if (participations > 0) redirect(`/equipes/${teamId}/gestion?error=hasparticipations`);
-  await deleteTeam(teamId);
+  // Garde anti-cascade, tenue en base : supprimer une équipe efface en cascade
+  // ses matchs dans TOUS les tournois. `deleteTeamIfUnused` refuse tant qu'il
+  // reste une inscription OU un match, et fait le contrôle dans la même
+  // transaction que la suppression.
+  if (!(await deleteTeamIfUnused(teamId))) {
+    redirect(`/equipes/${teamId}/gestion?error=hasparticipations`);
+  }
   // Le logo doit partir avec la ligne : sans cela le fichier reste sur le
   // disque et servi par /api/images, dont la clé est devinable (RGPD-01).
   await deleteStoredImage("teams", teamId);

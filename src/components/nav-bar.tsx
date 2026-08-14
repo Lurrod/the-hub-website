@@ -48,8 +48,6 @@ export default function NavBar() {
         </Link>
         {/* Repli sans le lien Admin : il ne concerne qu'une poignée de comptes,
             et l'attendre retarderait l'affichage de tous les autres. */}
-        {/* Repli sans le lien Admin : il ne concerne qu'une poignée de comptes,
-            et l'attendre retarderait l'affichage de tous les autres. */}
         <div className="hidden self-stretch md:flex">
           <Suspense fallback={<NavLinks isAdmin={false} />}>
             <NavSessionLinks />
@@ -70,7 +68,7 @@ export default function NavBar() {
             name="q"
             placeholder="Rechercher…"
             aria-label="Rechercher"
-            className="w-40 rounded border border-[var(--border)] bg-[var(--card)] py-1.5 pl-8 pr-3 text-sm text-white transition-colors duration-[130ms] placeholder:text-[var(--text-muted)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] focus:outline-none lg:w-52"
+            className="w-40 rounded border border-[var(--border)] bg-[var(--card)] py-1.5 pl-8 pr-3 text-sm text-white transition-colors duration-[130ms] placeholder:text-[var(--text-muted)] hover:border-[var(--border-strong)] focus:border-[var(--accent)] lg:w-52"
           />
         </form>
         <Suspense fallback={<NavSessionUserFallback />}>

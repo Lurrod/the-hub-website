@@ -336,47 +336,6 @@
    skeleton owns the cold pulse + the fade-out side of the
    reveal; the content owns the fade-in side. They share the
    same duration / ease so the swap reads as one motion. */
-.t-skel {
-  position: relative;
-}
-.t-skel-skeleton,
-.t-skel-content {
-  position: absolute;
-  inset: 0;
-}
-
-.t-skel-skeleton {
-  z-index: 1;
-  opacity: 1;
-  filter: blur(0);
-  transition:
-    opacity var(--reveal-dur) var(--reveal-ease),
-    filter var(--reveal-dur) var(--reveal-ease);
-}
-.t-skel-content {
-  z-index: 2;
-  opacity: 0;
-  filter: blur(var(--reveal-blur));
-  transition:
-    opacity var(--reveal-dur) var(--reveal-ease),
-    filter var(--reveal-dur) var(--reveal-ease);
-}
-.t-skel.is-revealed .t-skel-skeleton {
-  opacity: 0;
-  filter: blur(var(--reveal-blur));
-}
-.t-skel.is-revealed .t-skel-content {
-  opacity: 1;
-  filter: blur(0);
-}
-/* Snap-back when replaying: kill transitions so the reverse
-   (revealed → skeleton) is instant. Drop `.is-resetting`
-   after a forced reflow and the next reveal animates again. */
-.t-skel.is-resetting .t-skel-skeleton,
-.t-skel.is-resetting .t-skel-content {
-  transition: none !important;
-}
-
 /* Pulse: place the animation on the bar/avatar children, not
    on the skeleton itself, so the skeleton's opacity / filter
    stay free for the cross-fade transition above. */
@@ -394,10 +353,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .t-skel-skeleton,
-  .t-skel-content {
-    transition: none !important;
-  }
   .t-skel-skeleton.is-pulsing > * {
     animation: none !important;
   }
@@ -414,6 +369,9 @@
    absolu qui casserait la mise en page. */
 /* Le squelette du fallback n'a pas de contenu superposé : il doit rester dans
    le flux, d'où cette annulation ciblée du `position: absolute` du snippet. */
+/* `is-static` est conservé sur les six fallbacks : il documente que le
+   squelette vit dans le flux. La règle de positionnement absolu qu'il annulait
+   a disparu avec le fondu croisé jamais activé. */
 .t-skel-skeleton.is-static {
   position: static;
 }
@@ -437,112 +395,6 @@
   .t-skel-in {
     animation: none !important;
   }
-}
-
-/* --- Input clear with dissolve (13) --------------------------------------- */
-/* The wrap clips the glow to its rounded box. The hairline
-   border is `inset` so it sits inside that clip — when the
-   glow's mix-blend-mode darkens its area, the border
-   underneath darkens with it. Bring your own width / height /
-   border-radius / surface color. */
-.t-clear {
-  position: relative;
-  overflow: hidden;
-}
-.t-clear-mirror,
-.t-clear-placeholder {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  white-space: nowrap;
-  overflow: hidden;
-  z-index: 2;
-}
-.t-clear-mirror {
-  opacity: 0;
-}
-.t-clear.has-value .t-clear-mirror,
-.t-clear.is-clearing .t-clear-mirror {
-  opacity: 1;
-}
-/* Hide the input's own glyphs while the mirror owns them so
-   the cleared text doesn't double-render with the fly-up. */
-.t-clear.has-value > input,
-.t-clear.is-clearing > input {
-  -webkit-text-fill-color: transparent;
-}
-.t-clear.has-value .t-clear-placeholder {
-  opacity: 0;
-}
-/* The streak overlay: empty by default; JS writes a stack of
-   `radial-gradient(...)` layers into background during a clear,
-   then animates opacity. mix-blend-mode: multiply darkens the
-   underlying input + hairline; flip to `screen` in dark mode
-   so the same alpha values lighten instead of vanish. */
-.t-clear-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 3;
-  mix-blend-mode: multiply;
-}
-
-/* The transitions live in JS (per-frame transform/opacity/
-   filter writes), so this stylesheet only owns the resting
-   state + the variables that JS reads. Read them with
-   `parseFloat(getComputedStyle(root).getPropertyValue(...))`
-   so live tweaks apply on the next clear without a reload. */
-
-@media (prefers-reduced-motion: reduce) {
-  .t-clear-glow {
-    opacity: 0 !important;
-  }
-}
-
-/* Adaptation projet : thème sombre. `multiply` sur #131619 fait disparaître
-   la traînée ; `screen` l'éclaircit avec les mêmes alphas. Le texte du miroir
-   et du placeholder reprend le retrait du champ. */
-.t-clear-glow {
-  mix-blend-mode: screen;
-}
-.t-clear-mirror,
-.t-clear-placeholder {
-  padding: 0 12px;
-  font-size: 12px;
-  line-height: 1.25;
-}
-.t-clear-mirror {
-  color: var(--text);
-}
-.t-clear-placeholder {
-  color: var(--text-subtle);
-}
-
-/* WCAG 2.2 AA — 2.5.8 (taille de cible minimale). Le glyphe « × » ne mesure que
-   7,41 × 15 px, très en dessous des 24 × 24 px exigés.
-
-   La boîte du bouton est portée à 24 × 24 px et l'agrandissement est repris par
-   des marges négatives : son emprise dans le flux reste exactement celle du
-   glyphe et de sa marge de 4 px (11,41 × 15 px), et le caractère ne bouge pas
-   d'un pixel. Un pseudo-élément agrandirait bien la zone cliquable mais pas la
-   boîte de l'élément : axe-core continuerait — à juste titre — de signaler la
-   violation, faute de pouvoir la mesurer.
-   `place-items: center` recentre le glyphe dans la boîte élargie.
-   La marge gauche remplace le `ml-1` retiré du composant, pour que la
-   compensation vive à un seul endroit.
-   Les valeurs ne sont pas rondes : elles compensent la largeur réelle du glyphe
-   dans la police du site. À recalculer si la police ou la taille change — la
-   mesure se relit dans le rectangle de `.t-clear` et de son `input`, qui
-   doivent rester inchangés. */
-.t-clear-btn {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  margin: -4.5px -8.295px -4.5px -4.295px;
 }
 
 /* --- Icon swap (09) ------------------------------------------------------- */
@@ -652,92 +504,6 @@
 /* Adaptation projet : la bordure d'erreur, que le snippet laisse au composant. */
 .t-input.is-error {
   border-color: var(--destructive);
-}
-
-/* --- Texts reveal (18) ---------------------------------------------------- */
-/* Lines start translated down + blurred + invisible; .is-shown
-   on the parent flips them to their resting state. The second
-   line's transition-delay holds it back by --stagger-stagger
-   so the eye lands on the headline first. */
-.t-stagger-line {
-  display: block;
-  opacity: 0;
-  transform: translateY(var(--stagger-distance));
-  filter: blur(var(--stagger-blur));
-  transition:
-    opacity var(--stagger-dur) var(--stagger-ease),
-    transform var(--stagger-dur) var(--stagger-ease),
-    filter var(--stagger-dur) var(--stagger-ease);
-  will-change: transform, opacity, filter;
-}
-.t-stagger-line--2 {
-  transition-delay: var(--stagger-stagger);
-}
-
-.t-stagger.is-shown .t-stagger-line {
-  opacity: 1;
-  transform: translateY(0);
-  filter: blur(0);
-}
-/* Exit decouples from the stagger: same fade for every line,
-   no Y return, no blur — so the disappearance reads as a
-   single quiet fade instead of a reverse reveal. */
-.t-stagger.is-hiding .t-stagger-line {
-  opacity: 0;
-  transform: translateY(0);
-  filter: blur(0);
-  transition:
-    opacity 200ms ease,
-    transform 0s linear,
-    filter 0s linear;
-  transition-delay: 0s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .t-stagger-line {
-    transition: none !important;
-  }
-}
-
-/* --- Number pop-in (02) --------------------------------------------------- */
-@keyframes t-digit-pop-in {
-  0% {
-    transform: translate(
-      calc(var(--digit-distance) * var(--digit-dir-x)),
-      calc(var(--digit-distance) * var(--digit-dir-y))
-    );
-    opacity: 0;
-    filter: blur(var(--digit-blur));
-  }
-  100% {
-    transform: translate(0, 0);
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-
-.t-digit-group {
-  display: inline-flex;
-  align-items: baseline;
-}
-.t-digit {
-  display: inline-block;
-  will-change: transform, opacity, filter;
-}
-.t-digit-group.is-animating .t-digit {
-  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
-}
-.t-digit-group.is-animating .t-digit[data-stagger="1"] {
-  animation-delay: var(--digit-stagger);
-}
-.t-digit-group.is-animating .t-digit[data-stagger="2"] {
-  animation-delay: calc(var(--digit-stagger) * 2);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .t-digit-group .t-digit {
-    animation: none !important;
-  }
 }
 
 /* --- Text states swap (04) ------------------------------------------------ */

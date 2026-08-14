@@ -15,14 +15,35 @@ export type RiotAccount = { puuid: string; region: string; name: string; tag: st
 
 const BASE = "https://api.henrikdev.xyz";
 
-/** Vérifie un Riot ID auprès de HenrikDev. Server-only (utilise la clé API). */
-export async function verifyRiotId(name: string, tag: string): Promise<RiotAccount> {
+/** Au-delà, l'appel est abandonné : l'appelant est une action de formulaire. */
+const TIMEOUT_MS = 8000;
+
+/**
+ * Un appel à HenrikDev, de la clé d'API au contenu de l'enveloppe.
+ *
+ * Les trois points d'appel du module reproduisaient ce bloc à l'identique :
+ * lecture de la clé, temporisation par `AbortController`, en-tête
+ * d'autorisation, traduction des statuts en `RiotIdError` et déballage du
+ * champ `data`. Un durcissement du client — une temporisation revue, une
+ * journalisation plus fine, un traitement du 429 — devait donc être appliqué
+ * trois fois, avec le risque d'oublier celui qu'on n'a pas sous les yeux.
+ *
+ * @param path    chemin absolu sous {@link BASE}, segments déjà encodés.
+ * @param surAbsence code d'erreur pour un 404. `NOT_FOUND` là où l'absence est
+ *   une réponse attendue (compte ou partie inconnus), `API_ERROR` là où elle
+ *   trahit une anomalie.
+ * @returns le contenu du champ `data` de l'enveloppe, ou `null` s'il manque.
+ */
+async function fetchHenrik<T>(
+  path: string,
+  surAbsence: RiotIdErrorCode = "API_ERROR"
+): Promise<T | null> {
   const key = process.env.HENRIKDEV_API_KEY;
   if (!key) throw new RiotIdError("API_ERROR");
 
-  const url = `${BASE}/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+  const url = `${BASE}${path}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   let res: Response;
   try {
@@ -37,12 +58,20 @@ export async function verifyRiotId(name: string, tag: string): Promise<RiotAccou
     clearTimeout(timeout);
   }
 
-  if (res.status === 404) throw new RiotIdError("NOT_FOUND");
+  if (res.status === 404) throw new RiotIdError(surAbsence);
   if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
   if (!res.ok) throw new RiotIdError("API_ERROR");
 
-  const json = (await res.json().catch(() => null)) as { data?: Partial<RiotAccount> } | null;
-  const data = json?.data;
+  const json = (await res.json().catch(() => null)) as { data?: T } | null;
+  return json?.data ?? null;
+}
+
+/** Vérifie un Riot ID auprès de HenrikDev. Server-only (utilise la clé API). */
+export async function verifyRiotId(name: string, tag: string): Promise<RiotAccount> {
+  const data = await fetchHenrik<Partial<RiotAccount>>(
+    `/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`,
+    "NOT_FOUND"
+  );
   if (!data?.puuid) throw new RiotIdError("API_ERROR");
   return {
     puuid: data.puuid,
@@ -138,31 +167,13 @@ export async function getPlayerCustomMatches(
   name: string,
   tag: string
 ): Promise<CustomMatch[]> {
-  const key = process.env.HENRIKDEV_API_KEY;
-  if (!key) throw new RiotIdError("API_ERROR");
-
-  const url =
-    `${BASE}/valorant/v4/matches/${encodeURIComponent(region)}/pc/` +
-    `${encodeURIComponent(name)}/${encodeURIComponent(tag)}?mode=custom&size=10`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  let res: Response;
-  try {
-    res = await fetch(url, { headers: { Authorization: key }, signal: controller.signal });
-  } catch (e) {
-    // Le type `API_ERROR` suffit à l'appelant, mais pas à qui doit comprendre
-    // une panne : un DNS injoignable, un dépassement de délai et une erreur TLS
-    // s'y confondaient sans laisser la moindre trace.
-    logger.warn("henrikdev.unreachable", { url, ...describeError(e) });
-    throw new RiotIdError("API_ERROR");
-  } finally {
-    clearTimeout(timeout);
-  }
-  if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
-  if (!res.ok) throw new RiotIdError("API_ERROR");
-
-  const json = (await res.json().catch(() => null)) as { data?: unknown[] } | null;
-  const list = Array.isArray(json?.data) ? json!.data : [];
+  // Pas de `NOT_FOUND` ici : un historique vide se lit dans une réponse 200 à
+  // liste vide, un 404 sur cet endpoint signale donc une anomalie.
+  const data = await fetchHenrik<unknown[]>(
+    `/valorant/v4/matches/${encodeURIComponent(region)}/pc/` +
+      `${encodeURIComponent(name)}/${encodeURIComponent(tag)}?mode=custom&size=10`
+  );
+  const list = Array.isArray(data) ? data : [];
   return list.map(mapRawCustomMatch);
 }
 
@@ -172,32 +183,13 @@ export async function getPlayerCustomMatches(
  * partie et on va la chercher directement.
  */
 export async function getCustomMatchById(region: string, matchId: string): Promise<CustomMatch> {
-  const key = process.env.HENRIKDEV_API_KEY;
-  if (!key) throw new RiotIdError("API_ERROR");
-
-  const url = `${BASE}/valorant/v4/match/${encodeURIComponent(region)}/${encodeURIComponent(matchId)}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  let res: Response;
-  try {
-    res = await fetch(url, { headers: { Authorization: key }, signal: controller.signal });
-  } catch (e) {
-    // Le type `API_ERROR` suffit à l'appelant, mais pas à qui doit comprendre
-    // une panne : un DNS injoignable, un dépassement de délai et une erreur TLS
-    // s'y confondaient sans laisser la moindre trace.
-    logger.warn("henrikdev.unreachable", { url, ...describeError(e) });
-    throw new RiotIdError("API_ERROR");
-  } finally {
-    clearTimeout(timeout);
-  }
-  if (res.status === 404) throw new RiotIdError("NOT_FOUND");
-  if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
-  if (!res.ok) throw new RiotIdError("API_ERROR");
-
-  const json = (await res.json().catch(() => null)) as { data?: unknown } | null;
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v4/match/${encodeURIComponent(region)}/${encodeURIComponent(matchId)}`,
+    "NOT_FOUND"
+  );
   // L'endpoint renvoie un objet, mais on tolère la forme tableau des listes :
   // les deux enveloppes coexistent selon les versions de l'API.
-  const raw = Array.isArray(json?.data) ? json.data[0] : json?.data;
+  const raw = Array.isArray(data) ? data[0] : data;
   if (!raw || typeof raw !== "object") throw new RiotIdError("NOT_FOUND");
   return mapRawCustomMatch(raw);
 }

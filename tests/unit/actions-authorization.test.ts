@@ -45,7 +45,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/data/teams", () => ({
   createTeam: vi.fn(async () => ({ id: "t1" })),
   updateTeam: vi.fn(),
-  deleteTeam: vi.fn(),
+  deleteTeamIfUnused: vi.fn(),
   setTeamLogo: vi.fn(),
   addTeamManager: vi.fn(),
   removeTeamManagerIfNotLast: vi.fn(async () => true),

@@ -161,11 +161,17 @@ export default function ConfidentialitePage() {
       </Section>
 
       <Section title="Cookies">
-        <p>Le site dépose deux cookies, tous deux strictement nécessaires à son fonctionnement :</p>
+        <p>
+          Le site dépose des cookies pour deux finalités seulement, toutes deux strictement
+          nécessaires à son fonctionnement :
+        </p>
         <Ul>
           <li>
-            <span className="text-white">Cookie de session</span> - maintient votre connexion.
-            Déposé à la connexion, supprimé à la déconnexion.
+            <span className="text-white">Connexion</span> - les cookies posés par le mécanisme
+            d&apos;authentification Discord. Ils maintiennent votre session et protègent le
+            formulaire de connexion contre les requêtes forgées ; certains ne vivent que le temps de
+            l&apos;échange avec Discord et disparaissent aussitôt. Ils sont déposés au moment où
+            vous vous connectez et supprimés à la déconnexion.
           </li>
           <li>
             <span className="text-white">Cookie « onboarded »</span> - mémorise que vous avez
@@ -175,9 +181,13 @@ export default function ConfidentialitePage() {
         </Ul>
         <p>
           Il n&apos;y a ni cookie publicitaire, ni traceur tiers, et la mesure de fréquentation
-          décrite ci-dessous n&apos;en dépose aucun : ces deux cookies étant nécessaires au service
-          que vous demandez, aucun consentement préalable n&apos;est requis et aucune bannière
-          n&apos;est affichée.
+          décrite ci-dessous n&apos;en dépose aucun. Aucun de ces cookies ne sert à vous suivre :
+          tous étant nécessaires au service que vous demandez, aucun consentement préalable
+          n&apos;est requis et aucune bannière n&apos;est affichée.
+        </p>
+        <p>
+          Un visiteur qui ne lance jamais la connexion Discord ne reçoit aucun cookie : la
+          consultation du site n&apos;en dépose pas.
         </p>
       </Section>
 

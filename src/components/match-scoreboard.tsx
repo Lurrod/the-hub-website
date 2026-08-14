@@ -94,7 +94,8 @@ function TrackRow({
   label: string;
   logo: string | null;
 }) {
-  const wonBg = side === "A" ? "bg-[#289a87]" : "bg-[#c05655]";
+  // Aplats sourds : la pastille porte un glyphe clair, pas du texte.
+  const wonBg = side === "A" ? "bg-[var(--success-deep)]" : "bg-[var(--destructive-deep)]";
   return (
     <div className="flex items-center gap-2">
       <span className="flex w-20 shrink-0 items-center justify-end gap-1.5">
@@ -109,7 +110,7 @@ function TrackRow({
               key={i}
               title={`Round ${i + 1} - ${won ? `${label} · ${OUTCOME_LABEL[r.o] ?? r.o}` : "perdu"}`}
               className={`grid h-6 w-6 shrink-0 place-items-center rounded ${
-                won ? wonBg : "bg-[#131619]"
+                won ? wonBg : "bg-[var(--bg)]"
               }`}
             >
               {won ? <OutcomeIcon o={r.o} /> : null}
@@ -247,8 +248,14 @@ const HEAD =
 const CELL = "stat px-1.5 py-1.5 text-center text-sm text-white";
 
 function Diff({ value }: { value: number }) {
+  // Du texte, donc les teintes vives : la variante sourde tombait à 3,8:1 sur
+  // la carte pour le différentiel négatif.
   const cls =
-    value > 0 ? "text-[#289a87]" : value < 0 ? "text-[#c05655]" : "text-[var(--text-muted)]";
+    value > 0
+      ? "text-[var(--success)]"
+      : value < 0
+        ? "text-[var(--destructive)]"
+        : "text-[var(--text-muted)]";
   return <span className={cls}>{value > 0 ? `+${value}` : value}</span>;
 }
 

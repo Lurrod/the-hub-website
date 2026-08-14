@@ -1,5 +1,6 @@
 "use client";
 
+import "./live-duration.css";
 import { useEffect, useRef, useState } from "react";
 import { lengthLabel } from "@/lib/duration";
 

@@ -206,8 +206,35 @@ export function setTeamLogo(id: string, logoKey: string) {
   return db.team.update({ where: { id }, data: { logo: logoKey } });
 }
 
-export function deleteTeam(id: string) {
-  return db.team.delete({ where: { id } });
+/**
+ * Supprime une équipe, sauf si elle porte encore de l'historique.
+ *
+ * La cascade est ici destructrice et silencieuse : `Match.teamA` et
+ * `Match.teamB` sont déclarés `onDelete: Cascade` (prisma/schema.prisma), donc
+ * effacer une équipe efface ses matchs dans TOUS les tournois, y compris ceux
+ * gérés par d'autres. Le garde-fou compte donc les matchs eux-mêmes, et pas
+ * seulement les inscriptions : une équipe désinscrite d'un tournoi dont les
+ * matchs subsistent passait la vérification précédente.
+ *
+ * Comptage et suppression sont dans une même transaction Serializable — sinon
+ * une inscription concurrente se glisse entre les deux et l'historique part
+ * quand même, comme pour le retrait du dernier manager.
+ *
+ * @returns false si la suppression a été refusée.
+ */
+export function deleteTeamIfUnused(id: string): Promise<boolean> {
+  return db.$transaction(
+    async (tx) => {
+      const [participations, matchs] = await Promise.all([
+        tx.tournamentParticipant.count({ where: { teamId: id } }),
+        tx.match.count({ where: { OR: [{ teamAId: id }, { teamBId: id }] } }),
+      ]);
+      if (participations > 0 || matchs > 0) return false;
+      await tx.team.delete({ where: { id } });
+      return true;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
 }
 
 /** Ajoute (ou conserve) un manager. Le niveau par défaut est le plus bas. */
