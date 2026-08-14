@@ -4,7 +4,11 @@ import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
 import { listTeams } from "@/lib/data/teams";
-import { addParticipantAction, removeParticipantAction } from "@/app/admin/actions/tournaments";
+import {
+  addParticipantAction,
+  removeParticipantAction,
+  updateParticipantSeedAction,
+} from "@/app/admin/actions/tournaments";
 
 import { tournamentTitle } from "@/lib/data/titles";
 
@@ -49,20 +53,32 @@ export default async function TournamentParticipantsPage({
         )}
         {tournament.participants.map((p) => {
           const removeWith = removeParticipantAction.bind(null, id, p.teamId);
+          const seedWith = updateParticipantSeedAction.bind(null, id, p.teamId);
           return (
-            <li key={p.id} className="flex items-center justify-between p-3">
-              <span className="text-white">
-                {p.team.name}
-                {p.seed != null && (
-                  <>
-                    <span className="dot-sep">·</span>
-                    Seed {p.seed}
-                  </>
-                )}
-              </span>
-              <form action={removeWith}>
-                <button className="text-sm text-[var(--accent)]">Retirer</button>
-              </form>
+            <li key={p.id} className="flex items-center justify-between gap-3 p-3">
+              <span className="min-w-0 truncate text-white">{p.team.name}</span>
+              <div className="flex shrink-0 items-center gap-3">
+                {/* Le seed se corrige ici plutôt qu'en retirant l'équipe :
+                    `removeParticipant` supprime aussi tous ses matchs. */}
+                <form action={seedWith} className="flex items-center gap-2">
+                  <label htmlFor={`seed-${p.id}`} className="sr-only">
+                    Seed de {p.team.name}
+                  </label>
+                  <input
+                    id={`seed-${p.id}`}
+                    name="seed"
+                    type="number"
+                    min="1"
+                    defaultValue={p.seed ?? ""}
+                    placeholder="Seed"
+                    className={`${input} w-20`}
+                  />
+                  <button className="text-sm text-[var(--accent)]">Enregistrer</button>
+                </form>
+                <form action={removeWith}>
+                  <button className="text-sm text-[var(--accent)]">Retirer</button>
+                </form>
+              </div>
             </li>
           );
         })}

@@ -170,6 +170,15 @@ describe("actions de tournoi", () => {
     expect(auth.assertCanAdministerTournament).not.toHaveBeenCalled();
   });
 
+  it("modifier le seed d'un inscrit se contente du niveau manager", async () => {
+    const { updateParticipantSeedAction } = await import("@/app/admin/actions/tournaments");
+    const fd = new FormData();
+    fd.set("seed", "4");
+    await run(() => updateParticipantSeedAction("trn-1", "team-1", fd));
+    expect(auth.assertCanManageTournament).toHaveBeenCalledWith("trn-1");
+    expect(auth.assertCanAdministerTournament).not.toHaveBeenCalled();
+  });
+
   it("modifier la fiche se contente du niveau manager", async () => {
     const { updateTournamentAction } = await import("@/app/admin/actions/tournaments");
     const fd = new FormData();

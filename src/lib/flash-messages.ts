@@ -18,6 +18,10 @@ export const OK_MESSAGES: Record<string, FlashEntry> = {
   "team-saved": { title: "Modifications enregistrées", message: "L'équipe a été mise à jour." },
   "team-deleted": { title: "Équipe supprimée", message: "L'équipe a bien été supprimée." },
   "participant-added": { title: "Équipe inscrite", message: "L'équipe a été ajoutée au tournoi." },
+  "seed-updated": {
+    title: "Seed enregistré",
+    message: "Le placement de l'équipe a été mis à jour.",
+  },
   "manager-added": { title: "Manager ajouté", message: "Le manager a bien été ajouté." },
   "manager-role": { title: "Niveau modifié", message: "Le niveau du manager a été mis à jour." },
   "member-added": { title: "Joueur ajouté", message: "Le joueur a été ajouté au roster." },

@@ -138,12 +138,16 @@ export function deleteTournament(id: string) {
  * SQL pour rattraper ça — les jeux de démonstration numérotent les seeds par
  * poule, donc en double au sein d'un tournoi.
  *
+ * `seed` distingue trois cas : un nombre le pose, `null` l'efface, `undefined`
+ * le laisse tel quel — c'est ce dernier qui permet de réinscrire une équipe
+ * sans perdre son placement.
+ *
  * @returns false si le seed est déjà pris par une autre équipe.
  */
 export function addParticipant(
   tournamentId: string,
   teamId: string,
-  seed?: number
+  seed?: number | null
 ): Promise<boolean> {
   return db.$transaction(
     async (tx) => {

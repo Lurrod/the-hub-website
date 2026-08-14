@@ -9,7 +9,11 @@ import {
 } from "@/lib/server-auth";
 import { parseManagerRole } from "@/lib/manager-roles";
 import { db } from "@/lib/db";
-import { tournamentInputSchema, participantAddSchema } from "@/lib/validation/tournament";
+import {
+  tournamentInputSchema,
+  participantAddSchema,
+  participantSeedSchema,
+} from "@/lib/validation/tournament";
 import {
   createTournament,
   updateTournament,
@@ -129,6 +133,38 @@ export async function addParticipantAction(tournamentId: string, formData: FormD
   revalidatePath(base);
   revalidatePath(`/tournois/${tournamentId}`);
   redirect(`${base}?ok=participant-added`);
+}
+
+/**
+ * Change le seed d'une équipe déjà inscrite.
+ *
+ * Sans cette action, le seul chemin pour corriger un seed était de retirer
+ * l'équipe puis de la réinscrire — or `removeParticipant` supprime au passage
+ * tous ses matchs dans le tournoi. Une faute de frappe coûtait des scores.
+ */
+export async function updateParticipantSeedAction(
+  tournamentId: string,
+  teamId: string,
+  formData: FormData
+) {
+  await assertCanManageTournament(tournamentId);
+  const base = `/tournois/${tournamentId}/gestion/inscrits`;
+  const raw = formData.get("seed");
+  const parsed = participantSeedSchema.safeParse({
+    teamId,
+    // Un champ vidé efface le seed : `null` et non `undefined`, qui voudrait
+    // dire « ne touche pas » et rendrait l'effacement impossible.
+    seed: typeof raw === "string" && raw.trim() !== "" ? raw : null,
+  });
+  if (!parsed.success) redirect(`${base}?error=invalid`);
+  // `addParticipant` fait un upsert : sur une équipe déjà inscrite il ne touche
+  // que le seed, et son contrôle de collision tourne déjà en Serializable.
+  if (!(await addParticipant(tournamentId, parsed.data.teamId, parsed.data.seed))) {
+    redirect(`${base}?error=seedtaken`);
+  }
+  revalidatePath(base);
+  revalidatePath(`/tournois/${tournamentId}`);
+  redirect(`${base}?ok=seed-updated`);
 }
 
 export async function removeParticipantAction(tournamentId: string, teamId: string) {

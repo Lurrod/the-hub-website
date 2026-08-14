@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { tournamentInputSchema, participantAddSchema } from "@/lib/validation/tournament";
+import {
+  tournamentInputSchema,
+  participantAddSchema,
+  participantSeedSchema,
+} from "@/lib/validation/tournament";
 
 describe("tournamentInputSchema", () => {
   it("accepte un tournoi minimal valide", () => {
@@ -105,5 +109,31 @@ describe("participantAddSchema", () => {
 
   it("refuse teamId vide", () => {
     expect(() => participantAddSchema.parse({ teamId: "" })).toThrow();
+  });
+});
+
+describe("participantSeedSchema", () => {
+  it("coerce le seed saisi au clavier", () => {
+    expect(participantSeedSchema.parse({ teamId: "t1", seed: "4" }).seed).toBe(4);
+  });
+
+  it("accepte null pour effacer un seed", () => {
+    // Un champ vidé doit pouvoir revenir sur une saisie erronée. Côté données,
+    // `undefined` veut dire « ne touche pas » : seul `null` efface, d'où la
+    // distinction que ce schéma doit préserver.
+    expect(participantSeedSchema.parse({ teamId: "t1", seed: null }).seed).toBeNull();
+  });
+
+  it("refuse un seed nul ou négatif", () => {
+    expect(() => participantSeedSchema.parse({ teamId: "t1", seed: "0" })).toThrow();
+    expect(() => participantSeedSchema.parse({ teamId: "t1", seed: "-2" })).toThrow();
+  });
+
+  it("refuse un seed décimal", () => {
+    expect(() => participantSeedSchema.parse({ teamId: "t1", seed: "1.5" })).toThrow();
+  });
+
+  it("refuse teamId vide", () => {
+    expect(() => participantSeedSchema.parse({ teamId: "", seed: null })).toThrow();
   });
 });
