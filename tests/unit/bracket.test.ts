@@ -237,6 +237,30 @@ describe("brackets parallèles (Premier Contender)", () => {
     expect(names(tree.sections[0].rounds)).toEqual(["Demi-finales", "Finale"]);
   });
 
+  it("accepte deux brackets de profondeurs différentes", () => {
+    // Riot répartit les qualifiés en brackets de 5 à 8 équipes : deux brackets
+    // d'une même division n'ont pas la même profondeur, chacun doit garder la
+    // sienne au lieu d'être aligné sur son voisin.
+    const tree = buildBracket(
+      [
+        mkg("a-qf1", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-qf2", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-qf3", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-qf4", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-sf1", "Demi-finales", "ga", "Bracket A"),
+        mkg("a-sf2", "Demi-finales", "ga", "Bracket A"),
+        mkg("a-f", "Finale", "ga", "Bracket A"),
+        mkg("b-sf1", "Demi-finales", "gb", "Bracket B"),
+        mkg("b-sf2", "Demi-finales", "gb", "Bracket B"),
+        mkg("b-f", "Finale", "gb", "Bracket B"),
+      ],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.sections.map((s) => s.title)).toEqual(["Bracket A", "Bracket B"]);
+    expect(sizes(tree.sections[0].rounds)).toEqual([4, 2, 1]);
+    expect(sizes(tree.sections[1].rounds)).toEqual([2, 1]);
+  });
+
   it("garde la clé « single » sur chaque section", () => {
     // landing-showcase.ts et carte/route.tsx cherchent `key === "single"` :
     // claveter les sections sur l'id de groupe les ferait échouer en silence,
@@ -279,13 +303,21 @@ describe("brackets parallèles (Premier Contender)", () => {
     expect(tree.sections[0].title).toBe("Bracket A");
   });
 
-  it("laisse un lower bracket forcer la double élimination", () => {
-    // Garde-fou existant : les données corrigent le format déclaré.
+  it("fusionne les brackets parallèles dès qu'un lower bracket apparaît", () => {
+    // Le garde-fou du lower bracket passe avant le partitionnement : il vaut
+    // pour tout le tournoi, pas pour le seul bracket fautif. Assumé — voir le
+    // commentaire de `buildBracket`. Ce test existe pour que le jour où on
+    // changera d'avis, on le fasse exprès.
     const tree = buildBracket(
-      [mkg("u", "UB Finale", "ga", "Bracket A"), mkg("l", "LB Finale", "ga", "Bracket A")],
+      [
+        mkg("a-u", "UB Finale", "ga", "Bracket A"),
+        mkg("a-l", "LB Finale", "ga", "Bracket A"),
+        mkg("b-f", "Finale", "gb", "Bracket B"),
+      ],
       "PREMIER_CONTENDER"
     );
     expect(tree.layout).toBe("double");
+    expect(tree.sections.map((s) => s.key)).toContain("lower");
   });
 
   it("ne rend aucune section sans match", () => {

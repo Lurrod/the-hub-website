@@ -368,6 +368,14 @@ function treeRoundsOf(matches: BracketMatchData[]): BracketRound[] {
  * Le format choisit la géométrie ; les données peuvent la corriger (un lower
  * bracket présent force la double élimination, même si le format dit autre
  * chose), pour ne jamais rendre un arbre faux.
+ *
+ * Le garde-fou du lower bracket passe avant le partitionnement, donc il vaut
+ * pour tout le tournoi : un seul match libellé « LB … » suffit à ramener un
+ * Premier Contender à un arbre de double élimination, brackets parallèles
+ * fusionnés. C'est assumé — les playoffs Premier s'y jouent en élimination
+ * directe, un lower bracket y est une faute de saisie, et cette géométrie-là
+ * affiche tous les matchs quand un `multi` amputé de sa section lower en
+ * escamoterait.
  */
 export function buildBracket(matches: BracketMatchData[], format: TournamentFormat): BracketTree {
   const bySection = groupBySection(matches);
