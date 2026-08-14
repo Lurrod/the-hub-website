@@ -59,4 +59,17 @@ describe("catalogue de formats", () => {
       expect(STAGES_BY_FORMAT[f].length, f).toBeGreaterThan(0);
     }
   });
+
+  it("laisse porter des groupes tout format qui joue une phase de poule", () => {
+    // Invariant à sens unique : jouer une phase de poule implique pouvoir
+    // porter des groupes, jamais l'inverse — le Premier Contender porte des
+    // groupes sans jouer de poule, c'est tout l'intérêt de la liste explicite.
+    // Sans ce test, un futur format à phase de poule oublié dans
+    // FORMATS_WITH_GROUPS passerait sans bruit.
+    for (const f of TOURNAMENT_FORMATS) {
+      if (STAGES_BY_FORMAT[f].includes("GROUP")) {
+        expect(formatAllowsGroups(f), f).toBe(true);
+      }
+    }
+  });
 });
