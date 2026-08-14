@@ -132,7 +132,7 @@ export function listBracketMatches(tournamentId: string) {
     // Le groupe porte le bracket parallèle en Premier Contender : sans lui,
     // `buildBracket` verrait tous les matchs comme orphelins et n'en ferait
     // qu'un seul arbre.
-    include: { teamA: true, teamB: true, group: true },
+    include: { teamA: true, teamB: true, group: { select: { id: true, name: true } } },
     orderBy: [{ bracketPosition: "asc" }],
   });
 }
