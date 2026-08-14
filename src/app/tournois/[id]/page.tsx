@@ -27,7 +27,7 @@ import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import TournamentTeams from "@/components/tournament-teams";
 import { buildStandingRows } from "@/lib/standings";
-import { formatAllowsGroups } from "@/lib/constants";
+import { STAGES_BY_FORMAT } from "@/lib/constants";
 import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
 
@@ -79,7 +79,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   // affichaient leurs matchs mais aucun classement — leur raison d'être.
   // Couvre aussi une phase de poules dont l'organisateur n'a pas encore
   // découpé les groupes.
-  if (groups.length === 0 && formatAllowsGroups(tournament.format)) {
+  //
+  // Ce classement se calcule sur des matchs de phase de poule : la question
+  // n'est pas « le format peut-il porter des groupes ? » (vrai pour le Premier
+  // Contender, dont les groupes sont des brackets) mais « joue-t-il une phase de
+  // poule ? ». Sans cette distinction, un Contender affiche un classement vide.
+  if (groups.length === 0 && STAGES_BY_FORMAT[tournament.format].includes("GROUP")) {
     const rows = buildStandingRows(
       tournament.participants.map((p) => ({
         teamId: p.teamId,
