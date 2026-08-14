@@ -215,6 +215,8 @@ export const TOURNAMENT_FORMATS = [
   "SWISS",
   "ROUND_ROBIN",
   "LEAGUE",
+  "PREMIER_CONTENDER",
+  "PREMIER_INVITE",
 ] as const;
 export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number];
 export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
@@ -225,6 +227,8 @@ export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
   SWISS: "Système suisse",
   ROUND_ROBIN: "Round Robin",
   LEAGUE: "Ligue (championnat)",
+  PREMIER_CONTENDER: "Premier — Contender",
+  PREMIER_INVITE: "Premier — Invite",
 };
 
 export const TOURNAMENT_STATUSES = ["UPCOMING", "ONGOING", "FINISHED"] as const;
@@ -276,6 +280,8 @@ export const STAGES_BY_FORMAT: Record<TournamentFormat, readonly MatchStage[]> =
   SWISS: ["GROUP"],
   ROUND_ROBIN: ["GROUP"],
   LEAGUE: ["GROUP"],
+  PREMIER_CONTENDER: ["BRACKET"],
+  PREMIER_INVITE: ["BRACKET"],
 };
 
 /** Description courte de chaque format, affichée dans le sélecteur de création. */
@@ -287,11 +293,31 @@ export const TOURNAMENT_FORMAT_DESCRIPTIONS: Record<TournamentFormat, string> = 
   SWISS: "Appariements par score à chaque ronde, sans élimination directe.",
   ROUND_ROBIN: "Toutes les équipes s'affrontent une fois, classement global.",
   LEAGUE: "Championnat sur la durée (aller ou aller-retour), classement cumulé.",
+  PREMIER_CONTENDER:
+    "Playoffs Premier Contender : plusieurs arbres parallèles de 8 équipes, Bo1 jusqu'aux finales en Bo3.",
+  PREMIER_INVITE:
+    "Playoffs Premier Invite : un arbre à élimination directe de 8 équipes, Bo1 jusqu'à la finale en Bo3.",
 };
 
-/** Le format permet-il des poules (et donc des matchs de phase de poule) ? */
+/**
+ * Le tournoi peut-il porter des `Group` ?
+ *
+ * Le prédicat se dérivait de `STAGES_BY_FORMAT` tant que « groupe » voulait dire
+ * « poule ». Le Premier Contender casse l'équivalence : ses brackets parallèles
+ * sont des `Group` alors qu'il ne joue que des matchs de stage BRACKET. La liste
+ * est donc explicite — la dériver mentirait sur l'un des deux sens.
+ */
+const FORMATS_WITH_GROUPS: readonly TournamentFormat[] = [
+  "GROUPS",
+  "GROUPS_THEN_ELIM",
+  "SWISS",
+  "ROUND_ROBIN",
+  "LEAGUE",
+  "PREMIER_CONTENDER",
+];
+
 export function formatAllowsGroups(format: TournamentFormat): boolean {
-  return STAGES_BY_FORMAT[format].includes("GROUP");
+  return FORMATS_WITH_GROUPS.includes(format);
 }
 
 /** Le format s'appuie-t-il sur une taille de poule configurable ? */
