@@ -30,9 +30,10 @@ export type BracketSection = {
  * Géométrie de rendu déduite du format :
  * - `tree`   : un seul arbre binaire (élimination directe, poules puis élim) ;
  * - `double` : upper + lower + grande finale ;
+ * - `multi`  : plusieurs arbres côte à côte, un par bracket (Premier Contender) ;
  * - `flat`   : simples colonnes, sans arbre (suisse, ligue, round robin…).
  */
-export type BracketLayout = "tree" | "double" | "flat";
+export type BracketLayout = "tree" | "double" | "multi" | "flat";
 
 export type BracketTree = { layout: BracketLayout; sections: BracketSection[] };
 
@@ -141,8 +142,26 @@ export function parseRound(round: string | null): { section: BracketSectionKey; 
 /** Géométrie attendue pour un format donné, avant correction par les données. */
 export function bracketLayoutFor(format: TournamentFormat): BracketLayout {
   if (format === "DOUBLE_ELIM") return "double";
-  if (format === "SINGLE_ELIM" || format === "GROUPS_THEN_ELIM") return "tree";
+  if (format === "PREMIER_CONTENDER") return "multi";
+  if (format === "SINGLE_ELIM" || format === "GROUPS_THEN_ELIM" || format === "PREMIER_INVITE") {
+    return "tree";
+  }
   return "flat";
+}
+
+/** Les deux divisions hautes du Premier, seules à imposer un Bo par tour. */
+const PREMIER_FORMATS: readonly TournamentFormat[] = ["PREMIER_CONTENDER", "PREMIER_INVITE"];
+
+/**
+ * Bo proposé par défaut à la saisie d'un match.
+ *
+ * Riot impose Bo1 sur tous les tours des playoffs Contender et Invite, sauf la
+ * finale en Bo3. Le round peut ne pas encore exister (création d'un match) : on
+ * répond alors Bo1, qui est juste pour tous les tours sauf un.
+ */
+export function defaultBestOfFor(format: TournamentFormat, round: string | null): number {
+  if (!PREMIER_FORMATS.includes(format)) return 1;
+  return roundSizeFromLabel(round ?? "") === 1 ? 3 : 1;
 }
 
 type RawRound = { label: string; matches: BracketMatchData[] };

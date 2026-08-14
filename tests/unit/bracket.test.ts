@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildBracket,
   bracketLayoutFor,
+  defaultBestOfFor,
   parseRound,
   roundLabelForSize,
   roundSizeFromLabel,
@@ -195,5 +196,36 @@ describe("buildBracket - formats sans arbre", () => {
 
   it("ne rend aucune section sans match", () => {
     expect(buildBracket([], "SINGLE_ELIM").sections).toEqual([]);
+  });
+});
+
+describe("géométrie des formats Premier", () => {
+  it("dessine l'Invite en arbre simple et le Contender en brackets parallèles", () => {
+    expect(bracketLayoutFor("PREMIER_INVITE")).toBe("tree");
+    expect(bracketLayoutFor("PREMIER_CONTENDER")).toBe("multi");
+  });
+});
+
+describe("defaultBestOfFor", () => {
+  it("met la finale en Bo3 sur les deux formats Premier", () => {
+    expect(defaultBestOfFor("PREMIER_INVITE", "Finale")).toBe(3);
+    expect(defaultBestOfFor("PREMIER_CONTENDER", "Grande finale")).toBe(3);
+  });
+
+  it("met tous les autres tours en Bo1", () => {
+    expect(defaultBestOfFor("PREMIER_INVITE", "Demi-finales")).toBe(1);
+    expect(defaultBestOfFor("PREMIER_CONTENDER", "Quarts de finale")).toBe(1);
+  });
+
+  it("répond Bo1 quand le round n'est pas encore saisi", () => {
+    // Cas de la création d'un match : le round n'existe pas au moment où le
+    // formulaire calcule son défaut.
+    expect(defaultBestOfFor("PREMIER_CONTENDER", null)).toBe(1);
+    expect(defaultBestOfFor("PREMIER_INVITE", "")).toBe(1);
+  });
+
+  it("laisse les formats non-Premier sur le Bo1 déjà en place", () => {
+    expect(defaultBestOfFor("SINGLE_ELIM", "Finale")).toBe(1);
+    expect(defaultBestOfFor("GROUPS", "Finale")).toBe(1);
   });
 });
