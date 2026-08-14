@@ -68,3 +68,18 @@ export const participantAddSchema = z.object({
 });
 
 export type ParticipantAdd = z.infer<typeof participantAddSchema>;
+
+/**
+ * Seed d'un participant déjà inscrit.
+ *
+ * Distinct de `participantAddSchema` par son `null` : à l'inscription, un seed
+ * absent veut dire « pas de seed », mais sur une mise à jour `undefined`
+ * signifie « ne touche pas » côté données. Seul `null` efface une saisie
+ * erronée, et il faut donc pouvoir l'exprimer.
+ */
+export const participantSeedSchema = z.object({
+  teamId: z.string().trim().min(1, "Équipe requise"),
+  seed: z.coerce.number().int().positive().nullable(),
+});
+
+export type ParticipantSeed = z.infer<typeof participantSeedSchema>;
