@@ -76,8 +76,6 @@ src/
 prisma/         schéma, migrations, jeux de données
 tests/unit/     Vitest — logique pure
 tests/e2e/      Playwright — parcours
-deploy/         configuration Apache de production
-docs/           déploiement et effacement RGPD
 ```
 
 ## Tests et qualité
@@ -93,9 +91,11 @@ composants et les pages relèvent des parcours end-to-end.
 ## Déploiement
 
 Push sur `main` → `.github/workflows/deploy.yml` construit, envoie et bascule
-une release horodatée sur le Kimsufi, migrations comprises. La procédure
-complète, y compris la préparation initiale du serveur, est dans
-[docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
+une release horodatée sur le Kimsufi, migrations comprises.
+
+La procédure complète — préparation initiale du serveur, configuration Apache,
+effacement RGPD — est tenue hors du dépôt, avec les autres documents
+d'exploitation.
 
 ## Licence
 

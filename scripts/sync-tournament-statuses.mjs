@@ -15,7 +15,7 @@
  * En local :
  *   npm run db:sync:tournaments
  *
- * Sur le serveur (crontab, cf. docs/DEPLOIEMENT.md) :
+ * Sur le serveur (crontab, cf. la procédure d'exploitation, hors dépôt) :
  *   node scripts/sync-tournament-statuses.mjs
  */
 import { PrismaClient } from "@prisma/client";

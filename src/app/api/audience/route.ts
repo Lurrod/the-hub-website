@@ -39,7 +39,8 @@ const NO_CONTENT = new Response(null, { status: 204 });
  *
  * La comparaison porte sur l'hôte de la requête et non sur une URL de
  * référence figée : le site répond aussi bien sur `the-hub-vrc.fr` que sur
- * `www.the-hub-vrc.fr` (voir deploy/apache.conf) et sur `localhost:3200` en
+ * `www.the-hub-vrc.fr` — les deux sont servis par le même VirtualHost — et sur
+ * `localhost:3200` en
  * développement, sans qu'aucune liste n'ait à suivre.
  */
 function estMemeOrigine(request: Request): boolean {

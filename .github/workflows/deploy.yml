@@ -101,8 +101,8 @@ jobs:
         run: |
           ssh -p "$PORT" "$USER@$HOST" APP_DIR="$APP_DIR" 'bash -euo pipefail -s' <<'REMOTE'
             # Garde-fou : refuse de déployer dans un dossier qui n'a pas été
-            # préparé (voir docs/DEPLOIEMENT.md). Évite d'écraser un autre site
-            # si APP_DIR est mal renseigné.
+            # préparé par la procédure d'exploitation (tenue hors dépôt).
+            # Évite d'écraser un autre site si APP_DIR est mal renseigné.
             if [ ! -f "$APP_DIR/shared/.env" ]; then
               echo "ERREUR : $APP_DIR/shared/.env introuvable."
               echo "Le dossier n'est pas initialise, ou APP_DIR pointe au mauvais endroit."

@@ -74,5 +74,10 @@ next-env.d.ts
 # Rapports d'audit : livrables ponctuels, transmis hors depot.
 /audit/
 
+# Exploitation : configuration Apache de production, procedure de deploiement,
+# procedure d'effacement RGPD. Gardees en local, hors du depot public.
+/deploy/
+/docs/
+
 # Caches d'outillage tiers
 .ruff_cache/
