@@ -262,6 +262,23 @@ describe("brackets parallèles (Premier Contender)", () => {
     expect(tree.sections[0].title).toBe("");
   });
 
+  it("reste en brackets parallèles avec un seul bracket renseigné", () => {
+    // Le repli en arbre simple ne vaut que si AUCUN match n'est rattaché. Dès
+    // qu'un bracket existe, on garde la géométrie multi et son titre : une
+    // division qui n'en ouvre qu'un reste une division à brackets.
+    const tree = buildBracket(
+      [
+        mkg("s1", "Demi-finales", "ga", "Bracket A"),
+        mkg("s2", "Demi-finales", "ga", "Bracket A"),
+        mkg("f", "Finale", "ga", "Bracket A"),
+      ],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.layout).toBe("multi");
+    expect(tree.sections).toHaveLength(1);
+    expect(tree.sections[0].title).toBe("Bracket A");
+  });
+
   it("laisse un lower bracket forcer la double élimination", () => {
     // Garde-fou existant : les données corrigent le format déclaré.
     const tree = buildBracket(

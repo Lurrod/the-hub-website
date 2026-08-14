@@ -9,7 +9,7 @@ export type BracketMatchData = {
   scoreB: number;
   winnerId: string | null;
   position?: number | null;
-  /// Bracket parallèle auquel le match appartient (Premier Contender).
+  /** Bracket parallèle auquel le match appartient (Premier Contender). */
   groupId?: string | null;
   groupName?: string | null;
   teamA: { tag: string } | null;
@@ -25,9 +25,11 @@ export type BracketRound = { name: string; slots: BracketSlot[] };
 export type BracketSectionKey = "single" | "upper" | "lower" | "final";
 export type BracketSection = {
   key: BracketSectionKey;
-  /// Identité propre quand plusieurs sections partagent la même `key` : c'est
-  /// le cas des brackets parallèles, tous clavetés « single » pour que la
-  /// vitrine et la carte OG continuent d'en trouver un.
+  /**
+   * Identité propre quand plusieurs sections partagent la même `key` : c'est le
+   * cas des brackets parallèles, tous clavetés « single » pour que la vitrine et
+   * la carte OG continuent d'en trouver un.
+   */
   id?: string;
   title: string;
   rounds: BracketRound[];
