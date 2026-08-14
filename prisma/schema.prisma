@@ -215,6 +215,8 @@ enum TournamentFormat {
   SWISS
   ROUND_ROBIN
   LEAGUE
+  PREMIER_CONTENDER
+  PREMIER_INVITE
 }
 
 enum TournamentStatus {
