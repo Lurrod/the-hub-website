@@ -6,6 +6,7 @@ import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
 import { getGroupsWithMatches, listTournamentMatches } from "@/lib/data/matches";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
+import { defaultBestOfFor } from "@/lib/bracket";
 import MatchForm from "@/components/match-form";
 import {
   createGroupAction,
@@ -110,9 +111,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           </section>
 
           <section className="mb-10">
-            <h2 className="mb-3 text-lg font-semibold text-white">
-              {groupWord.assign}
-            </h2>
+            <h2 className="mb-3 text-lg font-semibold text-white">{groupWord.assign}</h2>
             <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
               {tournament.participants.length === 0 && (
                 <li className="p-3">
@@ -185,6 +184,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           groups={groupOptions}
           stages={allowedStages}
           submitLabel="Créer le match"
+          defaultBestOf={defaultBestOfFor(tournament.format, null)}
         />
       </section>
     </main>

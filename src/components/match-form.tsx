@@ -34,6 +34,7 @@ export default function MatchForm({
   values,
   submitLabel,
   stages = MATCH_STAGES,
+  defaultBestOf = 1,
 }: {
   action: (formData: FormData) => void;
   teams: Team[];
@@ -41,6 +42,9 @@ export default function MatchForm({
   values?: MatchFormValues;
   submitLabel: string;
   stages?: readonly MatchStage[];
+  /** Bo suggéré quand le match n'en porte pas encore : les playoffs Premier
+   * veulent Bo3 en finale, Bo1 partout ailleurs. */
+  defaultBestOf?: number;
 }) {
   const input =
     "w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
@@ -129,7 +133,7 @@ export default function MatchForm({
         </label>
         <label className={lbl}>
           Format
-          <select name="bestOf" defaultValue={values?.bestOf ?? 1} className={input}>
+          <select name="bestOf" defaultValue={values?.bestOf ?? defaultBestOf} className={input}>
             {BEST_OF_OPTIONS.map((n) => (
               <option key={n} value={n}>
                 BO{n}
