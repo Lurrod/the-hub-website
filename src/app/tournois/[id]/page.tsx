@@ -27,7 +27,7 @@ import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import TournamentTeams from "@/components/tournament-teams";
 import { buildStandingRows } from "@/lib/standings";
-import { formatAllowsGroups } from "@/lib/constants";
+import { STAGES_BY_FORMAT } from "@/lib/constants";
 import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
 
@@ -59,19 +59,27 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     getTournamentTeamStats(id),
   ]);
 
+  // Un `Group` ne vaut classement que si le format joue une phase de poule. Sur
+  // un Premier Contender ce sont des brackets parallèles : en faire des étapes
+  // de classement affichait « Bracket A » et « Bracket B » en deux tableaux
+  // entièrement à zéro, devant l'arbre qu'ils désignent.
+  const groupsAreStandings = STAGES_BY_FORMAT[tournament.format].includes("GROUP");
+
   // Étapes : chaque poule → son classement ; les playoffs → l'arbre du bracket.
   const stageDefs: { key: string; label: string; content: ReactNode }[] = [];
-  for (const g of groups) {
-    const rows = buildStandingRows(
-      g.participants.map((p) => ({ teamId: p.teamId, name: p.team.name, tag: p.team.tag })),
-      g.matches.map((m) => ({
-        teamAId: m.teamAId,
-        teamBId: m.teamBId,
-        scoreA: m.scoreA,
-        scoreB: m.scoreB,
-      }))
-    );
-    stageDefs.push({ key: `g-${g.id}`, label: g.name, content: <StandingsTable rows={rows} /> });
+  if (groupsAreStandings) {
+    for (const g of groups) {
+      const rows = buildStandingRows(
+        g.participants.map((p) => ({ teamId: p.teamId, name: p.team.name, tag: p.team.tag })),
+        g.matches.map((m) => ({
+          teamAId: m.teamAId,
+          teamBId: m.teamBId,
+          scoreA: m.scoreA,
+          scoreB: m.scoreB,
+        }))
+      );
+      stageDefs.push({ key: `g-${g.id}`, label: g.name, content: <StandingsTable rows={rows} /> });
+    }
   }
 
   // Suisse, ligue et round robin se jouent en phase « poule » sans qu'aucune
@@ -79,7 +87,11 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   // affichaient leurs matchs mais aucun classement — leur raison d'être.
   // Couvre aussi une phase de poules dont l'organisateur n'a pas encore
   // découpé les groupes.
-  if (groups.length === 0 && formatAllowsGroups(tournament.format)) {
+  //
+  // Même garde que ci-dessus : la question n'est pas « le format peut-il porter
+  // des groupes ? » (vrai pour le Premier Contender) mais « joue-t-il une phase
+  // de poule ? ». Sans elle, un Contender affiche un classement vide.
+  if (groups.length === 0 && groupsAreStandings) {
     const rows = buildStandingRows(
       tournament.participants.map((p) => ({
         teamId: p.teamId,
@@ -113,6 +125,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           matches={bracket.map((m) => ({
             id: m.id,
             round: m.round,
+            groupId: m.groupId,
+            groupName: m.group?.name ?? null,
             teamAId: m.teamAId,
             teamBId: m.teamBId,
             scoreA: m.scoreA,

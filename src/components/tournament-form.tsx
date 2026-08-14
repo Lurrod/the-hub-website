@@ -14,6 +14,7 @@ import {
   SEEDING_TYPES,
   SEEDING_TYPE_LABELS,
   formatUsesGroupSize,
+  isPremierFormat,
   type TournamentFormat,
 } from "@/lib/constants";
 import ImageUpload from "@/components/image-upload";
@@ -75,6 +76,21 @@ export default function TournamentForm({
     (values?.format as TournamentFormat) ?? TOURNAMENT_FORMATS[0]
   );
   const showGroupSize = formatUsesGroupSize(format);
+  const [bestOf, setBestOf] = useState(String(values?.bestOf ?? ""));
+
+  /**
+   * Choisir un format Premier propose BO1 : c'est le Bo de tous les tours de
+   * playoffs Premier sauf la finale (Bo3), posé à la création d'un match
+   * puisque le round n'y est pas encore connu. On ne le pose que sur un champ
+   * vide : une valeur déjà saisie est un choix de l'organisateur, pas un
+   * défaut à écraser.
+   */
+  function chooseFormat(next: TournamentFormat) {
+    setFormat(next);
+    if (bestOf === "" && isPremierFormat(next)) {
+      setBestOf("1");
+    }
+  }
 
   return (
     <form action={action} className="grid gap-6">
@@ -126,7 +142,7 @@ export default function TournamentForm({
               <button
                 key={f}
                 type="button"
-                onClick={() => setFormat(f)}
+                onClick={() => chooseFormat(f)}
                 aria-pressed={active}
                 className={`rounded-lg border p-3 text-left transition-colors ${
                   active
@@ -183,7 +199,12 @@ export default function TournamentForm({
           )}
           <label className={lbl}>
             Format des matchs
-            <select name="bestOf" defaultValue={String(values?.bestOf ?? "")} className={input}>
+            <select
+              name="bestOf"
+              value={bestOf}
+              onChange={(e) => setBestOf(e.target.value)}
+              className={input}
+            >
               <option value="">Non défini</option>
               {BEST_OF_OPTIONS.map((b) => (
                 <option key={b} value={b}>

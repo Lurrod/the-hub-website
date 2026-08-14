@@ -6,6 +6,7 @@ import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
 import { getGroupsWithMatches, listTournamentMatches } from "@/lib/data/matches";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
+import { defaultBestOfFor } from "@/lib/bracket";
 import MatchForm from "@/components/match-form";
 import {
   createGroupAction,
@@ -40,6 +41,25 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
   const allowGroups = formatAllowsGroups(tournament.format);
   const allowedStages = STAGES_BY_FORMAT[tournament.format];
 
+  // Le Premier Contender range ses brackets parallèles dans des `Group` : le
+  // vocabulaire de poule y serait faux, sans que la mécanique change.
+  const groupsAreBrackets = tournament.format === "PREMIER_CONTENDER";
+  const groupWord = groupsAreBrackets
+    ? {
+        title: "Brackets",
+        empty: "Aucun bracket créé.",
+        placeholder: "Nom du bracket (ex. Bracket A)",
+        assign: "Affectation des équipes aux brackets",
+        none: "- Sans bracket -",
+      }
+    : {
+        title: "Poules",
+        empty: "Aucune poule créée.",
+        placeholder: "Nom de la poule (ex. Groupe A)",
+        assign: "Affectation des équipes aux poules",
+        none: "- Sans poule -",
+      };
+
   const teams = tournament.participants.map((p) => ({ id: p.teamId, name: p.team.name }));
   const groupOptions = groups.map((g) => ({ id: g.id, name: g.name }));
 
@@ -58,11 +78,11 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
       {allowGroups && (
         <>
           <section className="mb-10">
-            <h2 className="mb-3 text-lg font-semibold text-white">Poules</h2>
+            <h2 className="mb-3 text-lg font-semibold text-white">{groupWord.title}</h2>
             <ul className="mb-3 divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
               {groups.length === 0 && (
                 <li className="p-3">
-                  <EmptyLine>Aucune poule créée.</EmptyLine>
+                  <EmptyLine>{groupWord.empty}</EmptyLine>
                 </li>
               )}
               {groups.map((g) => {
@@ -80,7 +100,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
             <form action={createGroupWith} className="flex gap-2">
               <input
                 name="name"
-                placeholder="Nom de la poule (ex. Groupe A)"
+                placeholder={groupWord.placeholder}
                 required
                 className={`${input} flex-1`}
               />
@@ -91,9 +111,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           </section>
 
           <section className="mb-10">
-            <h2 className="mb-3 text-lg font-semibold text-white">
-              Affectation des équipes aux poules
-            </h2>
+            <h2 className="mb-3 text-lg font-semibold text-white">{groupWord.assign}</h2>
             <ul className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
               {tournament.participants.length === 0 && (
                 <li className="p-3">
@@ -107,7 +125,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
                     <span className="text-white">{p.team.name}</span>
                     <form action={assignWith} className="flex gap-2">
                       <select name="groupId" defaultValue={p.groupId ?? ""} className={input}>
-                        <option value="">- Sans poule -</option>
+                        <option value="">{groupWord.none}</option>
                         {groupOptions.map((g) => (
                           <option key={g.id} value={g.id}>
                             {g.name}
@@ -166,6 +184,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           groups={groupOptions}
           stages={allowedStages}
           submitLabel="Créer le match"
+          defaultBestOf={defaultBestOfFor(tournament.format, null)}
         />
       </section>
     </main>

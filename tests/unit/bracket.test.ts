@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildBracket,
   bracketLayoutFor,
+  defaultBestOfFor,
   parseRound,
   roundLabelForSize,
   roundSizeFromLabel,
@@ -21,6 +22,14 @@ const mk = (id: string, round: string | null, position?: number | null): Bracket
   teamA: { tag: "A" },
   teamB: { tag: "B" },
 });
+
+/** Comme `mk`, mais rattaché à un bracket parallèle. */
+const mkg = (
+  id: string,
+  round: string | null,
+  groupId: string | null,
+  groupName: string | null
+): BracketMatchData => ({ ...mk(id, round), groupId, groupName });
 
 const names = (rounds: BracketRound[]) => rounds.map((r) => r.name);
 const sizes = (rounds: BracketRound[]) => rounds.map((r) => r.slots.length);
@@ -195,5 +204,148 @@ describe("buildBracket - formats sans arbre", () => {
 
   it("ne rend aucune section sans match", () => {
     expect(buildBracket([], "SINGLE_ELIM").sections).toEqual([]);
+  });
+});
+
+describe("géométrie des formats Premier", () => {
+  it("dessine l'Invite en arbre simple et le Contender en brackets parallèles", () => {
+    expect(bracketLayoutFor("PREMIER_INVITE")).toBe("tree");
+    expect(bracketLayoutFor("PREMIER_CONTENDER")).toBe("multi");
+  });
+});
+
+describe("brackets parallèles (Premier Contender)", () => {
+  const deuxBrackets = [
+    mkg("b1", "Demi-finales", "gb", "Bracket B"),
+    mkg("b2", "Demi-finales", "gb", "Bracket B"),
+    mkg("b3", "Finale", "gb", "Bracket B"),
+    mkg("a1", "Demi-finales", "ga", "Bracket A"),
+    mkg("a2", "Demi-finales", "ga", "Bracket A"),
+    mkg("a3", "Finale", "ga", "Bracket A"),
+  ];
+
+  it("rend un arbre par bracket, triés par nom", () => {
+    const tree = buildBracket(deuxBrackets, "PREMIER_CONTENDER");
+    expect(tree.layout).toBe("multi");
+    expect(tree.sections.map((s) => s.title)).toEqual(["Bracket A", "Bracket B"]);
+    expect(tree.sections.map((s) => s.id)).toEqual(["ga", "gb"]);
+  });
+
+  it("donne à chaque bracket la profondeur d'un arbre binaire", () => {
+    const tree = buildBracket(deuxBrackets, "PREMIER_CONTENDER");
+    expect(sizes(tree.sections[0].rounds)).toEqual([2, 1]);
+    expect(names(tree.sections[0].rounds)).toEqual(["Demi-finales", "Finale"]);
+  });
+
+  it("accepte deux brackets de profondeurs différentes", () => {
+    // Riot répartit les qualifiés en brackets de 5 à 8 équipes : deux brackets
+    // d'une même division n'ont pas la même profondeur, chacun doit garder la
+    // sienne au lieu d'être aligné sur son voisin.
+    const tree = buildBracket(
+      [
+        mkg("a-qf1", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-qf2", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-qf3", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-qf4", "Quarts de finale", "ga", "Bracket A"),
+        mkg("a-sf1", "Demi-finales", "ga", "Bracket A"),
+        mkg("a-sf2", "Demi-finales", "ga", "Bracket A"),
+        mkg("a-f", "Finale", "ga", "Bracket A"),
+        mkg("b-sf1", "Demi-finales", "gb", "Bracket B"),
+        mkg("b-sf2", "Demi-finales", "gb", "Bracket B"),
+        mkg("b-f", "Finale", "gb", "Bracket B"),
+      ],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.sections.map((s) => s.title)).toEqual(["Bracket A", "Bracket B"]);
+    expect(sizes(tree.sections[0].rounds)).toEqual([4, 2, 1]);
+    expect(sizes(tree.sections[1].rounds)).toEqual([2, 1]);
+  });
+
+  it("garde la clé « single » sur chaque section", () => {
+    // landing-showcase.ts et carte/route.tsx cherchent `key === "single"` :
+    // claveter les sections sur l'id de groupe les ferait échouer en silence,
+    // et un tournoi Contender disparaîtrait de la vitrine sans erreur.
+    const tree = buildBracket(deuxBrackets, "PREMIER_CONTENDER");
+    expect(tree.sections.every((s) => s.key === "single")).toBe(true);
+  });
+
+  it("range les matchs sans bracket dans un bloc placé en dernier", () => {
+    const tree = buildBracket(
+      [mkg("z", "Finale", "gz", "Bracket Z"), mkg("x", "Finale", null, null)],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.sections.map((s) => s.title)).toEqual(["Bracket Z", "Hors bracket"]);
+  });
+
+  it("retombe sur un arbre simple quand aucun match n'est rattaché", () => {
+    // Un Contender dont l'organisateur n'a pas encore découpé ses brackets doit
+    // se dessiner, pas afficher une section « Hors bracket » solitaire.
+    const tree = buildBracket([mk("d1", "Demi-finales"), mk("f", "Finale")], "PREMIER_CONTENDER");
+    expect(tree.layout).toBe("tree");
+    expect(tree.sections).toHaveLength(1);
+    expect(tree.sections[0].title).toBe("");
+  });
+
+  it("reste en brackets parallèles avec un seul bracket renseigné", () => {
+    // Le repli en arbre simple ne vaut que si AUCUN match n'est rattaché. Dès
+    // qu'un bracket existe, on garde la géométrie multi et son titre : une
+    // division qui n'en ouvre qu'un reste une division à brackets.
+    const tree = buildBracket(
+      [
+        mkg("s1", "Demi-finales", "ga", "Bracket A"),
+        mkg("s2", "Demi-finales", "ga", "Bracket A"),
+        mkg("f", "Finale", "ga", "Bracket A"),
+      ],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.layout).toBe("multi");
+    expect(tree.sections).toHaveLength(1);
+    expect(tree.sections[0].title).toBe("Bracket A");
+  });
+
+  it("fusionne les brackets parallèles dès qu'un lower bracket apparaît", () => {
+    // Le garde-fou du lower bracket passe avant le partitionnement : il vaut
+    // pour tout le tournoi, pas pour le seul bracket fautif. Assumé — voir le
+    // commentaire de `buildBracket`. Ce test existe pour que le jour où on
+    // changera d'avis, on le fasse exprès.
+    const tree = buildBracket(
+      [
+        mkg("a-u", "UB Finale", "ga", "Bracket A"),
+        mkg("a-l", "LB Finale", "ga", "Bracket A"),
+        mkg("b-f", "Finale", "gb", "Bracket B"),
+      ],
+      "PREMIER_CONTENDER"
+    );
+    expect(tree.layout).toBe("double");
+    expect(tree.sections.map((s) => s.key)).toContain("lower");
+  });
+
+  it("ne rend aucune section sans match", () => {
+    const tree = buildBracket([], "PREMIER_CONTENDER");
+    expect(tree.sections).toEqual([]);
+  });
+});
+
+describe("defaultBestOfFor", () => {
+  it("met la finale en Bo3 sur les deux formats Premier", () => {
+    expect(defaultBestOfFor("PREMIER_INVITE", "Finale")).toBe(3);
+    expect(defaultBestOfFor("PREMIER_CONTENDER", "Grande finale")).toBe(3);
+  });
+
+  it("met tous les autres tours en Bo1", () => {
+    expect(defaultBestOfFor("PREMIER_INVITE", "Demi-finales")).toBe(1);
+    expect(defaultBestOfFor("PREMIER_CONTENDER", "Quarts de finale")).toBe(1);
+  });
+
+  it("répond Bo1 quand le round n'est pas encore saisi", () => {
+    // Cas de la création d'un match : le round n'existe pas au moment où le
+    // formulaire calcule son défaut.
+    expect(defaultBestOfFor("PREMIER_CONTENDER", null)).toBe(1);
+    expect(defaultBestOfFor("PREMIER_INVITE", "")).toBe(1);
+  });
+
+  it("laisse les formats non-Premier sur le Bo1 déjà en place", () => {
+    expect(defaultBestOfFor("SINGLE_ELIM", "Finale")).toBe(1);
+    expect(defaultBestOfFor("GROUPS", "Finale")).toBe(1);
   });
 });

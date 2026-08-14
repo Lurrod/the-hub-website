@@ -41,7 +41,12 @@ test("l'index des matchs groupe les matchs par tournoi (accordéon)", async ({ p
 
 // fmt-league-m-aller-4 (prisma/seed-formats.ts) : journée aller de « Hub Pro
 // League - Saison 1 », Team Vitality (VIT) contre FNATIC (FNC). Les deux
-// équipes se sont déjà affrontées cinq fois avant ce match.
+// équipes se sont déjà affrontées sept fois avant ce match.
+//
+// Le bilan attendu est un total, donc il bouge dès qu'un tournoi du seed de
+// démonstration oppose à nouveau ces deux équipes : il est passé de 1-4 à 1-6
+// quand les formats Premier ont ajouté leurs playoffs. Recompter en base plutôt
+// que d'ajuster le chiffre au jugé si ce test tombe.
 test("la fiche de match affiche le bilan des confrontations directes et la forme récente", async ({
   page,
 }) => {
@@ -51,7 +56,7 @@ test("la fiche de match affiche le bilan des confrontations directes et la forme
   // les deux équipes) : le texte concaténé du paragraphe est vérifié tel quel
   // plutôt qu'un fragment, sinon un « 1 » matcherait la moitié de la page.
   const bilan = page.locator("p", { hasText: "Bilan des confrontations" });
-  await expect(bilan).toHaveText("Bilan des confrontations, Team Vitality contre FNATIC : 1-4");
+  await expect(bilan).toHaveText("Bilan des confrontations, Team Vitality contre FNATIC : 1-6");
   // Les dates des rencontres passées portent l'année : plusieurs saisons
   // peuvent se suivre dans cette liste.
   await expect(page.getByText("30/09/2026")).toBeVisible();
