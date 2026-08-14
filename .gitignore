@@ -44,12 +44,32 @@ next-env.d.ts
 # uploads (servis via /api/images ; volume en prod)
 /uploads
 
-# Visual brainstorming companion
-.superpowers/
-
 # Outillage design-sync (local, non lie au projet)
 .ds-sync/
 
 # Sorties Playwright
 /test-results/
 /playwright-report/
+
+# Outillage d'agents de code : instructions, memoire, notes de travail.
+# Local par choix — ces fichiers decrivent comment on outille le developpement,
+# pas le produit. Ils changent au rythme des outils et pollueraient l'historique.
+# AGENTS.md est en plus reecrit par `next dev` a chaque demarrage : le laisser
+# suivi rendait l'arbre sale en permanence.
+/.claude/
+/CLAUDE.md
+/AGENTS.md
+/GEMINI.md
+/.cursorrules
+/.mcp.json
+.superpowers/
+.claude-mem/
+
+# Note de conception locale (charte, decisions visuelles).
+/design.md
+
+# Rapports d'audit : livrables ponctuels, transmis hors depot.
+/audit/
+
+# Caches d'outillage tiers
+.ruff_cache/
