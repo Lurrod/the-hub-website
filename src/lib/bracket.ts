@@ -13,8 +13,10 @@ export type BracketMatchData = {
   scoreA: number;
   scoreB: number;
   winnerId: string | null;
-  /** Forfait déclaré : la case affiche « W / FF » à la place du score. */
+  /** Forfait déclaré : la case affiche « W / FF » à la place du score une
+   * fois le match terminé — d'où le besoin du statut ici. */
   forfeit?: MatchForfeit | null;
+  status?: string | null;
   position?: number | null;
   /** Bracket parallèle auquel le match appartient (Premier Contender). */
   groupId?: string | null;

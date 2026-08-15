@@ -73,6 +73,7 @@ export default async function LandingFeed({ isLoggedIn }: { isLoggedIn: boolean 
                   scoreB: m.scoreB,
                   winnerId: m.winnerId,
                   status: m.status,
+                  forfeit: m.forfeit,
                   date: m.date,
                   hasTime: m.hasTime,
                   bestOf: m.bestOf,

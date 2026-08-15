@@ -106,6 +106,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       id: m.id,
       round: m.round,
       forfeit: m.forfeit,
+      status: m.status,
       groupId: m.groupId,
       groupName: m.group?.name ?? null,
       teamAId: m.teamAId,

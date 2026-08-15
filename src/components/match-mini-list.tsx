@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { EmptyLine } from "@/components/empty-state";
 import { shortDate, timeLabel } from "@/lib/dates";
+import { displayScores } from "@/lib/forfeit";
+import type { MatchForfeit } from "@/lib/constants";
 
 type Side = { tag: string; logo: string | null } | null;
 
@@ -13,6 +15,8 @@ export type MiniMatch = {
   /** Scores : présents pour un match terminé, absents pour un match à venir. */
   scoreA?: number | null;
   scoreB?: number | null;
+  forfeit?: MatchForfeit | null;
+  status?: string | null;
 };
 
 function TeamLine({
@@ -21,7 +25,7 @@ function TeamLine({
   defeated,
 }: {
   team: Side;
-  score?: number | null;
+  score?: string | null;
   defeated: boolean;
 }) {
   return (
@@ -62,6 +66,17 @@ export default function MatchMiniList({
     <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
       {matches.map((m) => {
         const played = m.scoreA != null && m.scoreB != null;
+        const score = played
+          ? displayScores({
+              scoreA: m.scoreA!,
+              scoreB: m.scoreB!,
+              forfeit: m.forfeit,
+              status: m.status,
+            })
+          : null;
+        // Sur un forfait les scores restent à 0-0 : la comparaison ne
+        // griserait personne, c'est le « FF » qui désigne le battu.
+        const hasFF = score != null && (score.a === "FF" || score.b === "FF");
         return (
           <li key={m.id}>
             <Link
@@ -79,13 +94,13 @@ export default function MatchMiniList({
               <div className="space-y-1">
                 <TeamLine
                   team={m.teamA}
-                  score={m.scoreA}
-                  defeated={played && m.scoreA! < m.scoreB!}
+                  score={score?.a}
+                  defeated={hasFF ? score?.a === "FF" : played && m.scoreA! < m.scoreB!}
                 />
                 <TeamLine
                   team={m.teamB}
-                  score={m.scoreB}
-                  defeated={played && m.scoreB! < m.scoreA!}
+                  score={score?.b}
+                  defeated={hasFF ? score?.b === "FF" : played && m.scoreB! < m.scoreA!}
                 />
               </div>
             </Link>

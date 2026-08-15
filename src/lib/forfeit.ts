@@ -17,15 +17,23 @@ export function forfeitWinnerId(
 
 /**
  * Libellés de score à afficher : « W / FF » sur un forfait, les chiffres
- * sinon. Partagé par les cases du bracket, la fiche match et la carte OG pour
- * que le même match ne raconte pas deux histoires.
+ * sinon. Partagé par les cases du bracket, les listes de matchs, la fiche
+ * match et les cartes OG, pour que le même match ne raconte pas deux
+ * histoires.
+ *
+ * Même règle que la dérivation du vainqueur : le forfait ne vaut qu'une fois
+ * le match « Terminé ». Déclaré à l'avance, il n'a pas à annoncer W / FF sur
+ * un match encore à jouer — et sans statut connu, on s'abstient aussi.
  */
 export function displayScores(match: {
   scoreA: number;
   scoreB: number;
   forfeit?: MatchForfeit | null;
+  status?: string | null;
 }): { a: string; b: string } {
-  if (match.forfeit === "TEAM_A") return { a: "FF", b: "W" };
-  if (match.forfeit === "TEAM_B") return { a: "W", b: "FF" };
+  if (match.status === "FINISHED") {
+    if (match.forfeit === "TEAM_A") return { a: "FF", b: "W" };
+    if (match.forfeit === "TEAM_B") return { a: "W", b: "FF" };
+  }
   return { a: String(match.scoreA), b: String(match.scoreB) };
 }

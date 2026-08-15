@@ -12,6 +12,7 @@ import {
 } from "@/lib/og/fields";
 import { renderOg, SQUARE } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
+import { displayScores } from "@/lib/forfeit";
 import { bestOfLabel, matchBadge, mapsLabel, metaLine, mvpLabel } from "@/lib/og/labels";
 import { bySide, kdaLabel, mapRows, seriesRows, type CardStatRow } from "@/lib/og/scoreboard";
 import { DISPLAY, MONO, OG } from "@/lib/og/theme";
@@ -43,6 +44,7 @@ function resumeCard(match: Match, logoA: string | null, logoB: string | null) {
   const played = match.status !== "SCHEDULED";
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
+  const ff = displayScores(match);
 
   // Sur un match à venir, la date est l'information que l'affiche transporte.
   const schedule = match.date
@@ -65,18 +67,8 @@ function resumeCard(match: Match, logoA: string | null, logoB: string | null) {
       <Meta>{metaLine([match.tournament.name, match.round, bestOfLabel(match.bestOf)])}</Meta>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 26, marginTop: 12 }}>
-        <ScoreRow
-          src={logoA}
-          name={match.teamA.name}
-          score={played ? String(match.scoreA) : null}
-          win={aWin}
-        />
-        <ScoreRow
-          src={logoB}
-          name={match.teamB.name}
-          score={played ? String(match.scoreB) : null}
-          win={bWin}
-        />
+        <ScoreRow src={logoA} name={match.teamA.name} score={played ? ff.a : null} win={aWin} />
+        <ScoreRow src={logoB} name={match.teamB.name} score={played ? ff.b : null} win={bWin} />
       </div>
 
       {/* Le détail des maps sur un match joué, la date sur un match à venir :
