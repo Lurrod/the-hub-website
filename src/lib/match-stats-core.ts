@@ -8,10 +8,6 @@ import type {
 
 export type Side = "A" | "B";
 
-/** Camps bruts renvoyés par Riot, et le repli « laisser déduire par les puuid ». */
-export const RIOT_CAMPS = ["Blue", "Red"] as const;
-export type RiotCamp = (typeof RIOT_CAMPS)[number];
-
 /**
  * Vrai quand un scoreboard Riot est rattaché au match, qu'il vienne de la
  * recherche automatique ou d'un import manuel par identifiant de partie.
