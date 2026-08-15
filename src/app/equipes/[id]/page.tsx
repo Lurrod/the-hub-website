@@ -10,6 +10,7 @@ import {
   listTeamRecentMatches,
 } from "@/lib/data/matches";
 import { getTeamTournaments } from "@/lib/data/tournaments";
+import type { MatchForfeit } from "@/lib/constants";
 import { getSessionUser, getTeamManagerIds } from "@/lib/server-auth";
 import { canManageTeam } from "@/lib/permissions";
 import TeamMatchGroups from "@/components/team-match-groups";
@@ -85,6 +86,8 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     teamB: { tag: string; logo: string | null };
     scoreA: number;
     scoreB: number;
+    forfeit: MatchForfeit;
+    status: string;
   };
   const miniMatch = (m: MiniMatchSource, played: boolean) => ({
     id: m.id,
@@ -94,6 +97,8 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     teamB: { tag: m.teamB.tag, logo: m.teamB.logo },
     scoreA: played ? m.scoreA : undefined,
     scoreB: played ? m.scoreB : undefined,
+    forfeit: m.forfeit,
+    status: m.status,
   });
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "…");
 
@@ -190,6 +195,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           scoreB: m.scoreB,
           winnerId: m.winnerId,
           status: m.status,
+          forfeit: m.forfeit,
           date: m.date,
           hasTime: m.hasTime,
           bestOf: m.bestOf,

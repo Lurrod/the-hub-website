@@ -111,6 +111,19 @@ describe("matchInputSchema vodUrl", () => {
   });
 });
 
+describe("matchInputSchema forfeit", () => {
+  const base = { teamAId: "a", teamBId: "b" };
+  it("vaut « aucun » par défaut", () => {
+    expect(matchInputSchema.parse(base).forfeit).toBe("NONE");
+  });
+  it("porte l'équipe forfaitaire", () => {
+    expect(matchInputSchema.parse({ ...base, forfeit: "TEAM_B" }).forfeit).toBe("TEAM_B");
+  });
+  it("refuse un forfait inconnu", () => {
+    expect(() => matchInputSchema.parse({ ...base, forfeit: "TEAM_C" })).toThrow();
+  });
+});
+
 describe("matchMapSchema", () => {
   it("accepte une map valide", () => {
     const r = matchMapSchema.parse({ mapName: "Ascent", scoreA: "13", scoreB: "10" });

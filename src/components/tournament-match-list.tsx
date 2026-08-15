@@ -1,6 +1,8 @@
 import Link from "next/link";
 import EmptyState, { ListDecor } from "@/components/empty-state";
 import { dayKey, dayLabel, timeLabel } from "@/lib/dates";
+import { displayScores } from "@/lib/forfeit";
+import type { MatchForfeit } from "@/lib/constants";
 
 type Team = { name: string; logo: string | null } | null;
 export type MatchEntry = {
@@ -10,6 +12,7 @@ export type MatchEntry = {
   status: string;
   scoreA: number;
   scoreB: number;
+  forfeit?: MatchForfeit | null;
   stageLabel: string;
   teamA: Team;
   teamB: Team;
@@ -40,6 +43,7 @@ function TeamRow({ team }: { team: Team }) {
 /** Une ligne de match, réutilisable dans n'importe quelle liste groupée. */
 export function MatchListItem({ m }: { m: MatchEntry }) {
   const played = m.status === "FINISHED" || m.status === "LIVE";
+  const score = displayScores(m);
   return (
     <li>
       <Link
@@ -54,8 +58,8 @@ export function MatchListItem({ m }: { m: MatchEntry }) {
           <TeamRow team={m.teamB} />
         </div>
         <div className="w-8 shrink-0 space-y-1 text-center">
-          <div className="stat text-sm text-white">{played ? m.scoreA : "-"}</div>
-          <div className="stat text-sm text-white">{played ? m.scoreB : "-"}</div>
+          <div className="stat text-sm text-white">{played ? score.a : "-"}</div>
+          <div className="stat text-sm text-white">{played ? score.b : "-"}</div>
         </div>
         <div className="ml-auto hidden shrink-0 pl-3 text-right text-xs text-[var(--text-muted)] sm:block">
           {m.stageLabel}

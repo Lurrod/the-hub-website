@@ -271,6 +271,19 @@ export const VALORANT_MAPS = [
   "Corrode",
 ] as const;
 
+/**
+ * Forfait : équipe qui déclare forfait, et perd donc le match. Porté par le
+ * match plutôt que déduit du score : un forfait se joue à 0-0 et le score ne
+ * peut pas le raconter.
+ */
+export const MATCH_FORFEITS = ["NONE", "TEAM_A", "TEAM_B"] as const;
+export type MatchForfeit = (typeof MATCH_FORFEITS)[number];
+export const MATCH_FORFEIT_LABELS: Record<MatchForfeit, string> = {
+  NONE: "Aucun",
+  TEAM_A: "Forfait de l'équipe A",
+  TEAM_B: "Forfait de l'équipe B",
+};
+
 /** Phases de match autorisées selon le format déclaré du tournoi. */
 export const STAGES_BY_FORMAT: Record<TournamentFormat, readonly MatchStage[]> = {
   GROUPS: ["GROUP"],

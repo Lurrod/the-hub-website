@@ -125,6 +125,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           matches={bracket.map((m) => ({
             id: m.id,
             round: m.round,
+            forfeit: m.forfeit,
+            status: m.status,
             groupId: m.groupId,
             groupName: m.group?.name ?? null,
             teamAId: m.teamAId,
@@ -261,6 +263,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             status: m.status,
             scoreA: m.scoreA,
             scoreB: m.scoreB,
+            forfeit: m.forfeit,
             stageLabel: stageLabel(m),
             teamA: m.teamA ? { name: m.teamA.name, logo: m.teamA.logo } : null,
             teamB: m.teamB ? { name: m.teamB.name, logo: m.teamB.logo } : null,

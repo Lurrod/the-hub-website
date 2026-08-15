@@ -121,6 +121,7 @@ export default async function EditMatchPage({
           stage: match.stage,
           status: match.status,
           bestOf: match.bestOf,
+          forfeit: match.forfeit,
           groupId: match.groupId ?? undefined,
           round: match.round ?? undefined,
           bracketPosition: match.bracketPosition ?? undefined,

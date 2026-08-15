@@ -72,6 +72,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     teamB: { tag: m.teamB.tag, logo: m.teamB.logo },
     scoreA: played ? m.scoreA : undefined,
     scoreB: played ? m.scoreB : undefined,
+    forfeit: m.forfeit,
+    status: m.status,
   });
 
   // Le Discord du compte lié complète les réseaux saisis à la main : c'est le

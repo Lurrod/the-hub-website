@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { formatSite } from "@/lib/timezone";
 import { fullDate } from "@/lib/dates";
+import { displayScores } from "@/lib/forfeit";
+import type { MatchForfeit } from "@/lib/constants";
 
 export type MatchRowData = {
   id: string;
@@ -10,6 +12,7 @@ export type MatchRowData = {
   scoreB: number;
   winnerId: string | null;
   status: string;
+  forfeit?: MatchForfeit | null;
   date?: Date | string | null;
   hasTime?: boolean;
   bestOf?: number;
@@ -96,6 +99,7 @@ export default function MatchRow({
   withYear?: boolean;
 }) {
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
+  const score = displayScores(match);
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
   const schedule = formatSchedule(match.date, match.hasTime ?? false, withYear);
   return (
@@ -127,13 +131,13 @@ export default function MatchRow({
           <span
             className={aWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}
           >
-            {match.scoreA}
+            {score.a}
           </span>
           <span className="text-[var(--text-subtle)]">-</span>
           <span
             className={bWin ? "font-semibold text-[var(--accent)]" : "text-[var(--text-muted)]"}
           >
-            {match.scoreB}
+            {score.b}
           </span>
         </div>
         <Side team={match.teamB} isWinner={bWin} align="right" />

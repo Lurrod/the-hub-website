@@ -8,6 +8,7 @@ import {
   type BracketSlot,
 } from "@/lib/bracket";
 import type { TournamentFormat } from "@/lib/constants";
+import { displayScores } from "@/lib/forfeit";
 
 export type { BracketMatchData };
 
@@ -213,6 +214,7 @@ function ByeCell() {
 function BracketCell({ match }: { match: BracketMatchData }) {
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
+  const score = displayScores(match);
   const row = "flex items-center justify-between px-2.5 py-1.5 text-sm";
   return (
     <Link
@@ -221,12 +223,12 @@ function BracketCell({ match }: { match: BracketMatchData }) {
     >
       <div className={`${row} ${aWin ? "font-semibold text-[var(--accent)]" : "text-white"}`}>
         <span className="truncate">{match.teamA?.tag ?? "-"}</span>
-        <span className="stat">{match.scoreA}</span>
+        <span className="stat">{score.a}</span>
       </div>
       <div className="border-t border-[var(--border)]" />
       <div className={`${row} ${bWin ? "font-semibold text-[var(--accent)]" : "text-white"}`}>
         <span className="truncate">{match.teamB?.tag ?? "-"}</span>
-        <span className="stat">{match.scoreB}</span>
+        <span className="stat">{score.b}</span>
       </div>
     </Link>
   );

@@ -2,7 +2,8 @@ import { getMatch } from "@/lib/data/matches";
 import { Avatar, Meta, Stats } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
-import { bestOfLabel, mapsLabel, matchBadge, metaLine, scoreLabel } from "@/lib/og/labels";
+import { displayScores } from "@/lib/forfeit";
+import { bestOfLabel, mapsLabel, matchBadge, metaLine } from "@/lib/og/labels";
 import { DISPLAY, OG } from "@/lib/og/theme";
 
 export const alt = "Match";
@@ -47,7 +48,8 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
   // Le score n'a de sens qu'une fois le match commencé : avant, la carte
   // annonce l'affiche, pas un 0 – 0 qui se lirait comme un résultat.
-  const center = match.status === "SCHEDULED" ? "VS" : scoreLabel(match.scoreA, match.scoreB);
+  const ff = displayScores(match);
+  const center = match.status === "SCHEDULED" ? "VS" : `${ff.a} – ${ff.b}`;
 
   return renderOg(matchBadge(match.status), () => (
     <>

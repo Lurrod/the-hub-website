@@ -62,8 +62,8 @@ test("un match Contender garde le bracket choisi à la création", async ({ cont
     .locator("form")
     .filter({ has: page.getByRole("button", { name: "Créer le match" }) });
   await expect(creation.locator("label", { hasText: /^Bracket/ })).toBeVisible();
-  await creation.getByLabel("Équipe A").selectOption(TEAM_A.id);
-  await creation.getByLabel("Équipe B").selectOption(TEAM_B.id);
+  await creation.locator('select[name="teamAId"]').selectOption(TEAM_A.id);
+  await creation.locator('select[name="teamBId"]').selectOption(TEAM_B.id);
   await creation.locator('select[name="groupId"]').selectOption(bracketAId);
   await creation.getByLabel(/^Tour/).fill("Finale");
   await creation.getByRole("button", { name: "Créer le match" }).click();

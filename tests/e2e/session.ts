@@ -40,7 +40,10 @@ export async function createAccount(
 ): Promise<TestAccount> {
   // Un identifiant unique par appel : les tests Playwright peuvent tourner en
   // parallèle, et deux comptes ne doivent jamais se disputer un e-mail.
-  const unique = `${Date.now()}-${counter++}`;
+  // Le pid distingue les workers Playwright : deux specs qui créent leur
+  // compte au même instant partageaient le même horodatage, donc le même
+  // email — violation d'unicité en base.
+  const unique = `${Date.now()}-${process.pid}-${counter++}`;
   const pseudo = opts.pseudo ?? `E2E-${unique}`;
 
   const user = await db.user.create({
