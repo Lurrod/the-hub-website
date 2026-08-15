@@ -251,6 +251,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     </div>
   );
 
+  // Du plus récent au plus ancien, comme l'index /matchs : l'onglet sert à
+  // retrouver les derniers résultats, pas à relire le début du tournoi. La
+  // requête reste triée en ascendant pour la gestion et « Matchs à venir » —
+  // seuls les matchs sans date passent en queue plutôt qu'en tête.
+  const matchesDesc = [...allMatches].sort(
+    (a, b) => (b.date?.getTime() ?? -Infinity) - (a.date?.getTime() ?? -Infinity)
+  );
+
   const matchesTab = (
     <div>
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
@@ -258,7 +266,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       </h2>
       <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
         <TournamentMatchList
-          matches={allMatches.map((m) => ({
+          matches={matchesDesc.map((m) => ({
             id: m.id,
             date: m.date,
             hasTime: m.hasTime,
