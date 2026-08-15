@@ -74,6 +74,8 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
     scoreB: played ? m.scoreB : undefined,
     forfeit: m.forfeit,
     status: m.status,
+    bestOf: m.bestOf,
+    maps: m.maps,
   });
 
   // Le Discord du compte lié complète les réseaux saisis à la main : c'est le

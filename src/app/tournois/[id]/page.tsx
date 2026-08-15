@@ -127,6 +127,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             round: m.round,
             forfeit: m.forfeit,
             status: m.status,
+            bestOf: m.bestOf,
+            maps: m.maps,
             groupId: m.groupId,
             groupName: m.group?.name ?? null,
             teamAId: m.teamAId,
@@ -135,8 +137,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             scoreB: m.scoreB,
             winnerId: m.winnerId,
             position: m.bracketPosition,
-            teamA: m.teamA ? { tag: m.teamA.tag } : null,
-            teamB: m.teamB ? { tag: m.teamB.tag } : null,
+            teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
+            teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
           }))}
         />
       ),
@@ -264,6 +266,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
             scoreA: m.scoreA,
             scoreB: m.scoreB,
             forfeit: m.forfeit,
+            bestOf: m.bestOf,
+            maps: m.maps,
             stageLabel: stageLabel(m),
             teamA: m.teamA ? { name: m.teamA.name, logo: m.teamA.logo } : null,
             teamB: m.teamB ? { name: m.teamB.name, logo: m.teamB.logo } : null,

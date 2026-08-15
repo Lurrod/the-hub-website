@@ -17,6 +17,9 @@ export type MiniMatch = {
   scoreB?: number | null;
   forfeit?: MatchForfeit | null;
   status?: string | null;
+  /** Scores des maps : sur un BO1, la ligne affiche le score de la map. */
+  bestOf?: number | null;
+  maps?: { scoreA: number; scoreB: number }[] | null;
 };
 
 function TeamLine({
@@ -72,6 +75,8 @@ export default function MatchMiniList({
               scoreB: m.scoreB!,
               forfeit: m.forfeit,
               status: m.status,
+              bestOf: m.bestOf,
+              maps: m.maps,
             })
           : null;
         // Sur un forfait les scores restent à 0-0 : la comparaison ne

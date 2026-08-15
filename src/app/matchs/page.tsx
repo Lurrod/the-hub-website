@@ -113,6 +113,8 @@ export default async function MatchesPage({
                         scoreA: m.scoreA,
                         scoreB: m.scoreB,
                         forfeit: m.forfeit,
+                        bestOf: m.bestOf,
+                        maps: m.maps,
                         stageLabel:
                           m.stage === "BRACKET"
                             ? (m.round ?? "Playoffs")

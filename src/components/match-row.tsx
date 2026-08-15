@@ -16,6 +16,8 @@ export type MatchRowData = {
   date?: Date | string | null;
   hasTime?: boolean;
   bestOf?: number;
+  /** Scores des maps : sur un BO1, la ligne affiche le score de la map. */
+  maps?: { scoreA: number; scoreB: number }[] | null;
   vodUrl?: string | null;
   teamA: { name: string; tag: string; logo: string | null } | null;
   teamB: { name: string; tag: string; logo: string | null } | null;

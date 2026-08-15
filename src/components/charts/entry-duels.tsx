@@ -13,7 +13,7 @@ const WON = "var(--accent)";
 const LOST = "var(--viz-blue)";
 
 /**
- * Duels d'entry : premiers kills à droite, premières morts à gauche, de part
+ * Duels d'entry : premiers kills à gauche, premières morts à droite, de part
  * et d'autre d'un axe commun.
  *
  * La polarité est le sujet — gagner ou perdre l'ouverture — donc deux teintes
@@ -42,12 +42,12 @@ export default function EntryDuels({ players }: { players: PlayerPoint[] }) {
           reposer sur la seule couleur. */}
       <div className="mb-3 flex items-center gap-4 text-[11px] text-[var(--text-muted)]">
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: LOST }} aria-hidden />
-          Premières morts
-        </span>
-        <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: WON }} aria-hidden />
           Premiers kills
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: LOST }} aria-hidden />
+          Premières morts
         </span>
       </div>
 
@@ -67,13 +67,13 @@ export default function EntryDuels({ players }: { players: PlayerPoint[] }) {
               <div className="flex min-w-0 flex-1 items-center">
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
                   <span className="stat shrink-0 text-[10px] text-[var(--text-muted)]">
-                    {p.firstDeaths || ""}
+                    {p.firstKills || ""}
                   </span>
                   <div
                     className="h-3 shrink-0 rounded-l"
                     style={{
-                      width: `${(p.firstDeaths / max) * 100}%`,
-                      backgroundColor: LOST,
+                      width: `${(p.firstKills / max) * 100}%`,
+                      backgroundColor: WON,
                     }}
                   />
                 </div>
@@ -85,12 +85,12 @@ export default function EntryDuels({ players }: { players: PlayerPoint[] }) {
                   <div
                     className="h-3 shrink-0 rounded-r"
                     style={{
-                      width: `${(p.firstKills / max) * 100}%`,
-                      backgroundColor: WON,
+                      width: `${(p.firstDeaths / max) * 100}%`,
+                      backgroundColor: LOST,
                     }}
                   />
                   <span className="stat shrink-0 text-[10px] text-[var(--text-muted)]">
-                    {p.firstKills || ""}
+                    {p.firstDeaths || ""}
                   </span>
                 </div>
               </div>

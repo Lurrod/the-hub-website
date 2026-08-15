@@ -13,6 +13,9 @@ export type MatchEntry = {
   scoreA: number;
   scoreB: number;
   forfeit?: MatchForfeit | null;
+  /** Scores des maps : sur un BO1, la ligne affiche le score de la map. */
+  bestOf?: number | null;
+  maps?: { scoreA: number; scoreB: number }[] | null;
   stageLabel: string;
   teamA: Team;
   teamB: Team;
