@@ -107,6 +107,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       round: m.round,
       forfeit: m.forfeit,
       status: m.status,
+      // Sans eux, la carte retombait sur le « 1 - 0 » de série alors que le
+      // bracket du site affiche le score de la map sur un BO1.
+      bestOf: m.bestOf,
+      maps: m.maps,
       groupId: m.groupId,
       groupName: m.group?.name ?? null,
       teamAId: m.teamAId,
