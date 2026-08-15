@@ -71,7 +71,11 @@ test("un match Contender garde le bracket choisi à la création", async ({ cont
   // L'action redirige vers l'URL déjà courante : `waitForURL` répondrait tout
   // de suite et la base serait lue avant l'écriture. On attend donc la ligne
   // du match dans la liste, qui n'apparaît qu'après redirect et revalidation.
-  await expect(page.getByText("Team Heretics 0-0 Team Vitality")).toBeVisible();
+  // Aller-retour serveur + revalidation : sous la charge de la suite complète,
+  // les 5 s par défaut ne suffisent pas toujours.
+  await expect(page.getByText("Team Heretics 0-0 Team Vitality")).toBeVisible({
+    timeout: 15_000,
+  });
 
   const match = await db.match.findFirst({
     where: { tournamentId },
