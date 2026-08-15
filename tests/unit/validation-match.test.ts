@@ -125,12 +125,12 @@ describe("matchMapSchema", () => {
 describe("matchMapImportSchema", () => {
   const uuid = "0e3a1f2b-1111-2222-3333-444455556666";
 
-  it("accepte un identifiant de partie Riot et un camp explicite", () => {
-    const r = matchMapImportSchema.parse({ riotMatchId: uuid, campOfTeamA: "Blue" });
-    expect(r).toEqual({ riotMatchId: uuid, campOfTeamA: "Blue" });
+  it("accepte un identifiant de partie Riot et un résultat explicite", () => {
+    const r = matchMapImportSchema.parse({ riotMatchId: uuid, outcomeOfTeamA: "WON" });
+    expect(r).toEqual({ riotMatchId: uuid, outcomeOfTeamA: "WON" });
   });
-  it("déduit le camp par défaut", () => {
-    expect(matchMapImportSchema.parse({ riotMatchId: uuid }).campOfTeamA).toBe("AUTO");
+  it("déduit les équipes par défaut", () => {
+    expect(matchMapImportSchema.parse({ riotMatchId: uuid }).outcomeOfTeamA).toBe("AUTO");
   });
   it("tolère les espaces autour de l'identifiant collé", () => {
     expect(matchMapImportSchema.parse({ riotMatchId: `  ${uuid} ` }).riotMatchId).toBe(uuid);
@@ -138,7 +138,9 @@ describe("matchMapImportSchema", () => {
   it("refuse un identifiant qui n'est pas un UUID", () => {
     expect(() => matchMapImportSchema.parse({ riotMatchId: "12345" })).toThrow();
   });
-  it("refuse un camp inconnu", () => {
-    expect(() => matchMapImportSchema.parse({ riotMatchId: uuid, campOfTeamA: "Green" })).toThrow();
+  it("refuse un résultat inconnu — dont l'ancien vocabulaire de camp", () => {
+    expect(() =>
+      matchMapImportSchema.parse({ riotMatchId: uuid, outcomeOfTeamA: "Blue" })
+    ).toThrow();
   });
 });

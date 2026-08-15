@@ -257,6 +257,7 @@ const IMPORT_FLASH: Record<ManualImportResult, string> = {
   NOT_FOUND: "error=riotmatchnotfound",
   RATE_LIMITED: "error=ratelimited",
   API_ERROR: "error=riotapi",
+  NO_WINNER: "error=riotmatchnowinner",
 };
 
 /**
@@ -277,7 +278,7 @@ export async function importMatchMapAction(
   try {
     data = matchMapImportSchema.parse({
       riotMatchId: formData.get("riotMatchId"),
-      campOfTeamA: formData.get("campOfTeamA") || "AUTO",
+      outcomeOfTeamA: formData.get("outcomeOfTeamA") || "AUTO",
     });
   } catch {
     redirect(`${editBase}?error=riotmatchformat`);

@@ -3,6 +3,7 @@ import {
   countExpected,
   assignSides,
   assignSidesFromCamp,
+  assignSidesFromOutcome,
   computeDerivedStats,
   hasRiotStats,
   indexPlayerIdsByPuuid,
@@ -430,5 +431,32 @@ describe("selectSeries : fenêtre autour de la date du match", () => {
     const map2 = match("map2", "2026-07-27T21:00:00Z", red, blue);
     const out = selectSeries([scrim, map1, map2], expected, 8, 2, DATE);
     expect(out.map((m) => m.matchId)).toEqual(["map1", "map2"]);
+  });
+});
+
+describe("assignSidesFromOutcome", () => {
+  it("attribue A au camp vainqueur quand l'admin dit que l'équipe A a gagné", () => {
+    // teamRounds: Red 13 - Blue 9 → le vainqueur est Red.
+    const out = assignSidesFromOutcome(match("m", "t", red, blue), true);
+    expect(out?.sideOfTeam).toEqual({ Red: "A", Blue: "B" });
+    expect(out?.roundsA).toBe(13);
+    expect(out?.roundsB).toBe(9);
+  });
+
+  it("attribue A au camp perdant quand l'admin dit que l'équipe A a perdu", () => {
+    const out = assignSidesFromOutcome(match("m", "t", red, blue), false);
+    expect(out?.sideOfTeam).toEqual({ Red: "B", Blue: "A" });
+    expect(out?.roundsA).toBe(9);
+    expect(out?.roundsB).toBe(13);
+  });
+
+  it("refuse une map sans vainqueur : l'énoncé « a gagné » n'y départage rien", () => {
+    const m = { ...match("m", "t", red, blue), teamRounds: { Red: 12, Blue: 12 } };
+    expect(assignSidesFromOutcome(m, true)).toBeNull();
+  });
+
+  it("ne dépend pas des puuid liés", () => {
+    const m = { ...match("m", "t", red, blue), players: [] };
+    expect(assignSidesFromOutcome(m, true)?.roundsA).toBe(13);
   });
 });

@@ -7,7 +7,7 @@ import {
 } from "@/lib/henrikdev";
 import {
   assignSides,
-  assignSidesFromCamp,
+  assignSidesFromOutcome,
   computeDerivedStats,
   computeImpact,
   computeRating,
@@ -250,7 +250,13 @@ export async function fetchAndStoreMatchStats(matchId: string): Promise<"MATCHED
 }
 
 export type ManualImportResult =
-  "IMPORTED" | "DUPLICATE" | "NOT_FOUND" | "RATE_LIMITED" | "API_ERROR";
+  | "IMPORTED"
+  | "DUPLICATE"
+  | "NOT_FOUND"
+  | "RATE_LIMITED"
+  | "API_ERROR"
+  /** Map nulle : « a gagné / a perdu » n'y départage pas les camps. */
+  | "NO_WINNER";
 
 /** Région à interroger : celle des joueurs liés, `eu` à défaut. */
 function pickRegion(known: Known[]): string {
@@ -290,10 +296,14 @@ export async function importMatchMapFromRiotId(
   }
 
   const playerIdByPuuid = await playerIdsByPuuid(cm.players.map((p) => p.puuid));
-  const { sideOfTeam, roundsA, roundsB } =
-    input.campOfTeamA === "AUTO"
+  const assigned =
+    input.outcomeOfTeamA === "AUTO"
       ? assignSides(cm, new Map(known.map((k) => [k.puuid, k.side])))
-      : assignSidesFromCamp(cm, input.campOfTeamA);
+      : assignSidesFromOutcome(cm, input.outcomeOfTeamA === "WON");
+  // Refuser plutôt qu'inverser en silence : sur une map nulle, le résultat
+  // annoncé ne dit pas quel camp est l'équipe A.
+  if (!assigned) return "NO_WINNER";
+  const { sideOfTeam, roundsA, roundsB } = assigned;
 
   await db.$transaction(async (tx) => {
     const order = await tx.matchMap.count({ where: { matchId: match.id } });

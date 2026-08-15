@@ -152,6 +152,11 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
     title: "Partie déjà importée",
     message: "Cette partie est déjà rattachée à une map de ce match.",
   },
+  riotmatchnowinner: {
+    title: "Map sans vainqueur",
+    message:
+      "Cette partie s'est finie à égalité : « a gagné / a perdu » ne permet pas d'attribuer les équipes. Lie un joueur ou utilise la déduction automatique.",
+  },
   notupcoming: {
     title: "Inscriptions fermées",
     message: "Ce tournoi a déjà commencé ou est terminé.",
