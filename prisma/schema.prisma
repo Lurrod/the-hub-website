@@ -297,6 +297,14 @@ enum MatchStatus {
   FINISHED
 }
 
+/// Équipe qui déclare forfait sur un match (elle le perd). Porté par le match
+/// et non déduit du score : un forfait se joue à 0-0.
+enum MatchForfeit {
+  NONE
+  TEAM_A
+  TEAM_B
+}
+
 model Group {
   id           String                  @id @default(cuid())
   tournamentId String
@@ -322,6 +330,7 @@ model Match {
   bracketPosition Int?
   bestOf          Int         @default(1)
   status          MatchStatus @default(SCHEDULED)
+  forfeit         MatchForfeit @default(NONE)
   date            DateTime?
   /// L'heure de `date` est-elle significative ? Les matchs saisis avant
   /// l'ajout du champ horaire portent minuit, qui ne veut rien dire : sans ce

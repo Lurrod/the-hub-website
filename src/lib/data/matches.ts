@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import type { MatchStage, MatchStatus, TournamentFormat } from "@/lib/constants";
+import type { MatchForfeit, MatchStage, MatchStatus, TournamentFormat } from "@/lib/constants";
+import { forfeitWinnerId } from "@/lib/forfeit";
 import { matchGroupIdFor } from "@/lib/bracket";
 import type { MatchInput, MatchMapInput } from "@/lib/validation/match";
 import { syncTournamentStatusesIfStale } from "@/lib/tournament-status";
@@ -14,8 +15,13 @@ function deriveWinnerId(data: {
   scoreB: number;
   teamAId: string;
   teamBId: string;
+  forfeit?: MatchForfeit;
 }): string | null {
-  if (data.status !== "FINISHED" || data.scoreA === data.scoreB) return null;
+  if (data.status !== "FINISHED") return null;
+  // Le forfait prime sur le score : il se déclare le plus souvent à 0-0.
+  const byForfeit = forfeitWinnerId(data.forfeit ?? "NONE", data.teamAId, data.teamBId);
+  if (byForfeit) return byForfeit;
+  if (data.scoreA === data.scoreB) return null;
   return data.scoreA > data.scoreB ? data.teamAId : data.teamBId;
 }
 
@@ -70,6 +76,7 @@ export function createMatch(tournamentId: string, data: MatchInput, format: Tour
       stage: data.stage as MatchStage,
       status: data.status as MatchStatus,
       bestOf: data.bestOf,
+      forfeit: data.forfeit,
       round: data.stage === "BRACKET" ? (data.round ?? null) : null,
       bracketPosition: data.stage === "BRACKET" ? (data.bracketPosition ?? null) : null,
       date: data.date.date,
@@ -98,6 +105,7 @@ export function updateMatch(
       stage: data.stage as MatchStage,
       status: data.status as MatchStatus,
       bestOf: data.bestOf,
+      forfeit: data.forfeit,
       round: data.stage === "BRACKET" ? (data.round ?? null) : null,
       bracketPosition: data.stage === "BRACKET" ? (data.bracketPosition ?? null) : null,
       date: data.date.date ?? null,
@@ -190,6 +198,7 @@ export async function syncMatchScoreFromMaps(matchId: string): Promise<void> {
       status: true,
       teamAId: true,
       teamBId: true,
+      forfeit: true,
       maps: { select: { scoreA: true, scoreB: true } },
     },
   });

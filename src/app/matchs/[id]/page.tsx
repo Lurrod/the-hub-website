@@ -27,6 +27,7 @@ import { matchJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 import { matchShareVariants } from "@/lib/og/share-variants";
 import { SITE_URL } from "@/lib/site";
+import { displayScores } from "@/lib/forfeit";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -99,6 +100,9 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
+  // Sur un forfait le score chiffré ne raconte rien : la fiche affiche W / FF,
+  // comme les cases du bracket.
+  const score = displayScores(match);
   const hasScoreboard =
     hasRiotStats(match.statsStatus) && match.maps.some((m) => m.stats.length > 0);
   const scoreboardMaps: ScoreboardMap[] = match.maps.map((m) => ({
@@ -190,7 +194,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               style={{ fontSize: "24px" }}
               className={aWin ? "font-bold text-[var(--accent)]" : "text-white"}
             >
-              {match.scoreA}
+              {score.a}
             </span>
             <span style={{ fontSize: "16px" }} className="text-[var(--text-subtle)]">
               -
@@ -199,7 +203,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               style={{ fontSize: "24px" }}
               className={bWin ? "font-bold text-[var(--accent)]" : "text-white"}
             >
-              {match.scoreB}
+              {score.b}
             </span>
           </div>
 

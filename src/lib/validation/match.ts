@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MATCH_STAGES, MATCH_STATUSES, BEST_OF_OPTIONS } from "@/lib/constants";
+import { MATCH_FORFEITS, MATCH_STAGES, MATCH_STATUSES, BEST_OF_OPTIONS } from "@/lib/constants";
 import { hasTimePart, parseSiteDateTime } from "@/lib/timezone";
 
 /**
@@ -35,6 +35,7 @@ export const matchInputSchema = z
         message: "BestOf invalide",
       })
       .default(1),
+    forfeit: z.enum(MATCH_FORFEITS).default("NONE"),
     groupId: z.string().trim().optional(),
     round: z.string().trim().max(60).optional(),
     bracketPosition: z.coerce.number().int().min(0).optional(),

@@ -1,6 +1,8 @@
 import DateField from "@/components/date-field";
 import ErrorShake from "@/components/error-shake";
 import {
+  MATCH_FORFEITS,
+  MATCH_FORFEIT_LABELS,
   MATCH_STAGES,
   MATCH_STAGE_LABELS,
   MATCH_STATUSES,
@@ -20,6 +22,7 @@ type MatchFormValues = {
   stage?: string;
   status?: string;
   bestOf?: number;
+  forfeit?: string;
   groupId?: string;
   round?: string;
   bracketPosition?: number;
@@ -146,6 +149,19 @@ export default function MatchForm({
           </select>
         </label>
       </div>
+      <label className={lbl}>
+        Forfait
+        <select name="forfeit" defaultValue={values?.forfeit ?? "NONE"} className={input}>
+          {MATCH_FORFEITS.map((f) => (
+            <option key={f} value={f}>
+              {MATCH_FORFEIT_LABELS[f]}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-[var(--text-subtle)]">
+          Le forfaitaire perd le match une fois « Terminé » ; le score affiche W / FF.
+        </span>
+      </label>
       <ErrorShake codes={["nogroups"]}>
         <label className={lbl}>
           {groupLabel}

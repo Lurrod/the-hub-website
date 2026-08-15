@@ -125,6 +125,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
           matches={bracket.map((m) => ({
             id: m.id,
             round: m.round,
+            forfeit: m.forfeit,
             groupId: m.groupId,
             groupName: m.group?.name ?? null,
             teamAId: m.teamAId,

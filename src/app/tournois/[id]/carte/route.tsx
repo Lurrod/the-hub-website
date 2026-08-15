@@ -2,6 +2,7 @@ import { listBracketMatches } from "@/lib/data/matches";
 import { getTournament } from "@/lib/data/tournaments";
 import { buildBracket, type BracketRound } from "@/lib/bracket";
 import type { TournamentFormat } from "@/lib/constants";
+import { displayScores } from "@/lib/forfeit";
 import { Avatar, Meta } from "@/lib/og/fields";
 import { renderOg, SQUARE } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
@@ -25,7 +26,7 @@ export const dynamic = "force-dynamic";
 /** Tours affichés au maximum : au-delà, les cases deviennent illisibles. */
 const MAX_ROUNDS = 3;
 
-type Seat = { tag: string; score: number; won: boolean } | null;
+type Seat = { tag: string; score: string; won: boolean } | null;
 
 /** Une case de l'arbre : deux camps, ou un emplacement vide (exempt). */
 function Bout({ top, bottom }: { top: Seat; bottom: Seat }) {
@@ -68,7 +69,7 @@ function Bout({ top, bottom }: { top: Seat; bottom: Seat }) {
               color: s ? (s.won ? OG.accent : OG.subtle) : OG.subtle,
             }}
           >
-            {s ? String(s.score) : ""}
+            {s ? s.score : ""}
           </div>
         </div>
       ))}
@@ -82,12 +83,14 @@ function seats(round: BracketRound) {
     if (slot.kind === "bye") return { key: slot.key, top: null, bottom: null };
     const m = slot.match;
     // Une égalité — un match encore en cours de saisie — ne désigne personne.
-    const aWon = m.scoreA > m.scoreB;
-    const bWon = m.scoreB > m.scoreA;
+    // Le forfait laisse le score à 0-0 : le vainqueur enregistré fait foi.
+    const aWon = m.winnerId ? m.winnerId === m.teamAId : m.scoreA > m.scoreB;
+    const bWon = m.winnerId ? m.winnerId === m.teamBId : m.scoreB > m.scoreA;
+    const score = displayScores(m);
     return {
       key: slot.key,
-      top: { tag: m.teamA?.tag ?? "?", score: m.scoreA, won: aWon },
-      bottom: { tag: m.teamB?.tag ?? "?", score: m.scoreB, won: bWon },
+      top: { tag: m.teamA?.tag ?? "?", score: score.a, won: aWon },
+      bottom: { tag: m.teamB?.tag ?? "?", score: score.b, won: bWon },
     };
   });
 }
@@ -102,6 +105,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     matches.map((m) => ({
       id: m.id,
       round: m.round,
+      forfeit: m.forfeit,
       groupId: m.groupId,
       groupName: m.group?.name ?? null,
       teamAId: m.teamAId,

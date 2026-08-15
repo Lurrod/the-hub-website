@@ -74,6 +74,7 @@ function parseMatchForm(formData: FormData) {
     stage: formData.get("stage") || "GROUP",
     status: formData.get("status") || "SCHEDULED",
     bestOf: formData.get("bestOf") || 1,
+    forfeit: formData.get("forfeit") || "NONE",
     groupId: formData.get("groupId") || undefined,
     round: formData.get("round") || undefined,
     bracketPosition: formData.get("bracketPosition") || undefined,
@@ -189,7 +190,8 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
   // les maps importées à la main. La relance reste possible à la demande via
   // `refetchMatchStatsAction`.
   const becomesFinished = data.status === "FINISHED" && before.status !== "FINISHED";
-  if (becomesFinished && !hasRiotStats(before.statsStatus)) {
+  // Un forfait ne se joue pas : aucune partie custom à chercher côté Riot.
+  if (becomesFinished && !hasRiotStats(before.statsStatus) && data.forfeit === "NONE") {
     // `after` : la recherche interroge HenrikDev jusqu'à quatre fois, avec un
     // délai d'attente de 8 s chacune. La faire dans le cycle de requête
     // ajoutait jusqu'à une demi-minute au simple fait d'enregistrer un match.
