@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import type { MatchStage, MatchStatus } from "@/lib/constants";
+import type { MatchStage, MatchStatus, TournamentFormat } from "@/lib/constants";
+import { matchGroupIdFor } from "@/lib/bracket";
 import type { MatchInput, MatchMapInput } from "@/lib/validation/match";
 import { syncTournamentStatusesIfStale } from "@/lib/tournament-status";
 import { seriesScore } from "@/lib/match-stats-core";
@@ -56,12 +57,12 @@ export function assignParticipantGroup(
 
 // ---- Matchs ----
 
-export function createMatch(tournamentId: string, data: MatchInput) {
+export function createMatch(tournamentId: string, data: MatchInput, format: TournamentFormat) {
   const winnerId = deriveWinnerId(data);
   return db.match.create({
     data: {
       tournamentId,
-      groupId: data.stage === "GROUP" ? (data.groupId ?? null) : null,
+      groupId: matchGroupIdFor(format, data.stage, data.groupId),
       teamAId: data.teamAId,
       teamBId: data.teamBId,
       scoreA: data.scoreA,
@@ -79,12 +80,17 @@ export function createMatch(tournamentId: string, data: MatchInput) {
   });
 }
 
-export function updateMatch(id: string, tournamentId: string, data: MatchInput) {
+export function updateMatch(
+  id: string,
+  tournamentId: string,
+  data: MatchInput,
+  format: TournamentFormat
+) {
   const winnerId = deriveWinnerId(data);
   return db.match.updateMany({
     where: { id, tournamentId },
     data: {
-      groupId: data.stage === "GROUP" ? (data.groupId ?? null) : null,
+      groupId: matchGroupIdFor(format, data.stage, data.groupId),
       teamAId: data.teamAId,
       teamBId: data.teamBId,
       scoreA: data.scoreA,

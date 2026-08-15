@@ -9,6 +9,7 @@ import { assertCanManageTournament } from "@/lib/server-auth";
 import { logger, describeError } from "@/lib/logger";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
 import { flashCodeFromError } from "@/lib/form-errors";
+import { matchGroupIdFor } from "@/lib/bracket";
 import { hasRiotStats } from "@/lib/match-stats-core";
 import {
   matchInputSchema,
@@ -143,13 +144,17 @@ export async function createMatchAction(tournamentId: string, formData: FormData
     where: { id: tournamentId },
     select: { format: true },
   });
-  if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
+  if (!t) redirect(base);
+  if (!STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
     redirect(`${base}?error=notregistered`);
   }
-  if (data.stage === "GROUP" && data.groupId)
-    await assertGroupInTournament(data.groupId, tournamentId);
-  await createMatch(tournamentId, data);
+  // Le groupe persisté dépend du format (bracket parallèle en Premier
+  // Contender) : on contrôle l'appartenance de celui qui sera réellement
+  // écrit, pas seulement celui des phases de poule.
+  const groupId = matchGroupIdFor(t.format, data.stage, data.groupId);
+  if (groupId) await assertGroupInTournament(groupId, tournamentId);
+  await createMatch(tournamentId, data, t.format);
   revalidateCompetition(tournamentId);
   redirect(base);
 }
@@ -168,13 +173,15 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
     where: { id: tournamentId },
     select: { format: true },
   });
-  if (t && !STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
+  if (!t) redirect(editBase);
+  if (!STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
     redirect(`${editBase}?error=notregistered`);
   }
-  if (data.stage === "GROUP" && data.groupId)
-    await assertGroupInTournament(data.groupId, tournamentId);
-  await updateMatch(matchId, tournamentId, data);
+  // Même règle qu'à la création : contrôler le groupe réellement persisté.
+  const groupId = matchGroupIdFor(t.format, data.stage, data.groupId);
+  if (groupId) await assertGroupInTournament(groupId, tournamentId);
+  await updateMatch(matchId, tournamentId, data, t.format);
 
   // La recherche automatique REMPLACE toutes les maps du match. On ne la
   // déclenche donc que sur la bascule vers « Terminé », et jamais quand un

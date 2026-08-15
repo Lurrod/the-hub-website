@@ -1,4 +1,4 @@
-import { isPremierFormat, type TournamentFormat } from "@/lib/constants";
+import { isPremierFormat, type MatchStage, type TournamentFormat } from "@/lib/constants";
 
 export type BracketMatchData = {
   id: string;
@@ -168,6 +168,27 @@ export function bracketLayoutFor(format: TournamentFormat): BracketLayout {
 export function defaultBestOfFor(format: TournamentFormat, round: string | null): number {
   if (!isPremierFormat(format)) return 1;
   return roundSizeFromLabel(round ?? "") === 1 ? 3 : 1;
+}
+
+/**
+ * Groupe à persister sur un match selon sa phase et le format du tournoi.
+ *
+ * La règle historique « un groupe seulement en phase de poule » effaçait le
+ * bracket des matchs Premier Contender — un format qui ne joue que des matchs
+ * de stage BRACKET, rangés dans des `Group`. Tous ses matchs saisis via la
+ * gestion sortaient orphelins et l'arbre public retombait en section unique.
+ * On garde le groupe partout où la géométrie `multi` s'en sert, et nulle part
+ * ailleurs : une poule accrochée à un match d'élimination prendrait la place
+ * du tour dans les libellés.
+ */
+export function matchGroupIdFor(
+  format: TournamentFormat,
+  stage: MatchStage,
+  groupId: string | null | undefined
+): string | null {
+  if (stage === "GROUP") return groupId ?? null;
+  if (stage === "BRACKET" && bracketLayoutFor(format) === "multi") return groupId ?? null;
+  return null;
 }
 
 type RawRound = { label: string; matches: BracketMatchData[] };

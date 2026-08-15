@@ -3,6 +3,7 @@ import {
   buildBracket,
   bracketLayoutFor,
   defaultBestOfFor,
+  matchGroupIdFor,
   parseRound,
   roundLabelForSize,
   roundSizeFromLabel,
@@ -347,5 +348,33 @@ describe("defaultBestOfFor", () => {
   it("laisse les formats non-Premier sur le Bo1 déjà en place", () => {
     expect(defaultBestOfFor("SINGLE_ELIM", "Finale")).toBe(1);
     expect(defaultBestOfFor("GROUPS", "Finale")).toBe(1);
+  });
+});
+
+describe("matchGroupIdFor", () => {
+  it("conserve le bracket d'un match de playoffs Premier Contender", () => {
+    // Le bug d'origine : la persistance effaçait le groupe de tout match hors
+    // phase de poule, donc aucun match Contender saisi via la gestion ne
+    // portait son bracket — l'arbre public retombait en section unique au lieu
+    // des deux brackets parallèles.
+    expect(matchGroupIdFor("PREMIER_CONTENDER", "BRACKET", "g1")).toBe("g1");
+  });
+
+  it("conserve la poule d'un match de phase de groupes", () => {
+    expect(matchGroupIdFor("GROUPS", "GROUP", "g1")).toBe("g1");
+    expect(matchGroupIdFor("GROUPS_THEN_ELIM", "GROUP", "g1")).toBe("g1");
+  });
+
+  it("détache un match de playoffs des formats à arbre unique", () => {
+    // Une poule accrochée à un match d'élimination afficherait son nom à la
+    // place du tour sur la page du tournoi.
+    expect(matchGroupIdFor("GROUPS_THEN_ELIM", "BRACKET", "g1")).toBeNull();
+    expect(matchGroupIdFor("SINGLE_ELIM", "BRACKET", "g1")).toBeNull();
+    expect(matchGroupIdFor("PREMIER_INVITE", "BRACKET", "g1")).toBeNull();
+  });
+
+  it("répond null quand aucun groupe n'est fourni", () => {
+    expect(matchGroupIdFor("PREMIER_CONTENDER", "BRACKET", undefined)).toBeNull();
+    expect(matchGroupIdFor("GROUPS", "GROUP", null)).toBeNull();
   });
 });
