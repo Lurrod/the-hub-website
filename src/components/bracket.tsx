@@ -211,23 +211,51 @@ function ByeCell() {
   );
 }
 
+/**
+ * Écusson d'équipe dans une case : le logo, ou un monogramme sur le tag quand
+ * l'équipe n'en a pas. Rien pour une équipe encore inconnue — un carré vide
+ * devant « - » n'annoncerait rien.
+ */
+function CellCrest({ team }: { team: { tag: string; logo?: string | null } }) {
+  return team.logo ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      loading="lazy"
+      decoding="async"
+      src={team.logo}
+      alt=""
+      className="h-4 w-4 shrink-0 rounded object-cover"
+    />
+  ) : (
+    <span className="monogram grid h-4 w-4 shrink-0 place-items-center rounded text-[7px]">
+      {team.tag.slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
+
 function BracketCell({ match }: { match: BracketMatchData }) {
   const aWin = match.winnerId != null && match.winnerId === match.teamAId;
   const bWin = match.winnerId != null && match.winnerId === match.teamBId;
   const score = displayScores(match);
-  const row = "flex items-center justify-between px-2.5 py-1.5 text-sm";
+  const row = "flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm";
   return (
     <Link
       href={`/matchs/${match.id}`}
       className="card block transition-colors hover:border-[var(--border-strong)]"
     >
       <div className={`${row} ${aWin ? "font-semibold text-[var(--accent)]" : "text-white"}`}>
-        <span className="truncate">{match.teamA?.tag ?? "-"}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {match.teamA && <CellCrest team={match.teamA} />}
+          <span className="truncate">{match.teamA?.tag ?? "-"}</span>
+        </span>
         <span className="stat">{score.a}</span>
       </div>
       <div className="border-t border-[var(--border)]" />
       <div className={`${row} ${bWin ? "font-semibold text-[var(--accent)]" : "text-white"}`}>
-        <span className="truncate">{match.teamB?.tag ?? "-"}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {match.teamB && <CellCrest team={match.teamB} />}
+          <span className="truncate">{match.teamB?.tag ?? "-"}</span>
+        </span>
         <span className="stat">{score.b}</span>
       </div>
     </Link>

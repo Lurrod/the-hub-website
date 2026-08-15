@@ -47,4 +47,53 @@ describe("displayScores", () => {
     });
     expect(displayScores({ scoreA: 0, scoreB: 0 })).toEqual({ a: "0", b: "0" });
   });
+
+  it("affiche le score de la map sur un BO1 joué", () => {
+    // « 1 - 0 » sur un BO1 n'apprend rien : la série et la map ne font qu'un,
+    // c'est le score de la map qui raconte le match.
+    expect(
+      displayScores({
+        scoreA: 1,
+        scoreB: 0,
+        forfeit: "NONE",
+        status: "FINISHED",
+        bestOf: 1,
+        maps: [{ scoreA: 13, scoreB: 7 }],
+      })
+    ).toEqual({ a: "13", b: "7" });
+  });
+
+  it("garde le score de série quand le BO1 n'a pas encore de map", () => {
+    expect(
+      displayScores({ scoreA: 0, scoreB: 0, status: "SCHEDULED", bestOf: 1, maps: [] })
+    ).toEqual({ a: "0", b: "0" });
+  });
+
+  it("ignore les maps hors BO1", () => {
+    expect(
+      displayScores({
+        scoreA: 2,
+        scoreB: 0,
+        status: "FINISHED",
+        bestOf: 3,
+        maps: [
+          { scoreA: 13, scoreB: 7 },
+          { scoreA: 13, scoreB: 11 },
+        ],
+      })
+    ).toEqual({ a: "2", b: "0" });
+  });
+
+  it("le forfait prime sur le score de map d'un BO1", () => {
+    expect(
+      displayScores({
+        scoreA: 0,
+        scoreB: 0,
+        forfeit: "TEAM_B",
+        status: "FINISHED",
+        bestOf: 1,
+        maps: [{ scoreA: 13, scoreB: 2 }],
+      })
+    ).toEqual({ a: "W", b: "FF" });
+  });
 });

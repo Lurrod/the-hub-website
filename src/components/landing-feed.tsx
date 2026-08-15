@@ -77,6 +77,7 @@ export default async function LandingFeed({ isLoggedIn }: { isLoggedIn: boolean 
                   date: m.date,
                   hasTime: m.hasTime,
                   bestOf: m.bestOf,
+                  maps: m.maps,
                   vodUrl: m.vodUrl,
                   teamA: m.teamA
                     ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo }

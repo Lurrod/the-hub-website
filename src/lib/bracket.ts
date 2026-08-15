@@ -17,12 +17,15 @@ export type BracketMatchData = {
    * fois le match terminé — d'où le besoin du statut ici. */
   forfeit?: MatchForfeit | null;
   status?: string | null;
+  /** BO1 : la case affiche le score de la map plutôt que « 1 - 0 ». */
+  bestOf?: number | null;
+  maps?: { scoreA: number; scoreB: number }[] | null;
   position?: number | null;
   /** Bracket parallèle auquel le match appartient (Premier Contender). */
   groupId?: string | null;
   groupName?: string | null;
-  teamA: { tag: string } | null;
-  teamB: { tag: string } | null;
+  teamA: { tag: string; logo?: string | null } | null;
+  teamB: { tag: string; logo?: string | null } | null;
 };
 
 /** Une case de l'arbre : un match réel, ou un emplacement vide (bye). */

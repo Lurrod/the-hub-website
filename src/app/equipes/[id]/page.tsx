@@ -88,6 +88,8 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     scoreB: number;
     forfeit: MatchForfeit;
     status: string;
+    bestOf: number;
+    maps: { scoreA: number; scoreB: number }[];
   };
   const miniMatch = (m: MiniMatchSource, played: boolean) => ({
     id: m.id,
@@ -99,6 +101,8 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     scoreB: played ? m.scoreB : undefined,
     forfeit: m.forfeit,
     status: m.status,
+    bestOf: m.bestOf,
+    maps: m.maps,
   });
   const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "…");
 
@@ -199,6 +203,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           date: m.date,
           hasTime: m.hasTime,
           bestOf: m.bestOf,
+          maps: m.maps,
           vodUrl: m.vodUrl,
           teamA: m.teamA ? { name: m.teamA.name, tag: m.teamA.tag, logo: m.teamA.logo } : null,
           teamB: m.teamB ? { name: m.teamB.name, tag: m.teamB.tag, logo: m.teamB.logo } : null,

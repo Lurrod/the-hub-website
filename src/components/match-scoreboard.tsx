@@ -133,6 +133,7 @@ function RoundTimeline({
   scoreA,
   scoreB,
   durationSec,
+  mapName,
 }: {
   rounds: RoundEntry[];
   teamAName: string;
@@ -144,6 +145,9 @@ function RoundTimeline({
   scoreA: number;
   scoreB: number;
   durationSec: number | null;
+  /** Sur un BO1 il n'y a pas d'onglet de maps : la map se nomme ici, sinon
+   * la page entière tairait où la partie s'est jouée. */
+  mapName?: string | null;
 }) {
   if (rounds.length === 0) return null;
   return (
@@ -165,8 +169,15 @@ function RoundTimeline({
         </span>
       </div>
 
-      {/* Durée de la partie (réelle si l'API l'a fournie, sinon estimée) */}
-      <div className="mb-2 text-center text-[11px] text-[var(--text-muted)]">
+      {/* Nom de la map (BO1) et durée de la partie (réelle si l'API l'a
+          fournie, sinon estimée) */}
+      <div className="mb-2 flex items-center justify-center text-center text-[11px] text-[var(--text-muted)]">
+        {mapName && (
+          <>
+            <span>{mapName}</span>
+            <span className="dot-sep">·</span>
+          </>
+        )}
         <span className="stat">
           {durationSec != null
             ? fmtDuration(durationSec)
@@ -508,6 +519,7 @@ export default function MatchScoreboard({
             scoreA={map.scoreA}
             scoreB={map.scoreB}
             durationSec={map.durationSec}
+            mapName={maps.length === 1 ? map.mapName : null}
           />
         ) : (
           <SeriesHeader

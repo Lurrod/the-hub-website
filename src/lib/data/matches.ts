@@ -9,6 +9,16 @@ import { seriesScore } from "@/lib/match-stats-core";
 import { cutoffWhere, headToHeadTally, type MatchCutoff } from "@/lib/match-context-core";
 import { clampPage, pageOffset } from "@/lib/pagination";
 
+/**
+ * Scores des maps, joints partout où un score de match s'affiche : sur un BO1,
+ * `displayScores` remplace le « 1 - 0 » de série par le score de la map. Le
+ * fragment est partagé pour qu'aucune liste ne raconte un autre score que le
+ * bracket ou la fiche du même match.
+ */
+const MAPS_SCORES = {
+  maps: { select: { scoreA: true, scoreB: true }, orderBy: { order: "asc" as const } },
+};
+
 function deriveWinnerId(data: {
   status: string;
   scoreA: number;
@@ -145,8 +155,14 @@ export function listBracketMatches(tournamentId: string) {
     where: { tournamentId, stage: "BRACKET" },
     // Le groupe porte le bracket parallèle en Premier Contender : sans lui,
     // `buildBracket` verrait tous les matchs comme orphelins et n'en ferait
-    // qu'un seul arbre.
-    include: { teamA: true, teamB: true, group: { select: { id: true, name: true } } },
+    // qu'un seul arbre. Les maps servent au score des BO1, où la case affiche
+    // le score de la map plutôt qu'un « 1 - 0 » qui n'apprend rien.
+    include: {
+      teamA: true,
+      teamB: true,
+      group: { select: { id: true, name: true } },
+      ...MAPS_SCORES,
+    },
     orderBy: [{ bracketPosition: "asc" }],
   });
 }
@@ -154,7 +170,7 @@ export function listBracketMatches(tournamentId: string) {
 export function listTournamentMatches(tournamentId: string) {
   return db.match.findMany({
     where: { tournamentId },
-    include: { teamA: true, teamB: true, group: true },
+    include: { teamA: true, teamB: true, group: true, ...MAPS_SCORES },
     orderBy: [{ date: "asc" }],
   });
 }
@@ -216,7 +232,7 @@ export async function syncMatchScoreFromMaps(matchId: string): Promise<void> {
 export function listRecentResults(limit = 5) {
   return db.match.findMany({
     where: { status: "FINISHED" },
-    include: { teamA: true, teamB: true, tournament: true },
+    include: { teamA: true, teamB: true, tournament: true, ...MAPS_SCORES },
     orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
     take: limit,
   });
@@ -226,7 +242,7 @@ export function listRecentResults(limit = 5) {
 export function listUpcomingMatches(limit = 8) {
   return db.match.findMany({
     where: { status: { in: ["SCHEDULED", "LIVE"] } },
-    include: { teamA: true, teamB: true, tournament: true },
+    include: { teamA: true, teamB: true, tournament: true, ...MAPS_SCORES },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
@@ -301,8 +317,16 @@ export async function listTournamentsWithMatches(options?: {
       _count: { select: { matches: { where: matchWhere } } },
       matches: {
         where: matchWhere,
-        include: { teamA: true, teamB: true, group: true },
-        orderBy: [{ stage: "asc" }, { date: "asc" }],
+        include: { teamA: true, teamB: true, group: true, ...MAPS_SCORES },
+        // Du plus récent au plus ancien : l'index sert d'abord à retrouver les
+        // derniers résultats, pas à relire le début du tournoi. Le plafond
+        // retient donc aussi les rencontres les plus fraîches. Exception pour
+        // « À venir », où l'ordre naturel reste le prochain coup d'envoi en
+        // tête — inversé, le match le plus lointain ouvrirait la liste.
+        orderBy:
+          (options?.filter ?? "all") === "upcoming"
+            ? [{ date: { sort: "asc", nulls: "last" } as const }, { createdAt: "asc" as const }]
+            : [{ date: { sort: "desc", nulls: "last" } as const }, { updatedAt: "desc" as const }],
         take: MATCHES_PER_TOURNAMENT,
       },
     },
@@ -319,7 +343,7 @@ export async function listTournamentsWithMatches(options?: {
 export async function getTeamMatchesByTournament(teamId: string, limit = 200) {
   const matches = await db.match.findMany({
     where: { status: "FINISHED", OR: [{ teamAId: teamId }, { teamBId: teamId }] },
-    include: { teamA: true, teamB: true, tournament: true },
+    include: { teamA: true, teamB: true, tournament: true, ...MAPS_SCORES },
     orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
     take: limit,
   });
@@ -341,7 +365,7 @@ export function listTeamUpcomingMatches(teamId: string, limit = 4) {
       status: { in: ["SCHEDULED", "LIVE"] },
       OR: [{ teamAId: teamId }, { teamBId: teamId }],
     },
-    include: { teamA: true, teamB: true },
+    include: { teamA: true, teamB: true, ...MAPS_SCORES },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
@@ -382,6 +406,7 @@ export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchC
       // faire circuler `inviteToken` et `inviteExpiresAt` avec le reste.
       teamA: { select: { name: true, tag: true, logo: true } },
       teamB: { select: { name: true, tag: true, logo: true } },
+      ...MAPS_SCORES,
     },
     // `nulls: "last"` évite qu'un match affiché sans date — cutoff réduit à sa
     // seule exclusion — fasse remonter en tête les autres matchs sans date.
@@ -430,6 +455,7 @@ export async function getHeadToHead(
       teamB: { select: { name: true, tag: true, logo: true } },
       // Sans le nom du tournoi, dix lignes de score ne se distinguent pas.
       tournament: { select: { name: true } },
+      ...MAPS_SCORES,
     },
     orderBy: [{ date: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }],
     // Une ligne de plus que le plafond : c'est ce qui distingue « exactement
@@ -456,7 +482,7 @@ export async function getHeadToHead(
 export function listPlayerRecentMatches(playerId: string, limit = 4) {
   return db.match.findMany({
     where: { maps: { some: { stats: { some: { playerId } } } } },
-    include: { teamA: true, teamB: true },
+    include: { teamA: true, teamB: true, ...MAPS_SCORES },
     orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
     take: limit,
   });
@@ -475,7 +501,7 @@ export function listPlayerUpcomingMatches(playerId: string, limit = 4) {
       status: { in: ["SCHEDULED", "LIVE"] },
       OR: [{ teamA: onRoster }, { teamB: onRoster }],
     },
-    include: { teamA: true, teamB: true },
+    include: { teamA: true, teamB: true, ...MAPS_SCORES },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     take: limit,
   });
