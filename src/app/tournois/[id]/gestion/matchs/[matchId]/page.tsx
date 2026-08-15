@@ -195,22 +195,22 @@ export default async function EditMatchPage({
             className={`${input} min-w-72 flex-1 font-mono`}
           />
           <select
-            name="campOfTeamA"
+            name="outcomeOfTeamA"
             defaultValue="AUTO"
             className={input}
-            aria-label="Camp Riot de l'équipe A"
+            aria-label="Résultat de l'équipe A"
           >
-            <option value="AUTO">Déduire le camp</option>
-            <option value="Blue">{match.teamA.name} était Blue</option>
-            <option value="Red">{match.teamA.name} était Red</option>
+            <option value="AUTO">Déduire les équipes</option>
+            <option value="WON">{match.teamA.name} a gagné</option>
+            <option value="LOST">{match.teamA.name} a perdu</option>
           </select>
           <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white">
             Importer
           </button>
         </form>
         <p className="mt-2 text-xs text-[var(--text-muted)]">
-          « Déduire le camp » se base sur les joueurs dont le Riot ID est lié. Sans joueur lié,
-          choisis le camp à la main, sinon les deux équipes risquent d&apos;être inversées.
+          « Déduire les équipes » se base sur les joueurs dont le Riot ID est lié. Sans joueur lié,
+          indique qui a gagné la map, sinon les deux équipes risquent d&apos;être inversées.
         </p>
       </section>
     </main>

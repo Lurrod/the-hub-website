@@ -8,10 +8,6 @@ import type {
 
 export type Side = "A" | "B";
 
-/** Camps bruts renvoyés par Riot, et le repli « laisser déduire par les puuid ». */
-export const RIOT_CAMPS = ["Blue", "Red"] as const;
-export type RiotCamp = (typeof RIOT_CAMPS)[number];
-
 /**
  * Vrai quand un scoreboard Riot est rattaché au match, qu'il vienne de la
  * recherche automatique ou d'un import manuel par identifiant de partie.
@@ -62,6 +58,29 @@ export function assignSidesFromCamp(
     sideOfTeam[teamId] = teamId.toLowerCase() === camp ? "A" : "B";
   }
   return { sideOfTeam, ...roundsBySide(match, sideOfTeam) };
+}
+
+/**
+ * Rattachement des camps par le résultat annoncé (« l'équipe A a gagné »).
+ *
+ * L'organisateur sait toujours qui a gagné la map, rarement quel camp Riot
+ * (Blue/Red) était le sien — c'est ce qui rendait le sélecteur de camp
+ * inutilisable en pratique. Les données Riot donnent le camp vainqueur (le
+ * plus de rounds) : on traduit le résultat en camp puis on délègue.
+ *
+ * Renvoie null quand la map n'a pas de vainqueur (égalité de rounds) :
+ * « a gagné » n'y départage rien, l'appelant doit refuser l'import plutôt
+ * que risquer d'inverser les équipes en silence.
+ */
+export function assignSidesFromOutcome(
+  match: CustomMatch,
+  teamAWon: boolean
+): { sideOfTeam: Record<string, Side>; roundsA: number; roundsB: number } | null {
+  const camps = Object.entries(match.teamRounds);
+  if (camps.length !== 2 || camps[0][1] === camps[1][1]) return null;
+  const winner = camps[0][1] > camps[1][1] ? camps[0][0] : camps[1][0];
+  const loser = camps[0][0] === winner ? camps[1][0] : camps[0][0];
+  return assignSidesFromCamp(match, teamAWon ? winner : loser);
 }
 
 /** Nombre de joueurs de la partie dont le puuid est attendu. */
