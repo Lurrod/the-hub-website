@@ -111,6 +111,7 @@ export default async function EditMatchPage({
         groups={groupOptions}
         stages={allowedStages}
         defaultBestOf={defaultBestOfFor(tournament.format, match.round)}
+        groupLabel={tournament.format === "PREMIER_CONTENDER" ? "Bracket" : undefined}
         submitLabel="Enregistrer"
         values={{
           teamAId: match.teamAId,

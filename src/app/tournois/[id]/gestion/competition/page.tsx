@@ -51,6 +51,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         placeholder: "Nom du bracket (ex. Bracket A)",
         assign: "Affectation des équipes aux brackets",
         none: "- Sans bracket -",
+        matchField: "Bracket",
       }
     : {
         title: "Poules",
@@ -58,6 +59,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         placeholder: "Nom de la poule (ex. Groupe A)",
         assign: "Affectation des équipes aux poules",
         none: "- Sans poule -",
+        matchField: "Poule (si phase = Poule)",
       };
 
   const teams = tournament.participants.map((p) => ({ id: p.teamId, name: p.team.name }));
@@ -185,6 +187,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           stages={allowedStages}
           submitLabel="Créer le match"
           defaultBestOf={defaultBestOfFor(tournament.format, null)}
+          groupLabel={groupWord.matchField}
         />
       </section>
     </main>

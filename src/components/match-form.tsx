@@ -35,6 +35,7 @@ export default function MatchForm({
   submitLabel,
   stages = MATCH_STAGES,
   defaultBestOf = 1,
+  groupLabel = "Poule (si phase = Poule)",
 }: {
   action: (formData: FormData) => void;
   teams: Team[];
@@ -45,6 +46,9 @@ export default function MatchForm({
   /** Bo suggéré quand le match n'en porte pas encore : les playoffs Premier
    * veulent Bo3 en finale, Bo1 partout ailleurs. */
   defaultBestOf?: number;
+  /** Le Premier Contender range ses brackets parallèles dans ce même champ :
+   * l'intitulé « Poule (si phase = Poule) » y ferait ignorer un champ requis. */
+  groupLabel?: string;
 }) {
   const input =
     "w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
@@ -144,7 +148,7 @@ export default function MatchForm({
       </div>
       <ErrorShake codes={["nogroups"]}>
         <label className={lbl}>
-          Poule (si phase = Poule)
+          {groupLabel}
           <select
             name="groupId"
             defaultValue={values?.groupId ?? ""}
