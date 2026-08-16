@@ -70,8 +70,10 @@ test("un forfait donne la victoire à l'adversaire et s'affiche FF", async ({ co
   expect(match?.forfeit).toBe("TEAM_B");
   expect(match?.winnerId).toBe(TEAM_A.id);
 
-  // L'arbre public affiche W / FF à la place du score chiffré.
+  // L'arbre public affiche W / FF à la place du score chiffré. `.first()` :
+  // le forfait apparaît aussi dans « Derniers résultats » de l'aperçu, le
+  // sélecteur strict trouvait donc deux « FF ».
   await page.goto(`/tournois/${tournamentId}`);
-  await expect(page.getByText("FF", { exact: true })).toBeVisible();
-  await expect(page.getByText("W", { exact: true })).toBeVisible();
+  await expect(page.getByText("FF", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("W", { exact: true }).first()).toBeVisible();
 });
