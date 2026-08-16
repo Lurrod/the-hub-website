@@ -14,7 +14,7 @@ import { tournamentShareVariants } from "@/lib/og/share-variants";
 import { SITE_URL } from "@/lib/site";
 import EmptyState, { RosterDecor, StatsDecor } from "@/components/empty-state";
 import TournamentStats from "@/components/tournament-stats";
-import MatchMiniList from "@/components/match-mini-list";
+import MatchSideColumn from "@/components/match-side-column";
 import TournamentMatchList from "@/components/tournament-match-list";
 import StageMenu from "@/components/stage-menu";
 import ParticipantCard from "@/components/participant-card";
@@ -153,6 +153,26 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   });
 
   const upcoming = allMatches.filter((m) => m.status === "SCHEDULED" || m.status === "LIVE");
+  // Mêmes derniers résultats que sur les fiches équipe et joueur : les quatre
+  // matchs terminés les plus récents, la liste complète restant dans l'onglet
+  // Matches.
+  const recent = allMatches
+    .filter((m) => m.status === "FINISHED")
+    .sort((a, b) => (b.date?.getTime() ?? -Infinity) - (a.date?.getTime() ?? -Infinity))
+    .slice(0, 4);
+  const miniMatch = (m: (typeof allMatches)[number], played: boolean) => ({
+    id: m.id,
+    date: m.date,
+    hasTime: m.hasTime,
+    teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
+    teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
+    scoreA: played ? m.scoreA : undefined,
+    scoreB: played ? m.scoreB : undefined,
+    forfeit: m.forfeit,
+    status: m.status,
+    bestOf: m.bestOf,
+    maps: m.maps,
+  });
   const stageLabel = (m: (typeof allMatches)[number]) =>
     m.group ? m.group.name : (m.round ?? "Playoffs");
 
@@ -181,21 +201,10 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     // implicite en `min-width: auto`, donc l'arbre imposait sa largeur a la
     // piste et faisait defiler la PAGE entiere au lieu de defiler lui-meme.
     <div className="grid gap-6 lg:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
-      <section className="min-w-0 self-start">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-          Matchs à venir
-        </h2>
-        <MatchMiniList
-          empty="Aucun match à venir."
-          matches={upcoming.map((m) => ({
-            id: m.id,
-            date: m.date,
-            hasTime: m.hasTime,
-            teamA: m.teamA ? { tag: m.teamA.tag, logo: m.teamA.logo } : null,
-            teamB: m.teamB ? { tag: m.teamB.tag, logo: m.teamB.logo } : null,
-          }))}
-        />
-      </section>
+      <MatchSideColumn
+        upcoming={upcoming.map((m) => miniMatch(m, false))}
+        recent={recent.map((m) => miniMatch(m, true))}
+      />
 
       <div className="min-w-0 space-y-8">
         {stageDefs.length > 0 && (
