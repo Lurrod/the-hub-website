@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   daysUntil,
   countdownLabel,
+  tournamentCountdownLabel,
   monthKey,
   monthLabel,
   dayKey,
@@ -35,6 +36,21 @@ describe("countdownLabel", () => {
     expect(countdownLabel(5)).toBe("Dans 5 j");
     expect(countdownLabel(-1)).toBe("Hier");
     expect(countdownLabel(-3)).toBe("Terminé");
+  });
+});
+
+describe("tournamentCountdownLabel", () => {
+  it("fait primer le statut sur la date : un tournoi commencé reste « En cours »", () => {
+    expect(tournamentCountdownLabel("ONGOING", -3)).toBe("En cours");
+    expect(tournamentCountdownLabel("ONGOING", 0)).toBe("En cours");
+  });
+  it("« Terminé » vient du statut, pas de l'ancienneté de la date de début", () => {
+    expect(tournamentCountdownLabel("FINISHED", -30)).toBe("Terminé");
+  });
+  it("un tournoi à venir garde le compte à rebours", () => {
+    expect(tournamentCountdownLabel("UPCOMING", 5)).toBe("Dans 5 j");
+    expect(tournamentCountdownLabel("UPCOMING", 0)).toBe("Aujourd'hui");
+    expect(tournamentCountdownLabel("UPCOMING", null)).toBe("Date à définir");
   });
 });
 

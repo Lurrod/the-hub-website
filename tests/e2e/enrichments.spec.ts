@@ -6,6 +6,9 @@ import { test, expect } from "@playwright/test";
 test("la fiche tournoi affiche la section des matchs à venir", async ({ page }) => {
   await page.goto("/tournois/fmt-single-elim");
   await expect(page.getByRole("heading", { name: "Matchs à venir" })).toBeVisible();
+  // La fiche tournoi partage la colonne des fiches équipe et joueur : les
+  // derniers résultats accompagnent les matchs à venir.
+  await expect(page.getByRole("heading", { name: "Derniers résultats" })).toBeVisible();
 });
 
 // Anciennement « Resultats recents ».

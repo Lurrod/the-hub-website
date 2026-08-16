@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { countdownLabel } from "@/lib/dates";
+import { tournamentCountdownLabel } from "@/lib/dates";
+import type { TournamentStatus } from "@/lib/constants";
 
 type Row = {
   id: string;
@@ -9,6 +10,7 @@ type Row = {
   prizePool: string | null;
   teamCount: number;
   days: number | null;
+  status: TournamentStatus;
 };
 
 function fullDate(date: Date | null): string {
@@ -28,7 +30,7 @@ export default function TournamentListRow({ t }: { t: Row }) {
     >
       <div className="w-14 shrink-0 sm:w-24">
         <span className="stat block text-center text-sm font-semibold text-[var(--accent)]">
-          {countdownLabel(t.days)}
+          {tournamentCountdownLabel(t.status, t.days)}
         </span>
       </div>
 

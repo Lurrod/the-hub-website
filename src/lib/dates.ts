@@ -1,3 +1,4 @@
+import type { TournamentStatus } from "@/lib/constants";
 import { formatSite, toDateInput } from "@/lib/timezone";
 
 const DAY_MS = 86_400_000;
@@ -20,6 +21,17 @@ export function countdownLabel(days: number | null): string {
   if (days > 1) return `Dans ${days} j`;
   if (days === -1) return "Hier";
   return "Terminé";
+}
+
+/**
+ * Libellé du compte à rebours d'un tournoi : le statut prime sur la date de
+ * début. Basé sur la seule date, un tournoi affichait « Terminé » dès le
+ * surlendemain de son coup d'envoi alors que ses playoffs se jouaient encore.
+ */
+export function tournamentCountdownLabel(status: TournamentStatus, days: number | null): string {
+  if (status === "FINISHED") return "Terminé";
+  if (status === "ONGOING") return "En cours";
+  return countdownLabel(days);
 }
 
 /** Clé de regroupement par mois (AAAA-MM), "0000-00" si date absente. */
