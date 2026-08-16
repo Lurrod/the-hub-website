@@ -79,6 +79,7 @@ export default async function TournamentsPage({
                         prizePool: t.prizePool,
                         teamCount: t._count.participants,
                         days: daysUntil(t.startDate, now),
+                        status: t.status,
                       }}
                     />
                   ))}
