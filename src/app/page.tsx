@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth, signIn } from "@/lib/auth";
 import { getPlayerByUserId } from "@/lib/data/players";
 import LandingHero from "@/components/landing-hero";
@@ -8,7 +9,12 @@ import { pageMetadata } from "@/lib/metadata";
 import JsonLdScript from "@/components/json-ld";
 import { siteJsonLd } from "@/lib/structured-data";
 
-export const metadata = pageMetadata({ path: "/" });
+// Titre absolu : « The Hub » seul ne posait aucun mot-clé sur la requête la
+// plus disputée, et le gabarit « %s · The Hub » doublerait la marque.
+export const metadata: Metadata = {
+  ...pageMetadata({ path: "/" }),
+  title: { absolute: "The Hub — Tournois et stats du Tier 3 Valorant francophone" },
+};
 
 /**
  * Temporaire : l'accueil se limite au hero tant qu'aucune équipe n'est inscrite

@@ -20,7 +20,7 @@ export default function PlayerCard({ player }: { player: PlayerCardData }) {
           loading="lazy"
           decoding="async"
           src={player.photo}
-          alt=""
+          alt={player.pseudo}
           className="h-10 w-10 rounded-full object-cover"
         />
       ) : (

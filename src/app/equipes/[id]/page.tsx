@@ -19,15 +19,19 @@ import TournamentCard from "@/components/tournament-card";
 import MatchSideColumn from "@/components/match-side-column";
 import TeamPlayerCard from "@/components/team-player-card";
 
-import { teamTitle } from "@/lib/data/titles";
+import { teamSeo } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
 import { teamJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const name = await teamTitle(id);
-  return pageMetadata({ path: `/equipes/${id}`, title: name ?? "Équipe" });
+  const seo = await teamSeo(id);
+  return pageMetadata({
+    path: `/equipes/${id}`,
+    title: seo?.title ?? "Équipe",
+    description: seo?.description,
+  });
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -232,7 +236,11 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
             {team.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={team.logo} alt="" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+              <img
+                src={team.logo}
+                alt={`Logo ${team.name}`}
+                className="h-20 w-20 shrink-0 rounded-lg object-cover"
+              />
             ) : (
               <div className="monogram grid h-20 w-20 shrink-0 place-items-center rounded-lg text-xl">
                 {team.tag.slice(0, 3).toUpperCase()}

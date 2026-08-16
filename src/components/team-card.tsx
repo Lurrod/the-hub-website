@@ -20,7 +20,7 @@ export default function TeamCard({ team }: { team: TeamCardData }) {
           loading="lazy"
           decoding="async"
           src={team.logo}
-          alt=""
+          alt={`Logo ${team.name}`}
           className="h-10 w-10 rounded object-cover"
         />
       ) : (

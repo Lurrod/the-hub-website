@@ -31,15 +31,19 @@ import { STAGES_BY_FORMAT } from "@/lib/constants";
 import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
 
-import { tournamentTitle } from "@/lib/data/titles";
+import { tournamentSeo } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
 import { tournamentJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const name = await tournamentTitle(id);
-  return pageMetadata({ path: `/tournois/${id}`, title: name ?? "Tournoi" });
+  const seo = await tournamentSeo(id);
+  return pageMetadata({
+    path: `/tournois/${id}`,
+    title: seo?.title ?? "Tournoi",
+    description: seo?.description,
+  });
 }
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -322,7 +326,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={tournament.logo}
-                alt=""
+                alt={`Logo ${tournament.name}`}
                 className="h-16 w-16 shrink-0 rounded-lg object-cover"
               />
             ) : (

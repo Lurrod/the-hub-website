@@ -48,7 +48,7 @@ export default function TournamentCard({ tournament }: { tournament: TournamentC
             loading="lazy"
             decoding="async"
             src={tournament.logo}
-            alt=""
+            alt={`Logo ${tournament.name}`}
             className="h-12 w-12 rounded-lg object-cover"
           />
         ) : (
