@@ -459,6 +459,8 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
       .map((a) => ({ ...toEntry(a, `${value(a)}`, value(a)), detail: detail(a) })),
   });
 
+  // Somme non pondérée, assumée : pondérer un ace face à un triple reviendrait
+  // à inventer un barème, et le détail 3K/4K/ACE est affiché avec l'entrée.
   const mkTotal = (a: Agg) => a.triples + a.quadras + a.aces;
   const mkDetail = (a: Agg) =>
     [

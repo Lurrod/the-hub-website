@@ -106,6 +106,39 @@ describe("computeHighlights — clutchs", () => {
     expect(h.get("a1")).toMatchObject({ clutchWins: 2, clutchAttempts: 2, bestClutch: 3 });
   });
 
+  it("crédite le clutch posthume : le camp gagne le round après la mort du clutcheur", () => {
+    const kills = [
+      // a1 réduit les Blues à deux, puis se retrouve seul : 1v2.
+      kill(0, 1000, "a1", "b1"),
+      kill(0, 2000, "a1", "b2"),
+      kill(0, 3000, "a1", "b3"),
+      kill(0, 4000, "b4", "a2"),
+      kill(0, 4500, "b4", "a3"),
+      kill(0, 5000, "b4", "a4"),
+      kill(0, 5500, "b4", "a5"),
+      // a1 tombe b4 puis meurt — le spike explose, son camp gagne quand même.
+      kill(0, 6000, "a1", "b4"),
+      kill(0, 7000, "b5", "a1"),
+    ];
+    const h = computeHighlights(kills, players, [win("Red")]);
+    expect(h.get("a1")).toMatchObject({ clutchWins: 1, clutchAttempts: 1, bestClutch: 2 });
+  });
+
+  it("ignore les duels de joueurs absents du roster sans polluer les autres", () => {
+    const kills = [
+      // Un observateur fantôme dans les événements ne doit ni planter ni compter.
+      kill(0, 500, "fantome", "spectre"),
+      kill(0, 600, "fantome", "a9"),
+      kill(0, 1000, "a1", "b1"),
+      kill(0, 2000, "a1", "b2"),
+      kill(0, 3000, "a1", "b3"),
+    ];
+    const h = computeHighlights(kills, players, [win("Red")]);
+    expect(h.get("a1")).toMatchObject({ triples: 1 });
+    expect(h.has("fantome")).toBe(false);
+    expect(h.get("a2")).toMatchObject({ clutchWins: 0, clutchAttempts: 0 });
+  });
+
   it("sans vainqueur connu pour le round, la tentative reste mais pas la victoire", () => {
     const kills = [
       kill(3, 1000, "b1", "a2"),

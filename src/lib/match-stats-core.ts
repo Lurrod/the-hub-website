@@ -297,6 +297,10 @@ export function computeHighlights(
       if (enemies > 0) attempts.push({ puuid: last, teamId: victimTeam, size: enemies });
     }
 
+    // Frontière de confiance : le `round` d'un duel Riot est réputé 0-based et
+    // aligné sur l'ordre du tableau `rounds` du même payload. Si l'hypothèse
+    // casse (indice hors bornes), la tentative est comptée mais aucune victoire
+    // n'est créditée — dégradation muette plutôt que crédit au hasard.
     const winner = rounds[round]?.winningTeamId;
     for (const a of attempts) {
       const h = highlights.get(a.puuid);
