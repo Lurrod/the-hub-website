@@ -240,6 +240,14 @@ describe("siteJsonLd", () => {
     expect((d.publisher as Record<string, unknown>)["@type"]).toBe("Organization");
   });
 
+  it("porte « The Hub VRC » en alternateName — la requête de marque", () => {
+    // Le nom courant est « The Hub », mais on se cherche en tapant
+    // « the hub vrc » : sans cette variante, la chaîne n'existe nulle part.
+    const d = siteJsonLd();
+    expect(d.alternateName).toBe("The Hub VRC");
+    expect((d.publisher as Record<string, unknown>).alternateName).toBe("The Hub VRC");
+  });
+
   it("déclare l'action de recherche sur le paramètre que /recherche lit vraiment", () => {
     // Le gabarit doit pointer `q` : c'est le nom lu par src/app/recherche/page.tsx.
     const action = siteJsonLd().potentialAction as Record<string, unknown>;

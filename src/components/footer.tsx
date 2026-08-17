@@ -29,7 +29,12 @@ export default function Footer() {
           </a>
         </div>
 
-        <p className="hidden text-center text-xs sm:block">Projet non affilié à Riot Games.</p>
+        {/* La marque complète « The Hub VRC » doit exister en toutes lettres
+            quelque part sur chaque page : c'est la requête sous laquelle on
+            nous cherche, et le sigle seul renvoie à VRChat. */}
+        <p className="hidden text-center text-xs sm:block">
+          The Hub VRC — projet non affilié à Riot Games.
+        </p>
 
         {/* Coin droit : liens légaux puis réseaux */}
         <div className="flex items-center gap-4 justify-self-end">

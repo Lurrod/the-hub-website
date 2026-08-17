@@ -31,7 +31,25 @@ export function parseFichePath(path: string): { section: FicheSection; id: strin
   return m ? { section: m[1] as FicheSection, id: decodeURIComponent(m[2]) } : null;
 }
 
+/**
+ * Cible sans « www. », ou null si l'hôte n'en porte pas.
+ *
+ * www.the-hub-vrc.fr répondait 200 avec le même contenu que l'apex : deux
+ * hôtes indexables pour un même site, le canonical seul devant rattraper la
+ * dilution. Le 301 tranche — et vivre ici le rend indépendant de la conf
+ * Apache du Kimsufi.
+ */
+export function stripWwwUrl(url: URL): URL | null {
+  if (!url.hostname.startsWith("www.")) return null;
+  const target = new URL(url.toString());
+  target.hostname = url.hostname.slice(4);
+  return target;
+}
+
 export async function proxy(request: NextRequest) {
+  const www = stripWwwUrl(request.nextUrl);
+  if (www) return NextResponse.redirect(www, 301);
+
   const hasSession = SESSION_COOKIES.some((name) => request.cookies.has(name));
   const path = request.nextUrl.pathname;
   const isGestion = path.includes("/gestion");
