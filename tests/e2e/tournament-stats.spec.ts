@@ -19,7 +19,14 @@ test.describe("onglet Stats du tournoi", () => {
   }) => {
     await expect(page.getByRole("heading", { name: "Clutchs et multikills" })).toBeVisible();
     await expect(page.getByText("Plus gros clutch")).toBeVisible();
-    await expect(page.getByText("carte importée avant l'ajout de ces données")).toBeVisible();
+    // Une note par section alimentée par les duels : clutchs ET armes.
+    await expect(page.getByText("carte importée avant l'ajout de ces données")).toHaveCount(2);
+  });
+
+  test("la section armes montre la méta et le duel des fusils", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "Les armes" })).toBeVisible();
+    await expect(page.getByText("Vandal ou Phantom ?")).toBeVisible();
+    await expect(page.getByText("Rois de l'Opérateur")).toBeVisible();
   });
 
   test("le classement des joueurs est trié au rating et mène aux fiches", async ({ page }) => {

@@ -76,6 +76,19 @@ export type HighlightStats = {
   aces: StatLeaderboard;
 };
 
+/** Kills cumulés d'une arme sur le tournoi, avec sa part des kills à l'arme. */
+export type WeaponMetaEntry = { weapon: string; kills: number; pct: number };
+
+/** Armes du tournoi : méta, spécialistes, et le duel Vandal/Phantom. */
+export type WeaponStats = {
+  hasData: boolean;
+  missingMaps: number;
+  meta: WeaponMetaEntry[];
+  operator: StatLeaderboard;
+  melee: StatLeaderboard;
+  rifles: { vandal: number; phantom: number };
+};
+
 export type TournamentStats = {
   tournamentRecords: TournamentFact[]; // records du tournoi (perso, map, partie…)
   records: StatRecord[]; // exploit sur une seule game (top 1, visuel)
@@ -87,6 +100,7 @@ export type TournamentStats = {
   mapPool: MapPoolEntry[]; // fréquence et physionomie par carte
   margins: MarginBucket[]; // répartition des écarts de score
   highlights: HighlightStats; // clutchs et multikills
+  weapons: WeaponStats; // méta des armes
   hasData: boolean;
 };
 
@@ -114,7 +128,16 @@ type Agg = {
   aces: number;
   clutchWins: number;
   clutchAttempts: number;
+  weapons: Record<string, number>;
 };
+
+/**
+ * Relit la colonne Json `weaponKills`. Même précédent que `roundTimeline` :
+ * la donnée vient de notre propre import, un garde structurel suffit.
+ */
+function parseWeaponKills(v: unknown): Record<string, number> | null {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, number>) : null;
+}
 
 /**
  * Agrège toutes les stats par carte d'un tournoi : records (une game),
@@ -174,6 +197,14 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
         clutches: { key: "clutchs", label: "Clutchs gagnés", entries: [] },
         multikills: { key: "multikills", label: "Multikills", entries: [] },
         aces: { key: "aces", label: "Aces", entries: [] },
+      },
+      weapons: {
+        hasData: false,
+        missingMaps: 0,
+        meta: [],
+        operator: { key: "operator", label: "Rois de l'Opérateur", entries: [] },
+        melee: { key: "melee", label: "Kills au couteau", entries: [] },
+        rifles: { vandal: 0, phantom: 0 },
       },
       hasData: false,
     };
@@ -316,6 +347,7 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
       aces: 0,
       clutchWins: 0,
       clutchAttempts: 0,
+      weapons: {},
     };
     a.maps += 1;
     a.kills += r.kills;
@@ -333,6 +365,9 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     a.aces += r.aces ?? 0;
     a.clutchWins += r.clutchWins ?? 0;
     a.clutchAttempts += r.clutchAttempts ?? 0;
+    for (const [weapon, n] of Object.entries(parseWeaponKills(r.weaponKills) ?? {})) {
+      a.weapons[weapon] = (a.weapons[weapon] ?? 0) + n;
+    }
     byPlayer.set(key, a);
   }
   const players = [...byPlayer.values()];
@@ -504,6 +539,45 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     ),
   };
 
+  // --- Armes : méta cumulée, spécialistes, et le duel des fusils ---
+  const weaponCovered = resolved.filter((r) => parseWeaponKills(r.weaponKills) !== null);
+  const weaponMissing = new Set(
+    resolved.filter((r) => parseWeaponKills(r.weaponKills) === null).map((r) => r.matchMapId)
+  ).size;
+
+  const weaponTotals: Record<string, number> = {};
+  for (const a of players) {
+    for (const [weapon, n] of Object.entries(a.weapons)) {
+      weaponTotals[weapon] = (weaponTotals[weapon] ?? 0) + n;
+    }
+  }
+  const totalWeaponKills = Object.values(weaponTotals).reduce((n, v) => n + v, 0);
+
+  const weapons: WeaponStats = {
+    hasData: weaponCovered.length > 0,
+    missingMaps: weaponMissing,
+    meta: Object.entries(weaponTotals)
+      .sort((x, y) => y[1] - x[1])
+      .map(([weapon, kills]) => ({
+        weapon,
+        kills,
+        pct: totalWeaponKills > 0 ? Math.round((kills / totalWeaponKills) * 100) : 0,
+      })),
+    operator: highlightBoard(
+      "operator",
+      "Rois de l'Opérateur",
+      (a) => a.weapons["Operator"] ?? 0,
+      () => undefined
+    ),
+    melee: highlightBoard(
+      "melee",
+      "Kills au couteau",
+      (a) => a.weapons["Melee"] ?? 0,
+      () => undefined
+    ),
+    rifles: { vandal: weaponTotals["Vandal"] ?? 0, phantom: weaponTotals["Phantom"] ?? 0 },
+  };
+
   const playerPoints: PlayerPoint[] = players.map((a) => ({
     playerId: a.playerId,
     name: a.name,
@@ -531,6 +605,7 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     mapPool: computeMapPool(maps),
     margins: computeMarginBuckets(maps),
     highlights,
+    weapons,
     hasData: true,
   };
 }

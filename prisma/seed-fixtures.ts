@@ -65,6 +65,7 @@ type StatSpec = {
   clutchWins?: number | null;
   clutchAttempts?: number | null;
   bestClutch?: number | null;
+  weaponKills?: Record<string, number> | null;
 };
 
 /** Version d'une équipe sans faits d'armes : simule un import antérieur. */
@@ -77,6 +78,7 @@ function sansFaitsDarmes(rows: StatSpec[]): StatSpec[] {
     clutchWins: null,
     clutchAttempts: null,
     bestClutch: null,
+    weaponKills: null,
   }));
 }
 
@@ -214,6 +216,9 @@ async function upsertMap(
       clutchWins: s.clutchWins ?? null,
       clutchAttempts: s.clutchAttempts ?? null,
       bestClutch: s.bestClutch ?? null,
+      // `?? undefined` et non `?? null` : Prisma refuse null sur un champ Json
+      // (DbNull vs JsonNull) ; l'omission laisse simplement la colonne NULL.
+      weaponKills: s.weaponKills ?? undefined,
       rating: computeRating({
         rounds: r,
         kills: s.kills,
@@ -258,6 +263,17 @@ function lineup(
       clutchWins,
       clutchAttempts: clutchWins + (i % 2),
       bestClutch: clutchWins > 0 ? (kills % 3) + 1 : 0,
+      // Répartition d'armes plausible : le gros du score au fusil (Vandal pour
+      // les pairs, Phantom pour les impairs), l'Opérateur au second, un kill
+      // au couteau pour le dernier — de quoi peupler chaque carte de la section.
+      weaponKills: {
+        [i % 2 === 0 ? "Vandal" : "Phantom"]: Math.max(0, kills - 5 - (i === 1 ? 3 : 0)),
+        Spectre: 2,
+        Classic: 2,
+        Sheriff: 1,
+        ...(i === 1 ? { Operator: 3 } : {}),
+        ...(i === 4 ? { Melee: 1 } : {}),
+      },
     };
   });
 }
