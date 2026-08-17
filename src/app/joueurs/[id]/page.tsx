@@ -21,7 +21,7 @@ import RatingTrend from "@/components/charts/rating-trend";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
 import { playerDiscordSocial } from "@/lib/discord";
 
-import { playerTitle } from "@/lib/data/titles";
+import { playerSeo } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
 import ShareCardButton from "@/components/share-card-button";
 import { playerJsonLd } from "@/lib/structured-data";
@@ -31,8 +31,12 @@ import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const name = await playerTitle(id);
-  return pageMetadata({ path: `/joueurs/${id}`, title: name ?? "Joueur" });
+  const seo = await playerSeo(id);
+  return pageMetadata({
+    path: `/joueurs/${id}`,
+    title: seo?.title ?? "Joueur",
+    description: seo?.description,
+  });
 }
 
 function computeAge(birthdate: Date | null): number | null {
@@ -249,7 +253,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={player.photo}
-                alt=""
+                alt={player.pseudo}
                 className="h-20 w-20 shrink-0 rounded-full object-cover"
               />
             ) : (

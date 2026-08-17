@@ -24,7 +24,7 @@ export default function ParticipantCard({ p }: { p: P }) {
               loading="lazy"
               decoding="async"
               src={p.logo}
-              alt=""
+              alt={`Logo ${p.name}`}
               className="h-16 w-16 rounded-lg object-cover"
             />
           ) : (

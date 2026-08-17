@@ -40,7 +40,7 @@ export default function TournamentListRow({ t }: { t: Row }) {
           loading="lazy"
           decoding="async"
           src={t.logo}
-          alt=""
+          alt={`Logo ${t.name}`}
           className="h-12 w-12 shrink-0 rounded-lg object-cover"
         />
       ) : (

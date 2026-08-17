@@ -20,7 +20,7 @@ import MatchScoreboard, {
   type RoundEntry,
 } from "@/components/match-scoreboard";
 
-import { matchTitle } from "@/lib/data/titles";
+import { matchSeo } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
 import ShareCardButton from "@/components/share-card-button";
 import { matchJsonLd } from "@/lib/structured-data";
@@ -31,8 +31,12 @@ import { displayScores } from "@/lib/forfeit";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const name = await matchTitle(id);
-  return pageMetadata({ path: `/matchs/${id}`, title: name ?? "Match" });
+  const seo = await matchSeo(id);
+  return pageMetadata({
+    path: `/matchs/${id}`,
+    title: seo?.title ?? "Match",
+    description: seo?.description,
+  });
 }
 
 /** Le camp qui mène est mis en avant ; l'autre reste blanc, comme au bandeau. */
@@ -64,7 +68,7 @@ function TallySide({
           loading="lazy"
           decoding="async"
           src={team.logo}
-          alt=""
+          alt={`Logo ${team.name}`}
           className="h-5 w-5 shrink-0 rounded object-cover"
         />
       ) : (
@@ -178,7 +182,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={match.teamA.logo}
-                alt=""
+                alt={`Logo ${match.teamA.name}`}
                 className="order-1 h-14 w-14 rounded-lg object-cover sm:order-2"
               />
             ) : (
@@ -214,7 +218,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           >
             {match.teamB.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={match.teamB.logo} alt="" className="h-14 w-14 rounded-lg object-cover" />
+              <img
+                src={match.teamB.logo}
+                alt={`Logo ${match.teamB.name}`}
+                className="h-14 w-14 rounded-lg object-cover"
+              />
             ) : (
               <div className="monogram grid h-14 w-14 shrink-0 place-items-center rounded-lg text-base">
                 {match.teamB.tag.slice(0, 3).toUpperCase()}
@@ -259,7 +267,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={match.tournament.logo}
-                alt=""
+                alt={`Logo ${match.tournament.name}`}
                 className="h-8 w-8 shrink-0 rounded object-cover"
               />
             ) : (
