@@ -1,13 +1,31 @@
 import Link from "next/link";
 import PlayerScatter from "@/components/charts/player-scatter";
 import EntryDuels from "@/components/charts/entry-duels";
+import BarList from "@/components/charts/bar-list";
+import StatTile from "@/components/charts/stat-tile";
+import TournamentPlayerTable from "@/components/tournament-player-table";
 import { agentIconUrl } from "@/lib/agents";
+import { mapSplashUrl } from "@/lib/maps";
+import type {
+  AgentPick,
+  MapPoolEntry,
+  MarginBucket,
+  TournamentOverview,
+} from "@/lib/tournament-stats-core";
 import type {
   PlayerPoint,
   StatRecord,
   StatLeaderboard,
   TournamentFact,
 } from "@/lib/data/tournament-stats";
+
+/** Temps de jeu cumulé : les secondes n'apprennent rien à cette échelle. */
+function fmtPlayTime(sec: number): string {
+  if (sec < 3600) return `${Math.round(sec / 60)} min`;
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  return `${h} h ${m.toString().padStart(2, "0")}`;
+}
 
 /** Vignette d'agent, taille contrôlable (repli initiales si inconnu). */
 function AgentThumb({ agent, size = "h-8 w-8" }: { agent?: string | null; size?: string }) {
@@ -245,7 +263,54 @@ function LeaderboardCard({ board }: { board: StatLeaderboard }) {
   );
 }
 
+/**
+ * Carte du pool : l'image de la map en fond, la fréquence en avant. Même
+ * anatomie que FactCard — c'est la déclinaison « une carte par map ».
+ */
+function MapPoolCard({ entry }: { entry: MapPoolEntry }) {
+  const img = mapSplashUrl(entry.mapName);
+  const details = [
+    entry.otCount > 0 ? `${entry.otCount} prolongation${entry.otCount > 1 ? "s" : ""}` : null,
+    `écart moyen ${entry.avgMargin} rounds`,
+  ].filter(Boolean);
+  return (
+    <div
+      className={`group/map relative overflow-hidden rounded-lg border border-[var(--border)] p-3 transition-colors hover:border-[var(--border-strong)] ${
+        img ? "" : "bg-[var(--surface)]"
+      }`}
+    >
+      {img && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            loading="lazy"
+            decoding="async"
+            src={img}
+            alt=""
+            className="absolute inset-0 h-full w-full scale-100 object-cover opacity-30 transition duration-300 group-hover/map:scale-105 group-hover/map:opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/70 to-transparent" />
+        </>
+      )}
+      <div className="relative">
+        <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+          {entry.mapName}
+        </div>
+        <div className="stat mt-1.5 text-xl font-bold text-white">
+          {entry.played}{" "}
+          <span className="text-sm font-semibold">partie{entry.played > 1 ? "s" : ""}</span>
+        </div>
+        <div className="mt-1.5 truncate text-[11px] text-[var(--accent)]">
+          <Detail text={details.join(" · ")} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const SECTION = "mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]";
+const NOTE = "mb-4 text-xs text-[var(--text-muted)]";
+const CARD = "rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4";
 const GRID = "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4";
 
 export default function TournamentStats({
@@ -254,15 +319,38 @@ export default function TournamentStats({
   averages,
   totals,
   players,
+  overview,
+  agentMeta,
+  mapPool,
+  margins,
 }: {
   tournamentRecords: TournamentFact[];
   records: StatRecord[];
   averages: StatRecord[];
   totals: StatLeaderboard[];
   players: PlayerPoint[];
+  overview: TournamentOverview;
+  agentMeta: AgentPick[];
+  mapPool: MapPoolEntry[];
+  margins: MarginBucket[];
 }) {
+  const playedMaps = margins.reduce((n, b) => n + b.count, 0);
   return (
     <div className="space-y-8">
+      <section>
+        <h2 className={SECTION}>Le tournoi en chiffres</h2>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <StatTile label="Cartes jouées" value={`${overview.mapsPlayed}`} />
+          <StatTile label="Rounds" value={overview.rounds.toLocaleString("fr-FR")} />
+          <StatTile label="Kills" value={overview.kills.toLocaleString("fr-FR")} />
+          <StatTile label="Prolongations" value={`${overview.otMaps}`} />
+          <StatTile label="Joueurs" value={`${players.length}`} />
+          {overview.durationSec > 0 && (
+            <StatTile label="Temps de jeu" value={fmtPlayTime(overview.durationSec)} />
+          )}
+        </div>
+      </section>
+
       {tournamentRecords.length > 0 && (
         <section>
           <h2 className={SECTION}>Records du tournoi</h2>
@@ -275,25 +363,81 @@ export default function TournamentStats({
       )}
 
       <section>
+        <h2 className={SECTION}>Classement des joueurs</h2>
+        <div className={CARD}>
+          <TournamentPlayerTable players={players} />
+        </div>
+      </section>
+
+      <section>
         <h2 className={SECTION}>Carte des joueurs</h2>
-        <p className="mb-4 text-xs text-[var(--text-muted)]">
-          Deux axes séparent des profils qu&apos;un classement confond : qui frague en restant en
-          vie, qui fait du dégât en se mettant en danger, qui joue l&apos;appui.
+        <p className={NOTE}>
+          Qui frague en restant en vie, qui se sacrifie, qui joue l&apos;appui.
         </p>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div className={CARD}>
           <PlayerScatter players={players} />
         </div>
       </section>
 
       <section>
         <h2 className={SECTION}>Duels d&apos;entry</h2>
-        <p className="mb-4 text-xs text-[var(--text-muted)]">
+        <p className={NOTE}>
           Qui ouvre les rounds et qui les perd d&apos;entry, de part et d&apos;autre de l&apos;axe.
         </p>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div className={CARD}>
           <EntryDuels players={players} />
         </div>
       </section>
+
+      {/* Méta et pool côte à côte : les deux répondent à « à quoi ce tournoi
+          s'est joué », l'un par les persos, l'autre par les maps. */}
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-6">
+        {agentMeta.length > 0 && (
+          <section className="min-w-0">
+            <h2 className={SECTION}>Méta des persos</h2>
+            <div className={CARD}>
+              <BarList
+                items={agentMeta.slice(0, 8).map((a) => ({
+                  key: a.agent,
+                  label: a.agent,
+                  value: a.picks,
+                  note: `${a.pct} %`,
+                  icon: <AgentThumb agent={a.agent} size="h-5 w-5" />,
+                  title: `${a.agent} — ${a.picks} picks (${a.pct} % des picks)`,
+                }))}
+              />
+            </div>
+          </section>
+        )}
+
+        {playedMaps > 0 && (
+          <section className="min-w-0">
+            <h2 className={SECTION}>Physionomie des scores</h2>
+            <div className={CARD}>
+              <BarList
+                items={margins.map((b) => ({
+                  key: b.key,
+                  label: b.label,
+                  value: b.count,
+                  note: b.range,
+                  title: `${b.label} — ${b.count} carte(s) sur ${playedMaps}`,
+                }))}
+              />
+            </div>
+          </section>
+        )}
+      </div>
+
+      {mapPool.length > 0 && (
+        <section>
+          <h2 className={SECTION}>Le pool de cartes</h2>
+          <div className={GRID}>
+            {mapPool.map((m) => (
+              <MapPoolCard key={m.mapName} entry={m} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className={SECTION}>Records d&apos;une game</h2>

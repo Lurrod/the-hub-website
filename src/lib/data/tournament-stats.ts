@@ -1,5 +1,15 @@
 import { db } from "@/lib/db";
 import { mapSplashUrl } from "@/lib/maps";
+import {
+  computeOverview,
+  computeAgentMeta,
+  computeMapPool,
+  computeMarginBuckets,
+  type TournamentOverview,
+  type AgentPick,
+  type MapPoolEntry,
+  type MarginBucket,
+} from "@/lib/tournament-stats-core";
 
 /** Formate une durée en secondes → « 42:15 ». */
 function fmtDuration(sec: number): string {
@@ -38,6 +48,9 @@ export type PlayerPoint = {
   name: string;
   teamTag: string | null;
   maps: number;
+  kills: number;
+  deaths: number;
+  assists: number;
   acs: number;
   kd: number;
   rating: number;
@@ -52,6 +65,10 @@ export type TournamentStats = {
   averages: StatRecord[]; // meilleures moyennes du tournoi (top 1, visuel)
   totals: StatLeaderboard[]; // cumuls du tournoi (top 3)
   players: PlayerPoint[]; // agregats par joueur, pour les graphiques
+  overview: TournamentOverview; // chiffres d'ensemble (tuiles)
+  agentMeta: AgentPick[]; // popularité des persos
+  mapPool: MapPoolEntry[]; // fréquence et physionomie par carte
+  margins: MarginBucket[]; // répartition des écarts de score
   hasData: boolean;
 };
 
@@ -124,6 +141,10 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
       averages: [],
       totals: [],
       players: [],
+      overview: computeOverview([], []),
+      agentMeta: [],
+      mapPool: [],
+      margins: [],
       hasData: false,
     };
   }
@@ -377,6 +398,9 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     name: a.name,
     teamTag: a.teamTag,
     maps: a.maps,
+    kills: a.kills,
+    deaths: a.deaths,
+    assists: a.assists,
     acs: Math.round(a.acsSum / a.maps),
     kd: Math.round(kd(a) * 100) / 100,
     rating: Math.round((a.ratingSum / a.maps) * 100) / 100,
@@ -385,5 +409,16 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     firstDeaths: a.firstDeaths,
   }));
 
-  return { tournamentRecords, records, averages, totals, players: playerPoints, hasData: true };
+  return {
+    tournamentRecords,
+    records,
+    averages,
+    totals,
+    players: playerPoints,
+    overview: computeOverview(maps, resolved),
+    agentMeta: computeAgentMeta(resolved.map((r) => r.agent)),
+    mapPool: computeMapPool(maps),
+    margins: computeMarginBuckets(maps),
+    hasData: true,
+  };
 }
