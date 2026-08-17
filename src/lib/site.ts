@@ -9,6 +9,13 @@ export const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://the-hub-vrc
 export const SITE_NAME = "The Hub";
 
 /**
+ * Variante de marque sous laquelle on se cherche (« the hub vrc »). Sans elle,
+ * la chaîne n'existait nulle part sur le site — et pour Google, « VRC » seul
+ * renvoie à VRChat. Sert d'alternateName au JSON-LD et de mention visible.
+ */
+export const SITE_ALT_NAME = "The Hub VRC";
+
+/**
  * Sections réservées : jamais indexées, jamais listées dans le sitemap.
  * Les pages de gestion vivent sous /equipes/<id>/gestion et
  * /tournois/<id>/gestion, d'où le motif suffixé traité à part.

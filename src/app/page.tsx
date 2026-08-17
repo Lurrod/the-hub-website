@@ -11,9 +11,11 @@ import { siteJsonLd } from "@/lib/structured-data";
 
 // Titre absolu : « The Hub » seul ne posait aucun mot-clé sur la requête la
 // plus disputée, et le gabarit « %s · The Hub » doublerait la marque.
+// « VRC » y figure car c'est sous « the hub vrc » qu'on nous cherche — et sans
+// cette chaîne quelque part, Google n'associe le sigle qu'à VRChat.
 export const metadata: Metadata = {
   ...pageMetadata({ path: "/" }),
-  title: { absolute: "The Hub — Tournois et stats du Tier 3 Valorant francophone" },
+  title: { absolute: "The Hub VRC — Tournois et stats du Tier 3 Valorant francophone" },
 };
 
 /**

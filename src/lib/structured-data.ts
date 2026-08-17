@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_ALT_NAME, SITE_NAME, SITE_URL } from "@/lib/site";
 
 /**
  * Données structurées Schema.org des fiches publiques.
@@ -77,11 +77,13 @@ export function siteJsonLd(): JsonLd {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
+    alternateName: SITE_ALT_NAME,
     url: SITE_URL,
     inLanguage: "fr-FR",
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
+      alternateName: SITE_ALT_NAME,
       url: SITE_URL,
     },
     potentialAction: {
