@@ -215,6 +215,102 @@ export function computeImpact(
   return impact;
 }
 
+/** Faits d'armes d'un joueur sur une carte : multikills et clutchs. */
+export type PlayerHighlights = {
+  /** Rounds à exactement 3 kills. */
+  triples: number;
+  /** Rounds à exactement 4 kills. */
+  quadras: number;
+  /** Rounds à 5 kills ou plus. */
+  aces: number;
+  clutchWins: number;
+  clutchAttempts: number;
+  /** Plus grand 1vX remporté (0 si aucun). */
+  bestClutch: number;
+};
+
+/**
+ * Multikills et clutchs, reconstruits depuis la liste des duels — Riot
+ * n'expose ni l'un ni l'autre tel quel.
+ *
+ * Un clutch commence quand un joueur devient le dernier vivant de son camp
+ * face à au moins un adversaire ; il est gagné si son camp remporte le round,
+ * même posthume — un spike qui explose après sa mort reste son clutch. Limite
+ * assumée : une résurrection de Sage ne laisse aucune trace dans les duels, le
+ * ressuscité reste donc compté mort, comme sur les trackers grand public.
+ */
+export function computeHighlights(
+  kills: readonly CustomMatchKill[],
+  players: readonly { puuid: string; teamId: string }[],
+  rounds: readonly { winningTeamId: string }[]
+): Map<string, PlayerHighlights> {
+  const highlights = new Map<string, PlayerHighlights>(
+    players.map((p) => [
+      p.puuid,
+      { triples: 0, quadras: 0, aces: 0, clutchWins: 0, clutchAttempts: 0, bestClutch: 0 },
+    ])
+  );
+  const teamOf = new Map(players.map((p) => [p.puuid, p.teamId]));
+
+  const byRound = new Map<number, CustomMatchKill[]>();
+  for (const k of kills) {
+    const list = byRound.get(k.round);
+    if (list) list.push(k);
+    else byRound.set(k.round, [k]);
+  }
+
+  for (const [round, roundKills] of byRound) {
+    const ordered = [...roundKills].sort((a, b) => a.timeInRoundMs - b.timeInRoundMs);
+
+    // Multikills : le nombre de frags du round, joueur par joueur.
+    const fragsOf = new Map<string, number>();
+    for (const k of ordered) fragsOf.set(k.killerPuuid, (fragsOf.get(k.killerPuuid) ?? 0) + 1);
+    for (const [puuid, frags] of fragsOf) {
+      const h = highlights.get(puuid);
+      if (!h) continue;
+      if (frags === 3) h.triples += 1;
+      else if (frags === 4) h.quadras += 1;
+      else if (frags >= 5) h.aces += 1;
+    }
+
+    // Clutchs : on rejoue les morts dans l'ordre en suivant les survivants.
+    const alive = new Map<string, Set<string>>();
+    for (const p of players) {
+      const team = alive.get(p.teamId) ?? new Set<string>();
+      team.add(p.puuid);
+      alive.set(p.teamId, team);
+    }
+    const attempts: { puuid: string; teamId: string; size: number }[] = [];
+    for (const k of ordered) {
+      const victimTeam = teamOf.get(k.victimPuuid);
+      if (!victimTeam) continue;
+      const team = alive.get(victimTeam);
+      if (!team) continue;
+      team.delete(k.victimPuuid);
+      if (team.size !== 1) continue;
+      // Le camp vient de tomber à un seul vivant : ses adversaires encore
+      // debout donnent la taille du clutch. Zéro adversaire = round déjà plié.
+      const [last] = team;
+      const enemies = [...alive.entries()]
+        .filter(([teamId]) => teamId !== victimTeam)
+        .reduce((n, [, set]) => n + set.size, 0);
+      if (enemies > 0) attempts.push({ puuid: last, teamId: victimTeam, size: enemies });
+    }
+
+    const winner = rounds[round]?.winningTeamId;
+    for (const a of attempts) {
+      const h = highlights.get(a.puuid);
+      if (!h) continue;
+      h.clutchAttempts += 1;
+      if (winner && a.teamId === winner) {
+        h.clutchWins += 1;
+        h.bestClutch = Math.max(h.bestClutch, a.size);
+      }
+    }
+  }
+  return highlights;
+}
+
 /**
  * Constante de recentrage du rating.
  *

@@ -60,6 +60,22 @@ export type PlayerPoint = {
   firstDeaths: number;
 };
 
+/**
+ * Clutchs et multikills du tournoi. À part du reste : seules les cartes
+ * importées depuis leur ajout les portent, et l'affichage doit pouvoir dire
+ * « données partielles » sans confondre absence et zéro.
+ */
+export type HighlightStats = {
+  /** Au moins une carte du tournoi porte ces données. */
+  hasData: boolean;
+  /** Cartes avec scoreboard mais sans ces données (imports antérieurs). */
+  missingMaps: number;
+  biggestClutch: StatRecord;
+  clutches: StatLeaderboard;
+  multikills: StatLeaderboard;
+  aces: StatLeaderboard;
+};
+
 export type TournamentStats = {
   tournamentRecords: TournamentFact[]; // records du tournoi (perso, map, partie…)
   records: StatRecord[]; // exploit sur une seule game (top 1, visuel)
@@ -70,6 +86,7 @@ export type TournamentStats = {
   agentMeta: AgentPick[]; // popularité des persos
   mapPool: MapPoolEntry[]; // fréquence et physionomie par carte
   margins: MarginBucket[]; // répartition des écarts de score
+  highlights: HighlightStats; // clutchs et multikills
   hasData: boolean;
 };
 
@@ -91,6 +108,12 @@ type Agg = {
   kastSum: number;
   hsSum: number;
   agents: Set<string>;
+  // Sommés sur les seules cartes qui les portent (null = import antérieur).
+  triples: number;
+  quadras: number;
+  aces: number;
+  clutchWins: number;
+  clutchAttempts: number;
 };
 
 /**
@@ -144,6 +167,14 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
       agentMeta: [],
       mapPool: [],
       margins: [],
+      highlights: {
+        hasData: false,
+        missingMaps: 0,
+        biggestClutch: { key: "biggest-clutch", label: "Plus gros clutch", entry: null },
+        clutches: { key: "clutchs", label: "Clutchs gagnés", entries: [] },
+        multikills: { key: "multikills", label: "Multikills", entries: [] },
+        aces: { key: "aces", label: "Aces", entries: [] },
+      },
       hasData: false,
     };
   }
@@ -280,6 +311,11 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
       kastSum: 0,
       hsSum: 0,
       agents: new Set<string>(),
+      triples: 0,
+      quadras: 0,
+      aces: 0,
+      clutchWins: 0,
+      clutchAttempts: 0,
     };
     a.maps += 1;
     a.kills += r.kills;
@@ -292,6 +328,11 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     a.ratingSum += r.rating;
     a.kastSum += r.kast;
     a.hsSum += r.hsPct;
+    a.triples += r.triples ?? 0;
+    a.quadras += r.quadras ?? 0;
+    a.aces += r.aces ?? 0;
+    a.clutchWins += r.clutchWins ?? 0;
+    a.clutchAttempts += r.clutchAttempts ?? 0;
     byPlayer.set(key, a);
   }
   const players = [...byPlayer.values()];
@@ -392,6 +433,75 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     ),
   ];
 
+  // --- Clutchs et multikills : distinguer « aucun » de « donnée absente » ---
+  const covered = resolved.filter((r) => r.triples != null);
+  const missingMaps = new Set(resolved.filter((r) => r.triples == null).map((r) => r.matchMapId))
+    .size;
+
+  let bestClutchRow: (typeof covered)[number] | null = null;
+  for (const r of covered) {
+    if ((r.bestClutch ?? 0) > (bestClutchRow?.bestClutch ?? 0)) bestClutchRow = r;
+  }
+
+  /** Classement filtré aux joueurs qui ont la stat : un top 3 à zéro n'apprend rien. */
+  const highlightBoard = (
+    key: string,
+    label: string,
+    value: (a: Agg) => number,
+    detail: (a: Agg) => string | undefined
+  ): StatLeaderboard => ({
+    key,
+    label,
+    entries: players
+      .filter((a) => value(a) > 0)
+      .sort((x, y) => value(y) - value(x))
+      .slice(0, TOP_N)
+      .map((a) => ({ ...toEntry(a, `${value(a)}`, value(a)), detail: detail(a) })),
+  });
+
+  const mkTotal = (a: Agg) => a.triples + a.quadras + a.aces;
+  const mkDetail = (a: Agg) =>
+    [
+      a.triples > 0 ? `${a.triples}×3K` : null,
+      a.quadras > 0 ? `${a.quadras}×4K` : null,
+      a.aces > 0 ? `${a.aces}×ACE` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+
+  const highlights: HighlightStats = {
+    hasData: covered.length > 0,
+    missingMaps,
+    biggestClutch: {
+      key: "biggest-clutch",
+      label: "Plus gros clutch",
+      entry:
+        bestClutchRow && (bestClutchRow.bestClutch ?? 0) > 0
+          ? {
+              playerId: bestClutchRow.player?.id ?? null,
+              name: bestClutchRow.name,
+              teamTag: bestClutchRow.teamTag,
+              agent: bestClutchRow.agent,
+              valueLabel: `1v${bestClutchRow.bestClutch}`,
+              detail: `vs ${bestClutchRow.oppTag} · ${bestClutchRow.mapName}`,
+            }
+          : null,
+    },
+    clutches: highlightBoard(
+      "clutchs",
+      "Clutchs gagnés",
+      (a) => a.clutchWins,
+      (a) => `${a.clutchAttempts} tentative${a.clutchAttempts > 1 ? "s" : ""}`
+    ),
+    multikills: highlightBoard("multikills", "Multikills", mkTotal, mkDetail),
+    aces: highlightBoard(
+      "aces",
+      "Aces",
+      (a) => a.aces,
+      () => undefined
+    ),
+  };
+
   const playerPoints: PlayerPoint[] = players.map((a) => ({
     playerId: a.playerId,
     name: a.name,
@@ -418,6 +528,7 @@ export async function getTournamentStats(tournamentId: string): Promise<Tourname
     agentMeta: computeAgentMeta(resolved.map((r) => r.agent)),
     mapPool: computeMapPool(maps),
     margins: computeMarginBuckets(maps),
+    highlights,
     hasData: true,
   };
 }

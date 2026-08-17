@@ -311,6 +311,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       agentMeta={stats.agentMeta}
       mapPool={stats.mapPool}
       margins={stats.margins}
+      highlights={stats.highlights}
     />
   ) : (
     <EmptyState

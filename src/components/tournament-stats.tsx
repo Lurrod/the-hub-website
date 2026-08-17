@@ -13,6 +13,7 @@ import type {
   TournamentOverview,
 } from "@/lib/tournament-stats-core";
 import type {
+  HighlightStats,
   PlayerPoint,
   StatRecord,
   StatLeaderboard,
@@ -323,6 +324,7 @@ export default function TournamentStats({
   agentMeta,
   mapPool,
   margins,
+  highlights,
 }: {
   tournamentRecords: TournamentFact[];
   records: StatRecord[];
@@ -333,6 +335,7 @@ export default function TournamentStats({
   agentMeta: AgentPick[];
   mapPool: MapPoolEntry[];
   margins: MarginBucket[];
+  highlights: HighlightStats;
 }) {
   const playedMaps = margins.reduce((n, b) => n + b.count, 0);
   return (
@@ -358,6 +361,25 @@ export default function TournamentStats({
             {tournamentRecords.map((f) => (
               <FactCard key={f.key} fact={f} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {highlights.hasData && (
+        <section>
+          <h2 className={SECTION}>Clutchs et multikills</h2>
+          {highlights.missingMaps > 0 && (
+            <p className={NOTE}>
+              {highlights.missingMaps} carte{highlights.missingMaps > 1 ? "s" : ""} importée
+              {highlights.missingMaps > 1 ? "s" : ""} avant l&apos;ajout de ces données —
+              ré-importe-les pour compléter les comptes.
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            <BigStatCard record={highlights.biggestClutch} showAgent />
+            <LeaderboardCard board={highlights.clutches} />
+            <LeaderboardCard board={highlights.multikills} />
+            <LeaderboardCard board={highlights.aces} />
           </div>
         </section>
       )}

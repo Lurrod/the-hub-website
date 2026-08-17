@@ -395,6 +395,15 @@ model PlayerGameStat {
   kast        Int      @default(0)
   firstKills  Int      @default(0)
   firstDeaths Int      @default(0)
+  // Faits d'armes reconstruits des duels (multikills, clutchs). Nullables et
+  // non à défaut 0 : une carte importée avant leur ajout n'en porte pas, et
+  // « donnée absente » ne doit pas se lire comme « zéro clutch ».
+  triples        Int?
+  quadras        Int?
+  aces           Int?
+  clutchWins     Int?
+  clutchAttempts Int?
+  bestClutch     Int?
   matchMap   MatchMap  @relation(fields: [matchMapId], references: [id], onDelete: Cascade)
   player     Player?   @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
