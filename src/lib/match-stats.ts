@@ -9,6 +9,7 @@ import {
   assignSides,
   assignSidesFromOutcome,
   computeDerivedStats,
+  computeHighlights,
   computeImpact,
   computeRating,
   indexPlayerIdsByPuuid,
@@ -97,10 +98,16 @@ function gameStatRows(
     cm.players.map((p) => p.puuid),
     roundCount
   );
+  // Sans liste de duels, pas de multikills ni de clutchs : les colonnes
+  // restent nulles plutôt que d'écrire des zéros qui se liraient comme un
+  // tournoi sans le moindre clutch.
+  const highlights =
+    cm.kills.length > 0 ? computeHighlights(cm.kills, cm.players, cm.rounds) : null;
 
   return cm.players.map((p) => {
     const d = computeDerivedStats(p, rounds);
     const i = impact.get(p.puuid);
+    const h = highlights?.get(p.puuid) ?? null;
     const kast = roundCount > 0 ? Math.round(((i?.kastRounds ?? 0) / roundCount) * 100) : 0;
     return {
       matchMapId,
@@ -119,6 +126,12 @@ function gameStatRows(
       kast,
       firstKills: i?.firstKills ?? 0,
       firstDeaths: i?.firstDeaths ?? 0,
+      triples: h?.triples ?? null,
+      quadras: h?.quadras ?? null,
+      aces: h?.aces ?? null,
+      clutchWins: h?.clutchWins ?? null,
+      clutchAttempts: h?.clutchAttempts ?? null,
+      bestClutch: h?.bestClutch ?? null,
       rating: computeRating({
         rounds: roundCount,
         kills: p.kills,

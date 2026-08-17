@@ -58,7 +58,27 @@ type StatSpec = {
   kast: number;
   firstKills: number;
   firstDeaths: number;
+  // Faits d'armes : null = carte importée avant leur ajout.
+  triples?: number | null;
+  quadras?: number | null;
+  aces?: number | null;
+  clutchWins?: number | null;
+  clutchAttempts?: number | null;
+  bestClutch?: number | null;
 };
+
+/** Version d'une équipe sans faits d'armes : simule un import antérieur. */
+function sansFaitsDarmes(rows: StatSpec[]): StatSpec[] {
+  return rows.map((r) => ({
+    ...r,
+    triples: null,
+    quadras: null,
+    aces: null,
+    clutchWins: null,
+    clutchAttempts: null,
+    bestClutch: null,
+  }));
+}
 
 async function upsertTeam(id: string, name: string, tag: string, logo: string | null) {
   await db.team.upsert({
@@ -188,6 +208,12 @@ async function upsertMap(
       kast: s.kast,
       firstKills: s.firstKills,
       firstDeaths: s.firstDeaths,
+      triples: s.triples ?? null,
+      quadras: s.quadras ?? null,
+      aces: s.aces ?? null,
+      clutchWins: s.clutchWins ?? null,
+      clutchAttempts: s.clutchAttempts ?? null,
+      bestClutch: s.bestClutch ?? null,
       rating: computeRating({
         rounds: r,
         kills: s.kills,
@@ -206,22 +232,34 @@ function lineup(
   players: { id: string | null; riot: string; agent: string | null }[],
   profile: { kills: number; deaths: number; acs: number; adr: number; kast: number }
 ): StatSpec[] {
-  return players.map((p, i) => ({
-    playerId: p.id,
-    riotName: p.riot,
-    side,
-    agent: p.agent,
-    // Dégradé du meilleur au moins bon, pour que le classement du scoreboard
-    // ait quelque chose à trier.
-    kills: profile.kills - i * 2,
-    deaths: profile.deaths + i,
-    assists: 8 - i,
-    acs: profile.acs - i * 12,
-    adr: profile.adr - i * 8,
-    kast: profile.kast - i * 2,
-    firstKills: Math.max(0, 4 - i),
-    firstDeaths: i,
-  }));
+  return players.map((p, i) => {
+    const kills = profile.kills - i * 2;
+    // Faits d'armes dérivés des kills, pour rester déterministes : le premier
+    // de l'équipe clutch, les gros scores portent les multikills.
+    const clutchWins = i === 0 && kills > 15 ? 1 : 0;
+    return {
+      playerId: p.id,
+      riotName: p.riot,
+      side,
+      agent: p.agent,
+      // Dégradé du meilleur au moins bon, pour que le classement du scoreboard
+      // ait quelque chose à trier.
+      kills,
+      deaths: profile.deaths + i,
+      assists: 8 - i,
+      acs: profile.acs - i * 12,
+      adr: profile.adr - i * 8,
+      kast: profile.kast - i * 2,
+      firstKills: Math.max(0, 4 - i),
+      firstDeaths: i,
+      triples: Math.max(0, Math.floor((kills - 12) / 4)),
+      quadras: kills >= 19 ? 1 : 0,
+      aces: kills >= 20 ? 1 : 0,
+      clutchWins,
+      clutchAttempts: clutchWins + (i % 2),
+      bestClutch: clutchWins > 0 ? (kills % 3) + 1 : 0,
+    };
+  });
 }
 
 async function main() {
@@ -334,10 +372,20 @@ async function main() {
     ...lineup("A", alpha, { kills: 20, deaths: 8, acs: 290, adr: 185, kast: 82 }),
     ...lineup("B", bravo, { kills: 10, deaths: 16, acs: 170, adr: 110, kast: 58 }),
   ]);
-  await upsertMap("fx-map-2", "fx-m-bo3", 1, "Bind", 11, 13, [
-    ...lineup("A", alpha, { kills: 15, deaths: 18, acs: 200, adr: 135, kast: 66 }),
-    ...lineup("B", bravo, { kills: 19, deaths: 15, acs: 250, adr: 160, kast: 76 }),
-  ]);
+  // Cette map simule un import antérieur aux faits d'armes : la fiche tournoi
+  // doit signaler la donnée partielle sans confondre absence et zéro.
+  await upsertMap(
+    "fx-map-2",
+    "fx-m-bo3",
+    1,
+    "Bind",
+    11,
+    13,
+    sansFaitsDarmes([
+      ...lineup("A", alpha, { kills: 15, deaths: 18, acs: 200, adr: 135, kast: 66 }),
+      ...lineup("B", bravo, { kills: 19, deaths: 15, acs: 250, adr: 160, kast: 76 }),
+    ])
+  );
   // Un remplaçant entre à la place du cinquième : sa moyenne ne doit porter
   // que sur cette map, et le titulaire sortant garde deux maps.
   await upsertMap("fx-map-3", "fx-m-bo3", 2, "Lotus", 13, 11, [
