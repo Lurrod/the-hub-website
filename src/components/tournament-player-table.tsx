@@ -1,15 +1,16 @@
 import Link from "next/link";
+import { MIN_MAPS_FOR_AVG } from "@/lib/tournament-stats-core";
 import type { PlayerPoint } from "@/lib/data/tournament-stats";
 
 /**
  * Classement complet des joueurs du tournoi, trié au rating.
  *
- * Même seuil que les moyennes : une seule carte ne fait pas un classement — un
- * remplaçant à 1.60 sur sa game unique passerait devant tout le monde. Si
- * personne n'atteint le seuil (début de tournoi), on montre tout de même tout
- * le monde plutôt qu'un tableau vide.
+ * Même seuil que les moyennes (il est partagé, pas recopié) : une seule carte
+ * ne fait pas un classement — un remplaçant à 1.60 sur sa game unique
+ * passerait devant tout le monde. Si personne n'atteint le seuil (début de
+ * tournoi), on montre tout de même tout le monde plutôt qu'un tableau vide.
  */
-const MIN_MAPS = 2;
+const MIN_MAPS = MIN_MAPS_FOR_AVG;
 
 /** Ligne d'en-tête calée sur les largeurs des colonnes chiffrées. */
 const COLS_HEAD =

@@ -5,6 +5,7 @@ import {
   computeAgentMeta,
   computeMapPool,
   computeMarginBuckets,
+  MIN_MAPS_FOR_AVG,
   type TournamentOverview,
   type AgentPick,
   type MapPoolEntry,
@@ -72,8 +73,6 @@ export type TournamentStats = {
   hasData: boolean;
 };
 
-/** Nombre minimum de cartes jouées pour figurer dans les classements de moyenne. */
-const MIN_MAPS_FOR_AVG = 2;
 /** Nombre d'entrées affichées par classement cumulé. */
 const TOP_N = 3;
 

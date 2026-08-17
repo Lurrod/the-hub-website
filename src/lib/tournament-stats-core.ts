@@ -31,6 +31,13 @@ export type MapPoolEntry = {
 
 export type MarginBucket = { key: string; label: string; range: string; count: number };
 
+/**
+ * Cartes minimum pour figurer dans un classement de moyenne (meilleures
+ * moyennes comme tableau des joueurs) : une seule game ne fait pas un niveau,
+ * et deux seuils séparés avaient fini par ne plus être le même seuil.
+ */
+export const MIN_MAPS_FOR_AVG = 2;
+
 /** Un score au-delà de 13 ne s'atteint qu'en prolongation. */
 const isOvertime = (m: MapLine) => Math.max(m.scoreA, m.scoreB) > 13;
 const margin = (m: MapLine) => Math.abs(m.scoreA - m.scoreB);
