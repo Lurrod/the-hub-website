@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "@/components/icons";
-import {
-  RecruitPanel,
-  ScoreboardPanel,
-  SharePanel,
-  TournamentPanel,
-} from "@/components/landing-panels";
+import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
 import { PlayerPanel } from "@/components/landing-panels-player";
+import { ShareDiscord } from "@/components/landing-share-discord";
 import { getShowcaseData, type ShowcaseData } from "@/lib/data/landing-showcase";
 
 type Feature = {
@@ -124,8 +120,9 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Voir un match à partager", href: "/matchs" },
-    // Seule maquette sans données : la scène est scriptée (voir SharePanel).
-    panel: () => <SharePanel />,
+    // Seule maquette sans données ni cadre commun : la scène est scriptée
+    // dans sa propre fenêtre Discord (voir ShareDiscord).
+    panel: () => <ShareDiscord />,
   },
 ];
 
