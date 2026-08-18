@@ -4,6 +4,7 @@ import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/lan
 import { PlayerPanel } from "@/components/landing-panels-player";
 import { ShareDiscord } from "@/components/landing-share-discord";
 import { Tag } from "@/components/landing-panel-chrome";
+import LandingFlow from "@/components/landing-flow";
 
 type Feature = {
   /** Numéro affiché en filigrane derrière le titre. */
@@ -148,7 +149,7 @@ function MiniSearch() {
       </div>
       <ul className="mt-1.5 flex flex-col gap-1">
         <li className="flex items-center gap-2 px-1.5 py-1">
-          <Tag tag="SN" size="h-5 w-5" />
+          <Tag tag="SN" logo="/landing/sneax.webp" size="h-5 w-5" />
           <span className="lf-t11 min-w-0 truncate text-white">SneaX</span>
           <span className="lf-t10 ml-auto shrink-0 uppercase tracking-[0.1em] text-[var(--text-subtle)]">
             Joueur
@@ -275,7 +276,9 @@ export default function LandingShowcase() {
       </div>
 
       {/* Blocs de fonctionnalités */}
-      <div className="mt-24 flex flex-col gap-28 sm:mt-32 sm:gap-40">
+      <div className="relative mt-24 flex flex-col gap-28 sm:mt-32 sm:gap-40">
+        {/* Le fil lumineux qui relie les maquettes, peint sous les blocs. */}
+        <LandingFlow />
         {FEATURES.map((f, i) => {
           // Une ligne sur deux inverse texte et maquette. `order` ne s'applique
           // qu'à partir de `lg` : en une seule colonne, la maquette suit
