@@ -102,7 +102,13 @@ export function ShareDiscord() {
 
       <div className="flex min-w-0 flex-col gap-4 px-4 py-4">
         {/* La question, à laquelle le lien va répondre. */}
-        <Message avatar="SN" tone="a" author="SneaX" time="aujourd’hui à 21:04">
+        <Message
+          avatar="SN"
+          avatarImg="/landing/sneax.webp"
+          tone="a"
+          author="SneaX"
+          time="aujourd’hui à 21:04"
+        >
           <p className="lf-t13 lf-dc-text mt-0.5">
             <span className="lf-dc-mention">@Lurrod</span> tu sais qui a gagné les Premier Invite ?
           </p>

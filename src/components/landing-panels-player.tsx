@@ -1,17 +1,34 @@
 import Flag from "@/components/flag";
 import { Facts, Panel, PanelHead, Tag, initials } from "@/components/landing-panel-chrome";
-import type { ShowcasePlayer } from "@/lib/data/landing-showcase";
+type ShowcasePlayer = {
+  pseudo: string;
+  photo: string | null;
+  nationality: string | null;
+  /** Rôle Valorant, ou type de compte quand la fiche n'est pas celle d'un joueur. */
+  qualifier: string | null;
+  teamName: string | null;
+  age: number | null;
+  topAgent: { agent: string; pct: number } | null;
+  kd: number;
+  kills: number;
+  deaths: number;
+  bestGame: { kills: number; opponentTag: string | null } | null;
+  /** Ratings carte par carte, la plus ancienne d'abord. */
+  trend: number[];
+  avgRating: number;
+  mapRecords: { mapName: string; winratePct: number; wins: number; maps: number }[];
+};
 
 /**
  * La maquette de fiche joueur, avec ses deux tracés propres : la courbe de
  * rating et les barres de winrate par map.
  *
- * Voir `landing-panels.tsx` pour la règle générale : données de la base,
- * exemple figé quand la lecture ne rend rien, un seul chemin de rendu.
+ * Voir `landing-panels.tsx` pour la règle générale : vitrine scénarisée, et
+ * une fiche inventée ici — on ne prête pas de chiffres de carrière à une
+ * vraie personne.
  */
 
 const EXAMPLE_PLAYER: ShowcasePlayer = {
-  id: "",
   pseudo: "sylk",
   photo: null,
   nationality: "France",
@@ -92,8 +109,8 @@ function Tile({ label, value, sub }: { label: string; value: string; sub: string
   );
 }
 
-export function PlayerPanel({ data }: { data: ShowcasePlayer | null }) {
-  const p = data ?? EXAMPLE_PLAYER;
+export function PlayerPanel() {
+  const p = EXAMPLE_PLAYER;
   // Une fiche sans équipe ni date de naissance reste lisible : on retire ce
   // qui manque plutôt que de laisser un séparateur orphelin.
   const facts = [p.qualifier, p.teamName, p.age ? `${p.age} ans` : null].filter(

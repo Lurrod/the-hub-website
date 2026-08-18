@@ -4,7 +4,6 @@ import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/lan
 import { PlayerPanel } from "@/components/landing-panels-player";
 import { ShareDiscord } from "@/components/landing-share-discord";
 import { Tag } from "@/components/landing-panel-chrome";
-import { getShowcaseData, type ShowcaseData } from "@/lib/data/landing-showcase";
 
 type Feature = {
   /** Numéro affiché en filigrane derrière le titre. */
@@ -14,8 +13,7 @@ type Feature = {
   body: string;
   points: readonly { t: string; d: string }[];
   cta: { label: string; href: string };
-  /** La maquette est une fonction : elle a besoin des données lues au rendu. */
-  panel: (d: ShowcaseData) => React.ReactNode;
+  panel: () => React.ReactNode;
 };
 
 const FEATURES: readonly Feature[] = [
@@ -39,7 +37,7 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Voir un match analysé", href: "/matchs" },
-    panel: (d) => <ScoreboardPanel data={d.scoreboard} />,
+    panel: () => <ScoreboardPanel />,
   },
   {
     num: "02",
@@ -58,7 +56,7 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Parcourir les joueurs", href: "/joueurs" },
-    panel: (d) => <PlayerPanel data={d.player} />,
+    panel: () => <PlayerPanel />,
   },
   {
     num: "03",
@@ -80,7 +78,7 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Voir les tournois", href: "/tournois" },
-    panel: (d) => <TournamentPanel data={d.tournament} />,
+    panel: () => <TournamentPanel />,
   },
   {
     num: "04",
@@ -99,7 +97,7 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Voir les annonces", href: "/lft" },
-    panel: (d) => <RecruitPanel data={d.ads} />,
+    panel: () => <RecruitPanel />,
   },
   {
     num: "05",
@@ -253,14 +251,11 @@ const ALSO = [
  * L'apparition au défilement est purement CSS (`.lf-reveal`) : rien ici ne
  * dépend du JavaScript pour être lisible.
  *
- * Les maquettes montrent les vraies données du site (`getShowcaseData`). Une
- * lecture qui ne rend rien laisse le panneau retomber sur son exemple : la
- * vitrine ne se vide jamais, et l'accueil ne dépend pas de la base pour
- * s'afficher.
+ * Les maquettes sont entièrement scénarisées (voir `landing-panels.tsx` pour
+ * le pourquoi) : la section ne lit pas la base, l'accueil s'affiche donc à
+ * l'identique quel que soit l'état du site.
  */
-export default async function LandingShowcase() {
-  const data = await getShowcaseData();
-
+export default function LandingShowcase() {
   return (
     <section
       aria-labelledby="fonctionnalites"
@@ -330,7 +325,7 @@ export default async function LandingShowcase() {
                 </div>
               </div>
 
-              <div className={`min-w-0 ${flipped ? "lg:order-1" : ""}`}>{f.panel(data)}</div>
+              <div className={`min-w-0 ${flipped ? "lg:order-1" : ""}`}>{f.panel()}</div>
             </div>
           );
         })}
