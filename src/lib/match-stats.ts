@@ -11,6 +11,7 @@ import {
   computeDerivedStats,
   computeHighlights,
   computeImpact,
+  computeWeaponKills,
   computeRating,
   indexPlayerIdsByPuuid,
   roundTimeline,
@@ -103,6 +104,13 @@ function gameStatRows(
   // tournoi sans le moindre clutch.
   const highlights =
     cm.kills.length > 0 ? computeHighlights(cm.kills, cm.players, cm.rounds) : null;
+  const weaponKills =
+    cm.kills.length > 0
+      ? computeWeaponKills(
+          cm.kills,
+          cm.players.map((p) => p.puuid)
+        )
+      : null;
 
   return cm.players.map((p) => {
     const d = computeDerivedStats(p, rounds);
@@ -132,6 +140,7 @@ function gameStatRows(
       clutchWins: h?.clutchWins ?? null,
       clutchAttempts: h?.clutchAttempts ?? null,
       bestClutch: h?.bestClutch ?? null,
+      weaponKills: weaponKills?.get(p.puuid) ?? undefined,
       rating: computeRating({
         rounds: roundCount,
         kills: p.kills,

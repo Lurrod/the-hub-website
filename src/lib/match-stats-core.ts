@@ -316,6 +316,25 @@ export function computeHighlights(
 }
 
 /**
+ * Kills par arme et par joueur, depuis la liste des duels. Les kills sans arme
+ * (capacités d'agent, donnée absente) ne comptent pas : la section « armes »
+ * parle d'armes, pas de tout ce qui tue.
+ */
+export function computeWeaponKills(
+  kills: readonly CustomMatchKill[],
+  puuids: readonly string[]
+): Map<string, Record<string, number>> {
+  const byPlayer = new Map<string, Record<string, number>>(puuids.map((p) => [p, {}]));
+  for (const k of kills) {
+    if (!k.weapon) continue;
+    const counts = byPlayer.get(k.killerPuuid);
+    if (!counts) continue;
+    counts[k.weapon] = (counts[k.weapon] ?? 0) + 1;
+  }
+  return byPlayer;
+}
+
+/**
  * Constante de recentrage du rating.
  *
  * HLTV 2.0 porte un terme constant de `+0.1587`, calibré sur Counter-Strike.

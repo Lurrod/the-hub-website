@@ -312,6 +312,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       mapPool={stats.mapPool}
       margins={stats.margins}
       highlights={stats.highlights}
+      weapons={stats.weapons}
     />
   ) : (
     <EmptyState

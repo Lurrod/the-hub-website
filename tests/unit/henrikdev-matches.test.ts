@@ -32,6 +32,7 @@ const rawMatch = {
       killer: { puuid: "p1" },
       victim: { puuid: "p2" },
       assistants: [{ puuid: "p3" }],
+      weapon: { name: "Vandal" },
     },
     {
       round: 0,
@@ -165,7 +166,11 @@ describe("mapRawCustomMatch - rounds et duels", () => {
       killerPuuid: "p1",
       victimPuuid: "p2",
       assistantPuuids: ["p3"],
+      weapon: "Vandal",
     });
+    // Le second duel du fixture n'a pas de bloc weapon : un kill à la
+    // capacité doit rester un duel valide, arme nulle.
+    expect(m.kills[1].weapon).toBeNull();
   });
 });
 

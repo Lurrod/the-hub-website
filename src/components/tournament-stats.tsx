@@ -3,9 +3,11 @@ import PlayerScatter from "@/components/charts/player-scatter";
 import EntryDuels from "@/components/charts/entry-duels";
 import BarList from "@/components/charts/bar-list";
 import StatTile from "@/components/charts/stat-tile";
+import WeaponDonut from "@/components/charts/weapon-donut";
 import TournamentPlayerTable from "@/components/tournament-player-table";
 import { agentIconUrl } from "@/lib/agents";
 import { mapSplashUrl } from "@/lib/maps";
+import { weaponIconUrl } from "@/lib/weapons";
 import type {
   AgentPick,
   MapPoolEntry,
@@ -18,6 +20,7 @@ import type {
   StatRecord,
   StatLeaderboard,
   TournamentFact,
+  WeaponStats,
 } from "@/lib/data/tournament-stats";
 
 /** Temps de jeu cumulé : les secondes n'apprennent rien à cette échelle. */
@@ -26,6 +29,55 @@ function fmtPlayTime(sec: number): string {
   const h = Math.floor(sec / 3600);
   const m = Math.round((sec % 3600) / 60);
   return `${h} h ${m.toString().padStart(2, "0")}`;
+}
+
+/** Silhouette d'arme, large et basse — les icônes Riot sont des profils. */
+function WeaponThumb({ weapon }: { weapon: string }) {
+  const url = weaponIconUrl(weapon);
+  if (!url) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={url} alt="" className="h-4 w-10 shrink-0 object-contain" loading="lazy" />
+  );
+}
+
+/**
+ * Le duel des fusils : deux parts d'un même total, une teinte par arme.
+ * Deux séries nominales côte à côte — c'est le cas où la deuxième teinte de la
+ * palette de viz est légitime, contrairement aux barres à catégorie unique.
+ */
+function RifleDuel({ vandal, phantom }: { vandal: number; phantom: number }) {
+  const total = vandal + phantom;
+  if (total === 0) return null;
+  const pct = Math.round((vandal / total) * 100);
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3">
+      <div className="mb-2.5 text-[10px] uppercase tracking-wide text-[var(--accent)]">
+        Vandal ou Phantom ?
+      </div>
+      <div className="flex items-baseline justify-between text-xs">
+        <span className="flex items-center gap-2 font-semibold text-white">
+          <WeaponThumb weapon="Vandal" />
+          <span className="stat">{vandal}</span>
+        </span>
+        <span className="flex items-center gap-2 font-semibold text-white">
+          <span className="stat">{phantom}</span>
+          <WeaponThumb weapon="Phantom" />
+        </span>
+      </div>
+      <div
+        className="mt-2 flex h-2.5 gap-0.5 overflow-hidden rounded"
+        title={`Vandal ${vandal} kills (${pct} %) · Phantom ${phantom} kills (${100 - pct} %)`}
+      >
+        <div className="h-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+        <div className="h-full flex-1 bg-[var(--viz-blue)]" />
+      </div>
+      <div className="mt-1.5 flex justify-between text-[10px] text-[var(--text-muted)]">
+        <span>Vandal · {pct} %</span>
+        <span>Phantom · {100 - pct} %</span>
+      </div>
+    </div>
+  );
 }
 
 /** Vignette d'agent, taille contrôlable (repli initiales si inconnu). */
@@ -325,6 +377,7 @@ export default function TournamentStats({
   mapPool,
   margins,
   highlights,
+  weapons,
 }: {
   tournamentRecords: TournamentFact[];
   records: StatRecord[];
@@ -336,6 +389,7 @@ export default function TournamentStats({
   mapPool: MapPoolEntry[];
   margins: MarginBucket[];
   highlights: HighlightStats;
+  weapons: WeaponStats;
 }) {
   const playedMaps = margins.reduce((n, b) => n + b.count, 0);
   return (
@@ -380,6 +434,31 @@ export default function TournamentStats({
             <LeaderboardCard board={highlights.clutches} />
             <LeaderboardCard board={highlights.multikills} />
             <LeaderboardCard board={highlights.aces} />
+          </div>
+        </section>
+      )}
+
+      {weapons.hasData && (
+        <section>
+          <h2 className={SECTION}>Les armes</h2>
+          {weapons.missingMaps > 0 && (
+            <p className={NOTE}>
+              {weapons.missingMaps} carte{weapons.missingMaps > 1 ? "s" : ""} importée
+              {weapons.missingMaps > 1 ? "s" : ""} avant l&apos;ajout de ces données —
+              ré-importe-les pour compléter les comptes.
+            </p>
+          )}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className={`${CARD} min-w-0`}>
+              <WeaponDonut meta={weapons.meta} />
+            </div>
+            <div className="grid min-w-0 content-start gap-2 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <RifleDuel vandal={weapons.rifles.vandal} phantom={weapons.rifles.phantom} />
+              </div>
+              <LeaderboardCard board={weapons.operator} />
+              <LeaderboardCard board={weapons.melee} />
+            </div>
           </div>
         </section>
       )}

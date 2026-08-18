@@ -126,6 +126,8 @@ export type CustomMatchKill = {
   killerPuuid: string;
   victimPuuid: string;
   assistantPuuids: string[];
+  /** Nom de l'arme du duel, null pour un kill à la capacité ou une donnée absente. */
+  weapon: string | null;
 };
 
 export type CustomMatch = {
@@ -215,6 +217,7 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       killer?: { puuid?: string };
       victim?: { puuid?: string };
       assistants?: { puuid?: string }[];
+      weapon?: { name?: string | null };
     }[];
     players?: {
       puuid?: string;
@@ -275,6 +278,7 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       killerPuuid: k.killer!.puuid!,
       victimPuuid: k.victim!.puuid!,
       assistantPuuids: (k.assistants ?? []).map((a) => a.puuid ?? "").filter(Boolean),
+      weapon: k.weapon?.name ?? null,
     }));
   return {
     matchId: m.metadata?.match_id ?? "",

@@ -202,6 +202,7 @@ function kill(round: number, t: number, killer: string, victim: string, assists:
     killerPuuid: killer,
     victimPuuid: victim,
     assistantPuuids: assists,
+    weapon: null,
   };
 }
 

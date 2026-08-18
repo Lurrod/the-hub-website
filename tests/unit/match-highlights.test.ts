@@ -14,7 +14,14 @@ const kill = (
   timeInRoundMs: number,
   killerPuuid: string,
   victimPuuid: string
-): CustomMatchKill => ({ round, timeInRoundMs, killerPuuid, victimPuuid, assistantPuuids: [] });
+): CustomMatchKill => ({
+  round,
+  timeInRoundMs,
+  killerPuuid,
+  victimPuuid,
+  assistantPuuids: [],
+  weapon: null,
+});
 
 const win = (teamId: string) => ({ winningTeamId: teamId });
 

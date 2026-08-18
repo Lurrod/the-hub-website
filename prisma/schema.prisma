@@ -404,6 +404,9 @@ model PlayerGameStat {
   clutchWins     Int?
   clutchAttempts Int?
   bestClutch     Int?
+  /// Kills par arme (`{ "Vandal": 12, ... }`). Même convention que les faits
+  /// d'armes : null = carte importée avant l'ajout, jamais un zéro déguisé.
+  weaponKills Json?
   matchMap   MatchMap  @relation(fields: [matchMapId], references: [id], onDelete: Cascade)
   player     Player?   @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
