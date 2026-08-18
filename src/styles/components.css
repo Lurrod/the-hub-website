@@ -758,6 +758,100 @@ body :is(h1, h2, h3, h4, h5, h6) {
   }
 }
 
+/* --- Simulation Discord (maquette Partage) ---
+   Seule maquette hors du cadre .lf-panel : elle rejoue le client où la carte
+   de partage est réellement vue. Les gris sont ceux de Discord, étrangers à
+   la charte à dessein — l'imitation est le sujet. Le liseré de l'embed, lui,
+   reste l'accent du site : c'est la couleur que Discord lit de la page liée. */
+.lf-dc {
+  position: relative;
+  border-radius: var(--r-xl);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  background: #313338;
+  box-shadow: 0 30px 80px -42px rgba(0, 0, 0, 0.9);
+}
+.lf-dc-header {
+  border-bottom: 1px solid #26282c;
+}
+.lf-dc-hash {
+  color: #80848e;
+}
+.lf-dc-sep {
+  background: #3f4147;
+}
+.lf-dc-text {
+  color: #dbdee1;
+}
+.lf-dc-muted {
+  color: #949ba4;
+}
+.lf-dc-link {
+  color: #00a8fc;
+}
+.lf-dc-embed {
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  background: #2b2d31;
+}
+.lf-dc-reaction {
+  border: 1px solid #3f4147;
+  border-radius: 8px;
+  background: #2b2d31;
+  color: #dbdee1;
+}
+.lf-dc-input {
+  border-radius: 8px;
+  background: #383a40;
+  color: #82858f;
+}
+.lf-dc-plus {
+  background: #b5bac1;
+  color: #313338;
+  font-weight: 700;
+}
+.lf-dc-av-a {
+  background: #5865f2;
+  color: #fff;
+}
+.lf-dc-av-b {
+  background: #23a55a;
+  color: #fff;
+}
+
+/* La fenêtre garde un survol sobre — un lift, pas d'inclinaison ni de halo :
+   ce cadre imite un logiciel tiers, pas une surface du site. Les crochets
+   lf-hov-* internes (score, pastilles de cartes) rejouent comme ailleurs. */
+@media (hover: hover) {
+  .lf-dc {
+    transition:
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.3s var(--ease);
+  }
+  .lf-dc:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 40px 96px -40px rgba(0, 0, 0, 0.95);
+  }
+  .lf-dc:hover .lf-hov-pop {
+    animation: lf-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .lf-dc:hover .lf-hov-row {
+    animation: lf-row 0.4s var(--ease) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-dc {
+    transition: none;
+  }
+  .lf-dc,
+  .lf-dc:hover {
+    transform: none;
+  }
+  .lf-dc:hover .lf-hov-pop,
+  .lf-dc:hover .lf-hov-row {
+    animation: none;
+  }
+}
+
 /* Filet dégradé qui ouvre l'en-tête de section. */
 .lf-rule {
   height: 1px;
