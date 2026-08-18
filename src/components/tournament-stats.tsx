@@ -3,10 +3,11 @@ import PlayerScatter from "@/components/charts/player-scatter";
 import EntryDuels from "@/components/charts/entry-duels";
 import BarList from "@/components/charts/bar-list";
 import StatTile from "@/components/charts/stat-tile";
+import WeaponDonut from "@/components/charts/weapon-donut";
 import TournamentPlayerTable from "@/components/tournament-player-table";
 import { agentIconUrl } from "@/lib/agents";
 import { mapSplashUrl } from "@/lib/maps";
-import { weaponIconUrl, weaponLabel } from "@/lib/weapons";
+import { weaponIconUrl } from "@/lib/weapons";
 import type {
   AgentPick,
   MapPoolEntry,
@@ -449,16 +450,7 @@ export default function TournamentStats({
           )}
           <div className="grid gap-6 lg:grid-cols-2">
             <div className={`${CARD} min-w-0`}>
-              <BarList
-                items={weapons.meta.slice(0, 8).map((w) => ({
-                  key: w.weapon,
-                  label: weaponLabel(w.weapon),
-                  value: w.kills,
-                  note: `${w.pct} %`,
-                  icon: <WeaponThumb weapon={w.weapon} />,
-                  title: `${weaponLabel(w.weapon)} — ${w.kills} kills (${w.pct} % des kills à l'arme)`,
-                }))}
-              />
+              <WeaponDonut meta={weapons.meta} />
             </div>
             <div className="grid min-w-0 content-start gap-2 sm:grid-cols-2">
               <div className="sm:col-span-2">

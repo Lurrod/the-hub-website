@@ -1,4 +1,5 @@
 import { agentColor, agentIconUrl } from "@/lib/agents";
+import { donutSlices, polarPoint, ringSlicePath } from "@/lib/donut-core";
 import type { AgentShare } from "@/lib/player-overview-core";
 
 const SIZE = 260;
@@ -9,28 +10,6 @@ const R_MID = (R_OUT + R_IN) / 2;
 const ICON_R = 17;
 /** Espace de surface entre deux parts : jamais un contour tracé autour des parts. */
 const GAP_PX = 2;
-
-/** Point du cercle à un angle donné, 0 = midi, sens horaire. */
-function polar(angle: number, radius: number) {
-  const a = angle - Math.PI / 2;
-  return { x: CENTER + radius * Math.cos(a), y: CENTER + radius * Math.sin(a) };
-}
-
-/** Chemin d'une part d'anneau entre deux angles. */
-function arc(from: number, to: number): string {
-  const large = to - from > Math.PI ? 1 : 0;
-  const o1 = polar(from, R_OUT);
-  const o2 = polar(to, R_OUT);
-  const i2 = polar(to, R_IN);
-  const i1 = polar(from, R_IN);
-  return [
-    `M${o1.x},${o1.y}`,
-    `A${R_OUT},${R_OUT} 0 ${large} 1 ${o2.x},${o2.y}`,
-    `L${i2.x},${i2.y}`,
-    `A${R_IN},${R_IN} 0 ${large} 0 ${i1.x},${i1.y}`,
-    "Z",
-  ].join(" ");
-}
 
 /**
  * Répartition des agents joués, en anneau.
@@ -59,33 +38,22 @@ export default function AgentDonut({
     return <p className="text-sm text-[var(--text-muted)]">Aucun agent enregistré.</p>;
   }
 
-  const gapAngle = GAP_PX / R_MID;
   const single = agents.length === 1;
 
-  // Décalage angulaire de chaque part : somme des parts qui la précèdent.
-  const offsets = agents.reduce<number[]>(
-    (acc, a) => [...acc, acc[acc.length - 1] + (a.maps / total) * Math.PI * 2],
-    [0]
+  // La trigonométrie (angles, espaces, part unique) vit dans donut-core,
+  // partagée avec l'anneau des armes.
+  const angles = donutSlices(
+    agents.map((a) => a.maps),
+    GAP_PX,
+    R_MID
   );
-
-  const slices = agents.map((a, i) => {
-    const from = offsets[i];
-    const to = offsets[i + 1];
-    const sweep = to - from;
-    // Une part unique fait le tour complet : lui retirer un espace laisserait
-    // une encoche sans raison.
-    const half = single ? 0 : gapAngle / 2;
-    const mid = (from + to) / 2;
-    return {
-      ...a,
-      from: from + half,
-      to: to - half,
-      mid,
-      // Le portrait n'est posé que si la part est assez large pour l'accueillir.
-      showIcon: sweep * R_MID >= ICON_R * 2 + 8,
-      color: agentColor(a.agent),
-    };
-  });
+  const slices = agents.map((a, i) => ({
+    ...a,
+    ...angles[i],
+    // Le portrait n'est posé que si la part est assez large pour l'accueillir.
+    showIcon: angles[i].sweep * R_MID >= ICON_R * 2 + 8,
+    color: agentColor(a.agent),
+  }));
 
   return (
     <div
@@ -104,13 +72,17 @@ export default function AgentDonut({
         <defs>
           {slices.map((s) => (
             <clipPath key={s.agent} id={`agent-clip-${s.agent.replace(/\W/g, "")}`}>
-              <circle cx={polar(s.mid, R_MID).x} cy={polar(s.mid, R_MID).y} r={ICON_R} />
+              <circle
+                cx={polarPoint(CENTER, s.mid, R_MID).x}
+                cy={polarPoint(CENTER, s.mid, R_MID).y}
+                r={ICON_R}
+              />
             </clipPath>
           ))}
         </defs>
 
         {slices.map((s) => {
-          const p = polar(s.mid, R_MID);
+          const p = polarPoint(CENTER, s.mid, R_MID);
           const icon = agentIconUrl(s.agent);
           const clip = `url(#agent-clip-${s.agent.replace(/\W/g, "")})`;
           return (
@@ -127,7 +99,7 @@ export default function AgentDonut({
                   />
                 </>
               ) : (
-                <path d={arc(s.from, s.to)} fill={s.color} />
+                <path d={ringSlicePath(CENTER, R_OUT, R_IN, s.from, s.to)} fill={s.color} />
               )}
 
               {s.showIcon && (
