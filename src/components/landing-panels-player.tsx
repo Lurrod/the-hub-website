@@ -37,31 +37,48 @@ function Sparkline({ points }: { points: readonly number[] }) {
   const min = Math.min(...points);
   const max = Math.max(...points);
   const span = max - min || 1;
-  const coords = points.map((v, i) => {
-    const x = (i / (points.length - 1)) * 100;
-    const y = 32 - ((v - min) / span) * 28;
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  });
+  const xy = points.map((v, i) => ({
+    x: (i / (points.length - 1)) * 100,
+    y: 32 - ((v - min) / span) * 28,
+  }));
+  const coords = xy.map((c) => `${c.x.toFixed(2)},${c.y.toFixed(2)}`);
+  // Le pic de la courbe reçoit un point d'accent. En HTML posé en
+  // pourcentages, pas en <circle> : le SVG est étiré
+  // (`preserveAspectRatio="none"`), un cercle y deviendrait une ellipse.
+  const peak = xy[points.indexOf(max)];
 
   return (
-    <svg
-      viewBox="0 0 100 34"
-      preserveAspectRatio="none"
-      className="h-16 w-full"
-      role="img"
-      aria-label={`Courbe de rating des ${points.length} dernières cartes`}
-    >
-      <polygon points={`0,34 ${coords.join(" ")} 100,34`} fill="var(--accent)" fillOpacity="0.13" />
-      <polyline
-        points={coords.join(" ")}
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
+    <div className="relative">
+      {/* Le balayage s'applique au SVG entier : la ligne et son aire se
+          révèlent ensemble, gauche vers droite. */}
+      <svg
+        viewBox="0 0 100 34"
+        preserveAspectRatio="none"
+        className="lf-hov-wipe h-16 w-full"
+        role="img"
+        aria-label={`Courbe de rating des ${points.length} dernières cartes`}
+      >
+        <polygon
+          points={`0,34 ${coords.join(" ")} 100,34`}
+          fill="var(--accent)"
+          fillOpacity="0.13"
+        />
+        <polyline
+          points={coords.join(" ")}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <span
+        className="lf-spark-dot"
+        style={{ left: `${peak.x.toFixed(1)}%`, top: `${((peak.y / 34) * 100).toFixed(1)}%` }}
+        aria-hidden="true"
       />
-    </svg>
+    </div>
   );
 }
 
@@ -135,15 +152,15 @@ export function PlayerPanel({ data }: { data: ShowcasePlayer | null }) {
         <div>
           <PanelHead label="Winrate par map" />
           <ul className="mt-2 flex flex-col gap-2">
-            {p.mapRecords.map((m) => (
+            {p.mapRecords.map((m, i) => (
               <li key={m.mapName} className="flex items-center gap-3">
                 <span className="lf-t11 w-14 shrink-0 truncate text-[var(--text-muted)]">
                   {m.mapName}
                 </span>
                 <span className="h-1.5 min-w-0 flex-1 rounded-full bg-[var(--bg)]">
                   <span
-                    className="block h-full rounded-full bg-[var(--accent)]"
-                    style={{ width: `${m.winratePct}%` }}
+                    className="lf-hov-bar block h-full rounded-full bg-[var(--accent)]"
+                    style={{ width: `${m.winratePct}%`, animationDelay: `${i * 90}ms` }}
                   />
                 </span>
                 <span className="stat lf-t11 w-8 shrink-0 text-right text-white">

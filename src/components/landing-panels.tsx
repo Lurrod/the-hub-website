@@ -2,7 +2,6 @@ import AgentIcon from "@/components/agent-icon";
 import type {
   ShowcaseAd,
   ShowcaseBout,
-  ShowcaseMatchCard,
   ShowcaseScoreboard,
   ShowcaseTeam,
   ShowcaseTournament,
@@ -27,7 +26,8 @@ import type {
  *
  * Les équipes et les pseudos de ces exemples sont inventés : on ne met pas de
  * vraies structures en vitrine par défaut, et leurs chiffres ne sont pas des
- * résultats réels.
+ * résultats réels. Seule exception, la scène de partage : ses noms ont été
+ * choisis par le propriétaire du site, qui s'y met lui-même en scène.
  */
 
 /** Coquille commune : cadre, nappe d'accent, trame de points (cf. `.lf-panel`). */
@@ -156,7 +156,7 @@ export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
           <Tag tag={s.teamA.tag} logo={s.teamA.logo} />
           <span className="lf-t13 truncate font-semibold text-white">{s.teamA.name}</span>
         </div>
-        <div className="stat lf-t18 flex shrink-0 items-center gap-2 font-semibold">
+        <div className="stat lf-t18 lf-hov-pop flex shrink-0 items-center gap-2 font-semibold">
           <span className={aWon ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}>
             {s.roundsA}
           </span>
@@ -196,8 +196,12 @@ export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
           </tr>
         </thead>
         <tbody>
-          {s.lines.map((l) => (
-            <tr key={l.pseudo} className="border-b border-[var(--border)] last:border-0">
+          {s.lines.map((l, i) => (
+            <tr
+              key={l.pseudo}
+              className="lf-hov-row border-b border-[var(--border)] last:border-0"
+              style={{ animationDelay: `${i * 55}ms` }}
+            >
               <td className="py-1.5 pr-2">
                 <span className="flex items-center gap-2">
                   <AgentIcon agent={l.agent} size="h-5 w-5" />
@@ -289,7 +293,7 @@ function Bout({ bout }: { bout: ShowcaseBout }) {
             </span>
             <span
               className={`stat lf-t11 shrink-0 font-semibold ${
-                won ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"
+                won ? "lf-hov-pop text-[var(--accent)]" : "text-[var(--text-subtle)]"
               }`}
             >
               {s.score}
@@ -355,7 +359,9 @@ export function TournamentPanel({ data }: { data: ShowcaseTournament | null }) {
       <div className="grid grid-cols-[1fr_24px_1fr] items-center gap-2">
         <div className="flex flex-col gap-3">
           {t.semis.map((b, i) => (
-            <Bout key={i} bout={b} />
+            <div key={i} className="lf-hov-row" style={{ animationDelay: `${i * 90}ms` }}>
+              <Bout bout={b} />
+            </div>
           ))}
         </div>
 
@@ -366,7 +372,7 @@ export function TournamentPanel({ data }: { data: ShowcaseTournament | null }) {
         <svg
           viewBox="0 0 24 100"
           preserveAspectRatio="none"
-          className="h-full w-6 self-stretch text-[var(--border-strong)]"
+          className="lf-hov-wipe h-full w-6 self-stretch text-[var(--border-strong)]"
           aria-hidden="true"
         >
           <path
@@ -429,10 +435,11 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
         }
       />
       <ul className="flex flex-col gap-2">
-        {ads.map((a) => (
+        {ads.map((a, i) => (
           <li
             key={a.key}
-            className="flex items-center gap-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
+            className="lf-hov-row flex items-center gap-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
+            style={{ animationDelay: `${i * 80}ms` }}
           >
             <Tag tag={a.tag} logo={a.logo} size="h-9 w-9" />
             <div className="min-w-0 flex-1">
@@ -444,7 +451,7 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
             <span
               className={`lf-t10 shrink-0 rounded-full border px-2 py-1 font-semibold tracking-[0.1em] ${
                 a.kind === "LFT"
-                  ? "border-[var(--accent)] text-[var(--accent)]"
+                  ? "lf-hov-pop border-[var(--accent)] text-[var(--accent)]"
                   : "border-[var(--border-strong)] text-[var(--text-muted)]"
               }`}
             >
@@ -461,15 +468,20 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
 /* 05 — Carte de partage                                               */
 /* ------------------------------------------------------------------ */
 
-const EXAMPLE_MATCH_CARD: ShowcaseMatchCard = {
+/**
+ * La scène est scriptée, plus lue en base : une question, le lien qui y
+ * répond. Un match arbitraire sorti de la base ne répondrait pas à la
+ * question posée — et c'est la question qui fait la démonstration.
+ */
+const SHARE_SCENE = {
   id: "cm7x2k9d40001",
   badge: "MATCH · TERMINÉ",
-  teamA: { tag: "VRM", name: "Vermeil", logo: null },
+  teamA: { tag: "LYO", name: "Lyost", logo: null },
   teamB: { tag: "NRD", name: "Nordique", logo: null },
-  center: "2 – 1",
-  meta: "Hub Open #3 · Demi-finales · Bo3",
-  maps: "Ascent 13-9 · Haven 11-13 · Lotus 13-7",
-};
+  center: "2 – 0",
+  meta: "Premier Invite · Finale · Bo3",
+  maps: "Ascent 13-8 · Bind 13-10",
+} as const;
 
 /** Un camp du duel : logo au-dessus, nom en dessous, sur une colonne égale. */
 function Side({ team }: { team: ShowcaseTeam }) {
@@ -484,24 +496,25 @@ function Side({ team }: { team: ShowcaseTeam }) {
 }
 
 /**
- * Rejoue la carte de partage d'un match : bandeau de marque et badge en haut,
- * le duel au centre, tournoi et cartes en dessous, domaine en pied.
+ * Rejoue une conversation Discord : une question, puis le lien qui y répond
+ * en se dépliant en carte — bandeau de marque et badge en haut, le duel au
+ * centre, tournoi et cartes en dessous, domaine en pied.
  *
- * La composition et les rôles de couleur viennent de `matchs/[id]/
- * opengraph-image` et de `lib/og/fields`. Les quatre lignes de texte, elles,
- * sont composées en amont par `getShowcaseMatchCard` avec les helpers de
- * `lib/og/labels` : la maquette ne réécrit aucun libellé, elle affiche mot
- * pour mot ce que dirait l'image.
+ * La composition et les rôles de couleur de la carte viennent de
+ * `matchs/[id]/opengraph-image` et de `lib/og/fields`, et ses libellés ont la
+ * forme exacte de ceux de `lib/og/labels` : la maquette dit mot pour mot ce
+ * que dirait l'image.
  *
  * Ce n'est volontairement pas l'image elle-même : l'afficher demanderait un
  * rendu Satori par visiteur sur la page la plus servie du site, pour un
  * résultat identique à l'œil.
  *
- * Elle est montrée là où on la voit vraiment, dans un message : c'est ce qui
- * la distingue d'une simple illustration de fiche.
+ * Elle est montrée là où on la voit vraiment, dans un message — et en réponse
+ * à une vraie question : c'est le lien qui répond, pas son expéditeur. C'est
+ * toute la promesse de la fonctionnalité.
  */
-export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
-  const m = data ?? EXAMPLE_MATCH_CARD;
+export function SharePanel() {
+  const m = SHARE_SCENE;
 
   return (
     <Panel>
@@ -510,7 +523,23 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
         right={<span className="lf-t10 shrink-0 text-[var(--text-subtle)]">Lien collé</span>}
       />
 
-      {/* Le message qui contient le lien. */}
+      {/* La question, à laquelle le lien va répondre. */}
+      <div className="flex min-w-0 gap-2.5">
+        <span className="monogram lf-t10 grid h-8 w-8 shrink-0 place-items-center rounded-full font-semibold">
+          SN
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className="lf-t11 font-semibold text-white">sneax</span>
+            <span className="lf-t10 text-[var(--text-subtle)]">aujourd&apos;hui à 21:04</span>
+          </div>
+          <p className="lf-t11 mt-0.5 text-[var(--text-muted)]">
+            tu sais qui a gagné les Premier Invite ?
+          </p>
+        </div>
+      </div>
+
+      {/* La réponse : rien que le lien, la carte parle pour lui. */}
       <div className="flex min-w-0 gap-2.5">
         <span className="monogram lf-t10 grid h-8 w-8 shrink-0 place-items-center rounded-full font-semibold">
           LU
@@ -518,7 +547,7 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="lf-t11 font-semibold text-white">Lurrod</span>
-            <span className="lf-t10 text-[var(--text-subtle)]">aujourd&apos;hui</span>
+            <span className="lf-t10 text-[var(--text-subtle)]">aujourd&apos;hui à 21:05</span>
           </div>
           <p className="lf-t11 mt-0.5 truncate text-[var(--accent)]">
             the-hub-vrc.fr/matchs/{m.id}
@@ -526,48 +555,76 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
 
           {/* L'aperçu déplié, liseré d'accent à gauche comme dans un client de
               discussion. */}
-          <div className="mt-2 overflow-hidden rounded-[var(--r-md)] border border-l-2 border-[var(--border)] border-l-[var(--accent)] bg-[var(--bg)]">
+          <div className="lf-hov-lift mt-2 overflow-hidden rounded-[var(--r-md)] border border-l-2 border-[var(--border)] border-l-[var(--accent)] bg-[var(--bg)]">
             {/* La proportion réelle de la carte (1200×630) n'est tenue qu'à
                 partir de `sm` : sous 400 px de large, elle réduirait la hauteur
                 au point d'écraser le contenu. En dessous, la carte prend la
                 hauteur qu'il lui faut. */}
             <div className="flex min-w-0 flex-col justify-between gap-3 p-3.5 sm:aspect-[1200/630]">
-              <div className="flex items-center gap-2">
-                {/* Rendu à 20 px : le PNG source de 1125 px (98 Ko) était
-                    téléchargé sur l'accueil pour cette seule vignette. Le webp
-                    fait 3,7 Ko, comme dans la barre de navigation. Le PNG reste
-                    nécessaire, mais côté serveur seulement, pour les images de
-                    partage (src/lib/og/frame.tsx). */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo.webp"
-                  width={130}
-                  height={128}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="h-5 w-5 shrink-0 rounded-[4px] object-cover"
-                />
-                <span className="stat lf-t10 truncate tracking-[0.22em] text-[var(--accent)]">
+              {/* Bandeau de marque, séparé du duel par un filet : la vraie
+                  image de partage a la même tête, badge à droite. */}
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] pb-2.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  {/* Rendu à 20 px : le PNG source de 1125 px (98 Ko) était
+                      téléchargé sur l'accueil pour cette seule vignette. Le webp
+                      fait 3,7 Ko, comme dans la barre de navigation. Le PNG reste
+                      nécessaire, mais côté serveur seulement, pour les images de
+                      partage (src/lib/og/frame.tsx). */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/logo.webp"
+                    width={130}
+                    height={128}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-5 w-5 shrink-0 rounded-[4px] object-cover"
+                  />
+                  <span className="stat lf-t10 truncate tracking-[0.16em] text-white">THE HUB</span>
+                </div>
+                <span className="stat lf-t10 shrink-0 truncate tracking-[0.22em] text-[var(--accent)]">
                   {m.badge}
                 </span>
               </div>
 
-              <div className="flex min-w-0 flex-col gap-2">
-                <div className="flex min-w-0 items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-col items-center gap-2.5">
+                <div className="flex w-full min-w-0 items-center justify-between gap-2">
                   <Side team={m.teamA} />
-                  <span className="lf-og-title shrink-0 text-[var(--accent)]">{m.center}</span>
+                  <span className="lf-og-title lf-hov-pop shrink-0 text-[var(--accent)]">
+                    {m.center}
+                  </span>
                   <Side team={m.teamB} />
                 </div>
                 {m.meta && (
-                  <span className="stat lf-t10 truncate text-[var(--text-muted)]">{m.meta}</span>
+                  <span className="stat lf-t10 max-w-full truncate text-[var(--text-muted)]">
+                    {m.meta}
+                  </span>
                 )}
+                {/* Le détail des cartes en pastilles plutôt qu'en une ligne :
+                    trois scores se comparent mieux que trois fragments dans une
+                    phrase. Le libellé vient tel quel de `lib/og/labels`, on ne
+                    fait que le découper sur son séparateur. */}
                 {m.maps && (
-                  <span className="stat lf-t10 truncate text-[var(--accent)]">{m.maps}</span>
+                  <div className="flex max-w-full flex-wrap justify-center gap-1.5">
+                    {m.maps.split(" · ").map((map, i) => (
+                      <span
+                        key={map}
+                        className="stat lf-t10 lf-hov-row truncate rounded-[6px] border border-[var(--border)] bg-[var(--category)] px-2 py-1 text-[var(--accent)]"
+                        style={{ animationDelay: `${i * 70}ms` }}
+                      >
+                        {map}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              <span className="stat lf-t10 text-[var(--accent)]">the-hub-vrc.fr</span>
+              <div className="flex items-center justify-between gap-2 border-t border-[var(--border)] pt-2.5">
+                <span className="stat lf-t10 text-[var(--accent)]">the-hub-vrc.fr</span>
+                <span className="lf-t10 truncate text-[var(--text-subtle)]">
+                  Aperçu généré à la demande
+                </span>
+              </div>
             </div>
           </div>
         </div>

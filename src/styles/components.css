@@ -591,6 +591,173 @@ body :is(h1, h2, h3, h4, h5, h6) {
     18px 18px;
 }
 
+/* --- Vie des maquettes au survol ---
+   L'inclinaison (`--lf-rx/--lf-ry`) et le halo (`--lf-mx/--lf-my`) lisent les
+   variables écrites par `landing-panel-shell.tsx`. Sans JavaScript, elles
+   gardent leur défaut : le panneau se contente du lift et du halo centré,
+   jamais d'état cassé. Le tout est gardé par `hover: hover` : au doigt, ces
+   états ne s'invoqueraient qu'au toucher et resteraient collés. */
+@media (hover: hover) {
+  .lf-panel {
+    transform: perspective(900px) rotateX(var(--lf-rx, 0deg)) rotateY(var(--lf-ry, 0deg))
+      translateY(0);
+    transition:
+      transform 0.16s var(--ease),
+      border-color var(--hover-fast) var(--ease),
+      box-shadow 0.3s var(--ease);
+    will-change: transform;
+  }
+  .lf-panel:hover {
+    border-color: var(--border-strong);
+    transform: perspective(900px) rotateX(var(--lf-rx, 0deg)) rotateY(var(--lf-ry, 0deg))
+      translateY(-4px);
+    box-shadow:
+      0 40px 96px -40px rgba(0, 0, 0, 0.95),
+      0 18px 60px -32px rgba(237, 94, 41, 0.28);
+  }
+  /* Le liseré haut s'allume avec le cadre : posé en retrait au repos pour
+     avoir de la marge à rendre au survol. */
+  .lf-panel::before {
+    opacity: 0.55;
+    transition: opacity var(--hover-fast) var(--ease);
+  }
+  .lf-panel:hover::before {
+    opacity: 1;
+  }
+
+  /* Halo d'accent sous le curseur. `inherit` sur le rayon : le halo épouse le
+     cadre, l'overflow du panneau fait le reste. */
+  .lf-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.35s var(--ease);
+    background: radial-gradient(
+      240px circle at var(--lf-mx, 50%) var(--lf-my, 0%),
+      rgba(237, 94, 41, 0.13),
+      transparent 65%
+    );
+  }
+  .lf-panel:hover .lf-glow {
+    opacity: 1;
+  }
+
+  /* Micro-animations internes, une classe-crochet par motif. Des animations,
+     pas des transitions : elles rejouent à chaque survol et retombent seules
+     sur l'état de repos. Les décalages en cascade sont posés en ligne
+     (`animationDelay`) par les maquettes, qui connaissent leur index. */
+  /* Balayage gauche→droite en clip-path, pas en stroke-dasharray : avec
+     `vector-effect: non-scaling-stroke`, les tirets sont remis à l'échelle
+     différemment du tracé et une partie de la ligne restait invisible. */
+  .lf-panel:hover .lf-hov-wipe {
+    animation: lf-wipe 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .lf-panel:hover .lf-hov-bar {
+    transform-origin: left;
+    animation: lf-refill 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .lf-panel:hover .lf-hov-row {
+    animation: lf-row 0.4s var(--ease) both;
+  }
+  .lf-panel:hover .lf-hov-pop {
+    animation: lf-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .lf-panel:hover .lf-spark-dot {
+    animation: lf-peak 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.65s both;
+  }
+  .lf-hov-lift {
+    transition:
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.3s var(--ease);
+  }
+  .lf-panel:hover .lf-hov-lift {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.85);
+  }
+}
+
+@keyframes lf-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes lf-refill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes lf-row {
+  from {
+    opacity: 0.35;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lf-pop {
+  35% {
+    transform: scale(1.14);
+  }
+}
+@keyframes lf-peak {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Point de pic sur la courbe de rating. Un élément HTML posé en pourcentages
+   plutôt qu'un <circle> : le SVG est étiré (`preserveAspectRatio="none"`),
+   un cercle y deviendrait une ellipse. */
+.lf-spark-dot {
+  position: absolute;
+  height: 6px;
+  width: 6px;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 0 8px 1px rgba(237, 94, 41, 0.55);
+  transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-panel,
+  .lf-hov-lift,
+  .lf-glow {
+    transition: none;
+  }
+  .lf-panel,
+  .lf-panel:hover {
+    transform: none;
+  }
+  .lf-panel:hover .lf-hov-wipe,
+  .lf-panel:hover .lf-hov-bar,
+  .lf-panel:hover .lf-hov-row,
+  .lf-panel:hover .lf-hov-pop,
+  .lf-panel:hover .lf-spark-dot {
+    animation: none;
+  }
+  .lf-panel:hover .lf-hov-lift {
+    transform: none;
+  }
+}
+
 /* Filet dégradé qui ouvre l'en-tête de section. */
 .lf-rule {
   height: 1px;
