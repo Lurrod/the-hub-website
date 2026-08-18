@@ -132,6 +132,9 @@ const COLS: readonly {
 export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
   const s = data ?? EXAMPLE_SCOREBOARD;
   const aWon = s.roundsA >= s.roundsB;
+  // Le meilleur rating de la carte porte l'étiquette MVP, comme sur la vraie
+  // fiche match : c'est la ligne que l'œil doit trouver en premier.
+  const mvp = s.lines.reduce((best, l, i) => (l.rating > s.lines[best].rating ? i : best), 0);
 
   return (
     <Panel>
@@ -156,7 +159,7 @@ export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
           <Tag tag={s.teamA.tag} logo={s.teamA.logo} />
           <span className="lf-t13 truncate font-semibold text-white">{s.teamA.name}</span>
         </div>
-        <div className="stat lf-t18 flex shrink-0 items-center gap-2 font-semibold">
+        <div className="stat lf-t18 lf-hov-pop flex shrink-0 items-center gap-2 font-semibold">
           <span className={aWon ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}>
             {s.roundsA}
           </span>
@@ -196,12 +199,21 @@ export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
           </tr>
         </thead>
         <tbody>
-          {s.lines.map((l) => (
-            <tr key={l.pseudo} className="border-b border-[var(--border)] last:border-0">
+          {s.lines.map((l, i) => (
+            <tr
+              key={l.pseudo}
+              className="lf-hov-row border-b border-[var(--border)] last:border-0"
+              style={{ animationDelay: `${i * 55}ms` }}
+            >
               <td className="py-1.5 pr-2">
                 <span className="flex items-center gap-2">
                   <AgentIcon agent={l.agent} size="h-5 w-5" />
                   <span className="lf-t11 truncate text-white">{l.pseudo}</span>
+                  {i === mvp && (
+                    <span className="lf-t10 lf-hov-pop shrink-0 rounded-full bg-[var(--accent-soft)] px-1.5 py-px font-semibold tracking-[0.1em] text-[var(--accent)] ring-1 ring-[var(--accent)]/40">
+                      MVP
+                    </span>
+                  )}
                 </span>
               </td>
               {COLS.map((c) => (
@@ -289,7 +301,7 @@ function Bout({ bout }: { bout: ShowcaseBout }) {
             </span>
             <span
               className={`stat lf-t11 shrink-0 font-semibold ${
-                won ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"
+                won ? "lf-hov-pop text-[var(--accent)]" : "text-[var(--text-subtle)]"
               }`}
             >
               {s.score}
@@ -317,6 +329,14 @@ export function TournamentPanel({ data }: { data: ShowcaseTournament | null }) {
     `${t.teamCount} équipe${t.teamCount > 1 ? "s" : ""}`,
     t.prizePool,
   ].filter((f): f is string => !!f);
+  // Le vainqueur de la finale n'existe que si elle est jouée et départagée :
+  // une égalité est un match en cours de saisie, pas un champion.
+  const champion =
+    t.final && t.final.top.score !== t.final.bottom.score
+      ? t.final.top.score > t.final.bottom.score
+        ? t.final.top
+        : t.final.bottom
+      : null;
 
   return (
     <Panel>
@@ -355,7 +375,9 @@ export function TournamentPanel({ data }: { data: ShowcaseTournament | null }) {
       <div className="grid grid-cols-[1fr_24px_1fr] items-center gap-2">
         <div className="flex flex-col gap-3">
           {t.semis.map((b, i) => (
-            <Bout key={i} bout={b} />
+            <div key={i} className="lf-hov-row" style={{ animationDelay: `${i * 90}ms` }}>
+              <Bout bout={b} />
+            </div>
           ))}
         </div>
 
@@ -370,6 +392,8 @@ export function TournamentPanel({ data }: { data: ShowcaseTournament | null }) {
           aria-hidden="true"
         >
           <path
+            className="lf-hov-draw"
+            pathLength={1}
             d="M0 22.5 H12 V50 H24 M0 77.5 H12 V50"
             fill="none"
             stroke="currentColor"
@@ -378,7 +402,20 @@ export function TournamentPanel({ data }: { data: ShowcaseTournament | null }) {
           />
         </svg>
 
-        {t.final ? <Bout bout={t.final} /> : <span />}
+        {t.final ? (
+          <div className="flex flex-col gap-2">
+            <Bout bout={t.final} />
+            {champion && (
+              <div className="lf-hov-pop flex items-center justify-center gap-1.5 rounded-[var(--r-md)] bg-[var(--accent-soft)] px-2 py-1.5 ring-1 ring-[var(--accent)]/30">
+                <span className="lf-t10 truncate font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+                  Champion · {champion.name}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <span />
+        )}
       </div>
     </Panel>
   );
@@ -429,10 +466,11 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
         }
       />
       <ul className="flex flex-col gap-2">
-        {ads.map((a) => (
+        {ads.map((a, i) => (
           <li
             key={a.key}
-            className="flex items-center gap-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
+            className="lf-hov-row flex items-center gap-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
+            style={{ animationDelay: `${i * 80}ms` }}
           >
             <Tag tag={a.tag} logo={a.logo} size="h-9 w-9" />
             <div className="min-w-0 flex-1">
@@ -444,7 +482,7 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
             <span
               className={`lf-t10 shrink-0 rounded-full border px-2 py-1 font-semibold tracking-[0.1em] ${
                 a.kind === "LFT"
-                  ? "border-[var(--accent)] text-[var(--accent)]"
+                  ? "lf-hov-pop border-[var(--accent)] text-[var(--accent)]"
                   : "border-[var(--border-strong)] text-[var(--text-muted)]"
               }`}
             >
@@ -526,7 +564,7 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
 
           {/* L'aperçu déplié, liseré d'accent à gauche comme dans un client de
               discussion. */}
-          <div className="mt-2 overflow-hidden rounded-[var(--r-md)] border border-l-2 border-[var(--border)] border-l-[var(--accent)] bg-[var(--bg)]">
+          <div className="lf-hov-lift mt-2 overflow-hidden rounded-[var(--r-md)] border border-l-2 border-[var(--border)] border-l-[var(--accent)] bg-[var(--bg)]">
             {/* La proportion réelle de la carte (1200×630) n'est tenue qu'à
                 partir de `sm` : sous 400 px de large, elle réduirait la hauteur
                 au point d'écraser le contenu. En dessous, la carte prend la
@@ -556,7 +594,9 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="flex min-w-0 items-center justify-between gap-2">
                   <Side team={m.teamA} />
-                  <span className="lf-og-title shrink-0 text-[var(--accent)]">{m.center}</span>
+                  <span className="lf-og-title lf-hov-pop shrink-0 text-[var(--accent)]">
+                    {m.center}
+                  </span>
                   <Side team={m.teamB} />
                 </div>
                 {m.meta && (

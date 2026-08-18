@@ -7,16 +7,13 @@
  * pas ce qu'elle raconte.
  */
 
-export function Panel({ children }: { children: React.ReactNode }) {
-  return (
-    // `min-w-0` : sans lui, une maquette plus large que la colonne (le tableau
-    // de scoreboard sur petit écran) impose sa largeur de contenu à la grille
-    // et fait déborder la page entière au lieu d'être contenue.
-    <div className="lf-panel min-w-0 p-4 sm:p-5">
-      <div className="flex min-w-0 flex-col gap-3">{children}</div>
-    </div>
-  );
-}
+// `min-w-0` (dans PanelShell) : sans lui, une maquette plus large que la
+// colonne (le tableau de scoreboard sur petit écran) impose sa largeur de
+// contenu à la grille et fait déborder la page entière au lieu d'être
+// contenue. La coquille est un composant client à part : elle suit le curseur
+// pour le halo et l'inclinaison, ce que ce fichier — partagé par des
+// composants serveur — n'a pas à embarquer.
+export { default as Panel } from "@/components/landing-panel-shell";
 
 /** Bandeau de titre interne, repris de l'en-tête des sections du site. */
 export function PanelHead({ label, right }: { label: string; right?: React.ReactNode }) {
