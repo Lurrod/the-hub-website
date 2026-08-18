@@ -124,7 +124,8 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Voir un match à partager", href: "/matchs" },
-    panel: (d) => <SharePanel data={d.matchCard} />,
+    // Seule maquette sans données : la scène est scriptée (voir SharePanel).
+    panel: () => <SharePanel />,
   },
 ];
 

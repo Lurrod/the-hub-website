@@ -2,7 +2,6 @@ import AgentIcon from "@/components/agent-icon";
 import type {
   ShowcaseAd,
   ShowcaseBout,
-  ShowcaseMatchCard,
   ShowcaseScoreboard,
   ShowcaseTeam,
   ShowcaseTournament,
@@ -27,7 +26,8 @@ import type {
  *
  * Les équipes et les pseudos de ces exemples sont inventés : on ne met pas de
  * vraies structures en vitrine par défaut, et leurs chiffres ne sont pas des
- * résultats réels.
+ * résultats réels. Seule exception, la scène de partage : ses noms ont été
+ * choisis par le propriétaire du site, qui s'y met lui-même en scène.
  */
 
 /** Coquille commune : cadre, nappe d'accent, trame de points (cf. `.lf-panel`). */
@@ -468,15 +468,20 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
 /* 05 — Carte de partage                                               */
 /* ------------------------------------------------------------------ */
 
-const EXAMPLE_MATCH_CARD: ShowcaseMatchCard = {
+/**
+ * La scène est scriptée, plus lue en base : une question, le lien qui y
+ * répond. Un match arbitraire sorti de la base ne répondrait pas à la
+ * question posée — et c'est la question qui fait la démonstration.
+ */
+const SHARE_SCENE = {
   id: "cm7x2k9d40001",
   badge: "MATCH · TERMINÉ",
-  teamA: { tag: "VRM", name: "Vermeil", logo: null },
+  teamA: { tag: "LYO", name: "Lyost", logo: null },
   teamB: { tag: "NRD", name: "Nordique", logo: null },
-  center: "2 – 1",
-  meta: "Hub Open #3 · Demi-finales · Bo3",
-  maps: "Ascent 13-9 · Haven 11-13 · Lotus 13-7",
-};
+  center: "2 – 0",
+  meta: "Premier Invite · Finale · Bo3",
+  maps: "Ascent 13-8 · Bind 13-10",
+} as const;
 
 /** Un camp du duel : logo au-dessus, nom en dessous, sur une colonne égale. */
 function Side({ team }: { team: ShowcaseTeam }) {
@@ -491,24 +496,25 @@ function Side({ team }: { team: ShowcaseTeam }) {
 }
 
 /**
- * Rejoue la carte de partage d'un match : bandeau de marque et badge en haut,
- * le duel au centre, tournoi et cartes en dessous, domaine en pied.
+ * Rejoue une conversation Discord : une question, puis le lien qui y répond
+ * en se dépliant en carte — bandeau de marque et badge en haut, le duel au
+ * centre, tournoi et cartes en dessous, domaine en pied.
  *
- * La composition et les rôles de couleur viennent de `matchs/[id]/
- * opengraph-image` et de `lib/og/fields`. Les quatre lignes de texte, elles,
- * sont composées en amont par `getShowcaseMatchCard` avec les helpers de
- * `lib/og/labels` : la maquette ne réécrit aucun libellé, elle affiche mot
- * pour mot ce que dirait l'image.
+ * La composition et les rôles de couleur de la carte viennent de
+ * `matchs/[id]/opengraph-image` et de `lib/og/fields`, et ses libellés ont la
+ * forme exacte de ceux de `lib/og/labels` : la maquette dit mot pour mot ce
+ * que dirait l'image.
  *
  * Ce n'est volontairement pas l'image elle-même : l'afficher demanderait un
  * rendu Satori par visiteur sur la page la plus servie du site, pour un
  * résultat identique à l'œil.
  *
- * Elle est montrée là où on la voit vraiment, dans un message : c'est ce qui
- * la distingue d'une simple illustration de fiche.
+ * Elle est montrée là où on la voit vraiment, dans un message — et en réponse
+ * à une vraie question : c'est le lien qui répond, pas son expéditeur. C'est
+ * toute la promesse de la fonctionnalité.
  */
-export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
-  const m = data ?? EXAMPLE_MATCH_CARD;
+export function SharePanel() {
+  const m = SHARE_SCENE;
 
   return (
     <Panel>
@@ -517,7 +523,23 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
         right={<span className="lf-t10 shrink-0 text-[var(--text-subtle)]">Lien collé</span>}
       />
 
-      {/* Le message qui contient le lien. */}
+      {/* La question, à laquelle le lien va répondre. */}
+      <div className="flex min-w-0 gap-2.5">
+        <span className="monogram lf-t10 grid h-8 w-8 shrink-0 place-items-center rounded-full font-semibold">
+          SN
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className="lf-t11 font-semibold text-white">sneax</span>
+            <span className="lf-t10 text-[var(--text-subtle)]">aujourd&apos;hui à 21:04</span>
+          </div>
+          <p className="lf-t11 mt-0.5 text-[var(--text-muted)]">
+            tu sais qui a gagné les Premier Invite ?
+          </p>
+        </div>
+      </div>
+
+      {/* La réponse : rien que le lien, la carte parle pour lui. */}
       <div className="flex min-w-0 gap-2.5">
         <span className="monogram lf-t10 grid h-8 w-8 shrink-0 place-items-center rounded-full font-semibold">
           LU
@@ -525,7 +547,7 @@ export function SharePanel({ data }: { data: ShowcaseMatchCard | null }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="lf-t11 font-semibold text-white">Lurrod</span>
-            <span className="lf-t10 text-[var(--text-subtle)]">aujourd&apos;hui</span>
+            <span className="lf-t10 text-[var(--text-subtle)]">aujourd&apos;hui à 21:05</span>
           </div>
           <p className="lf-t11 mt-0.5 truncate text-[var(--accent)]">
             the-hub-vrc.fr/matchs/{m.id}
