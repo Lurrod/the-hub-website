@@ -49,10 +49,12 @@ function Sparkline({ points }: { points: readonly number[] }) {
 
   return (
     <div className="relative">
+      {/* Le balayage s'applique au SVG entier : la ligne et son aire se
+          révèlent ensemble, gauche vers droite. */}
       <svg
         viewBox="0 0 100 34"
         preserveAspectRatio="none"
-        className="h-16 w-full"
+        className="lf-hov-wipe h-16 w-full"
         role="img"
         aria-label={`Courbe de rating des ${points.length} dernières cartes`}
       >
@@ -62,8 +64,6 @@ function Sparkline({ points }: { points: readonly number[] }) {
           fillOpacity="0.13"
         />
         <polyline
-          className="lf-hov-draw"
-          pathLength={1}
           points={coords.join(" ")}
           fill="none"
           stroke="var(--accent)"

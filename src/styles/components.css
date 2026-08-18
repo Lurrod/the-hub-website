@@ -648,9 +648,11 @@ body :is(h1, h2, h3, h4, h5, h6) {
      pas des transitions : elles rejouent à chaque survol et retombent seules
      sur l'état de repos. Les décalages en cascade sont posés en ligne
      (`animationDelay`) par les maquettes, qui connaissent leur index. */
-  .lf-panel:hover .lf-hov-draw {
-    stroke-dasharray: 1;
-    animation: lf-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Balayage gauche→droite en clip-path, pas en stroke-dasharray : avec
+     `vector-effect: non-scaling-stroke`, les tirets sont remis à l'échelle
+     différemment du tracé et une partie de la ligne restait invisible. */
+  .lf-panel:hover .lf-hov-wipe {
+    animation: lf-wipe 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .lf-panel:hover .lf-hov-bar {
     transform-origin: left;
@@ -676,12 +678,12 @@ body :is(h1, h2, h3, h4, h5, h6) {
   }
 }
 
-@keyframes lf-draw {
+@keyframes lf-wipe {
   from {
-    stroke-dashoffset: 1;
+    clip-path: inset(0 100% 0 0);
   }
   to {
-    stroke-dashoffset: 0;
+    clip-path: inset(0 0 0 0);
   }
 }
 @keyframes lf-refill {
@@ -744,7 +746,7 @@ body :is(h1, h2, h3, h4, h5, h6) {
   .lf-panel:hover {
     transform: none;
   }
-  .lf-panel:hover .lf-hov-draw,
+  .lf-panel:hover .lf-hov-wipe,
   .lf-panel:hover .lf-hov-bar,
   .lf-panel:hover .lf-hov-row,
   .lf-panel:hover .lf-hov-pop,
