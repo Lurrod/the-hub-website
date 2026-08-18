@@ -1,11 +1,5 @@
 import AgentIcon from "@/components/agent-icon";
-import type {
-  ShowcaseAd,
-  ShowcaseBout,
-  ShowcaseScoreboard,
-  ShowcaseTeam,
-  ShowcaseTournament,
-} from "@/lib/data/landing-showcase";
+import type { TournamentStatus } from "@/lib/constants";
 
 /**
  * Maquettes de la landing : chaque bloc de fonctionnalité est illustré par un
@@ -15,26 +9,85 @@ import type {
  * les zooms, suit la charte quand un jeton change, se traduit, et ne demande
  * aucun asset à régénérer à chaque évolution de l'interface.
  *
- * Ces maquettes sont alimentées par la base (`lib/data/landing-showcase`) :
- * en production, ce sont les vrais matchs, fiches et annonces du site.
+ * La vitrine est entièrement scénarisée, plus branchée sur la base. Elle l'a
+ * été : en production, chaque panneau affichait alors le dernier contenu
+ * importé, n'importe lequel — la vitrine changeait de visage à chaque import
+ * et les exemples choisis ne se montraient jamais. Une vitrine raconte un
+ * exemple précis ; les vraies données, elles, sont à un clic derrière chaque
+ * bouton « Voir ».
  *
- * Chaque panneau garde néanmoins un exemple figé, utilisé quand la requête ne
- * rend rien — site neuf, statistiques pas encore importées, base
- * momentanément indisponible. Un cadre vide en vitrine dirait qu'il n'y a rien
- * à voir, ce qui est faux. Les exemples ont la forme exacte des données
- * réelles, si bien qu'il n'existe qu'un seul chemin de rendu.
- *
- * Les exemples figés du scoreboard et du tournoi rejouent un vrai résultat —
- * la finale des Playoff Premier Invite V26A4 (Lyost 2-0 PuR Esport), chiffres
- * relevés sur la fiche du match : un exemple crédible vaut mieux qu'un
- * inventé. Fiche joueur et annonces restent inventées : ce sont des données
- * personnelles (carrière, recherche d'équipe), on ne prête pas de chiffres ni
- * d'intentions à de vraies personnes.
+ * Le scoreboard et le tournoi rejouent un vrai résultat — la finale des
+ * Playoff Premier Invite V26A4 (Lyost 2-0 PuR Esport), chiffres relevés sur
+ * la fiche du match : un exemple crédible vaut mieux qu'un inventé. Fiche
+ * joueur et annonces restent inventées : ce sont des données personnelles
+ * (carrière, recherche d'équipe), on ne prête pas de chiffres ni d'intentions
+ * à de vraies personnes.
  *
  * La maquette « Partage », elle, vit dans `landing-share-discord.tsx` : c'est
  * une conversation Discord scénarisée, hors du cadre commun, sur ce même
  * match.
  */
+
+/** Équipe telle qu'affichée dans un aperçu : logo si elle en a un, sinon monogramme. */
+export type ShowcaseTeam = {
+  tag: string;
+  name: string;
+  logo: string | null;
+};
+
+type ShowcaseScoreboardLine = {
+  pseudo: string;
+  agent: string | null;
+  rating: number;
+  acs: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  kast: number;
+  adr: number;
+};
+
+type ShowcaseScoreboard = {
+  teamA: ShowcaseTeam;
+  teamB: ShowcaseTeam;
+  mapName: string;
+  /** Rang de la carte dans la série et longueur de la série, pour « carte 2 sur 3 ». */
+  mapIndex: number;
+  mapCount: number;
+  roundsA: number;
+  roundsB: number;
+  lines: ShowcaseScoreboardLine[];
+};
+
+type ShowcaseBout = {
+  top: ShowcaseTeam & { score: number };
+  bottom: ShowcaseTeam & { score: number };
+};
+
+type ShowcaseTournament = {
+  name: string;
+  logo: string | null;
+  format: string;
+  status: TournamentStatus;
+  statusLabel: string;
+  teamCount: number;
+  prizePool: string | null;
+  /** Deux confrontations d'un même tour, puis celle du tour suivant. */
+  semis: ShowcaseBout[];
+  final: ShowcaseBout | null;
+  /** Libellés des deux tours, tels que l'organisateur les a nommés. */
+  semisLabel: string;
+  finalLabel: string;
+};
+
+type ShowcaseAd = {
+  key: string;
+  name: string;
+  tag: string;
+  logo: string | null;
+  kind: "LFT" | "LFP";
+  facts: string[];
+};
 
 /** Coquille commune : cadre, nappe d'accent, trame de points (cf. `.lf-panel`). */
 import { Facts, Panel, PanelHead, Tag, initials } from "@/components/landing-panel-chrome";
@@ -49,7 +102,6 @@ import { Facts, Panel, PanelHead, Tag, initials } from "@/components/landing-pan
  * Paingu montre mieux ce qu'est un scoreboard qu'une ligne moyenne inventée.
  */
 const EXAMPLE_SCOREBOARD: ShowcaseScoreboard = {
-  matchId: "",
   teamA: { tag: "LYO", name: "Lyost", logo: "/landing/lyost.webp" },
   teamB: { tag: "PuR", name: "PuR Esport", logo: "/landing/pur.webp" },
   mapName: "Ascent",
@@ -139,8 +191,8 @@ const COLS: readonly {
   { key: "ADR", cell: (l) => String(l.adr), narrow: true },
 ];
 
-export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
-  const s = data ?? EXAMPLE_SCOREBOARD;
+export function ScoreboardPanel() {
+  const s = EXAMPLE_SCOREBOARD;
   const aWon = s.roundsA >= s.roundsB;
 
   return (
@@ -253,7 +305,6 @@ export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
  * vitrine raconte une seule soirée, réelle.
  */
 const EXAMPLE_TOURNAMENT: ShowcaseTournament = {
-  id: "",
   name: "Playoff Premier Invite V26A4",
   logo: "/landing/premier-invite.webp",
   format: "Simple élimination",
@@ -335,8 +386,8 @@ function Round({ label }: { label: string }) {
   );
 }
 
-export function TournamentPanel({ data }: { data: ShowcaseTournament | null }) {
-  const t = data ?? EXAMPLE_TOURNAMENT;
+export function TournamentPanel() {
+  const t = EXAMPLE_TOURNAMENT;
   const facts = [
     t.format,
     `${t.teamCount} équipe${t.teamCount > 1 ? "s" : ""}`,
@@ -442,8 +493,8 @@ const EXAMPLE_ADS: readonly ShowcaseAd[] = [
   },
 ];
 
-export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
-  const ads = data && data.length > 0 ? data : EXAMPLE_ADS;
+export function RecruitPanel() {
+  const ads = EXAMPLE_ADS;
 
   return (
     <Panel>

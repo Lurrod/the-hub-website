@@ -263,9 +263,9 @@ describe("brackets parallèles (Premier Contender)", () => {
   });
 
   it("garde la clé « single » sur chaque section", () => {
-    // landing-showcase.ts et carte/route.tsx cherchent `key === "single"` :
-    // claveter les sections sur l'id de groupe les ferait échouer en silence,
-    // et un tournoi Contender disparaîtrait de la vitrine sans erreur.
+    // carte/route.tsx cherche `key === "single"` : claveter les sections sur
+    // l'id de groupe la ferait échouer en silence, et la carte de partage
+    // d'un tournoi Contender perdrait son bracket sans erreur.
     const tree = buildBracket(deuxBrackets, "PREMIER_CONTENDER");
     expect(tree.sections.every((s) => s.key === "single")).toBe(true);
   });
