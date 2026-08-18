@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Le fil lumineux de la vitrine : deux rails d'accent qui partent de la
- * première maquette, épousent les flancs gauche et droit de chacune, et
- * serpentent en courbes de Bézier jusqu'à la dernière — un continuum qui relie
- * visuellement les blocs alternés.
+ * L'ombre lumineuse de la vitrine : deux bandes d'accent floutées qui partent
+ * de la première maquette, épousent les flancs gauche et droit de chacune, et
+ * serpentent en courbes de Bézier jusqu'à la dernière — un continuum en fond
+ * qui relie visuellement les blocs alternés, et dont la largeur respire
+ * (`lf-flow-breathe`, components.css).
  *
  * Le tracé est mesuré au montage puis à chaque redimensionnement : les
  * maquettes alternent de colonne et changent de hauteur avec le contenu, un
@@ -91,20 +92,14 @@ export default function LandingFlow() {
       preserveAspectRatio="none"
       aria-hidden="true"
     >
+      {/* Durées et départs décalés entre les deux bandes : jamais en phase,
+          la respiration paraît aléatoire. */}
       {[geom.left, geom.right].map((d, i) => (
-        <g key={i}>
-          <path className="lf-flow-glow" d={d} />
-          <path className="lf-flow-core" d={d} />
-          {/* La pulsation : un segment brillant parcourt le fil en boucle.
-              `pathLength` normalise le tracé à 1, le tiret est donc une
-              fraction du chemin quelle que soit sa longueur en pixels. */}
-          <path
-            className="lf-flow-comet"
-            d={d}
-            pathLength={1}
-            style={{ animationDelay: `${i * -4.5}s` }}
-          />
-        </g>
+        <path
+          key={i}
+          d={d}
+          style={{ animationDuration: `${9 + i * 4}s`, animationDelay: `${i * -3}s` }}
+        />
       ))}
     </svg>
   );
