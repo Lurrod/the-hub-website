@@ -3,6 +3,7 @@ import { ArrowRightIcon, CheckIcon } from "@/components/icons";
 import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
 import { PlayerPanel } from "@/components/landing-panels-player";
 import { ShareDiscord } from "@/components/landing-share-discord";
+import { Tag } from "@/components/landing-panel-chrome";
 import { getShowcaseData, type ShowcaseData } from "@/lib/data/landing-showcase";
 
 type Feature = {
@@ -126,10 +127,123 @@ const FEATURES: readonly Feature[] = [
   },
 ];
 
+/**
+ * Les trois fonctionnalités secondaires, chacune avec un mini-exemple qui
+ * montre le geste plutôt que de le décrire : une recherche en cours et ses
+ * résultats mêlés, un roster avec une invitation en attente, une fiche aux
+ * comptes reliés. Décoratifs (`aria-hidden`) : le texte au-dessus dit déjà
+ * tout, la maquette ne fait que le montrer.
+ */
+function MiniSearch() {
+  return (
+    <div
+      className="mt-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] p-2"
+      aria-hidden="true"
+    >
+      <div className="flex items-center gap-2 rounded-[6px] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5">
+        <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0 text-[var(--text-subtle)]">
+          <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M11 11 L15 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+        <span className="lf-t11 text-white">s</span>
+        <span className="h-3.5 w-px bg-[var(--accent)]" />
+      </div>
+      <ul className="mt-1.5 flex flex-col gap-1">
+        <li className="flex items-center gap-2 px-1.5 py-1">
+          <Tag tag="SN" size="h-5 w-5" />
+          <span className="lf-t11 min-w-0 truncate text-white">SneaX</span>
+          <span className="lf-t10 ml-auto shrink-0 uppercase tracking-[0.1em] text-[var(--text-subtle)]">
+            Joueur
+          </span>
+        </li>
+        <li className="flex items-center gap-2 px-1.5 py-1">
+          <Tag tag="SA" logo="/landing/silentascencion.webp" size="h-5 w-5" />
+          <span className="lf-t11 min-w-0 truncate text-white">SilentAscencion</span>
+          <span className="lf-t10 ml-auto shrink-0 uppercase tracking-[0.1em] text-[var(--text-subtle)]">
+            Équipe
+          </span>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function MiniRoster() {
+  return (
+    <div
+      className="mt-3 flex flex-col gap-1.5 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] p-2"
+      aria-hidden="true"
+    >
+      <div className="flex items-center gap-2 px-1.5 py-1">
+        <Tag tag="SY" size="h-5 w-5" />
+        <span className="lf-t11 min-w-0 truncate text-white">sylk</span>
+        <span className="lf-t10 ml-auto shrink-0 rounded-full border border-[var(--border-strong)] px-1.5 py-px text-[var(--text-muted)]">
+          Capitaine
+        </span>
+      </div>
+      {/* L'invitation en attente : le pointillé dit « pas encore dans
+          l'équipe », le badge dit qui doit répondre. */}
+      <div className="flex items-center gap-2 rounded-[6px] border border-dashed border-[var(--border-strong)] px-1.5 py-1">
+        <Tag tag="ME" size="h-5 w-5" />
+        <span className="lf-t11 min-w-0 truncate text-[var(--text-muted)]">mevi</span>
+        <span className="lf-t10 ml-auto shrink-0 rounded-full bg-[var(--accent-soft)] px-1.5 py-px font-semibold text-[var(--accent)] ring-1 ring-[var(--accent)]/40">
+          Invitation envoyée
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MiniProfile() {
+  return (
+    <div
+      className="mt-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] p-2"
+      aria-hidden="true"
+    >
+      <div className="flex items-center gap-2 px-1.5 py-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/landing/lurrod.webp"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-5 w-5 shrink-0 rounded-full object-cover"
+        />
+        <span className="lf-t11 min-w-0 truncate text-white">Lurrod</span>
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-1.5 px-1.5">
+        {["Riot ID", "Discord", "Twitch"].map((c) => (
+          <span
+            key={c}
+            className="lf-t10 inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-1.5 py-0.5 text-[var(--text-muted)]"
+          >
+            <span className="grid h-3 w-3 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+              <CheckIcon className="h-2 w-2" />
+            </span>
+            {c}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const ALSO = [
-  { t: "Recherche unifiée", d: "Joueurs, équipes et tournois dans un seul champ." },
-  { t: "Gestion de roster", d: "Invitations, départs et managers, sans passer par nous." },
-  { t: "Profils reliés", d: "Riot ID, Discord, X et Twitch sur la fiche." },
+  {
+    t: "Recherche unifiée",
+    d: "Joueurs, équipes et tournois dans un seul champ.",
+    demo: <MiniSearch />,
+  },
+  {
+    t: "Gestion de roster",
+    d: "Invitations, départs et managers, sans passer par nous.",
+    demo: <MiniRoster />,
+  },
+  {
+    t: "Profils reliés",
+    d: "Riot ID, Discord, X et Twitch sur la fiche.",
+    demo: <MiniProfile />,
+  },
 ] as const;
 
 /**
@@ -230,9 +344,12 @@ export default async function LandingShowcase() {
         </div>
         <ul className="mt-8 grid gap-3 sm:grid-cols-3">
           {ALSO.map((a) => (
-            <li key={a.t} className="card p-4">
+            <li key={a.t} className="card flex flex-col p-4">
               <div className="lf-point-t font-semibold text-white">{a.t}</div>
               <p className="lf-point-d mt-1.5 text-[var(--text-muted)]">{a.d}</p>
+              {/* Le mini-exemple est calé en bas de carte : les trois demos
+                  s'alignent d'une colonne à l'autre quel que soit le texte. */}
+              <div className="mt-auto">{a.demo}</div>
             </li>
           ))}
         </ul>

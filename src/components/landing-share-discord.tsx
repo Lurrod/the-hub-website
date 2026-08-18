@@ -18,32 +18,39 @@ import { Tag } from "@/components/landing-panel-chrome";
 const SCENE = {
   id: "cmsutba5a005qhixwr3li5j1q",
   badge: "MATCH · TERMINÉ",
-  teamA: { tag: "LYO", name: "Lyost" },
-  teamB: { tag: "PuR", name: "PuR Esport" },
+  teamA: { tag: "LYO", name: "Lyost", logo: "/landing/lyost.webp" },
+  teamB: { tag: "PuR", name: "PuR Esport", logo: "/landing/pur.webp" },
   center: "2 – 0",
   meta: "Playoff Premier Invite V26A4 · Finale · Bo3",
   maps: ["Lotus 13-11", "Ascent 13-7"],
 } as const;
 
 /** Un camp du duel : logo au-dessus, nom en dessous, sur une colonne égale. */
-function Side({ tag, name }: { tag: string; name: string }) {
+function Side({ tag, name, logo }: { tag: string; name: string; logo: string }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-      <Tag tag={tag} size="h-10 w-10" />
+      <Tag tag={tag} logo={logo} size="h-10 w-10" />
       <span className="lf-t11 w-full truncate text-center font-semibold text-white">{name}</span>
     </div>
   );
 }
 
-/** Un message : avatar, nom, horodatage, puis le contenu passé en enfant. */
+/**
+ * Un message : avatar, nom, horodatage, puis le contenu passé en enfant.
+ * L'avatar est la vraie photo de profil quand la personne en a une sur sa
+ * fiche (`avatarImg`, copiée dans `public/landing/`) ; sinon le monogramme,
+ * exactement comme sur le site.
+ */
 function Message({
   avatar,
+  avatarImg,
   tone,
   author,
   time,
   children,
 }: {
   avatar: string;
+  avatarImg?: string;
   tone: "a" | "b";
   author: string;
   time: string;
@@ -51,13 +58,24 @@ function Message({
 }) {
   return (
     <div className="flex min-w-0 gap-3">
-      <span
-        className={`lf-t10 grid h-9 w-9 shrink-0 place-items-center rounded-full font-semibold ${
-          tone === "a" ? "lf-dc-av-a" : "lf-dc-av-b"
-        }`}
-      >
-        {avatar}
-      </span>
+      {avatarImg ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarImg}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-9 w-9 shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <span
+          className={`lf-t10 grid h-9 w-9 shrink-0 place-items-center rounded-full font-semibold ${
+            tone === "a" ? "lf-dc-av-a" : "lf-dc-av-b"
+          }`}
+        >
+          {avatar}
+        </span>
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="lf-t13 lf-dc-text font-semibold">{author}</span>
@@ -84,12 +102,20 @@ export function ShareDiscord() {
 
       <div className="flex min-w-0 flex-col gap-4 px-4 py-4">
         {/* La question, à laquelle le lien va répondre. */}
-        <Message avatar="SN" tone="a" author="sneax" time="aujourd’hui à 21:04">
-          <p className="lf-t13 lf-dc-text mt-0.5">tu sais qui a gagné les Premier Invite ?</p>
+        <Message avatar="SN" tone="a" author="SneaX" time="aujourd’hui à 21:04">
+          <p className="lf-t13 lf-dc-text mt-0.5">
+            <span className="lf-dc-mention">@Lurrod</span> tu sais qui a gagné les Premier Invite ?
+          </p>
         </Message>
 
         {/* La réponse : rien que le lien, la carte parle pour lui. */}
-        <Message avatar="LU" tone="b" author="Lurrod" time="aujourd’hui à 21:05">
+        <Message
+          avatar="LU"
+          avatarImg="/landing/lurrod.webp"
+          tone="b"
+          author="Lurrod"
+          time="aujourd’hui à 21:05"
+        >
           <p className="lf-t13 lf-dc-link mt-0.5 truncate">the-hub-vrc.fr/matchs/{m.id}</p>
 
           {/* L'embed déplié : liseré à la couleur du site, et dedans la carte
@@ -124,11 +150,11 @@ export function ShareDiscord() {
 
                 <div className="flex min-w-0 flex-col items-center gap-2.5">
                   <div className="flex w-full min-w-0 items-center justify-between gap-2">
-                    <Side tag={m.teamA.tag} name={m.teamA.name} />
+                    <Side tag={m.teamA.tag} name={m.teamA.name} logo={m.teamA.logo} />
                     <span className="lf-og-title lf-hov-pop shrink-0 text-[var(--accent)]">
                       {m.center}
                     </span>
-                    <Side tag={m.teamB.tag} name={m.teamB.name} />
+                    <Side tag={m.teamB.tag} name={m.teamB.name} logo={m.teamB.logo} />
                   </div>
                   <span className="stat lf-t10 max-w-full truncate text-[var(--text-muted)]">
                     {m.meta}

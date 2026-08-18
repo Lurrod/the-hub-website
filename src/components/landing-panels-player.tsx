@@ -157,10 +157,16 @@ export function PlayerPanel({ data }: { data: ShowcasePlayer | null }) {
                 <span className="lf-t11 w-14 shrink-0 truncate text-[var(--text-muted)]">
                   {m.mapName}
                 </span>
-                <span className="h-1.5 min-w-0 flex-1 rounded-full bg-[var(--bg)]">
+                <span className="relative h-1.5 min-w-0 flex-1 rounded-full bg-[var(--bg)]">
                   <span
                     className="lf-hov-bar block h-full rounded-full bg-[var(--accent)]"
                     style={{ width: `${m.winratePct}%`, animationDelay: `${i * 90}ms` }}
+                  />
+                  {/* Le repère à 50 % promis par le texte du bloc : la barre
+                      se juge d'un coup d'œil, au-dessus ou en dessous. */}
+                  <span
+                    className="absolute left-1/2 top-1/2 h-2.5 w-px -translate-y-1/2 bg-[var(--border-strong)]"
+                    aria-hidden="true"
                   />
                 </span>
                 <span className="stat lf-t11 w-8 shrink-0 text-right text-white">
