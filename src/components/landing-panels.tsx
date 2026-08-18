@@ -24,13 +24,16 @@ import type {
  * à voir, ce qui est faux. Les exemples ont la forme exacte des données
  * réelles, si bien qu'il n'existe qu'un seul chemin de rendu.
  *
- * Les équipes et les pseudos de ces exemples sont inventés : on ne met pas de
- * vraies structures en vitrine par défaut, et leurs chiffres ne sont pas des
- * résultats réels.
+ * Les exemples figés du scoreboard et du tournoi rejouent un vrai résultat —
+ * la finale des Playoff Premier Invite V26A4 (Lyost 2-0 PuR Esport), chiffres
+ * relevés sur la fiche du match : un exemple crédible vaut mieux qu'un
+ * inventé. Fiche joueur et annonces restent inventées : ce sont des données
+ * personnelles (carrière, recherche d'équipe), on ne prête pas de chiffres ni
+ * d'intentions à de vraies personnes.
  *
  * La maquette « Partage », elle, vit dans `landing-share-discord.tsx` : c'est
- * une conversation Discord scénarisée, hors du cadre commun, avec un vrai
- * match choisi par le propriétaire du site.
+ * une conversation Discord scénarisée, hors du cadre commun, sur ce même
+ * match.
  */
 
 /** Coquille commune : cadre, nappe d'accent, trame de points (cf. `.lf-panel`). */
@@ -40,70 +43,75 @@ import { Facts, Panel, PanelHead, Tag, initials } from "@/components/landing-pan
 /* 01 — Scoreboard                                                     */
 /* ------------------------------------------------------------------ */
 
+/**
+ * L'Ascent de la finale des Premier Invite, côté Lyost : chiffres relevés sur
+ * la fiche du match (`/matchs/cmsutba5a005qhixwr3li5j1q`). Le 28/11 à 1.92 de
+ * Paingu montre mieux ce qu'est un scoreboard qu'une ligne moyenne inventée.
+ */
 const EXAMPLE_SCOREBOARD: ShowcaseScoreboard = {
   matchId: "",
-  teamA: { tag: "VRM", name: "Vermeil", logo: null },
-  teamB: { tag: "NRD", name: "Nordique", logo: null },
+  teamA: { tag: "LYO", name: "Lyost", logo: "/landing/lyost.webp" },
+  teamB: { tag: "PuR", name: "PuR Esport", logo: "/landing/pur.webp" },
   mapName: "Ascent",
   mapIndex: 2,
-  mapCount: 3,
+  mapCount: 2,
   roundsA: 13,
-  roundsB: 9,
+  roundsB: 7,
   lines: [
     {
-      pseudo: "sylk",
+      pseudo: "Paingu",
       agent: "Jett",
-      rating: 1.42,
-      acs: 289,
-      kills: 24,
-      deaths: 14,
-      assists: 5,
-      kast: 78,
-      adr: 168,
+      rating: 1.92,
+      acs: 363,
+      kills: 28,
+      deaths: 11,
+      assists: 4,
+      kast: 80,
+      adr: 231,
     },
     {
-      pseudo: "noax",
-      agent: "Sova",
-      rating: 1.18,
-      acs: 231,
-      kills: 19,
-      deaths: 15,
-      assists: 11,
-      kast: 74,
-      adr: 149,
-    },
-    {
-      pseudo: "tchek",
+      pseudo: "Zoom",
       agent: "Omen",
-      rating: 1.05,
-      acs: 204,
-      kills: 16,
-      deaths: 15,
-      assists: 9,
-      kast: 78,
-      adr: 132,
+      rating: 1.72,
+      acs: 297,
+      kills: 24,
+      deaths: 12,
+      assists: 8,
+      kast: 90,
+      adr: 176,
     },
     {
-      pseudo: "orya",
-      agent: "Killjoy",
-      rating: 0.94,
-      acs: 178,
+      pseudo: "3phones",
+      agent: "Sova",
+      rating: 1.07,
+      acs: 194,
       kills: 13,
-      deaths: 16,
-      assists: 6,
-      kast: 65,
-      adr: 121,
+      deaths: 11,
+      assists: 4,
+      kast: 75,
+      adr: 137,
     },
     {
-      pseudo: "mevi",
-      agent: "Sage",
-      rating: 0.81,
-      acs: 151,
-      kills: 11,
-      deaths: 18,
-      assists: 12,
-      kast: 61,
-      adr: 108,
+      pseudo: "SkeeneX",
+      agent: "Phoenix",
+      rating: 0.86,
+      acs: 145,
+      kills: 10,
+      deaths: 12,
+      assists: 5,
+      kast: 75,
+      adr: 99,
+    },
+    {
+      pseudo: "whitecatwww Fan",
+      agent: "Cypher",
+      rating: 0.69,
+      acs: 161,
+      kills: 10,
+      deaths: 16,
+      assists: 4,
+      kast: 65,
+      adr: 109,
     },
   ],
 };
@@ -112,10 +120,11 @@ const EXAMPLE_SCOREBOARD: ShowcaseScoreboard = {
  * Colonnes chiffrées, en-tête et cellule décrites au même endroit pour qu'elles
  * ne puissent pas se désynchroniser.
  *
- * `narrow: false` retire la colonne sous `sm` : les sept colonnes ne tiennent
- * pas dans 390 px et débordaient la page de douze pixels. On sacrifie les deux
- * moins parlantes hors contexte plutôt que d'imposer un défilement latéral
- * dans une vitrine.
+ * K, D et A sont réunis en une colonne « KDA » : trois colonnes d'un chiffre
+ * se lisaient comme trois statistiques sans lien, la forme 28 / 11 / 4 est
+ * celle que tout joueur connaît — et la place gagnée garde le tableau dans
+ * 390 px sans défilement latéral. `narrow: false` retire la colonne la moins
+ * parlante hors contexte sous `sm`.
  */
 const COLS: readonly {
   key: string;
@@ -125,9 +134,7 @@ const COLS: readonly {
 }[] = [
   { key: "R", cell: (l) => l.rating.toFixed(2), narrow: true, strong: true },
   { key: "ACS", cell: (l) => String(l.acs), narrow: true },
-  { key: "K", cell: (l) => String(l.kills), narrow: true },
-  { key: "D", cell: (l) => String(l.deaths), narrow: true },
-  { key: "A", cell: (l) => String(l.assists), narrow: false },
+  { key: "KDA", cell: (l) => `${l.kills} / ${l.deaths} / ${l.assists}`, narrow: true },
   { key: "KAST", cell: (l) => `${l.kast}%`, narrow: false },
   { key: "ADR", cell: (l) => String(l.adr), narrow: true },
 ];
@@ -239,30 +246,41 @@ export function ScoreboardPanel({ data }: { data: ShowcaseScoreboard | null }) {
 /* 03 — Tournoi                                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Le bracket final des Playoff Premier Invite V26A4, tel que sa page le
+ * donne : demi-finales en Bo1 (scores en rounds), finale en Bo3 (score en
+ * cartes). Même tournoi que le scoreboard et la scène de partage — la
+ * vitrine raconte une seule soirée, réelle.
+ */
 const EXAMPLE_TOURNAMENT: ShowcaseTournament = {
   id: "",
-  name: "Hub Open #3",
-  logo: null,
-  format: "Double élimination",
-  status: "ONGOING",
-  statusLabel: "En cours",
-  teamCount: 16,
-  prizePool: "500 €",
+  name: "Playoff Premier Invite V26A4",
+  logo: "/landing/premier-invite.webp",
+  format: "Simple élimination",
+  status: "FINISHED",
+  statusLabel: "Terminé",
+  teamCount: 8,
+  prizePool: null,
   semisLabel: "Demi-finales",
   finalLabel: "Finale",
   semis: [
     {
-      top: { tag: "VRM", name: "Vermeil", logo: null, score: 2 },
-      bottom: { tag: "CLQ", name: "Calanques", logo: null, score: 0 },
+      top: { tag: "LYO", name: "Lyost", logo: "/landing/lyost.webp", score: 13 },
+      bottom: {
+        tag: "SA",
+        name: "SilentAscencion",
+        logo: "/landing/silentascencion.webp",
+        score: 9,
+      },
     },
     {
-      top: { tag: "ASC", name: "Ascension", logo: null, score: 1 },
-      bottom: { tag: "NRD", name: "Nordique", logo: null, score: 2 },
+      top: { tag: "HLT", name: "HL Tauri eSports", logo: "/landing/hltauri.webp", score: 6 },
+      bottom: { tag: "PuR", name: "PuR Esport", logo: "/landing/pur.webp", score: 13 },
     },
   ],
   final: {
-    top: { tag: "VRM", name: "Vermeil", logo: null, score: 3 },
-    bottom: { tag: "NRD", name: "Nordique", logo: null, score: 1 },
+    top: { tag: "LYO", name: "Lyost", logo: "/landing/lyost.webp", score: 2 },
+    bottom: { tag: "PuR", name: "PuR Esport", logo: "/landing/pur.webp", score: 0 },
   },
 };
 
@@ -433,10 +451,29 @@ export function RecruitPanel({ data }: { data: readonly ShowcaseAd[] | null }) {
         label="Annonces"
         right={
           <span className="lf-t10 shrink-0 text-[var(--text-subtle)]">
-            Filtrées par rôle, rang et région
+            {ads.length} annonce{ads.length > 1 ? "s" : ""}
           </span>
         }
       />
+      {/* La barre de filtres de la vraie page, en décor : elle montre le
+          geste (filtrer par rôle, rang, région) sans prétendre qu'un filtre
+          est actif — les annonces affichées sont les vraies, non filtrées. */}
+      <div className="flex flex-wrap items-center gap-1.5" aria-hidden="true">
+        {["Rôle", "Rang", "Région"].map((f) => (
+          <span
+            key={f}
+            className="lf-t10 inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 font-medium text-[var(--text-muted)]"
+          >
+            {f}
+            <svg viewBox="0 0 8 5" className="h-1 w-2 text-[var(--text-subtle)]" aria-hidden="true">
+              <path d="M0 0 L4 5 L8 0" fill="currentColor" />
+            </svg>
+          </span>
+        ))}
+        <span className="lf-t10 inline-flex items-center rounded-full border border-[var(--accent)]/50 bg-[var(--accent-soft)] px-2.5 py-1 font-semibold text-[var(--accent)]">
+          LFT + LFP
+        </span>
+      </div>
       <ul className="flex flex-col gap-2">
         {ads.map((a, i) => (
           <li

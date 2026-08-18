@@ -788,6 +788,13 @@ body :is(h1, h2, h3, h4, h5, h6) {
 .lf-dc-link {
   color: #00a8fc;
 }
+.lf-dc-mention {
+  border-radius: 3px;
+  padding: 0 2px;
+  background: rgba(88, 101, 242, 0.3);
+  color: #c9cdfb;
+  font-weight: 500;
+}
 .lf-dc-embed {
   border-left: 4px solid var(--accent);
   border-radius: 4px;
