@@ -759,11 +759,11 @@ body :is(h1, h2, h3, h4, h5, h6) {
 }
 
 /* --- Ombre lumineuse de la vitrine ---
-   Deux bandes d'accent floutées tracées par landing-flow.tsx le long des
-   flancs des maquettes, du premier au dernier bloc. Le SVG couvre le
-   conteneur des blocs et se peint avant eux : tout passe au-dessus de
-   l'ombre, elle reste un fond. Pas de trait net ni de segment brillant — une
-   ombre, dont la largeur respire. */
+   Une unique bande d'accent floutée, immobile, tracée par landing-flow.tsx
+   par le milieu de chaque maquette, du premier au dernier bloc. C'est un
+   polygone rempli, pas un trait : sa largeur ondule le long du tracé (voir
+   `widthAt`). Le SVG couvre le conteneur des blocs et se peint avant eux :
+   tout passe au-dessus, l'ombre reste un fond. */
 .lf-flow {
   position: absolute;
   inset: 0;
@@ -772,44 +772,9 @@ body :is(h1, h2, h3, h4, h5, h6) {
   pointer-events: none;
 }
 .lf-flow path {
-  fill: none;
-  stroke: var(--accent);
-  stroke-linecap: round;
-  stroke-width: 16;
-  opacity: 0.15;
-  filter: blur(11px);
-  animation: lf-flow-breathe 9s ease-in-out infinite;
-}
-/* Des paliers à des pourcentages irréguliers : la respiration ne retombe
-   jamais sur un rythme lisible, et les deux bandes tournent sur des durées
-   différentes (posées en ligne par le composant) — l'œil y lit de l'aléa. */
-@keyframes lf-flow-breathe {
-  0%,
-  100% {
-    stroke-width: 14;
-    opacity: 0.13;
-  }
-  23% {
-    stroke-width: 28;
-    opacity: 0.2;
-  }
-  41% {
-    stroke-width: 12;
-    opacity: 0.11;
-  }
-  58% {
-    stroke-width: 32;
-    opacity: 0.22;
-  }
-  79% {
-    stroke-width: 18;
-    opacity: 0.15;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lf-flow path {
-    animation: none;
-  }
+  fill: var(--accent);
+  opacity: 0.09;
+  filter: blur(18px);
 }
 
 /* --- Simulation Discord (maquette Partage) ---

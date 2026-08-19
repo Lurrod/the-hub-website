@@ -276,8 +276,12 @@ export default function LandingShowcase() {
       </div>
 
       {/* Blocs de fonctionnalités */}
-      <div className="relative mt-24 flex flex-col gap-28 sm:mt-32 sm:gap-40">
-        {/* Le fil lumineux qui relie les maquettes, peint sous les blocs. */}
+      {/* En large, chaque étape occupe un écran entier (`min-h-svh`, sans
+          écart supplémentaire) : l'ombre a toute la hauteur pour changer de
+          côté, ses courbes restent douces. En colonne unique, on garde des
+          écarts classiques. */}
+      <div className="relative mt-24 flex flex-col gap-28 sm:mt-32 sm:gap-40 lg:gap-0">
+        {/* L'ombre qui relie les maquettes, peinte sous les blocs. */}
         <LandingFlow />
         {FEATURES.map((f, i) => {
           // Une ligne sur deux inverse texte et maquette. `order` ne s'applique
@@ -287,7 +291,7 @@ export default function LandingShowcase() {
           return (
             <div
               key={f.num}
-              className="lf-reveal grid items-center gap-10 lg:grid-cols-2 lg:gap-20"
+              className="lf-reveal grid items-center gap-10 lg:min-h-svh lg:grid-cols-2 lg:content-center lg:gap-20"
             >
               <div className={`relative min-w-0 ${flipped ? "lg:order-2" : ""}`}>
                 <span
