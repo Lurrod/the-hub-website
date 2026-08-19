@@ -758,6 +758,25 @@ body :is(h1, h2, h3, h4, h5, h6) {
   }
 }
 
+/* --- Ombre lumineuse de la vitrine ---
+   Une unique bande d'accent floutée, immobile, tracée par landing-flow.tsx
+   par le milieu de chaque maquette, du premier au dernier bloc. C'est un
+   polygone rempli, pas un trait : sa largeur ondule le long du tracé (voir
+   `widthAt`). Le SVG couvre le conteneur des blocs et se peint avant eux :
+   tout passe au-dessus, l'ombre reste un fond. */
+.lf-flow {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+}
+.lf-flow path {
+  fill: var(--accent);
+  opacity: 0.09;
+  filter: blur(18px);
+}
+
 /* --- Simulation Discord (maquette Partage) ---
    Seule maquette hors du cadre .lf-panel : elle rejoue le client où la carte
    de partage est réellement vue. Les gris sont ceux de Discord, étrangers à
