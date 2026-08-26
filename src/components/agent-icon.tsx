@@ -1,6 +1,6 @@
 import { agentIconUrl } from "@/lib/agents";
 
-/** Icône d'agent Valorant (image valorant-api.com), avec repli si inconnu. */
+/** Icône d'agent Valorant (image servie depuis public/), avec repli si inconnu. */
 export default function AgentIcon({
   agent,
   className = "",

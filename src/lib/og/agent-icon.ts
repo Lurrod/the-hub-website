@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import sharp from "sharp";
 import { agentIconUrl } from "@/lib/agents";
 import { logger, describeError } from "@/lib/logger";
@@ -6,11 +8,17 @@ import { logger, describeError } from "@/lib/logger";
 const ICON_PX = 68;
 
 /**
- * Au-delà, on rend la carte sans les icônes plutôt que de faire attendre.
- * `media.valorant-api.com` est un CDN tiers : sa disponibilité ne doit pas
- * conditionner celle d'une image du site.
+ * Les icônes sont lues dans `public/` — plus aucun appel réseau ici. Le CDN
+ * `media.valorant-api.com` était un tiers sur le chemin d'une image de partage :
+ * sa latence était celle de la carte, sa panne en retirait les icônes. La
+ * temporisation de 2,5 s qui l'encadrait n'a donc plus d'objet.
+ *
+ * `process.cwd()` est la racine du serveur `standalone`, où le déploiement
+ * recopie `public/` (voir .github/workflows/deploy.yml).
  */
-const TIMEOUT_MS = 2500;
+function iconPath(url: string): string {
+  return path.join(process.cwd(), "public", ...url.split("/").filter(Boolean));
+}
 
 const cache = new Map<string, Promise<string | null>>();
 
@@ -18,9 +26,7 @@ async function load(agent: string): Promise<string | null> {
   const url = agentIconUrl(agent);
   if (!url) return null;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const png = await sharp(Buffer.from(await response.arrayBuffer()))
+    const png = await sharp(await readFile(iconPath(url)))
       .resize(ICON_PX, ICON_PX, { fit: "inside" })
       .png()
       .toBuffer();
@@ -28,8 +34,8 @@ async function load(agent: string): Promise<string | null> {
   } catch (e) {
     // Une icône manquante ne prive pas la carte de sa ligne : le nom de
     // l'agent reprend la place. On trace, car la carte reste un 200 valide —
-    // sans cette ligne, une panne du CDN serait muette.
-    logger.warn("og.agent-icon.unreachable", { agent, ...describeError(e) });
+    // sans cette ligne, un fichier oublié au déploiement serait muet.
+    logger.warn("og.agent-icon.unreadable", { agent, ...describeError(e) });
     return null;
   }
 }
@@ -38,9 +44,9 @@ async function load(agent: string): Promise<string | null> {
  * Icônes d'agent en data URI, prêtes pour Satori, qui ne va pas chercher les
  * images distantes lui-même.
  *
- * Mémoïsé au niveau du module : le CDN n'est interrogé qu'une fois par agent
- * et par processus. Les échecs, eux, ne sont pas mémorisés — une indisponibilité
- * passagère ne doit pas priver d'icônes toutes les cartes suivantes.
+ * Mémoïsé au niveau du module : le fichier n'est lu et redimensionné qu'une
+ * fois par agent et par processus. Les échecs, eux, ne sont pas mémorisés — une
+ * lecture qui rate ne doit pas priver d'icônes toutes les cartes suivantes.
  *
  * @returns une table nom d'agent → data URI ; un agent absent de la table est
  *   un agent dont l'icône n'a pas pu être chargée.
