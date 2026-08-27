@@ -27,7 +27,7 @@ import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import TournamentTeams from "@/components/tournament-teams";
 import { buildStandingRows } from "@/lib/standings";
-import { STAGES_BY_FORMAT, formatGroupsAreBrackets } from "@/lib/constants";
+import { STAGES_BY_FORMAT, formatGroupsAreBrackets, isPremierFormat } from "@/lib/constants";
 import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
 
@@ -96,7 +96,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   // d'être ; une phase de poules que l'organisateur n'a pas encore découpée ; et
   // le Premier Contender, dont les `Group` servent aux brackets et dont la ligne
   // régulière n'a donc aucune poule où se ranger.
-  if (playsGroupStage && (groups.length === 0 || groupsAreBrackets)) {
+  // Un format Premier n'affiche son classement que s'il a réellement joué une
+  // ligne régulière. Sans cette garde, un tournoi de playoffs seuls — ceux
+  // saisis à la main, ou une saison dont le championnat précède l'import —
+  // ouvrait sur un tableau entièrement à zéro qui masquait l'arbre derrière lui.
+  const ligneReguliereJouee = allMatches.some((m) => m.stage === "GROUP");
+  const classementUtile = !isPremierFormat(tournament.format) || ligneReguliereJouee;
+
+  if (playsGroupStage && classementUtile && (groups.length === 0 || groupsAreBrackets)) {
     const rows = buildStandingRows(
       tournament.participants.map((p) => ({
         teamId: p.teamId,
