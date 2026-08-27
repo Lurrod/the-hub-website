@@ -7,6 +7,7 @@ import {
   mutualMatchIds,
   sideOfRoster,
   bracketNameFor,
+  actNameFor,
   playoffSeries,
   tournamentStatusFor,
   quotaDelayMs,
@@ -310,5 +311,35 @@ describe("secretMatches", () => {
   it("refuse un secret de longueur différente sans lever", () => {
     expect(secretMatches("Bearer abcdef", "abc")).toBe(false);
     expect(secretMatches("Bearer a", "abc")).toBe(false);
+  });
+});
+
+describe("actNameFor", () => {
+  // Ordre réel de `/v1/content` : l'entrée d'année précède ses actes.
+  const ACTES = [
+    { id: "y26", name: "V26" },
+    { id: "a6", name: "ACT VI" },
+    { id: "a5", name: "ACT V" },
+    { id: "a4", name: "ACT IV" },
+    { id: "y25", name: "V25" },
+    { id: "a3", name: "ACT III" },
+  ];
+
+  it("compose le nom officiel de l'acte avec son année", () => {
+    expect(actNameFor(ACTES, "a5")).toBe("V26 Act V");
+    expect(actNameFor(ACTES, "a4")).toBe("V26 Act IV");
+  });
+
+  it("rattache l'acte à l'année qui le précède, pas à la plus récente", () => {
+    expect(actNameFor(ACTES, "a3")).toBe("V25 Act III");
+  });
+
+  it("rend null sur un acte inconnu", () => {
+    expect(actNameFor(ACTES, "absent")).toBeNull();
+    expect(actNameFor([], "a5")).toBeNull();
+  });
+
+  it("rend l'acte seul si aucune année ne le précède", () => {
+    expect(actNameFor([{ id: "a1", name: "ACT I" }], "a1")).toBe("Act I");
   });
 });

@@ -9,6 +9,7 @@ import {
   sideOfRoster,
   playoffSeries,
   bracketNameFor,
+  actNameFor,
   type PlayoffSeries,
   tournamentStatusFor,
   type PremierTier,
@@ -20,6 +21,7 @@ import {
   getPremierHistory,
   getPremierLeaderboard,
   getPremierSeasons,
+  getValorantActs,
   RiotIdError,
   type CustomMatch,
 } from "@/lib/henrikdev";
@@ -115,9 +117,18 @@ function formatFor(tier: PremierTier): TournamentFormat {
   return tier === "CONTENDER" ? "PREMIER_CONTENDER" : "PREMIER_INVITE";
 }
 
-function nameFor(tier: PremierTier, seasonNumber: number): string {
+/**
+ * Nom d'un tournoi Premier.
+ *
+ * On préfère l'acte Valorant officiel — « V26 Act V » — au numéro d'ordre.
+ * L'API ne numérote pas ses saisons Premier : ce numéro était déduit du rang
+ * dans la liste et aurait glissé au moindre remaniement de l'historique.
+ * L'acte, lui, est ce que Riot affiche en jeu. Le rang ne sert plus que de
+ * repli, le temps qu'une partie de la saison soit connue.
+ */
+function nameFor(tier: PremierTier, seasonNumber: number, actName: string | null): string {
   const palier = tier === "CONTENDER" ? "Contender" : "Invite";
-  return `Premier ${palier} France — Saison ${seasonNumber}`;
+  return `Premier ${palier} France — ${actName ?? `Saison ${seasonNumber}`}`;
 }
 
 /**
@@ -136,9 +147,11 @@ function nameFor(tier: PremierTier, seasonNumber: number): string {
 export async function ensurePremierTournament(
   season: PremierSeason,
   seasonNumber: number,
-  tier: PremierTier
+  tier: PremierTier,
+  actName: string | null
 ): Promise<string> {
   const commun = {
+    name: nameFor(tier, seasonNumber, actName),
     format: formatFor(tier),
     startDate: new Date(season.startsAt),
     endDate: new Date(season.endsAt),
@@ -158,7 +171,6 @@ export async function ensurePremierTournament(
 
   const t = await db.tournament.create({
     data: {
-      name: nameFor(tier, seasonNumber),
       region: "France",
       organizer: "Riot Games",
       premierSeasonId: season.id,
@@ -471,25 +483,6 @@ export async function runPremierSync(
       [...parEquipePremier].map(([premierId, v]) => [premierId, v.teamId])
     );
 
-    // Un tournoi par couple saison/palier.
-    const tournamentBySeasonTier = new Map<string, string>();
-    const cle = (seasonId: string, tier: PremierTier) => `${seasonId}|${tier}`;
-    for (const seasonId of targets) {
-      const n = seasonNumberOf(seasonIds, seasonId) ?? seasonIds.length;
-      const fenetre = windows.find((w) => w.id === seasonId)!;
-      for (const { tier, entries } of entriesParTier) {
-        const id = await ensurePremierTournament(fenetre, n, tier);
-        tournamentBySeasonTier.set(cle(seasonId, tier), id);
-        await syncParticipants(
-          id,
-          entries
-            .map((e) => parEquipePremier.get(e.id)?.teamId)
-            .filter((x): x is string => Boolean(x))
-        );
-        report.seasons.push({ seasonNumber: n, tier, tournamentId: id, matches: 0 });
-      }
-    }
-
     // Un seul appel d'historique par équipe : il contient toutes les saisons.
     const historiesBySeason = new Map<string, string[][]>(targets.map((sid) => [sid, []]));
     const premierIdsOfMatch = new Map<string, Set<string>>();
@@ -512,6 +505,50 @@ export async function runPremierSync(
       }
       for (const seasonId of targets) {
         historiesBySeason.get(seasonId)!.push(parSaison.get(seasonId)!);
+      }
+    }
+
+    // Les tournois sont créés **après** la lecture des historiques : leur nom
+    // porte l'acte Valorant officiel (« V26 Act V »), qu'on ne connaît qu'en
+    // regardant une partie de la saison. Un appel par saison, contre un nom
+    // juste plutôt qu'un numéro d'ordre que l'API ne donne pas.
+    const actes = await getValorantActs().catch(() => []);
+    const nomDeSaison = new Map<string, string | null>();
+    for (const seasonId of targets) {
+      const unMatch = historiesBySeason.get(seasonId)?.flat()[0];
+      if (!unMatch) {
+        nomDeSaison.set(seasonId, null);
+        continue;
+      }
+      try {
+        const m = await getCustomMatchById("eu", unMatch, true);
+        nomDeSaison.set(seasonId, m.seasonId ? actNameFor(actes, m.seasonId) : null);
+      } catch (e) {
+        if (estQuotaDepasse(e)) throw e;
+        nomDeSaison.set(seasonId, null);
+      }
+    }
+
+    const tournamentBySeasonTier = new Map<string, string>();
+    const cle = (seasonId: string, tier: PremierTier) => `${seasonId}|${tier}`;
+    for (const seasonId of targets) {
+      const n = seasonNumberOf(seasonIds, seasonId) ?? seasonIds.length;
+      const fenetre = windows.find((w) => w.id === seasonId)!;
+      for (const { tier, entries } of entriesParTier) {
+        const id = await ensurePremierTournament(
+          fenetre,
+          n,
+          tier,
+          nomDeSaison.get(seasonId) ?? null
+        );
+        tournamentBySeasonTier.set(cle(seasonId, tier), id);
+        await syncParticipants(
+          id,
+          entries
+            .map((e) => parEquipePremier.get(e.id)?.teamId)
+            .filter((x): x is string => Boolean(x))
+        );
+        report.seasons.push({ seasonNumber: n, tier, tournamentId: id, matches: 0 });
       }
     }
 
@@ -553,11 +590,13 @@ export async function runPremierSync(
     // partout, et deux finales dans le même arbre parce que le vainqueur réel
     // n'est pas suivi. Un arbre fragmentaire affiché comme un arbre complet
     // raconte un tournoi qui n'a pas eu lieu.
-    const saisonEnCours = targets.find((sid) => {
-      const w = windows.find((x) => x.id === sid);
-      return w ? tournamentStatusFor(w, Date.now()) === "ONGOING" : false;
-    });
-    const saisonsAvecPlayoffs = saisonEnCours ? [saisonEnCours] : [];
+    // La **dernière** saison demandée, et non « celle en cours ». Le
+    // championnat se joue deux à trois jours avant la clôture : avec une
+    // condition « en cours », un cron qui n'aurait pas tourné pendant ces trois
+    // jours aurait laissé passer les playoffs pour de bon. Tant que la saison
+    // suivante n'a pas commencé, les divisions n'ont pas été rebattues et le
+    // rattrapage reste valide.
+    const saisonsAvecPlayoffs = targets.slice(-1);
     const arbresParSaison = new Map<string, string[]>(saisonsAvecPlayoffs.map((sid) => [sid, []]));
     const arbresVus = new Set(participations.map((p) => p.tournamentId));
 

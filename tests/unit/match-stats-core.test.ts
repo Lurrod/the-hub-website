@@ -42,6 +42,7 @@ function match(
   return {
     matchId: id,
     map: "Ascent",
+    seasonId: null,
     startedAt,
     durationSec: 2400,
     teamRounds: { Red: 13, Blue: 9 },

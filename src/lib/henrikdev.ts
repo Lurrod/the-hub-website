@@ -5,6 +5,7 @@ import {
   premierSeasonsSchema,
   premierTeamDetailSchema,
   premierHistorySchema,
+  valorantActsSchema,
   type PremierTeamEntry,
   type PremierSeasonResponse,
   type PremierTeamDetail,
@@ -227,6 +228,8 @@ export type CustomMatchTeam = {
 export type CustomMatch = {
   matchId: string;
   map: string;
+  /** Acte Valorant de la partie, à rapprocher du catalogue de contenu. */
+  seasonId: string | null;
   startedAt: string | null;
   durationSec: number | null;
   teamRounds: Record<string, number>; // team_id -> rounds gagnés
@@ -306,6 +309,7 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       map?: { name?: string };
       started_at?: string;
       game_length_in_ms?: number;
+      season?: { id?: string };
     };
     teams?: {
       team_id?: string;
@@ -400,6 +404,7 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
   return {
     matchId: m.metadata?.match_id ?? "",
     map: m.metadata?.map?.name ?? "",
+    seasonId: m.metadata?.season?.id ?? null,
     startedAt: m.metadata?.started_at ?? null,
     durationSec:
       typeof m.metadata?.game_length_in_ms === "number"
@@ -474,4 +479,21 @@ export async function getPremierHistory(id: string): Promise<PremierHistory> {
     "premier-history"
   );
   return premierHistorySchema.parse(data ?? { league_matches: [], tournament_matches: [] });
+}
+
+/**
+ * Actes Valorant du catalogue de contenu, du plus récent au plus ancien.
+ *
+ * Les entrées d'année (« V26 ») y précèdent leurs actes sans qu'aucun
+ * `parentUuid` ne les relie : c'est la position qui fait foi, d'où l'ordre
+ * conservé tel quel.
+ */
+export async function getValorantActs(): Promise<{ id: string; name: string }[]> {
+  const data = await fetchHenrik<unknown>(
+    "/valorant/v1/content?locale=en-US",
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS,
+    "content"
+  );
+  return valorantActsSchema.parse(data ?? {}).acts;
 }

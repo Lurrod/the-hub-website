@@ -174,6 +174,34 @@ export function tournamentStatusFor(season: PremierSeason, nowMs: number): Premi
 
 export type PremierParticipation = { tournamentId: string; matches: readonly string[] };
 
+export type ValorantAct = { id: string; name: string };
+
+/** « ACT V » -> « Act V » : le catalogue crie, pas les noms de tournoi. */
+function casseDouce(nom: string): string {
+  return nom.replace(/^ACT/i, "Act");
+}
+
+/**
+ * Nom officiel d'un acte Valorant, année comprise : « V26 Act V ».
+ *
+ * Le catalogue `/v1/content` rend une liste plate, du plus récent au plus
+ * ancien, où les entrées d'année (« V26 », « V25 ») précèdent leurs actes. Aucun
+ * `parentUuid` n'est renseigné : le rattachement se fait par la position, en
+ * remontant jusqu'à la première année rencontrée.
+ *
+ * Sert à nommer les saisons Premier comme Riot les nomme, plutôt que par un
+ * numéro d'ordre que l'API ne donne pas et qui glisserait si l'historique était
+ * réécrit.
+ */
+export function actNameFor(acts: readonly ValorantAct[], actId: string): string | null {
+  const i = acts.findIndex((a) => a.id === actId);
+  if (i < 0) return null;
+  for (let j = i; j >= 0; j--) {
+    if (/^V\d+$/.test(acts[j].name)) return `${acts[j].name} ${casseDouce(acts[i].name)}`;
+  }
+  return casseDouce(acts[i].name);
+}
+
 /** Une partie de playoffs, une fois connus son heure et ses deux camps. */
 export type PlayoffGame = {
   matchId: string;

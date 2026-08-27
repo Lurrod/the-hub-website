@@ -84,3 +84,13 @@ export const premierTeamDetailSchema = z.object({
     .default([]),
 });
 export type PremierTeamDetail = z.infer<typeof premierTeamDetailSchema>;
+
+/**
+ * Catalogue de contenu Valorant, réduit aux actes.
+ *
+ * Sert à nommer une saison Premier comme Riot la nomme (« V26 Act V ») plutôt
+ * que par un numéro d'ordre que l'API ne donne pas.
+ */
+export const valorantActsSchema = z.object({
+  acts: z.array(z.object({ id: z.string().min(1), name: z.string().min(1) })).default([]),
+});
