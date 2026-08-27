@@ -103,9 +103,25 @@ matchs de phase `GROUP`, les seconds en phase `BRACKET`, de sorte que le
 classement et l'arbre s'affichent sur la même page. Les participants viennent du
 classement et les matchs de l'historique des équipes.
 
-Les équipes sont rattachées par `Team.premierTeamId` — jamais par leur nom, qui
-change — et leurs logos sont rapatriés dans le stockage local plutôt que servis
-depuis le CDN de HenrikDev, que la CSP bloquerait.
+Les logos sont rapatriés dans le stockage local plutôt que servis depuis le CDN
+de HenrikDev, que la CSP bloquerait.
+
+### Rattachement des équipes
+
+Une équipe Premier est reconnue dans cet ordre :
+
+1. Par `Team.premierTeamId`, le cas normal une fois le premier passage fait.
+2. Par son **roster** : au moins trois `puuid` en commun avec une équipe déjà
+   présente sur le site. C'est le seul rapprochement automatique, parce que
+   c'est le seul signal fiable — les noms divergent souvent entre le site et le
+   Premier, et une fusion erronée se défait très mal. Une égalité parfaite entre
+   deux candidates ne tranche pas : le cas remonte dans le rapport.
+3. À défaut, elle est créée et marquée `premierManaged`. Si elle ressemble
+   quand même à une fiche existante (même nom ou même tag), elle est signalée
+   dans `teamsSuspects` plutôt que rattachée d'office.
+
+**Seules les équipes `premierManaged` suivent le nom de Riot.** Une équipe déjà
+présente puis rattachée garde le nom qu'on lui a donné ici.
 
 ### Les playoffs
 
