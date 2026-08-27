@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { roundLabelForSize } from "@/lib/bracket";
 
 /**
  * Logique pure du miroir Premier : aucun accès base, aucun appel réseau, aucune
@@ -171,25 +172,59 @@ export function tournamentStatusFor(season: PremierSeason, nowMs: number): Premi
   return "ONGOING";
 }
 
-export type PremierBracket = { name: string; teamIds: string[] };
+export type PremierParticipation = { tournamentId: string; matches: readonly string[] };
+export type PlayoffPlacement = { tournamentId: string; roundLabel: string };
 
-/** Taille d'un arbre Premier, imposée par Riot. */
-const BRACKET_SIZE = 8;
+/** Nom d'un arbre parallèle, par son rang. Borné à l'alphabet. */
+export function bracketNameFor(index: number): string {
+  const i = Math.min(25, Math.max(0, index));
+  return `Bracket ${String.fromCharCode(65 + i)}`;
+}
 
 /**
- * Répartit les équipes qualifiées en arbres parallèles de 8.
+ * Tour de chaque match de playoffs, déduit du rang dans le parcours d'une
+ * équipe.
  *
- * Le dernier arbre reste incomplet s'il le faut : le compléter avec des équipes
- * fantômes fabriquerait des matchs qui n'ont jamais eu lieu, et le site affiche
- * des résultats, pas des simulations.
+ * L'API ne nomme pas les tours : une participation ne donne que la liste
+ * ordonnée des parties jouées par l'équipe. Le rang y tient lieu de tour, ce que
+ * la mesure confirme — sur trois championnats réels, un match vu par ses deux
+ * équipes apparaît au même rang chez l'une et chez l'autre, sans exception.
+ *
+ * La profondeur de l'arbre se lit sur le plus long parcours : trois matchs pour
+ * le vainqueur d'un arbre de huit, donc un premier tour à quatre affiches. Cette
+ * lecture n'est fiable que parce qu'on suit **toute la division** — un
+ * échantillon d'équipes ferait manquer le vainqueur et rétrograderait tous les
+ * tours d'un cran.
+ *
+ * **Les participations doivent être filtrées sur une seule saison.** Un premier
+ * jet les prenait telles quelles : l'historique remontant à plus de deux ans,
+ * les championnats de vingt saisons se retrouvaient fondus en un seul tournoi,
+ * avec six « finales » et vingt-deux arbres parallèles pour treize matchs.
  */
-export function bracketsOf(teamIds: readonly string[]): PremierBracket[] {
-  const out: PremierBracket[] = [];
-  for (let i = 0; i < teamIds.length; i += BRACKET_SIZE) {
-    out.push({
-      name: `Bracket ${String.fromCharCode(65 + out.length)}`,
-      teamIds: teamIds.slice(i, i + BRACKET_SIZE),
-    });
+export function playoffRounds(
+  participations: readonly PremierParticipation[]
+): Map<string, PlayoffPlacement> {
+  const parArbre = new Map<string, { profondeur: number; rangs: Map<string, number> }>();
+
+  for (const p of participations) {
+    const ids = p.matches.filter(Boolean);
+    if (ids.length === 0) continue;
+    const arbre = parArbre.get(p.tournamentId) ?? { profondeur: 0, rangs: new Map() };
+    arbre.profondeur = Math.max(arbre.profondeur, ids.length);
+    // Sur une divergence, le rang le plus tardif l'emporte : un même match ne
+    // peut pas figurer dans deux tours.
+    ids.forEach((id, rang) => arbre.rangs.set(id, Math.max(arbre.rangs.get(id) ?? 0, rang)));
+    parArbre.set(p.tournamentId, arbre);
+  }
+
+  const out = new Map<string, PlayoffPlacement>();
+  for (const [tournamentId, { profondeur, rangs }] of parArbre) {
+    for (const [id, rang] of rangs) {
+      // Un arbre de profondeur d s'ouvre sur 2^(d-1) affiches ; chaque tour
+      // franchi divise ce nombre par deux.
+      const taille = Math.max(1, 2 ** (profondeur - 1 - rang));
+      out.set(id, { tournamentId, roundLabel: roundLabelForSize(taille) });
+    }
   }
   return out;
 }

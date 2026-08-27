@@ -6,7 +6,8 @@ import {
   seasonNumberOf,
   mutualMatchIds,
   sideOfRoster,
-  bracketsOf,
+  bracketNameFor,
+  playoffRounds,
   tournamentStatusFor,
   quotaDelayMs,
   secretMatches,
@@ -168,31 +169,67 @@ describe("sideOfRoster", () => {
   });
 });
 
-describe("bracketsOf", () => {
-  const equipes = (n: number) => Array.from({ length: n }, (_, i) => `t${i + 1}`);
-
-  it("répartit 16 équipes en deux arbres de 8", () => {
-    const b = bracketsOf(equipes(16));
-    expect(b).toHaveLength(2);
-    expect(b[0]).toEqual({ name: "Bracket A", teamIds: equipes(8) });
-    expect(b[1].name).toBe("Bracket B");
-    expect(b[1].teamIds).toHaveLength(8);
+describe("bracketNameFor", () => {
+  it("nomme les arbres parallèles par lettre", () => {
+    expect(bracketNameFor(0)).toBe("Bracket A");
+    expect(bracketNameFor(2)).toBe("Bracket C");
   });
 
-  it("laisse le dernier arbre incomplet plutôt que de le compléter", () => {
-    // Compléter avec des équipes fantômes fabriquerait des matchs qui n'ont
-    // pas eu lieu.
-    const b = bracketsOf(equipes(10));
-    expect(b).toHaveLength(2);
-    expect(b[1].teamIds).toHaveLength(2);
+  it("ne sort pas de l'alphabet sur un rang aberrant", () => {
+    expect(bracketNameFor(-1)).toBe("Bracket A");
+    expect(bracketNameFor(26)).toBe("Bracket Z");
+  });
+});
+
+describe("playoffRounds", () => {
+  // Le championnat d'une saison se joue en arbres parallèles de 8 : le
+  // vainqueur d'un arbre dispute donc trois matchs. Comme on suit toute la
+  // division, on observe l'arbre entier et sa profondeur est fiable.
+  const arbreDeHuit = [
+    { tournamentId: "t1", matches: ["qf1", "sf1", "f1"] },
+    { tournamentId: "t1", matches: ["qf2", "sf1"] },
+    { tournamentId: "t1", matches: ["qf3", "sf2", "f1"] },
+    { tournamentId: "t1", matches: ["qf4", "sf2"] },
+  ];
+
+  it("nomme les tours d'après la profondeur de l'arbre", () => {
+    const r = playoffRounds(arbreDeHuit);
+    expect(r.get("qf1")).toEqual({ tournamentId: "t1", roundLabel: "Quarts de finale" });
+    expect(r.get("sf1")).toEqual({ tournamentId: "t1", roundLabel: "Demi-finales" });
+    expect(r.get("f1")).toEqual({ tournamentId: "t1", roundLabel: "Finale" });
   });
 
-  it("rend un seul arbre pour l'Invite", () => {
-    expect(bracketsOf(equipes(8))).toEqual([{ name: "Bracket A", teamIds: equipes(8) }]);
+  it("donne le même tour aux deux équipes d'un match", () => {
+    const r = playoffRounds(arbreDeHuit);
+    expect(r.get("qf4")?.roundLabel).toBe("Quarts de finale");
+    expect(r.get("sf2")?.roundLabel).toBe("Demi-finales");
   });
 
-  it("rend une liste vide sans équipe", () => {
-    expect(bracketsOf([])).toEqual([]);
+  it("sépare les arbres parallèles", () => {
+    const r = playoffRounds([
+      { tournamentId: "a", matches: ["m1", "m2"] },
+      { tournamentId: "b", matches: ["m3", "m4"] },
+    ]);
+    expect(r.get("m1")?.tournamentId).toBe("a");
+    expect(r.get("m3")?.tournamentId).toBe("b");
+    // Deux tours de part et d'autre : demies puis finale.
+    expect(r.get("m2")?.roundLabel).toBe("Finale");
+    expect(r.get("m4")?.roundLabel).toBe("Finale");
+  });
+
+  it("range un match au tour le plus tardif quand deux équipes divergent", () => {
+    // Donnée incohérente : mieux vaut un tour que deux.
+    const r = playoffRounds([
+      { tournamentId: "t", matches: ["x", "y"] },
+      { tournamentId: "t", matches: ["y"] },
+    ]);
+    expect(r.get("y")?.roundLabel).toBe("Finale");
+    expect([...r.keys()].filter((k) => k === "y")).toHaveLength(1);
+  });
+
+  it("ignore les participations sans match joué", () => {
+    expect(playoffRounds([{ tournamentId: "t", matches: [] }]).size).toBe(0);
+    expect(playoffRounds([]).size).toBe(0);
   });
 });
 
