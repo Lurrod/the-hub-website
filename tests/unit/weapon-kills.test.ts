@@ -32,7 +32,7 @@ describe("computeWeaponKills", () => {
 
 describe("weapons", () => {
   it("fournit une icône pour les armes connues, rien pour l'inconnu", () => {
-    expect(weaponIconUrl("Vandal")).toMatch(/^https:\/\/media\.valorant-api\.com\/weapons\//);
+    expect(weaponIconUrl("Vandal")).toBe("/valorant/weapons/vandal.webp");
     expect(weaponIconUrl("Fusil imaginaire")).toBeNull();
     expect(weaponIconUrl(null)).toBeNull();
   });

@@ -70,9 +70,11 @@ describe("mapSplashUrl", () => {
     expect(mapSplashUrl("")).toBeUndefined();
   });
 
-  it("ne pointe que des URLs https de valorant-api", () => {
+  it("ne pointe que des images servies par le site", () => {
+    // Une URL absolue qui reviendrait ici rouvrirait un domaine tiers dans
+    // img-src : la CSP la bloquerait, et la carte de map perdrait son fond.
     for (const url of Object.values(MAP_SPLASH)) {
-      expect(url).toMatch(/^https:\/\/media\.valorant-api\.com\/maps\/.+\/splash\.png$/);
+      expect(url).toMatch(/^\/valorant\/maps\/[a-z0-9-]+\.webp$/);
     }
   });
 });

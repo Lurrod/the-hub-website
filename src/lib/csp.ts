@@ -14,8 +14,9 @@
 
 /** Hôtes d'images tiers réellement chargés par le site. */
 export const EXTERNAL_IMAGE_HOSTS = [
-  // Icônes d'agents Valorant — src/lib/agents.ts
-  "https://media.valorant-api.com",
+  // media.valorant-api.com a été retiré : les icônes d'agents, de rôles,
+  // d'armes et les illustrations de maps sont désormais servies depuis
+  // `public/valorant/`, rapatriées par `npm run assets:valorant`.
   // Drapeaux de nationalité — src/components/flag.tsx
   "https://flagcdn.com",
   // Avatars Discord : `ensurePlayerForUser` reprend `user.image` comme photo

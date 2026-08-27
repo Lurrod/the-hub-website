@@ -3,7 +3,7 @@ import { agentIconUrl, rankTopAgentsByPlayer } from "@/lib/agents";
 
 describe("agentIconUrl", () => {
   it("résout un agent connu", () => {
-    expect(agentIconUrl("Jett")).toContain("media.valorant-api.com");
+    expect(agentIconUrl("Jett")).toBe("/valorant/agents/jett.webp");
   });
   it("ignore un agent inconnu ou absent", () => {
     expect(agentIconUrl("Inconnu")).toBeUndefined();

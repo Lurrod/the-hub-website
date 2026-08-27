@@ -1,46 +1,29 @@
-// Table nom d'arme -> URL d'icône (valorant-api.com), figée (pas de fetch runtime).
-// Générée via valorant-api.com/v1/weapons (displayName -> displayIcon), comme
-// AGENT_ICONS. Le domaine media.valorant-api.com est déjà déclaré dans la CSP.
+// Table nom d'arme -> chemin d'icône servi par le site (pas de fetch runtime).
+// Rapatriée de valorant-api.com par `npm run assets:valorant`, comme AGENT_ICONS.
+// >>> table générée par `npm run assets:valorant` — ne pas éditer à la main
 export const WEAPON_ICONS: Record<string, string> = {
-  Odin: "https://media.valorant-api.com/weapons/63e6c2b6-4a8e-869c-3d4c-e38355226584/displayicon.png",
-  Ares: "https://media.valorant-api.com/weapons/55d8a0f4-4274-ca67-fe2c-06ab45efdf58/displayicon.png",
-  Vandal:
-    "https://media.valorant-api.com/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/displayicon.png",
-  Bulldog:
-    "https://media.valorant-api.com/weapons/ae3de142-4d85-2547-dd26-4e90bed35cf7/displayicon.png",
-  Phantom:
-    "https://media.valorant-api.com/weapons/ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a/displayicon.png",
-  Judge:
-    "https://media.valorant-api.com/weapons/ec845bf4-4f79-ddda-a3da-0db3774b2794/displayicon.png",
-  Bucky:
-    "https://media.valorant-api.com/weapons/910be174-449b-c412-ab22-d0873436b21b/displayicon.png",
-  Frenzy:
-    "https://media.valorant-api.com/weapons/44d4e95c-4157-0037-81b2-17841bf2e8e3/displayicon.png",
-  Classic:
-    "https://media.valorant-api.com/weapons/29a0cfab-485b-f5d5-779a-b59f85e204a8/displayicon.png",
-  Bandit:
-    "https://media.valorant-api.com/weapons/410b2e0b-4ceb-1321-1727-20858f7f3477/displayicon.png",
-  Ghost:
-    "https://media.valorant-api.com/weapons/1baa85b4-4c70-1284-64bb-6481dfc3bb4e/displayicon.png",
-  Sheriff:
-    "https://media.valorant-api.com/weapons/e336c6b8-418d-9340-d77f-7a9e4cfe0702/displayicon.png",
-  Shorty:
-    "https://media.valorant-api.com/weapons/42da8ccc-40d5-affc-beec-15aa47b42eda/displayicon.png",
-  Operator:
-    "https://media.valorant-api.com/weapons/a03b24d3-4319-996d-0f8c-94bbfba1dfc7/displayicon.png",
-  Guardian:
-    "https://media.valorant-api.com/weapons/4ade7faa-4cf1-8376-95ef-39884480959b/displayicon.png",
-  Outlaw:
-    "https://media.valorant-api.com/weapons/5f0aaf7a-4289-3998-d5ff-eb9a5cf7ef5c/displayicon.png",
-  Marshal:
-    "https://media.valorant-api.com/weapons/c4883e50-4494-202c-3ec3-6b8a9284f00b/displayicon.png",
-  Spectre:
-    "https://media.valorant-api.com/weapons/462080d1-4035-2937-7c09-27aa2a5c27a7/displayicon.png",
-  Stinger:
-    "https://media.valorant-api.com/weapons/f7e1b454-4ad4-1063-ec0a-159e56b58941/displayicon.png",
-  Melee:
-    "https://media.valorant-api.com/weapons/2f59173c-4bed-b6c3-2191-dea9b58be9c7/displayicon.png",
+  Ares: "/valorant/weapons/ares.webp",
+  Bandit: "/valorant/weapons/bandit.webp",
+  Bucky: "/valorant/weapons/bucky.webp",
+  Bulldog: "/valorant/weapons/bulldog.webp",
+  Classic: "/valorant/weapons/classic.webp",
+  Frenzy: "/valorant/weapons/frenzy.webp",
+  Ghost: "/valorant/weapons/ghost.webp",
+  Guardian: "/valorant/weapons/guardian.webp",
+  Judge: "/valorant/weapons/judge.webp",
+  Marshal: "/valorant/weapons/marshal.webp",
+  Melee: "/valorant/weapons/melee.webp",
+  Odin: "/valorant/weapons/odin.webp",
+  Operator: "/valorant/weapons/operator.webp",
+  Outlaw: "/valorant/weapons/outlaw.webp",
+  Phantom: "/valorant/weapons/phantom.webp",
+  Sheriff: "/valorant/weapons/sheriff.webp",
+  Shorty: "/valorant/weapons/shorty.webp",
+  Spectre: "/valorant/weapons/spectre.webp",
+  Stinger: "/valorant/weapons/stinger.webp",
+  Vandal: "/valorant/weapons/vandal.webp",
 };
+// <<< fin de la table générée
 
 /** URL d'icône d'une arme, null si le nom est inconnu (arme future, capacité). */
 export function weaponIconUrl(weapon: string | null | undefined): string | null {

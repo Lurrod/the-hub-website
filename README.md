@@ -6,16 +6,17 @@ KAST). En production sur [the-hub-vrc.fr](https://the-hub-vrc.fr).
 
 ## Pile technique
 
-| Domaine          | Choix                                                          |
-| ---------------- | -------------------------------------------------------------- |
-| Framework        | Next.js 16 (App Router, React Server Components)               |
-| Langage          | TypeScript, React 19                                           |
-| Base de données  | PostgreSQL via Prisma                                          |
-| Authentification | Auth.js 5 (Discord uniquement, sessions en base)               |
-| Styles           | Tailwind CSS 4, jetons de charte dans `src/app/globals.css`    |
-| Images           | `sharp` côté serveur, servies en webp par `/api/images`        |
-| Données Valorant | API HenrikDev (vérification de Riot ID, statistiques de match) |
-| Hébergement      | Serveur OVH Kimsufi, PM2 derrière Apache                       |
+| Domaine          | Choix                                                               |
+| ---------------- | ------------------------------------------------------------------- |
+| Framework        | Next.js 16 (App Router, React Server Components)                    |
+| Langage          | TypeScript, React 19                                                |
+| Base de données  | PostgreSQL via Prisma                                               |
+| Authentification | Auth.js 5 (Discord uniquement, sessions en base)                    |
+| Styles           | Tailwind CSS 4, jetons de charte dans `src/app/globals.css`         |
+| Images           | `sharp` côté serveur, servies en webp par `/api/images`             |
+| Données Valorant | API HenrikDev (vérification de Riot ID, statistiques de match)      |
+| Images du jeu    | Rapatriées de valorant-api.com dans `public/valorant/`, versionnées |
+| Hébergement      | Serveur OVH Kimsufi, PM2 derrière Apache                            |
 
 ## Mise en route
 
@@ -48,21 +49,33 @@ Toutes sont décrites dans `.env.example`.
 
 ## Scripts
 
-| Commande                          | Effet                                                               |
-| --------------------------------- | ------------------------------------------------------------------- |
-| `npm run dev`                     | Serveur de développement (port 3200)                                |
-| `npm run build` / `npm start`     | Build de production autonome, puis service                          |
-| `npm run lint`                    | ESLint (configuration Next + durcissement `no-console`)             |
-| `npm run format` / `format:check` | Prettier                                                            |
-| `npm test`                        | Tests unitaires Vitest                                              |
-| `npm run test:coverage`           | Idem avec couverture et seuils planchers                            |
-| `npm run test:e2e`                | Parcours Playwright                                                 |
-| `npm run db:migrate`              | `prisma migrate dev`                                                |
-| `npm run db:seed:dev`             | Jeu de démonstration (fixtures des tests E2E)                       |
-| `npm run db:seed:vlr`             | Import de données VCT EMEA réalistes                                |
-| `npm run db:seed:scoreboards`     | Scoreboards de démonstration                                        |
-| `npm run db:studio`               | Prisma Studio                                                       |
-| `npm run db:sync:tournaments`     | Recale le statut des tournois d'après leurs dates (tâche planifiée) |
+| Commande                          | Effet                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| `npm run dev`                     | Serveur de développement (port 3200)                                      |
+| `npm run build` / `npm start`     | Build de production autonome, puis service                                |
+| `npm run lint`                    | ESLint (configuration Next + durcissement `no-console`)                   |
+| `npm run format` / `format:check` | Prettier                                                                  |
+| `npm test`                        | Tests unitaires Vitest                                                    |
+| `npm run test:coverage`           | Idem avec couverture et seuils planchers                                  |
+| `npm run test:e2e`                | Parcours Playwright                                                       |
+| `npm run db:migrate`              | `prisma migrate dev`                                                      |
+| `npm run db:seed:dev`             | Jeu de démonstration (fixtures des tests E2E)                             |
+| `npm run db:seed:vlr`             | Import de données VCT EMEA réalistes                                      |
+| `npm run db:seed:scoreboards`     | Scoreboards de démonstration                                              |
+| `npm run db:studio`               | Prisma Studio                                                             |
+| `npm run db:sync:tournaments`     | Recale le statut des tournois d'après leurs dates (tâche planifiée)       |
+| `npm run assets:valorant`         | Re-télécharge les images du jeu dans `public/valorant/` (voir ci-dessous) |
+
+### Images du jeu
+
+Les icônes d'agents, de rôles, d'armes et les illustrations de maps sont
+servies depuis `public/valorant/` : aucune requête ne part vers un CDN tiers au
+rendu, et `media.valorant-api.com` n'a plus à figurer dans la CSP.
+`npm run assets:valorant` les retélécharge depuis valorant-api.com, les
+ré-encode en WebP à la taille d'affichage (49 Mo d'originaux → 1 Mo) et réécrit
+les tables de `src/lib/{agents,maps,roles,weapons}.ts`. À relancer quand Riot
+sort un agent ou une arme ; une nouvelle map compétitive se déclare d'abord à la
+main dans `MAP_SPLASH`, le script signalant celles du catalogue qui manquent.
 
 ## Organisation
 

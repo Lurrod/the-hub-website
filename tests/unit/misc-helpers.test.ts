@@ -29,7 +29,7 @@ describe("flashCodeFromError", () => {
 describe("roles Valorant", () => {
   it("donne le libellé et l'icône d'un rôle connu", () => {
     expect(roleLabel("DUELIST")).toBe("Duelliste");
-    expect(roleIconUrl("SENTINEL")).toMatch(/^https:\/\/media\.valorant-api\.com\//);
+    expect(roleIconUrl("SENTINEL")).toBe("/valorant/roles/sentinel.webp");
   });
 
   it("rend undefined sur un rôle absent ou inconnu", () => {

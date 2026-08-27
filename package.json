@@ -1,6 +1,6 @@
 {
   "name": "the-hub-website",
-  "version": "1.50.0",
+  "version": "1.51.0",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
@@ -24,7 +24,8 @@
     "db:sync:tournaments": "node scripts/sync-tournament-statuses.mjs",
     "images:prune": "node scripts/prune-orphan-images.mjs",
     "ratings:recalibrate": "node scripts/recalibrate-ratings.mjs",
-    "db:seed:fixtures": "tsx prisma/seed-fixtures.ts"
+    "db:seed:fixtures": "tsx prisma/seed-fixtures.ts",
+    "assets:valorant": "node scripts/fetch-valorant-assets.mjs"
   },
   "overrides": {
     "sharp": "^0.35.3",
