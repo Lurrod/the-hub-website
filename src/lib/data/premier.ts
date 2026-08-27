@@ -5,7 +5,7 @@ import {
   frenchTiers,
   seasonOfMatch,
   seasonNumberOf,
-  dedupeMatchIds,
+  mutualMatchIds,
   sideOfRoster,
   tournamentStatusFor,
   type PremierTier,
@@ -329,8 +329,22 @@ export async function runPremierSync(
   if (targets.length === 0) return report;
 
   try {
+    // Les deux paliers sont lus d'abord, puis traités ensemble.
+    //
+    // Les traiter l'un après l'autre séparait leurs historiques, et un match
+    // de saison passée entre une équipe aujourd'hui en Invite et une
+    // aujourd'hui en Contender n'apparaissait qu'une fois de chaque côté :
+    // `mutualMatchIds` l'écartait des deux listes. Mettre les 72 équipes en
+    // commun règle le problème à la racine.
+    const parEquipePremier = new Map<string, { teamId: string; tier: PremierTier }>();
+    const entriesParTier: {
+      tier: PremierTier;
+      entries: Awaited<ReturnType<typeof getPremierLeaderboard>>;
+    }[] = [];
+
     for (const { conference, division, tier } of frenchTiers()) {
       const entries = await getPremierLeaderboard(conference, division);
+      entriesParTier.push({ tier, entries });
 
       if (dryRun) {
         report.teamsLinked += entries.length;
@@ -340,55 +354,75 @@ export async function runPremierSync(
       const teams = await syncPremierTeams(entries);
       report.teamsCreated += teams.created;
       report.teamsLinked += teams.linked;
+      for (const [premierId, teamId] of teams.byPremierId) {
+        parEquipePremier.set(premierId, { teamId, tier });
+      }
+    }
+    if (dryRun) return report;
 
-      // Un tournoi par saison visée, tous alimentés par la même lecture
-      // d'historique.
-      const tournamentBySeason = new Map<string, string>();
-      const idsBySeason = new Map<string, string[]>();
-      for (const seasonId of targets) {
-        const n = seasonNumberOf(seasonIds, seasonId) ?? seasonIds.length;
-        const fenetre = windows.find((w) => w.id === seasonId)!;
+    const teamIdByPremierId = new Map(
+      [...parEquipePremier].map(([premierId, v]) => [premierId, v.teamId])
+    );
+
+    // Un tournoi par couple saison/palier.
+    const tournamentBySeasonTier = new Map<string, string>();
+    const cle = (seasonId: string, tier: PremierTier) => `${seasonId}|${tier}`;
+    for (const seasonId of targets) {
+      const n = seasonNumberOf(seasonIds, seasonId) ?? seasonIds.length;
+      const fenetre = windows.find((w) => w.id === seasonId)!;
+      for (const { tier, entries } of entriesParTier) {
         const id = await ensurePremierTournament(fenetre, n, tier, "LEAGUE");
-        tournamentBySeason.set(seasonId, id);
-        idsBySeason.set(seasonId, []);
-        await syncParticipants(id, [...teams.byPremierId.values()]);
+        tournamentBySeasonTier.set(cle(seasonId, tier), id);
+        await syncParticipants(
+          id,
+          entries
+            .map((e) => parEquipePremier.get(e.id)?.teamId)
+            .filter((x): x is string => Boolean(x))
+        );
         report.seasons.push({ seasonNumber: n, tier, tournamentId: id, matches: 0 });
       }
+    }
 
-      // Un historique par équipe, réparti ensuite par saison. Les listes
-      // restent séparées jusqu'au dédoublonnage : les deux équipes d'un match
-      // le déclarent chacune, et sans ce filtre on paierait deux appels d'API
-      // pour chaque match importé.
-      const historiesBySeason = new Map<string, string[][]>(targets.map((s) => [s, []]));
-      for (const e of entries) {
-        const h = await getPremierHistory(e.id);
-        const parEquipe = new Map<string, string[]>(targets.map((s) => [s, []]));
-        for (const m of h.league_matches) {
-          const season = seasonOfMatch(windows, m.started_at);
-          parEquipe.get(season ?? "")?.push(m.id);
-        }
-        for (const seasonId of targets) {
-          historiesBySeason.get(seasonId)!.push(parEquipe.get(seasonId)!);
-        }
+    // Un seul appel d'historique par équipe : il contient toutes les saisons.
+    const historiesBySeason = new Map<string, string[][]>(targets.map((sid) => [sid, []]));
+    const premierIdsOfMatch = new Map<string, Set<string>>();
+    for (const premierId of parEquipePremier.keys()) {
+      const h = await getPremierHistory(premierId);
+      const parSaison = new Map<string, string[]>(targets.map((sid) => [sid, []]));
+      for (const m of h.league_matches) {
+        const season = seasonOfMatch(windows, m.started_at);
+        if (!season || !parSaison.has(season)) continue;
+        parSaison.get(season)!.push(m.id);
+        const camps = premierIdsOfMatch.get(m.id) ?? new Set<string>();
+        camps.add(premierId);
+        premierIdsOfMatch.set(m.id, camps);
       }
       for (const seasonId of targets) {
-        idsBySeason.set(seasonId, dedupeMatchIds(historiesBySeason.get(seasonId)!));
+        historiesBySeason.get(seasonId)!.push(parSaison.get(seasonId)!);
       }
+    }
 
-      for (const seasonId of targets) {
-        const tournamentId = tournamentBySeason.get(seasonId)!;
-        const ligne = report.seasons.find((x) => x.tournamentId === tournamentId)!;
-        for (const id of idsBySeason.get(seasonId)!) {
-          if (report.matchesImported >= matchBudget) {
-            report.matchesPending += 1;
-            continue;
-          }
-          const r = await importPremierMatch(id, tournamentId, teams.byPremierId);
-          if (r === "IMPORTED") {
-            report.matchesImported += 1;
-            ligne.matches += 1;
-          } else if (r === "FAILED") report.matchesFailed += 1;
+    for (const seasonId of targets) {
+      for (const id of mutualMatchIds(historiesBySeason.get(seasonId)!)) {
+        if (report.matchesImported >= matchBudget) {
+          report.matchesPending += 1;
+          continue;
         }
+        // Le palier du match est celui de ses équipes. Pour une saison passée
+        // elles peuvent avoir divergé depuis : on retient alors le palier de
+        // la première, faute de connaître les divisions d'alors.
+        const premierIds = [...(premierIdsOfMatch.get(id) ?? [])];
+        const tier = parEquipePremier.get(premierIds[0] ?? "")?.tier;
+        if (!tier) continue;
+        const tournamentId = tournamentBySeasonTier.get(cle(seasonId, tier));
+        if (!tournamentId) continue;
+
+        const r = await importPremierMatch(id, tournamentId, teamIdByPremierId);
+        if (r === "IMPORTED") {
+          report.matchesImported += 1;
+          const ligne = report.seasons.find((x) => x.tournamentId === tournamentId);
+          if (ligne) ligne.matches += 1;
+        } else if (r === "FAILED") report.matchesFailed += 1;
       }
     }
   } catch (e) {

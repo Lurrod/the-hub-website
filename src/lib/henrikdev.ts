@@ -39,17 +39,21 @@ const TIMEOUT_MS = 8000;
  */
 const PREMIER_TIMEOUT_MS = 20_000;
 
+type QuotaState = { remaining: number | null; resetAtMs: number | null };
+
 /**
- * Dernier état du quota vu dans une réponse, partagé par tout le module.
+ * Quota observé, **par seau**.
  *
- * Le seau est unique pour la clé d'API : ce qu'une vérification de Riot ID
- * consomme manque à la synchronisation Premier. Un compteur par appelant
- * mentirait donc sur la marge réelle.
+ * HenrikDev ne compte pas un quota unique par clé d'API : chaque famille
+ * d'endpoints a le sien, exposé par `x-ratelimit-bucket`. L'historique
+ * (`c61e23f3-…`) et la fiche d'équipe (`9aaa6845-…`) se comptent séparément.
+ *
+ * Un état unique pour tout le module appliquait donc le crédit restant d'un
+ * seau à un autre : la synchronisation attendait une minute pleine à chaque
+ * bascule d'endpoint, ce qui faisait passer un import incrémental de trois à
+ * vingt et une minutes. Mesuré, pas supposé.
  */
-const lastQuota: { remaining: number | null; resetAtMs: number | null } = {
-  remaining: null,
-  resetAtMs: null,
-};
+const quotaByKey = new Map<string, QuotaState>();
 
 /**
  * Relève `x-ratelimit-*` d'une réponse. `reset` est un compte à rebours en
@@ -57,15 +61,17 @@ const lastQuota: { remaining: number | null; resetAtMs: number | null } = {
  *
  * Tolérante à une réponse sans en-têtes : la lecture du quota est un confort
  * pour les appels en lot, jamais une raison de faire échouer l'appel qui vient
- * d'aboutir. Un quota non observé laisse simplement `lastQuota` tel quel, et
- * `quotaDelayMs` n'attend pas.
+ * d'aboutir. Un quota non observé laisse l'état tel quel, et `quotaDelayMs`
+ * n'attend pas.
  */
-function noteQuota(headers: Headers | undefined): void {
+function noteQuota(key: string, headers: Headers | undefined): void {
   if (!headers?.get) return;
   const remaining = Number(headers.get("x-ratelimit-remaining"));
   const reset = Number(headers.get("x-ratelimit-reset"));
-  if (Number.isFinite(remaining)) lastQuota.remaining = remaining;
-  if (Number.isFinite(reset)) lastQuota.resetAtMs = Date.now() + reset * 1000;
+  const state = quotaByKey.get(key) ?? { remaining: null, resetAtMs: null };
+  if (Number.isFinite(remaining)) state.remaining = remaining;
+  if (Number.isFinite(reset)) state.resetAtMs = Date.now() + reset * 1000;
+  quotaByKey.set(key, state);
 }
 
 /**
@@ -91,17 +97,23 @@ async function fetchHenrik<T>(
   path: string,
   surAbsence: RiotIdErrorCode = "API_ERROR",
   timeoutMs: number = TIMEOUT_MS,
-  respecterLeQuota = false
+  /**
+   * Famille d'endpoints à laquelle imputer le quota, ou `undefined` pour ne pas
+   * patienter. Les clés doivent séparer ce que HenrikDev compte séparément :
+   * une clé partagée entre deux seaux fait attendre pour rien.
+   */
+  quotaKey?: string
 ): Promise<T | null> {
   const key = process.env.HENRIKDEV_API_KEY;
   if (!key) throw new RiotIdError("API_ERROR");
 
   // Seuls les appels en lot patientent. Une action de formulaire qui dormirait
   // une minute vaudrait moins qu'un message d'erreur immédiat.
-  if (respecterLeQuota) {
-    const wait = quotaDelayMs({ ...lastQuota, nowMs: Date.now() });
+  if (quotaKey) {
+    const etat = quotaByKey.get(quotaKey) ?? { remaining: null, resetAtMs: null };
+    const wait = quotaDelayMs({ ...etat, nowMs: Date.now() });
     if (wait > 0) {
-      logger.info("henrikdev.quota.wait", { waitMs: wait });
+      logger.info("henrikdev.quota.wait", { quotaKey, waitMs: wait });
       await new Promise((r) => setTimeout(r, wait));
     }
   }
@@ -123,7 +135,7 @@ async function fetchHenrik<T>(
     clearTimeout(timeout);
   }
 
-  noteQuota(res.headers);
+  if (quotaKey) noteQuota(quotaKey, res.headers);
 
   if (res.status === 404) throw new RiotIdError(surAbsence);
   if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
@@ -278,7 +290,7 @@ export async function getCustomMatchById(
     `/valorant/v4/match/${encodeURIComponent(region)}/${encodeURIComponent(matchId)}`,
     "NOT_FOUND",
     respecterLeQuota ? PREMIER_TIMEOUT_MS : TIMEOUT_MS,
-    respecterLeQuota
+    respecterLeQuota ? "match-v4" : undefined
   );
   // L'endpoint renvoie un objet, mais on tolère la forme tableau des listes :
   // les deux enveloppes coexistent selon les versions de l'API.
@@ -426,7 +438,7 @@ export async function getPremierLeaderboard(
     `/valorant/v1/premier/leaderboard/eu/${encodeURIComponent(conference)}/${division}`,
     "NOT_FOUND",
     PREMIER_TIMEOUT_MS,
-    true
+    "premier-leaderboard"
   );
   return premierLeaderboardSchema.parse(data ?? []);
 }
@@ -437,7 +449,7 @@ export async function getPremierSeasons(affinity = "eu"): Promise<PremierSeasonR
     `/valorant/v1/premier/seasons/${encodeURIComponent(affinity)}`,
     "NOT_FOUND",
     PREMIER_TIMEOUT_MS,
-    true
+    "premier-seasons"
   );
   return premierSeasonsSchema.parse(data ?? []);
 }
@@ -448,7 +460,7 @@ export async function getPremierTeam(id: string): Promise<PremierTeamDetail> {
     `/valorant/v1/premier/${encodeURIComponent(id)}`,
     "NOT_FOUND",
     PREMIER_TIMEOUT_MS,
-    true
+    "premier-team"
   );
   return premierTeamDetailSchema.parse(data);
 }
@@ -459,7 +471,7 @@ export async function getPremierHistory(id: string): Promise<PremierHistory> {
     `/valorant/v1/premier/${encodeURIComponent(id)}/history`,
     "NOT_FOUND",
     PREMIER_TIMEOUT_MS,
-    true
+    "premier-history"
   );
   return premierHistorySchema.parse(data ?? { league_matches: [], tournament_matches: [] });
 }

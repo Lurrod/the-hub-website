@@ -4,7 +4,7 @@ import {
   frenchTiers,
   seasonOfMatch,
   seasonNumberOf,
-  dedupeMatchIds,
+  mutualMatchIds,
   sideOfRoster,
   bracketsOf,
   tournamentStatusFor,
@@ -87,19 +87,36 @@ describe("seasonOfMatch", () => {
   });
 });
 
-describe("dedupeMatchIds", () => {
-  it("ne garde qu'une occurrence par identifiant", () => {
-    // Les deux équipes d'un match le déclarent chacune dans leur historique.
-    expect(dedupeMatchIds([["a", "b"], ["b", "c"], ["a"]])).toEqual(["a", "b", "c"]);
+describe("mutualMatchIds", () => {
+  it("ne garde que les matchs déclarés par deux équipes suivies", () => {
+    // Un match dont les deux camps sont dans le périmètre figure dans les deux
+    // historiques. Vu une seule fois, l'adversaire est hors périmètre — et le
+    // récupérer pour s'en apercevoir coûte deux crédits, à chaque passage.
+    expect(mutualMatchIds([["a", "b"], ["b", "c"], ["a"]])).toEqual(["a", "b"]);
+  });
+
+  it("écarte un match vu une seule fois", () => {
+    expect(mutualMatchIds([["solo"]])).toEqual([]);
+  });
+
+  it("ne compte pas deux fois un doublon interne à un historique", () => {
+    // Sinon un match répété chez une seule équipe passerait pour un match
+    // entre deux équipes suivies.
+    expect(mutualMatchIds([["x", "x"]])).toEqual([]);
   });
 
   it("préserve l'ordre de première apparition", () => {
-    expect(dedupeMatchIds([["z"], ["a"], ["z"]])).toEqual(["z", "a"]);
+    expect(
+      mutualMatchIds([
+        ["z", "a"],
+        ["a", "z"],
+      ])
+    ).toEqual(["z", "a"]);
   });
 
   it("supporte des historiques vides", () => {
-    expect(dedupeMatchIds([])).toEqual([]);
-    expect(dedupeMatchIds([[], []])).toEqual([]);
+    expect(mutualMatchIds([])).toEqual([]);
+    expect(mutualMatchIds([[], []])).toEqual([]);
   });
 });
 

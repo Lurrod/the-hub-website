@@ -84,23 +84,34 @@ export function seasonNumberOf(seasonIds: readonly string[], seasonId: string): 
 }
 
 /**
- * Identifiants de match uniques, dans leur ordre de première apparition.
+ * Matchs joués **entre deux équipes suivies**, dans leur ordre d'apparition.
  *
- * Chaque match figure dans l'historique des deux équipes qui l'ont joué : sans
- * ce filtre, on paierait deux appels d'API pour chaque match importé, sur un
- * quota déjà étroit.
+ * Chaque match figure dans l'historique des deux équipes qui l'ont joué : ne
+ * garder que ceux vus au moins deux fois revient à écarter, sans le moindre
+ * appel réseau, les matchs dont l'adversaire est hors périmètre — autre
+ * conférence, division inférieure, ou équipe descendue depuis.
+ *
+ * Une simple déduplication les laissait passer : on les récupérait pour
+ * découvrir que l'adversaire manquait, on les rejetait, et on recommençait au
+ * passage suivant. Mesuré sur le miroir de deux saisons : 227 appels par
+ * passage — à deux crédits pièce — pour zéro match importé, soit un quart
+ * d'heure de quota brûlé toutes les quinze minutes.
+ *
+ * Le compte se fait par historique et non par occurrence : un même match
+ * répété dans la liste d'une seule équipe ne prouve pas qu'on suit son
+ * adversaire.
  */
-export function dedupeMatchIds(histories: readonly (readonly string[])[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
+export function mutualMatchIds(histories: readonly (readonly string[])[]): string[] {
+  const seenIn = new Map<string, number>();
+  const order: string[] = [];
   for (const history of histories) {
-    for (const id of history) {
-      if (seen.has(id)) continue;
-      seen.add(id);
-      out.push(id);
+    for (const id of new Set(history)) {
+      const n = seenIn.get(id) ?? 0;
+      if (n === 0) order.push(id);
+      seenIn.set(id, n + 1);
     }
   }
-  return out;
+  return order.filter((id) => (seenIn.get(id) ?? 0) >= 2);
 }
 
 export type PremierMatchTeam = {
