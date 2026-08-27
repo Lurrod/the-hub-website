@@ -1,4 +1,16 @@
 import { logger, describeError } from "@/lib/logger";
+import { quotaDelayMs } from "@/lib/premier-core";
+import {
+  premierLeaderboardSchema,
+  premierSeasonsSchema,
+  premierTeamDetailSchema,
+  premierHistorySchema,
+  valorantActsSchema,
+  type PremierTeamEntry,
+  type PremierSeasonResponse,
+  type PremierTeamDetail,
+  type PremierHistory,
+} from "@/lib/validation/premier";
 
 export type RiotIdErrorCode = "NOT_FOUND" | "RATE_LIMITED" | "API_ERROR" | "TAKEN";
 
@@ -19,6 +31,51 @@ const BASE = "https://api.henrikdev.xyz";
 const TIMEOUT_MS = 8000;
 
 /**
+ * Délai des appels de synchronisation Premier.
+ *
+ * `TIMEOUT_MS` vise une action de formulaire, où huit secondes d'attente sont
+ * déjà une éternité. Les appels de la synchronisation tournent hors du chemin
+ * d'un utilisateur : y couper une réponse valide coûterait un match manquant
+ * pour rien.
+ */
+const PREMIER_TIMEOUT_MS = 20_000;
+
+type QuotaState = { remaining: number | null; resetAtMs: number | null };
+
+/**
+ * Quota observé, **par seau**.
+ *
+ * HenrikDev ne compte pas un quota unique par clé d'API : chaque famille
+ * d'endpoints a le sien, exposé par `x-ratelimit-bucket`. L'historique
+ * (`c61e23f3-…`) et la fiche d'équipe (`9aaa6845-…`) se comptent séparément.
+ *
+ * Un état unique pour tout le module appliquait donc le crédit restant d'un
+ * seau à un autre : la synchronisation attendait une minute pleine à chaque
+ * bascule d'endpoint, ce qui faisait passer un import incrémental de trois à
+ * vingt et une minutes. Mesuré, pas supposé.
+ */
+const quotaByKey = new Map<string, QuotaState>();
+
+/**
+ * Relève `x-ratelimit-*` d'une réponse. `reset` est un compte à rebours en
+ * secondes, pas un horodatage.
+ *
+ * Tolérante à une réponse sans en-têtes : la lecture du quota est un confort
+ * pour les appels en lot, jamais une raison de faire échouer l'appel qui vient
+ * d'aboutir. Un quota non observé laisse l'état tel quel, et `quotaDelayMs`
+ * n'attend pas.
+ */
+function noteQuota(key: string, headers: Headers | undefined): void {
+  if (!headers?.get) return;
+  const remaining = Number(headers.get("x-ratelimit-remaining"));
+  const reset = Number(headers.get("x-ratelimit-reset"));
+  const state = quotaByKey.get(key) ?? { remaining: null, resetAtMs: null };
+  if (Number.isFinite(remaining)) state.remaining = remaining;
+  if (Number.isFinite(reset)) state.resetAtMs = Date.now() + reset * 1000;
+  quotaByKey.set(key, state);
+}
+
+/**
  * Un appel à HenrikDev, de la clé d'API au contenu de l'enveloppe.
  *
  * Les trois points d'appel du module reproduisaient ce bloc à l'identique :
@@ -32,18 +89,39 @@ const TIMEOUT_MS = 8000;
  * @param surAbsence code d'erreur pour un 404. `NOT_FOUND` là où l'absence est
  *   une réponse attendue (compte ou partie inconnus), `API_ERROR` là où elle
  *   trahit une anomalie.
+ * @param timeoutMs délai d'abandon. La valeur par défaut vise une soumission
+ *   de formulaire ; les appels en lot de la synchronisation Premier durent
+ *   plus longtemps et la remontent.
  * @returns le contenu du champ `data` de l'enveloppe, ou `null` s'il manque.
  */
 async function fetchHenrik<T>(
   path: string,
-  surAbsence: RiotIdErrorCode = "API_ERROR"
+  surAbsence: RiotIdErrorCode = "API_ERROR",
+  timeoutMs: number = TIMEOUT_MS,
+  /**
+   * Famille d'endpoints à laquelle imputer le quota, ou `undefined` pour ne pas
+   * patienter. Les clés doivent séparer ce que HenrikDev compte séparément :
+   * une clé partagée entre deux seaux fait attendre pour rien.
+   */
+  quotaKey?: string
 ): Promise<T | null> {
   const key = process.env.HENRIKDEV_API_KEY;
   if (!key) throw new RiotIdError("API_ERROR");
 
+  // Seuls les appels en lot patientent. Une action de formulaire qui dormirait
+  // une minute vaudrait moins qu'un message d'erreur immédiat.
+  if (quotaKey) {
+    const etat = quotaByKey.get(quotaKey) ?? { remaining: null, resetAtMs: null };
+    const wait = quotaDelayMs({ ...etat, nowMs: Date.now() });
+    if (wait > 0) {
+      logger.info("henrikdev.quota.wait", { quotaKey, waitMs: wait });
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+
   const url = `${BASE}${path}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;
   try {
@@ -57,6 +135,8 @@ async function fetchHenrik<T>(
   } finally {
     clearTimeout(timeout);
   }
+
+  if (quotaKey) noteQuota(quotaKey, res.headers);
 
   if (res.status === 404) throw new RiotIdError(surAbsence);
   if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
@@ -130,12 +210,30 @@ export type CustomMatchKill = {
   weapon: string | null;
 };
 
+/**
+ * Un camp du match. `rosterId` n'est renseigné que sur les parties Premier :
+ * c'est le seul champ qui rattache « Red » ou « Blue » — attribués
+ * arbitrairement d'un match à l'autre — à une équipe Premier identifiée, et
+ * donc la seule façon de savoir qui a gagné pour qui lors d'un import
+ * automatique.
+ */
+export type CustomMatchTeam = {
+  teamId: string;
+  won: boolean;
+  rosterId: string | null;
+  roundsWon: number;
+  roundsLost: number;
+};
+
 export type CustomMatch = {
   matchId: string;
   map: string;
+  /** Acte Valorant de la partie, à rapprocher du catalogue de contenu. */
+  seasonId: string | null;
   startedAt: string | null;
   durationSec: number | null;
   teamRounds: Record<string, number>; // team_id -> rounds gagnés
+  teams: CustomMatchTeam[];
   players: CustomMatchPlayer[];
   rounds: CustomMatchRound[];
   kills: CustomMatchKill[];
@@ -184,10 +282,18 @@ export async function getPlayerCustomMatches(
  * quand la recherche par historique ne trouve rien, un admin colle l'ID de la
  * partie et on va la chercher directement.
  */
-export async function getCustomMatchById(region: string, matchId: string): Promise<CustomMatch> {
+export async function getCustomMatchById(
+  region: string,
+  matchId: string,
+  // La synchronisation Premier en appelle des dizaines à la suite et doit
+  // patienter ; le rattrapage manuel d'un admin, lui, répond tout de suite.
+  respecterLeQuota = false
+): Promise<CustomMatch> {
   const data = await fetchHenrik<unknown>(
     `/valorant/v4/match/${encodeURIComponent(region)}/${encodeURIComponent(matchId)}`,
-    "NOT_FOUND"
+    "NOT_FOUND",
+    respecterLeQuota ? PREMIER_TIMEOUT_MS : TIMEOUT_MS,
+    respecterLeQuota ? "match-v4" : undefined
   );
   // L'endpoint renvoie un objet, mais on tolère la forme tableau des listes :
   // les deux enveloppes coexistent selon les versions de l'API.
@@ -203,8 +309,14 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       map?: { name?: string };
       started_at?: string;
       game_length_in_ms?: number;
+      season?: { id?: string };
     };
-    teams?: { team_id?: string; rounds?: { won?: number } }[];
+    teams?: {
+      team_id?: string;
+      won?: boolean;
+      rounds?: { won?: number; lost?: number };
+      premier_roster?: { id?: string } | null;
+    }[];
     rounds?: {
       winning_team?: string;
       result?: string;
@@ -241,6 +353,15 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
   for (const t of m.teams ?? []) {
     if (t.team_id) teamRounds[t.team_id] = num(t.rounds?.won);
   }
+  const teams: CustomMatchTeam[] = (m.teams ?? [])
+    .filter((t) => Boolean(t.team_id))
+    .map((t) => ({
+      teamId: t.team_id!,
+      won: t.won === true,
+      rosterId: t.premier_roster?.id ?? null,
+      roundsWon: num(t.rounds?.won),
+      roundsLost: num(t.rounds?.lost),
+    }));
   const players: CustomMatchPlayer[] = (m.players ?? []).map((p) => ({
     puuid: p.puuid ?? "",
     name: p.name ?? "",
@@ -283,14 +404,96 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
   return {
     matchId: m.metadata?.match_id ?? "",
     map: m.metadata?.map?.name ?? "",
+    seasonId: m.metadata?.season?.id ?? null,
     startedAt: m.metadata?.started_at ?? null,
     durationSec:
       typeof m.metadata?.game_length_in_ms === "number"
         ? Math.round(m.metadata.game_length_in_ms / 1000)
         : null,
     teamRounds,
+    teams,
     players,
     rounds,
     kills,
   };
+}
+
+/**
+ * Délai des appels de synchronisation Premier.
+ *
+ * `TIMEOUT_MS` vise une action de formulaire, où huit secondes d'attente sont
+ * déjà une éternité. Les appels de la synchronisation tournent hors du chemin
+ * d'un utilisateur : y couper une réponse valide coûterait un match manquant
+ * pour rien.
+ */
+
+/**
+ * Classement d'une division Premier.
+ *
+ * Le filtre passe par des **segments de chemin**, pas par des paramètres de
+ * requête : la variante `?conference=&division=` documentée dans la
+ * spécification OpenAPI est ignorée par le serveur, qui renvoie alors les
+ * 4 523 équipes européennes au lieu des dizaines attendues.
+ */
+export async function getPremierLeaderboard(
+  conference: string,
+  division: number
+): Promise<PremierTeamEntry[]> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/leaderboard/eu/${encodeURIComponent(conference)}/${division}`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS,
+    "premier-leaderboard"
+  );
+  return premierLeaderboardSchema.parse(data ?? []);
+}
+
+/** Saisons Premier d'une région, de la plus ancienne à la plus récente. */
+export async function getPremierSeasons(affinity = "eu"): Promise<PremierSeasonResponse[]> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/seasons/${encodeURIComponent(affinity)}`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS,
+    "premier-seasons"
+  );
+  return premierSeasonsSchema.parse(data ?? []);
+}
+
+/** Fiche d'une équipe Premier, roster compris. */
+export async function getPremierTeam(id: string): Promise<PremierTeamDetail> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/${encodeURIComponent(id)}`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS,
+    "premier-team"
+  );
+  return premierTeamDetailSchema.parse(data);
+}
+
+/** Historique d'une équipe : matchs de ligue et matchs de playoffs. */
+export async function getPremierHistory(id: string): Promise<PremierHistory> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/${encodeURIComponent(id)}/history`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS,
+    "premier-history"
+  );
+  return premierHistorySchema.parse(data ?? { league_matches: [], tournament_matches: [] });
+}
+
+/**
+ * Actes Valorant du catalogue de contenu, du plus récent au plus ancien.
+ *
+ * Les entrées d'année (« V26 ») y précèdent leurs actes sans qu'aucun
+ * `parentUuid` ne les relie : c'est la position qui fait foi, d'où l'ordre
+ * conservé tel quel.
+ */
+export async function getValorantActs(): Promise<{ id: string; name: string }[]> {
+  const data = await fetchHenrik<unknown>(
+    "/valorant/v1/content?locale=en-US",
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS,
+    "content"
+  );
+  return valorantActsSchema.parse(data ?? {}).acts;
 }
