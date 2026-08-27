@@ -128,7 +128,7 @@ function formatFor(tier: PremierTier): TournamentFormat {
  */
 function nameFor(tier: PremierTier, seasonNumber: number, actName: string | null): string {
   const palier = tier === "CONTENDER" ? "Contender" : "Invite";
-  return `Premier ${palier} France — ${actName ?? `Saison ${seasonNumber}`}`;
+  return `Premier ${palier} France - ${actName ?? `Saison ${seasonNumber}`}`;
 }
 
 /**
