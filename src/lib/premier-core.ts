@@ -156,21 +156,36 @@ export function bracketsOf(teamIds: readonly string[]): PremierBracket[] {
   return out;
 }
 
-/** Quota relevé sur l'en-tête `X-RateLimit-Limit` : 30 crédits par 60 s. */
-export const RATE_BUDGET = 30;
-export const RATE_WINDOW_MS = 60_000;
+/**
+ * Marge conservée sous le quota.
+ *
+ * On s'arrête avant zéro plutôt qu'à zéro : le compteur est partagé par tout
+ * ce qui utilise la clé — une vérification de Riot ID déclenchée par un
+ * visiteur pendant la synchronisation consomme le même seau.
+ */
+export const QUOTA_FLOOR = 3;
 
 /**
  * Attente à respecter avant le prochain appel HenrikDev.
  *
- * Un appel coûte environ deux crédits : les requêtes que HenrikDev relaie vers
- * Riot sont comptées elles aussi. Enchaîner sans attendre garantit une rafale
- * de 429 au bout d'une quinzaine de requêtes — et la synchronisation en fait
- * plus de soixante-dix rien que pour lire les historiques.
+ * Le quota ne se devine pas, il se lit : chaque réponse porte
+ * `x-ratelimit-remaining` et `x-ratelimit-reset`, ce dernier étant un compte à
+ * rebours en secondes. Une première version estimait le coût d'un appel à deux
+ * crédits et comptait elle-même une fenêtre de 60 s : la mesure a montré un
+ * crédit par appel et une remise à zéro glissante, et la synchronisation
+ * prenait quand même un 429 au bout de deux minutes.
+ *
+ * `remaining` à `null` signifie qu'aucun en-tête n'a encore été observé : on
+ * n'attend pas, sous peine de perdre une minute avant le tout premier appel.
  */
-export function nextDelayMs(w: { spent: number; elapsedMs: number }): number {
-  if (w.spent < RATE_BUDGET) return 0;
-  return Math.max(0, RATE_WINDOW_MS - w.elapsedMs);
+export function quotaDelayMs(q: {
+  remaining: number | null;
+  resetAtMs: number | null;
+  nowMs: number;
+}): number {
+  if (q.remaining === null || q.resetAtMs === null) return 0;
+  if (q.remaining > QUOTA_FLOOR) return 0;
+  return Math.max(0, q.resetAtMs - q.nowMs);
 }
 
 const BEARER = "Bearer ";

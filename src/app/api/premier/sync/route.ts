@@ -43,6 +43,7 @@ export async function POST(req: Request) {
       matchesImported: report.matchesImported,
       matchesFailed: report.matchesFailed,
       matchesPending: report.matchesPending,
+      rateLimited: report.rateLimited,
     });
     return Response.json(report);
   } catch (e) {

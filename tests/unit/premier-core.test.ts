@@ -7,10 +7,9 @@ import {
   dedupeMatchIds,
   sideOfRoster,
   bracketsOf,
-  nextDelayMs,
+  quotaDelayMs,
   secretMatches,
-  RATE_BUDGET,
-  RATE_WINDOW_MS,
+  QUOTA_FLOOR,
 } from "@/lib/premier-core";
 
 describe("frenchTierOf", () => {
@@ -169,20 +168,27 @@ describe("bracketsOf", () => {
   });
 });
 
-describe("nextDelayMs", () => {
-  it("n'attend pas tant que le budget de la fenêtre n'est pas consommé", () => {
-    expect(nextDelayMs({ spent: 0, elapsedMs: 0 })).toBe(0);
-    expect(nextDelayMs({ spent: RATE_BUDGET - 1, elapsedMs: 1_000 })).toBe(0);
+describe("quotaDelayMs", () => {
+  it("n'attend pas tant qu'il reste de la marge", () => {
+    expect(quotaDelayMs({ remaining: 29, resetAtMs: 60_000, nowMs: 0 })).toBe(0);
+    expect(quotaDelayMs({ remaining: QUOTA_FLOOR + 1, resetAtMs: 60_000, nowMs: 0 })).toBe(0);
   });
 
-  it("attend le reste de la fenêtre quand le budget est épuisé", () => {
-    expect(nextDelayMs({ spent: RATE_BUDGET, elapsedMs: 0 })).toBe(RATE_WINDOW_MS);
-    expect(nextDelayMs({ spent: RATE_BUDGET, elapsedMs: 20_000 })).toBe(RATE_WINDOW_MS - 20_000);
+  it("attend la remise à zéro annoncée quand la marge est atteinte", () => {
+    expect(quotaDelayMs({ remaining: QUOTA_FLOOR, resetAtMs: 60_000, nowMs: 10_000 })).toBe(50_000);
+    expect(quotaDelayMs({ remaining: 0, resetAtMs: 60_000, nowMs: 0 })).toBe(60_000);
   });
 
-  it("n'attend plus quand la fenêtre est déjà écoulée", () => {
-    expect(nextDelayMs({ spent: RATE_BUDGET, elapsedMs: RATE_WINDOW_MS })).toBe(0);
-    expect(nextDelayMs({ spent: RATE_BUDGET, elapsedMs: RATE_WINDOW_MS + 5_000 })).toBe(0);
+  it("n'attend plus une fois la remise à zéro passée", () => {
+    expect(quotaDelayMs({ remaining: 0, resetAtMs: 60_000, nowMs: 60_000 })).toBe(0);
+    expect(quotaDelayMs({ remaining: 0, resetAtMs: 60_000, nowMs: 90_000 })).toBe(0);
+  });
+
+  it("n'attend pas quand le quota n'a pas encore été observé", () => {
+    // Avant le premier appel, aucun en-tête n'a été vu : attendre à l'aveugle
+    // coûterait une minute pour rien.
+    expect(quotaDelayMs({ remaining: null, resetAtMs: null, nowMs: 0 })).toBe(0);
+    expect(quotaDelayMs({ remaining: 0, resetAtMs: null, nowMs: 0 })).toBe(0);
   });
 });
 

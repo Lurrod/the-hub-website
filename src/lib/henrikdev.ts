@@ -1,4 +1,5 @@
 import { logger, describeError } from "@/lib/logger";
+import { quotaDelayMs } from "@/lib/premier-core";
 import {
   premierLeaderboardSchema,
   premierSeasonsSchema,
@@ -29,6 +30,45 @@ const BASE = "https://api.henrikdev.xyz";
 const TIMEOUT_MS = 8000;
 
 /**
+ * Délai des appels de synchronisation Premier.
+ *
+ * `TIMEOUT_MS` vise une action de formulaire, où huit secondes d'attente sont
+ * déjà une éternité. Les appels de la synchronisation tournent hors du chemin
+ * d'un utilisateur : y couper une réponse valide coûterait un match manquant
+ * pour rien.
+ */
+const PREMIER_TIMEOUT_MS = 20_000;
+
+/**
+ * Dernier état du quota vu dans une réponse, partagé par tout le module.
+ *
+ * Le seau est unique pour la clé d'API : ce qu'une vérification de Riot ID
+ * consomme manque à la synchronisation Premier. Un compteur par appelant
+ * mentirait donc sur la marge réelle.
+ */
+const lastQuota: { remaining: number | null; resetAtMs: number | null } = {
+  remaining: null,
+  resetAtMs: null,
+};
+
+/**
+ * Relève `x-ratelimit-*` d'une réponse. `reset` est un compte à rebours en
+ * secondes, pas un horodatage.
+ *
+ * Tolérante à une réponse sans en-têtes : la lecture du quota est un confort
+ * pour les appels en lot, jamais une raison de faire échouer l'appel qui vient
+ * d'aboutir. Un quota non observé laisse simplement `lastQuota` tel quel, et
+ * `quotaDelayMs` n'attend pas.
+ */
+function noteQuota(headers: Headers | undefined): void {
+  if (!headers?.get) return;
+  const remaining = Number(headers.get("x-ratelimit-remaining"));
+  const reset = Number(headers.get("x-ratelimit-reset"));
+  if (Number.isFinite(remaining)) lastQuota.remaining = remaining;
+  if (Number.isFinite(reset)) lastQuota.resetAtMs = Date.now() + reset * 1000;
+}
+
+/**
  * Un appel à HenrikDev, de la clé d'API au contenu de l'enveloppe.
  *
  * Les trois points d'appel du module reproduisaient ce bloc à l'identique :
@@ -50,10 +90,21 @@ const TIMEOUT_MS = 8000;
 async function fetchHenrik<T>(
   path: string,
   surAbsence: RiotIdErrorCode = "API_ERROR",
-  timeoutMs: number = TIMEOUT_MS
+  timeoutMs: number = TIMEOUT_MS,
+  respecterLeQuota = false
 ): Promise<T | null> {
   const key = process.env.HENRIKDEV_API_KEY;
   if (!key) throw new RiotIdError("API_ERROR");
+
+  // Seuls les appels en lot patientent. Une action de formulaire qui dormirait
+  // une minute vaudrait moins qu'un message d'erreur immédiat.
+  if (respecterLeQuota) {
+    const wait = quotaDelayMs({ ...lastQuota, nowMs: Date.now() });
+    if (wait > 0) {
+      logger.info("henrikdev.quota.wait", { waitMs: wait });
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
 
   const url = `${BASE}${path}`;
   const controller = new AbortController();
@@ -71,6 +122,8 @@ async function fetchHenrik<T>(
   } finally {
     clearTimeout(timeout);
   }
+
+  noteQuota(res.headers);
 
   if (res.status === 404) throw new RiotIdError(surAbsence);
   if (res.status === 429) throw new RiotIdError("RATE_LIMITED");
@@ -214,10 +267,18 @@ export async function getPlayerCustomMatches(
  * quand la recherche par historique ne trouve rien, un admin colle l'ID de la
  * partie et on va la chercher directement.
  */
-export async function getCustomMatchById(region: string, matchId: string): Promise<CustomMatch> {
+export async function getCustomMatchById(
+  region: string,
+  matchId: string,
+  // La synchronisation Premier en appelle des dizaines à la suite et doit
+  // patienter ; le rattrapage manuel d'un admin, lui, répond tout de suite.
+  respecterLeQuota = false
+): Promise<CustomMatch> {
   const data = await fetchHenrik<unknown>(
     `/valorant/v4/match/${encodeURIComponent(region)}/${encodeURIComponent(matchId)}`,
-    "NOT_FOUND"
+    "NOT_FOUND",
+    respecterLeQuota ? PREMIER_TIMEOUT_MS : TIMEOUT_MS,
+    respecterLeQuota
   );
   // L'endpoint renvoie un objet, mais on tolère la forme tableau des listes :
   // les deux enveloppes coexistent selon les versions de l'API.
@@ -348,7 +409,6 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
  * d'un utilisateur : y couper une réponse valide coûterait un match manquant
  * pour rien.
  */
-const PREMIER_TIMEOUT_MS = 20_000;
 
 /**
  * Classement d'une division Premier.
@@ -365,7 +425,8 @@ export async function getPremierLeaderboard(
   const data = await fetchHenrik<unknown>(
     `/valorant/v1/premier/leaderboard/eu/${encodeURIComponent(conference)}/${division}`,
     "NOT_FOUND",
-    PREMIER_TIMEOUT_MS
+    PREMIER_TIMEOUT_MS,
+    true
   );
   return premierLeaderboardSchema.parse(data ?? []);
 }
@@ -375,7 +436,8 @@ export async function getPremierSeasons(affinity = "eu"): Promise<PremierSeasonR
   const data = await fetchHenrik<unknown>(
     `/valorant/v1/premier/seasons/${encodeURIComponent(affinity)}`,
     "NOT_FOUND",
-    PREMIER_TIMEOUT_MS
+    PREMIER_TIMEOUT_MS,
+    true
   );
   return premierSeasonsSchema.parse(data ?? []);
 }
@@ -385,7 +447,8 @@ export async function getPremierTeam(id: string): Promise<PremierTeamDetail> {
   const data = await fetchHenrik<unknown>(
     `/valorant/v1/premier/${encodeURIComponent(id)}`,
     "NOT_FOUND",
-    PREMIER_TIMEOUT_MS
+    PREMIER_TIMEOUT_MS,
+    true
   );
   return premierTeamDetailSchema.parse(data);
 }
@@ -395,7 +458,8 @@ export async function getPremierHistory(id: string): Promise<PremierHistory> {
   const data = await fetchHenrik<unknown>(
     `/valorant/v1/premier/${encodeURIComponent(id)}/history`,
     "NOT_FOUND",
-    PREMIER_TIMEOUT_MS
+    PREMIER_TIMEOUT_MS,
+    true
   );
   return premierHistorySchema.parse(data ?? { league_matches: [], tournament_matches: [] });
 }

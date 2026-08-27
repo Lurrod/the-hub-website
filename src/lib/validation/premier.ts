@@ -26,17 +26,43 @@ export type PremierTeamEntry = z.infer<typeof premierTeamEntrySchema>;
 export const premierLeaderboardSchema = z.array(premierTeamEntrySchema);
 
 /**
- * Une entrée d'historique. `started_at` est exigé : c'est le seul champ qui
- * permette de rattacher le match à une saison, l'API n'en donnant aucun autre.
+ * Un match de ligue. `started_at` est exigé : c'est le seul champ qui permette
+ * de rattacher le match à une saison, l'API n'en donnant aucun autre.
  */
-const historyEntrySchema = z.object({
+const leagueMatchSchema = z.object({
   id: z.string().min(1),
   started_at: z.string().min(1),
 });
 
+/**
+ * Une participation à un tournoi de playoffs.
+ *
+ * Les deux listes de l'historique n'ont **pas la même forme**, ce qui n'est
+ * documenté nulle part : `league_matches` liste des matchs, `tournament_matches`
+ * liste des participations, chacune portant ses identifiants de partie dans
+ * `matches[]`. Aucune date n'y figure — un match de playoffs ne peut donc pas
+ * être rattaché à une saison par sa fenêtre de dates, seulement par son
+ * `tournament_id`.
+ *
+ * `matches[]` contient des chaînes vides : ce sont les créneaux d'un arbre que
+ * l'équipe n'a pas joués, parce qu'elle en a été éliminée avant. Les rejeter
+ * ferait échouer la synchronisation sur une donnée parfaitement normale — on
+ * les écarte ici, une fois pour toutes, plutôt qu'à chaque point d'usage.
+ */
+const tournamentEntrySchema = z.object({
+  tournament_id: z.string().min(1),
+  placement: z.number().int().optional(),
+  points_before: z.number().int().optional(),
+  points_after: z.number().int().optional(),
+  matches: z
+    .array(z.string())
+    .default([])
+    .transform((ids) => ids.filter((id) => id.length > 0)),
+});
+
 export const premierHistorySchema = z.object({
-  league_matches: z.array(historyEntrySchema),
-  tournament_matches: z.array(historyEntrySchema),
+  league_matches: z.array(leagueMatchSchema),
+  tournament_matches: z.array(tournamentEntrySchema),
 });
 export type PremierHistory = z.infer<typeof premierHistorySchema>;
 

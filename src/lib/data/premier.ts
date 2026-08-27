@@ -7,8 +7,6 @@ import {
   seasonNumberOf,
   dedupeMatchIds,
   sideOfRoster,
-  nextDelayMs,
-  RATE_WINDOW_MS,
   type PremierTier,
 } from "@/lib/premier-core";
 import {
@@ -16,6 +14,7 @@ import {
   getPremierHistory,
   getPremierLeaderboard,
   getPremierSeasons,
+  RiotIdError,
 } from "@/lib/henrikdev";
 import type { PremierTeamEntry } from "@/lib/validation/premier";
 import { importMatchMapFromRiotId } from "@/lib/match-stats";
@@ -199,8 +198,12 @@ export async function importPremierMatch(
 
   let raw;
   try {
-    raw = await getCustomMatchById("eu", riotMatchId);
+    raw = await getCustomMatchById("eu", riotMatchId, true);
   } catch (e) {
+    // Le dépassement de quota n'est pas l'échec d'un match : il arrête le
+    // passage. Le laisser remonter permet à l'orchestration de rendre sa
+    // progression au lieu de la perdre.
+    if (e instanceof RiotIdError && e.code === "RATE_LIMITED") throw e;
     logger.warn("premier.match.fetch_failed", { riotMatchId, ...describeError(e) });
     return "FAILED";
   }
@@ -256,26 +259,13 @@ export type SyncReport = {
   matchesImported: number;
   matchesFailed: number;
   matchesPending: number;
+  /** Le passage s'est-il arrêté sur le quota plutôt qu'au bout de son travail ? */
+  rateLimited: boolean;
 };
 
-/**
- * Compteur de quota partagé par tous les appels d'un passage.
- *
- * `nextDelayMs` est pur et ne connaît ni l'horloge ni le sommeil : c'est ici
- * qu'on les branche, dans la couche d'accès où ils ont leur place.
- */
-function rateGate() {
-  let spent = 0;
-  let windowStart = Date.now();
-  return async function pay(cost = 2): Promise<void> {
-    const wait = nextDelayMs({ spent, elapsedMs: Date.now() - windowStart });
-    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-    if (Date.now() - windowStart >= RATE_WINDOW_MS) {
-      spent = 0;
-      windowStart = Date.now();
-    }
-    spent += cost;
-  };
+/** Le dépassement de quota est-il la cause de cette erreur ? */
+function estQuotaDepasse(e: unknown): boolean {
+  return e instanceof RiotIdError && e.code === "RATE_LIMITED";
 }
 
 /**
@@ -289,8 +279,6 @@ function rateGate() {
  * unique, l'existant est sauté sans appel réseau.
  */
 export async function runPremierSync(matchBudget: number, dryRun: boolean): Promise<SyncReport> {
-  const pay = rateGate();
-  await pay();
   const seasons = await getPremierSeasons("eu");
   const seasonIds = seasons.map((s) => s.id);
   const windows = seasons.map((s) => ({ id: s.id, startsAt: s.starts_at, endsAt: s.ends_at }));
@@ -308,47 +296,58 @@ export async function runPremierSync(matchBudget: number, dryRun: boolean): Prom
     matchesImported: 0,
     matchesFailed: 0,
     matchesPending: 0,
+    rateLimited: false,
   };
   if (!current) return report;
 
-  for (const { conference, division, tier } of frenchTiers()) {
-    await pay();
-    const entries = await getPremierLeaderboard(conference, division);
+  try {
+    for (const { conference, division, tier } of frenchTiers()) {
+      const entries = await getPremierLeaderboard(conference, division);
 
-    if (dryRun) {
-      report.teamsLinked += entries.length;
-      continue;
-    }
-
-    const teams = await syncPremierTeams(entries);
-    report.teamsCreated += teams.created;
-    report.teamsLinked += teams.linked;
-
-    const league = await ensurePremierTournament(current, seasonNumber, tier, "LEAGUE");
-    report.tournaments.push(league);
-    await syncParticipants(league, [...teams.byPremierId.values()]);
-
-    const histories: string[][] = [];
-    for (const e of entries) {
-      await pay();
-      const h = await getPremierHistory(e.id);
-      histories.push(
-        h.league_matches
-          .filter((m) => seasonOfMatch(windows, m.started_at) === current)
-          .map((m) => m.id)
-      );
-    }
-
-    for (const id of dedupeMatchIds(histories)) {
-      if (report.matchesImported >= matchBudget) {
-        report.matchesPending += 1;
+      if (dryRun) {
+        report.teamsLinked += entries.length;
         continue;
       }
-      await pay();
-      const r = await importPremierMatch(id, league, teams.byPremierId);
-      if (r === "IMPORTED") report.matchesImported += 1;
-      else if (r === "FAILED") report.matchesFailed += 1;
+
+      const teams = await syncPremierTeams(entries);
+      report.teamsCreated += teams.created;
+      report.teamsLinked += teams.linked;
+
+      const league = await ensurePremierTournament(current, seasonNumber, tier, "LEAGUE");
+      report.tournaments.push(league);
+      await syncParticipants(league, [...teams.byPremierId.values()]);
+
+      const histories: string[][] = [];
+      for (const e of entries) {
+        const h = await getPremierHistory(e.id);
+        histories.push(
+          h.league_matches
+            .filter((m) => seasonOfMatch(windows, m.started_at) === current)
+            .map((m) => m.id)
+        );
+      }
+
+      for (const id of dedupeMatchIds(histories)) {
+        if (report.matchesImported >= matchBudget) {
+          report.matchesPending += 1;
+          continue;
+        }
+        const r = await importPremierMatch(id, league, teams.byPremierId);
+        if (r === "IMPORTED") report.matchesImported += 1;
+        else if (r === "FAILED") report.matchesFailed += 1;
+      }
     }
+  } catch (e) {
+    // Un quota dépassé n'annule pas ce qui a déjà été écrit : équipes, tournois
+    // et matchs importés sont acquis, et le passage suivant reprend là où
+    // celui-ci s'arrête. Rendre le rapport plutôt que de lever évite au cron de
+    // repartir de zéro toutes les quinze minutes.
+    if (!estQuotaDepasse(e)) throw e;
+    logger.warn("premier.sync.rate_limited", {
+      matchesImported: report.matchesImported,
+      teamsCreated: report.teamsCreated,
+    });
+    report.rateLimited = true;
   }
 
   return report;

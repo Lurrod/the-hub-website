@@ -61,6 +61,55 @@ describe("premierHistorySchema", () => {
     });
     expect(r.success).toBe(true);
   });
+
+  it("accepte une participation à un tournoi, de forme différente des matchs de ligue", () => {
+    // Relevé sur l'API : `tournament_matches` ne liste pas des matchs mais des
+    // participations, chacune portant ses identifiants de partie dans
+    // `matches[]`. Ni `id` ni `started_at` au premier niveau.
+    const r = premierHistorySchema.safeParse({
+      league_matches: [],
+      tournament_matches: [
+        {
+          tournament_id: "7178998a-746b-4d6a-af66-b234ae2bf305",
+          placement: 1,
+          placement_league_bonus: 0,
+          points_before: 1100,
+          points_after: 1100,
+          matches: ["cc2765fa-67d5-481d-b76b-7397133dff38", "9542e385-43e8-4b97-9c65-58b126b636f8"],
+        },
+      ],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.tournament_matches[0].matches).toHaveLength(2);
+  });
+
+  it("tolère une participation sans partie jouée", () => {
+    const r = premierHistorySchema.safeParse({
+      league_matches: [],
+      tournament_matches: [{ tournament_id: "t1" }],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.tournament_matches[0].matches).toEqual([]);
+  });
+
+  it("écarte les créneaux de match non joués", () => {
+    // Une équipe éliminée tôt garde des cases vides dans l'arbre : c'est une
+    // donnée normale, pas une réponse malformée.
+    const r = premierHistorySchema.safeParse({
+      league_matches: [],
+      tournament_matches: [{ tournament_id: "t1", matches: ["m1", "", "m2", ""] }],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.tournament_matches[0].matches).toEqual(["m1", "m2"]);
+  });
+
+  it("refuse une participation sans identifiant de tournoi", () => {
+    const r = premierHistorySchema.safeParse({
+      league_matches: [],
+      tournament_matches: [{ placement: 1, matches: [] }],
+    });
+    expect(r.success).toBe(false);
+  });
 });
 
 describe("premierSeasonsSchema", () => {
