@@ -53,6 +53,11 @@ export type PremierSeason = { id: string; startsAt: string; endsAt: string };
  * `starts_at`/`ends_at` de chaque saison. Une date hors de toute fenêtre rend
  * `null` — mieux vaut un match ignoré qu'un match rangé dans la mauvaise
  * saison, où il fausserait un classement.
+ *
+ * La borne de fin est **exclue** : les saisons sont contiguës à la seconde
+ * près — la 18 se termine le 2026-08-19T03:15:00Z, la 19 commence au même
+ * instant. Avec deux bornes incluses, un match tombant pile au basculement
+ * appartiendrait aux deux et serait rangé dans la plus ancienne.
  */
 export function seasonOfMatch(seasons: readonly PremierSeason[], startedAt: string): string | null {
   const t = Date.parse(startedAt);
@@ -60,7 +65,7 @@ export function seasonOfMatch(seasons: readonly PremierSeason[], startedAt: stri
   const hit = seasons.find((s) => {
     const from = Date.parse(s.startsAt);
     const to = Date.parse(s.endsAt);
-    return !Number.isNaN(from) && !Number.isNaN(to) && t >= from && t <= to;
+    return !Number.isNaN(from) && !Number.isNaN(to) && t >= from && t < to;
   });
   return hit?.id ?? null;
 }

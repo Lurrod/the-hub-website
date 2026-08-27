@@ -44,8 +44,9 @@ describe("frenchTiers", () => {
   });
 });
 
+// Fenêtres réelles des saisons 18 et 19, contiguës à la seconde près.
 const SAISONS = [
-  { id: "s18", startsAt: "2026-06-10T03:15:00Z", endsAt: "2026-08-18T03:15:00Z" },
+  { id: "s18", startsAt: "2026-06-24T03:15:00Z", endsAt: "2026-08-19T03:15:00Z" },
   { id: "s19", startsAt: "2026-08-19T03:15:00Z", endsAt: "2026-10-14T03:15:00Z" },
 ];
 
@@ -55,14 +56,23 @@ describe("seasonOfMatch", () => {
     expect(seasonOfMatch(SAISONS, "2026-07-01T20:00:00Z")).toBe("s18");
   });
 
-  it("inclut les bornes de la fenêtre", () => {
+  it("inclut la borne de début", () => {
+    expect(seasonOfMatch(SAISONS, "2026-06-24T03:15:00Z")).toBe("s18");
+  });
+
+  it("attribue le basculement à la saison qui commence, pas à celle qui finit", () => {
+    // Les deux fenêtres se touchent : sans borne de fin exclue, cet instant
+    // appartiendrait aux deux et tomberait dans la plus ancienne.
     expect(seasonOfMatch(SAISONS, "2026-08-19T03:15:00Z")).toBe("s19");
-    expect(seasonOfMatch(SAISONS, "2026-10-14T03:15:00Z")).toBe("s19");
+  });
+
+  it("exclut la borne de fin de la dernière saison", () => {
+    expect(seasonOfMatch(SAISONS, "2026-10-14T03:15:00Z")).toBeNull();
+    expect(seasonOfMatch(SAISONS, "2026-10-14T03:14:59Z")).toBe("s19");
   });
 
   it("rend null hors de toute fenêtre", () => {
-    // L'API laisse un trou de 24 h entre deux saisons.
-    expect(seasonOfMatch(SAISONS, "2026-08-18T12:00:00Z")).toBeNull();
+    expect(seasonOfMatch(SAISONS, "2026-06-01T12:00:00Z")).toBeNull();
     expect(seasonOfMatch(SAISONS, "2025-01-01T00:00:00Z")).toBeNull();
   });
 

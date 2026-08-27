@@ -11,7 +11,11 @@ const bodySchema = z.object({
   dryRun: z.boolean().default(false),
   // 40 matchs tiennent dans le quota d'un passage sans dépasser le quart
   // d'heure qui sépare deux exécutions du cron.
-  matchBudget: z.number().int().min(1).max(200).default(40),
+  matchBudget: z.number().int().min(1).max(2000).default(40),
+  // Remonte le miroir de plusieurs saisons. Sert surtout à garnir un
+  // environnement de développement : en production, le cron n'a besoin que de
+  // la saison en cours.
+  seasons: z.number().int().min(1).max(5).default(1),
 });
 
 /**
@@ -31,15 +35,18 @@ export async function POST(req: Request) {
   if (!parsed.success) return new Response("Bad Request", { status: 400 });
 
   try {
-    const report = await runPremierSync(parsed.data.matchBudget, parsed.data.dryRun);
+    const report = await runPremierSync(
+      parsed.data.matchBudget,
+      parsed.data.dryRun,
+      parsed.data.seasons
+    );
     // Le contexte de journalisation n'accepte que des valeurs scalaires : la
     // liste des tournois se réduit à son décompte, l'identifiant de chacun
     // n'ayant pas d'intérêt une fois la synchronisation passée.
     logger.info("premier.sync.done", {
-      seasonNumber: report.seasonNumber,
+      seasons: report.seasons.length,
       teamsCreated: report.teamsCreated,
       teamsLinked: report.teamsLinked,
-      tournaments: report.tournaments.length,
       matchesImported: report.matchesImported,
       matchesFailed: report.matchesFailed,
       matchesPending: report.matchesPending,

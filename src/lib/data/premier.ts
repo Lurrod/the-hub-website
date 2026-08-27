@@ -251,11 +251,10 @@ export async function importPremierMatch(
 }
 
 export type SyncReport = {
-  seasonId: string;
-  seasonNumber: number;
+  /** Une ligne par couple saison/palier effectivement traité. */
+  seasons: { seasonNumber: number; tier: PremierTier; tournamentId: string; matches: number }[];
   teamsCreated: number;
   teamsLinked: number;
-  tournaments: string[];
   matchesImported: number;
   matchesFailed: number;
   matchesPending: number;
@@ -271,34 +270,43 @@ function estQuotaDepasse(e: unknown): boolean {
 /**
  * Un passage de synchronisation, borné en nombre de matchs.
  *
- * Le premier remplissage représente environ 290 matchs par saison, soit une
- * vingtaine de minutes d'appels une fois l'étranglement appliqué : le bornage
+ * Le premier remplissage représente près de 300 matchs par saison : le bornage
  * l'étale sur plusieurs passages plutôt que de tenir une requête HTTP ouverte
  * tout ce temps. Le cron rappelle jusqu'à ce que `matchesPending` tombe à zéro,
  * et les passages suivants sont quasi gratuits — `MatchMap.riotMatchId` étant
  * unique, l'existant est sauté sans appel réseau.
+ *
+ * `seasonCount` remonte le miroir de plusieurs saisons. L'historique d'une
+ * équipe les contient toutes : il n'est lu **qu'une fois par équipe**, puis les
+ * matchs sont répartis par leur date. Interroger l'API une fois par saison
+ * doublerait la facture pour la même donnée.
+ *
+ * Limite assumée : le classement est un instantané du présent. Une saison
+ * passée est donc miroitée telle que la voient les équipes **actuellement**
+ * dans ces divisions — une équipe descendue depuis n'y figure plus.
  */
-export async function runPremierSync(matchBudget: number, dryRun: boolean): Promise<SyncReport> {
+export async function runPremierSync(
+  matchBudget: number,
+  dryRun: boolean,
+  seasonCount = 1
+): Promise<SyncReport> {
   const seasons = await getPremierSeasons("eu");
   const seasonIds = seasons.map((s) => s.id);
   const windows = seasons.map((s) => ({ id: s.id, startsAt: s.starts_at, endsAt: s.ends_at }));
-  // La liste est rendue de la plus ancienne à la plus récente : la saison en
-  // cours est la dernière.
-  const current = seasonIds[seasonIds.length - 1] ?? "";
-  const seasonNumber = seasonNumberOf(seasonIds, current) ?? seasonIds.length;
+  // La liste va de la plus ancienne à la plus récente : les saisons visées
+  // sont les dernières.
+  const targets = seasonIds.slice(-Math.max(1, seasonCount));
 
   const report: SyncReport = {
-    seasonId: current,
-    seasonNumber,
+    seasons: [],
     teamsCreated: 0,
     teamsLinked: 0,
-    tournaments: [],
     matchesImported: 0,
     matchesFailed: 0,
     matchesPending: 0,
     rateLimited: false,
   };
-  if (!current) return report;
+  if (targets.length === 0) return report;
 
   try {
     for (const { conference, division, tier } of frenchTiers()) {
@@ -313,28 +321,53 @@ export async function runPremierSync(matchBudget: number, dryRun: boolean): Prom
       report.teamsCreated += teams.created;
       report.teamsLinked += teams.linked;
 
-      const league = await ensurePremierTournament(current, seasonNumber, tier, "LEAGUE");
-      report.tournaments.push(league);
-      await syncParticipants(league, [...teams.byPremierId.values()]);
-
-      const histories: string[][] = [];
-      for (const e of entries) {
-        const h = await getPremierHistory(e.id);
-        histories.push(
-          h.league_matches
-            .filter((m) => seasonOfMatch(windows, m.started_at) === current)
-            .map((m) => m.id)
-        );
+      // Un tournoi par saison visée, tous alimentés par la même lecture
+      // d'historique.
+      const tournamentBySeason = new Map<string, string>();
+      const idsBySeason = new Map<string, string[]>();
+      for (const seasonId of targets) {
+        const n = seasonNumberOf(seasonIds, seasonId) ?? seasonIds.length;
+        const id = await ensurePremierTournament(seasonId, n, tier, "LEAGUE");
+        tournamentBySeason.set(seasonId, id);
+        idsBySeason.set(seasonId, []);
+        await syncParticipants(id, [...teams.byPremierId.values()]);
+        report.seasons.push({ seasonNumber: n, tier, tournamentId: id, matches: 0 });
       }
 
-      for (const id of dedupeMatchIds(histories)) {
-        if (report.matchesImported >= matchBudget) {
-          report.matchesPending += 1;
-          continue;
+      // Un historique par équipe, réparti ensuite par saison. Les listes
+      // restent séparées jusqu'au dédoublonnage : les deux équipes d'un match
+      // le déclarent chacune, et sans ce filtre on paierait deux appels d'API
+      // pour chaque match importé.
+      const historiesBySeason = new Map<string, string[][]>(targets.map((s) => [s, []]));
+      for (const e of entries) {
+        const h = await getPremierHistory(e.id);
+        const parEquipe = new Map<string, string[]>(targets.map((s) => [s, []]));
+        for (const m of h.league_matches) {
+          const season = seasonOfMatch(windows, m.started_at);
+          parEquipe.get(season ?? "")?.push(m.id);
         }
-        const r = await importPremierMatch(id, league, teams.byPremierId);
-        if (r === "IMPORTED") report.matchesImported += 1;
-        else if (r === "FAILED") report.matchesFailed += 1;
+        for (const seasonId of targets) {
+          historiesBySeason.get(seasonId)!.push(parEquipe.get(seasonId)!);
+        }
+      }
+      for (const seasonId of targets) {
+        idsBySeason.set(seasonId, dedupeMatchIds(historiesBySeason.get(seasonId)!));
+      }
+
+      for (const seasonId of targets) {
+        const tournamentId = tournamentBySeason.get(seasonId)!;
+        const ligne = report.seasons.find((x) => x.tournamentId === tournamentId)!;
+        for (const id of idsBySeason.get(seasonId)!) {
+          if (report.matchesImported >= matchBudget) {
+            report.matchesPending += 1;
+            continue;
+          }
+          const r = await importPremierMatch(id, tournamentId, teams.byPremierId);
+          if (r === "IMPORTED") {
+            report.matchesImported += 1;
+            ligne.matches += 1;
+          } else if (r === "FAILED") report.matchesFailed += 1;
+        }
       }
     }
   } catch (e) {
