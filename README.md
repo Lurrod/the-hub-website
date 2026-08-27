@@ -107,13 +107,31 @@ Les équipes sont rattachées par `Team.premierTeamId` — jamais par leur nom, 
 change — et leurs logos sont rapatriés dans le stockage local plutôt que servis
 depuis le CDN de HenrikDev, que la CSP bloquerait.
 
-**Les playoffs ne sont pas encore importés**, et la place leur est faite sans
-être occupée. `tournament_matches` ne liste pas un tournoi de fin de saison mais
-tous les tournois Premier joués, à raison d'un par semaine — treize
-participations par équipe sur quatre mois. Les fondre dans un seul arbre donnait
-six « finales » et vingt-deux brackets parallèles pour treize matchs. Les
-modéliser correctement demande de traiter chaque tournoi hebdomadaire pour ce
-qu'il est.
+### Les playoffs
+
+Chaque saison se clôt par un championnat, joué deux à trois jours avant sa fin et
+réservé aux équipes ayant atteint le seuil de points de la saison. Il se dispute
+en **arbres parallèles** : chaque `tournament_id` de `tournament_matches` est un
+arbre, stocké comme un `Group` du tournoi.
+
+L'API ne date pas ces tournois et ne nomme pas leurs tours. Deux déductions, l'une
+et l'autre mesurées avant d'être codées :
+
+- **La saison** vient de la date d'une des parties de l'arbre — un appel par
+  arbre, ils sont deux ou trois par saison. Sans ce filtre, l'historique
+  remontant à plus de deux ans, vingt championnats se fondaient en un seul, avec
+  six « finales » et vingt-deux arbres pour treize matchs.
+- **Le tour** vient du rang du match dans le parcours de l'équipe, et la
+  profondeur de l'arbre du plus long parcours observé. Sur trois championnats
+  réels, un match vu par ses deux équipes apparaît au même rang chez l'une et
+  chez l'autre, sans exception.
+
+**Seule la saison en cours est importée.** Les équipes sont identifiées par leur
+division d'aujourd'hui ; sur une saison passée, jouée avec les divisions d'alors,
+on ne retrouve qu'une partie des participants et l'arbre reconstruit est un
+fragment — arbres à un seul match, byes partout, deux finales dans le même arbre
+parce que le vainqueur réel n'est pas suivi. Le site affiche des résultats, pas
+des simulations.
 
 Seuls sont importés les matchs **dont les deux équipes sont suivies**, reconnus
 au fait qu'ils figurent dans deux historiques. Les autres — adversaire d'une
