@@ -13,22 +13,22 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  discordId     String?   @unique
+  id                     String              @id @default(cuid())
+  name                   String?
+  email                  String?             @unique
+  emailVerified          DateTime?
+  image                  String?
+  discordId              String?             @unique
   /// Pseudo Discord (@handle), rafraîchi à chaque connexion. `name` porte le
   /// nom d'affichage, qui ne permet pas de retrouver le compte.
-  discordUsername String?
-  globalRole    Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  teamsCreated     Team[]        @relation("TeamCreatedBy")
-  teamManagerRoles TeamManager[]
+  discordUsername        String?
+  globalRole             Role                @default(USER)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  accounts               Account[]
+  sessions               Session[]
+  teamsCreated           Team[]              @relation("TeamCreatedBy")
+  teamManagerRoles       TeamManager[]
   tournamentsCreated     Tournament[]        @relation("TournamentCreatedBy")
   tournamentManagerRoles TournamentManager[]
   player                 Player?
@@ -74,38 +74,43 @@ enum TeamStatus {
 }
 
 model Team {
-  id          String       @id @default(cuid())
+  id              String                  @id @default(cuid())
   // Pas de contrainte SQL sur name/tag : les jeux de démonstration importent
   // les mêmes équipes réelles depuis deux sources (`seed-dev` et
   // `seed-vlr-emea`), et la CI joue les deux. L'unicité est vérifiée à la
   // saisie — voir `findTeamConflict` — là où elle a un sens pour l'utilisateur.
-  name        String
-  tag         String
-  logo        String?
-  region      String
-  description String?
-  socials     Json?
-  status          TeamStatus   @default(ACTIVE)
+  name            String
+  tag             String
+  logo            String?
+  region          String
+  description     String?
+  socials         Json?
+  status          TeamStatus              @default(ACTIVE)
   /// Pendant du LFT côté équipe : « on recrute ». Même paire drapeau +
   /// horodatage que `Player.lft`, pour trier les annonces les plus fraîches.
-  lfp             Boolean      @default(false)
+  lfp             Boolean                 @default(false)
   lfpSince        DateTime?
   /// Postes recherchés. Vide = ouvert à tous les rôles.
-  lfpRoles        ValorantRole[] @default([])
+  lfpRoles        ValorantRole[]          @default([])
   /// Précision libre de l'annonce (niveau attendu, disponibilités…).
   lfpMessage      String?
-  inviteToken     String?      @unique
+  inviteToken     String?                 @unique
   inviteExpiresAt DateTime?
-  createdById String?
-  createdBy   User?        @relation("TeamCreatedBy", fields: [createdById], references: [id])
-  managers    TeamManager[]
-  memberships TeamMembership[]
-  participations TournamentParticipant[]
-  matchesAsA Match[] @relation("MatchTeamA")
-  matchesAsB Match[] @relation("MatchTeamB")
-  matchesWon Match[] @relation("MatchWinner")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  /// UUID de l'équipe côté Premier. Nullable : les équipes saisies à la main
+  /// n'en ont pas. C'est la clé de rattachement de la synchronisation — un
+  /// rapprochement par nom+tag scinderait l'historique d'une équipe au premier
+  /// renommage côté Riot.
+  premierTeamId   String?                 @unique
+  createdById     String?
+  createdBy       User?                   @relation("TeamCreatedBy", fields: [createdById], references: [id])
+  managers        TeamManager[]
+  memberships     TeamMembership[]
+  participations  TournamentParticipant[]
+  matchesAsA      Match[]                 @relation("MatchTeamA")
+  matchesAsB      Match[]                 @relation("MatchTeamB")
+  matchesWon      Match[]                 @relation("MatchWinner")
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
   @@index([region])
   // Créé par la migration 20260805180000_team_lfp mais jamais déclaré ici :
@@ -152,18 +157,18 @@ enum AccountType {
 }
 
 model Player {
-  id          String           @id @default(cuid())
-  pseudo      String
-  realName    String?
-  nationality String?
-  photo       String?
-  userId      String?          @unique
-  user        User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  socials     Json?
-  riotName    String?
-  riotTag     String?
-  puuid       String?          @unique
-  region      String?
+  id           String           @id @default(cuid())
+  pseudo       String
+  realName     String?
+  nationality  String?
+  photo        String?
+  userId       String?          @unique
+  user         User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  socials      Json?
+  riotName     String?
+  riotTag      String?
+  puuid        String?          @unique
+  region       String?
   valorantRole ValorantRole?
   birthdate    DateTime?
   accountType  AccountType      @default(JOUEUR)
@@ -177,10 +182,10 @@ model Player {
   /// Le Discord du compte lié s'affiche d'office sur la fiche publique ; ce
   /// drapeau laisse au joueur la possibilité de le retirer.
   showDiscord  Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  memberships TeamMembership[]
-  gameStats   PlayerGameStat[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  memberships  TeamMembership[]
+  gameStats    PlayerGameStat[]
 }
 
 enum ValorantRole {
@@ -199,12 +204,12 @@ model TeamMembership {
   leaveDate DateTime?
   team      Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
   player    Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
-
-  @@index([teamId])
-  @@index([playerId])
   // Invariant §1.4 : un joueur = une seule adhésion active (leaveDate IS NULL).
   // Index unique PARTIEL non exprimable ici → défini en SQL brut dans la
   // migration 20260725201000_active_membership_unique.
+
+  @@index([teamId])
+  @@index([playerId])
 }
 
 enum TournamentFormat {
@@ -226,34 +231,45 @@ enum TournamentStatus {
 }
 
 model Tournament {
-  id           String                  @id @default(cuid())
-  name         String
-  logo         String?
-  banner       String?
-  region       String
-  startDate    DateTime?
-  endDate      DateTime?
-  format       TournamentFormat        @default(GROUPS)
-  status       TournamentStatus        @default(UPCOMING)
-  prizePool    String?
-  organizer    String?
-  description  String?
+  id              String                  @id @default(cuid())
+  name            String
+  logo            String?
+  banner          String?
+  region          String
+  startDate       DateTime?
+  endDate         DateTime?
+  format          TournamentFormat        @default(GROUPS)
+  status          TournamentStatus        @default(UPCOMING)
+  prizePool       String?
+  organizer       String?
+  description     String?
   /// Réseaux de l'organisation (même forme que `Team.socials`) : c'est là que
   /// les joueurs trouvent le Discord du tournoi.
-  socials      Json?
-  maxTeams     Int?
-  groupSize    Int?
-  bestOf       Int?
-  seeding      String?
-  createdById  String?
-  createdBy    User?                   @relation("TournamentCreatedBy", fields: [createdById], references: [id])
-  managers     TournamentManager[]
-  participants TournamentParticipant[]
-  groups   Group[]
-  matches  Match[]
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
+  socials         Json?
+  maxTeams        Int?
+  groupSize       Int?
+  bestOf          Int?
+  seeding         String?
+  /// Identité Premier du tournoi. Les trois champs vont ensemble : ils
+  /// n'existent que sur les tournois créés par la synchronisation.
+  /// `premierTier` vaut CONTENDER ou INVITE, `premierPhase` LEAGUE ou
+  /// PLAYOFFS. Des `String?` et non des enums : ils servent l'idempotence de
+  /// l'import, jamais l'affichage — c'est `format` qui pilote le rendu.
+  premierSeasonId String?
+  premierTier     String?
+  premierPhase    String?
+  createdById     String?
+  createdBy       User?                   @relation("TournamentCreatedBy", fields: [createdById], references: [id])
+  managers        TournamentManager[]
+  participants    TournamentParticipant[]
+  groups          Group[]
+  matches         Match[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
+  // Porte l'idempotence de la synchronisation Premier : rejouée, elle
+  // retrouve le tournoi au lieu d'en créer un second.
+  @@unique([premierSeasonId, premierTier, premierPhase])
   @@index([region])
   @@index([status])
 }
@@ -278,12 +294,12 @@ model TournamentParticipant {
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
   group        Group?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
-
-  @@unique([tournamentId, teamId])
   // Pas de contrainte unique sur (tournamentId, seed) : les jeux de
   // démonstration importés numérotent les seeds PAR POULE, donc en double au
   // sein d'un même tournoi. L'unicité par tournoi reste la règle des
   // formulaires, appliquée transactionnellement dans `addParticipantAction`.
+
+  @@unique([tournamentId, teamId])
 }
 
 enum MatchStage {
@@ -317,36 +333,36 @@ model Group {
 }
 
 model Match {
-  id              String      @id @default(cuid())
+  id              String       @id @default(cuid())
   tournamentId    String
   groupId         String?
   teamAId         String
   teamBId         String
-  scoreA          Int         @default(0)
-  scoreB          Int         @default(0)
+  scoreA          Int          @default(0)
+  scoreB          Int          @default(0)
   winnerId        String?
-  stage           MatchStage  @default(GROUP)
+  stage           MatchStage   @default(GROUP)
   round           String?
   bracketPosition Int?
-  bestOf          Int         @default(1)
-  status          MatchStatus @default(SCHEDULED)
+  bestOf          Int          @default(1)
+  status          MatchStatus  @default(SCHEDULED)
   forfeit         MatchForfeit @default(NONE)
   date            DateTime?
   /// L'heure de `date` est-elle significative ? Les matchs saisis avant
   /// l'ajout du champ horaire portent minuit, qui ne veut rien dire : sans ce
   /// drapeau ils afficheraient une heure de coup d'envoi inventée.
-  hasTime         Boolean     @default(false)
+  hasTime         Boolean      @default(false)
   vodUrl          String?
   statsStatus     String?
   statsFetchedAt  DateTime?
-  tournament      Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  group           Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  teamA           Team        @relation("MatchTeamA", fields: [teamAId], references: [id], onDelete: Cascade)
-  teamB           Team        @relation("MatchTeamB", fields: [teamBId], references: [id], onDelete: Cascade)
-  winner          Team?       @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  tournament      Tournament   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  group           Group?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  teamA           Team         @relation("MatchTeamA", fields: [teamAId], references: [id], onDelete: Cascade)
+  teamB           Team         @relation("MatchTeamB", fields: [teamBId], references: [id], onDelete: Cascade)
+  winner          Team?        @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
   maps            MatchMap[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([tournamentId])
   @@index([groupId])
@@ -360,41 +376,41 @@ model Match {
 }
 
 model MatchMap {
-  id      String @id @default(cuid())
-  matchId String
-  mapName String
-  scoreA  Int
-  scoreB  Int
-  order       Int              @default(0)
-  riotMatchId String?          @unique
-  startedAt   DateTime?
-  durationSec Int?
+  id            String           @id @default(cuid())
+  matchId       String
+  mapName       String
+  scoreA        Int
+  scoreB        Int
+  order         Int              @default(0)
+  riotMatchId   String?          @unique
+  startedAt     DateTime?
+  durationSec   Int?
   roundTimeline Json?
-  stats       PlayerGameStat[]
-  match       Match            @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  stats         PlayerGameStat[]
+  match         Match            @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@index([matchId])
 }
 
 model PlayerGameStat {
-  id         String    @id @default(cuid())
-  matchMapId String
-  playerId   String?
-  riotName   String
-  riotTag    String?
-  puuid      String?
-  teamSide   String
-  agent      String?
-  kills      Int
-  deaths     Int
-  assists    Int
-  acs        Int
-  adr        Int
-  hsPct      Int
-  rating      Float    @default(0)
-  kast        Int      @default(0)
-  firstKills  Int      @default(0)
-  firstDeaths Int      @default(0)
+  id             String   @id @default(cuid())
+  matchMapId     String
+  playerId       String?
+  riotName       String
+  riotTag        String?
+  puuid          String?
+  teamSide       String
+  agent          String?
+  kills          Int
+  deaths         Int
+  assists        Int
+  acs            Int
+  adr            Int
+  hsPct          Int
+  rating         Float    @default(0)
+  kast           Int      @default(0)
+  firstKills     Int      @default(0)
+  firstDeaths    Int      @default(0)
   // Faits d'armes reconstruits des duels (multikills, clutchs). Nullables et
   // non à défaut 0 : une carte importée avant leur ajout n'en porte pas, et
   // « donnée absente » ne doit pas se lire comme « zéro clutch ».
@@ -406,9 +422,9 @@ model PlayerGameStat {
   bestClutch     Int?
   /// Kills par arme (`{ "Vandal": 12, ... }`). Même convention que les faits
   /// d'armes : null = carte importée avant l'ajout, jamais un zéro déguisé.
-  weaponKills Json?
-  matchMap   MatchMap  @relation(fields: [matchMapId], references: [id], onDelete: Cascade)
-  player     Player?   @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  weaponKills    Json?
+  matchMap       MatchMap @relation(fields: [matchMapId], references: [id], onDelete: Cascade)
+  player         Player?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@index([matchMapId])
   @@index([playerId])
@@ -419,7 +435,6 @@ model PlayerGameStat {
 
 /**
  * Mesure d'audience — trois tables, aucune donnée personnelle conservée.
- *
  * Le principe : on n'écrit jamais une ligne par visite, seulement des
  * compteurs. Rien ne permet de reconstituer un parcours, ni de relier deux
  * jours entre eux.
