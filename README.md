@@ -103,6 +103,19 @@ Les équipes sont rattachées par `Team.premierTeamId` — jamais par leur nom, 
 change — et leurs logos sont rapatriés dans le stockage local plutôt que servis
 depuis le CDN de HenrikDev, que la CSP bloquerait.
 
+Seuls sont importés les matchs **dont les deux équipes sont suivies**, reconnus
+au fait qu'ils figurent dans deux historiques. Les autres — adversaire d'une
+autre conférence, d'une division inférieure, ou descendu depuis — étaient
+sinon récupérés pour être aussitôt rejetés, et rerécupérés au passage suivant :
+227 appels par passage pour zéro match importé.
+
+Le paramètre `seasons` remonte le miroir de plusieurs saisons ; les deux
+paliers sont mis en commun avant ce filtre, sans quoi un match de saison passée
+entre une équipe aujourd'hui en Invite et une aujourd'hui en Contender serait
+écarté des deux côtés. **Limite assumée** : le classement est un instantané du
+présent, une saison passée est donc miroitée telle que la voient les équipes
+actuellement dans ces divisions.
+
 Le déclenchement passe par `POST /api/premier/sync`, protégée par
 `PREMIER_SYNC_SECRET` :
 
@@ -112,18 +125,34 @@ curl -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" \
      http://127.0.0.1:3000/api/premier/sync
 ```
 
-Le corps accepte `dryRun` (aucune écriture, compte seulement les équipes) et
-`matchBudget` (40 par défaut). La réponse rend `matchesImported` et
-`matchesPending` : **le passage est borné exprès**, le premier remplissage
-représentant près de 300 matchs. Le cron rappelle jusqu'à ce que
-`matchesPending` tombe à zéro ; les passages suivants sont quasi gratuits,
-`MatchMap.riotMatchId` étant unique.
+Le corps accepte `dryRun` (aucune écriture, compte seulement les équipes),
+`matchBudget` (40 par défaut) et `seasons` (1 par défaut). La réponse rend
+`matchesImported` et `matchesPending` : **le passage est borné exprès**. Le
+cron rappelle jusqu'à ce que `matchesPending` tombe à zéro ; les passages
+suivants sont bien plus courts, `MatchMap.riotMatchId` étant unique.
 
-Le quota HenrikDev — 30 requêtes par minute, un crédit par appel — n'est pas
-estimé mais **lu dans les en-têtes `x-ratelimit-*` de chaque réponse**. Une
-première version devinait le coût et prenait quand même un 429 au bout de deux
-minutes. Si le quota tombe malgré tout, le rapport porte `rateLimited: true` et
-rend la progression acquise au lieu de la perdre.
+Le quota HenrikDev n'est pas estimé mais **lu dans les en-têtes
+`x-ratelimit-*` de chaque réponse**. Trois choses s'y devinent mal et ont été
+mesurées :
+
+- La limite affichée est de 30 par minute, mais **un appel coûte deux crédits**
+  dès qu'il porte sur une donnée non mise en cache — les requêtes relayées vers
+  Riot sont comptées en plus. Une sonde répétant le même identifiant fait
+  croire à un crédit par appel : elle tape dans le cache.
+- Chaque famille d'endpoints a **son propre seau** (`x-ratelimit-bucket`). Le
+  suivi est donc tenu par famille : partager un compteur entre deux seaux fait
+  patienter une minute pour rien.
+- La fenêtre est fixe, pas glissante : passé `x-ratelimit-reset`, le crédit
+  repart au maximum.
+
+Si le quota tombe malgré tout, le rapport porte `rateLimited: true` et rend la
+progression acquise au lieu de la perdre.
+
+Ordres de grandeur mesurés sur le miroir de deux saisons : **environ 15 minutes
+pour un premier remplissage** (138 matchs) et **quatre minutes pour un passage
+incrémental**. Attention à ne pas couper le client en cours de route — une
+déconnexion avorte le traitement côté serveur, et ce qui restait à faire attend
+le passage suivant.
 
 Ligne de crontab, sur le serveur :
 
@@ -131,10 +160,10 @@ Ligne de crontab, sur le serveur :
 */15 * * * * /usr/bin/flock -n /tmp/premier-sync.lock curl -s --max-time 840 -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" -H "Content-Type: application/json" -d '{}' http://127.0.0.1:3000/api/premier/sync >> /var/log/premier-sync.log 2>&1
 ```
 
-`flock -n` n'est pas décoratif : un passage complet dure environ cinq minutes
-(72 lectures d'historique, étranglement compris), ce qui laisse peu de marge
-sous le quart d'heure du cron. Sans lui, un passage en retard doublerait les
-appels et ferait tomber les deux sur des 429.
+`flock -n` n'est pas décoratif : un passage incrémental dure environ quatre
+minutes, mais un rattrapage après interruption peut approcher le quart d'heure
+du cron. Sans lui, un passage en retard doublerait les appels et ferait tomber
+les deux sur des 429.
 
 ## Déploiement
 
