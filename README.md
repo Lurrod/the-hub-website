@@ -44,6 +44,7 @@ Toutes sont décrites dans `.env.example`.
 | `NEXTAUTH_URL`                            | URL publique, utilisée pour les callbacks OAuth            |
 | `NEXT_PUBLIC_BASE_URL`                    | URL publique des métadonnées, du sitemap et du robots.txt  |
 | `HENRIKDEV_API_KEY`                       | Clé de l'API HenrikDev (côté serveur uniquement)           |
+| `PREMIER_SYNC_SECRET`                     | Secret de déclenchement de la synchronisation Premier      |
 
 ## Scripts
 
@@ -87,6 +88,53 @@ job joue les parcours Playwright contre une base PostgreSQL éphémère.
 Les seuils de couverture portent sur `src/lib/**` et servent de cliquet : ils
 sont calés sur le niveau atteint, à relever au fil des ajouts de tests. Les
 composants et les pages relèvent des parcours end-to-end.
+
+## Synchronisation du Premier français
+
+Le site tient à jour un miroir du Premier français à partir de l'API HenrikDev.
+Le périmètre est volontairement étroit : le palier **Contender**
+(`EU_FRANCE` division 21, 59 équipes) et le palier **Invite**
+(`EU_FRANCE_SUPER` division 22, 13 équipes). Les divisions inférieures sont
+hors sujet pour un site Tier 3.
+
+Chaque saison donne un tournoi au format `LEAGUE` par palier, dont les
+participants viennent du classement et les matchs de l'historique des équipes.
+Les équipes sont rattachées par `Team.premierTeamId` — jamais par leur nom, qui
+change — et leurs logos sont rapatriés dans le stockage local plutôt que servis
+depuis le CDN de HenrikDev, que la CSP bloquerait.
+
+Le déclenchement passe par `POST /api/premier/sync`, protégée par
+`PREMIER_SYNC_SECRET` :
+
+```bash
+curl -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" \
+     -H "Content-Type: application/json" -d '{"dryRun":true}' \
+     http://127.0.0.1:3000/api/premier/sync
+```
+
+Le corps accepte `dryRun` (aucune écriture, compte seulement les équipes) et
+`matchBudget` (40 par défaut). La réponse rend `matchesImported` et
+`matchesPending` : **le passage est borné exprès**, le premier remplissage
+représentant près de 300 matchs. Le cron rappelle jusqu'à ce que
+`matchesPending` tombe à zéro ; les passages suivants sont quasi gratuits,
+`MatchMap.riotMatchId` étant unique.
+
+Le quota HenrikDev — 30 requêtes par minute, un crédit par appel — n'est pas
+estimé mais **lu dans les en-têtes `x-ratelimit-*` de chaque réponse**. Une
+première version devinait le coût et prenait quand même un 429 au bout de deux
+minutes. Si le quota tombe malgré tout, le rapport porte `rateLimited: true` et
+rend la progression acquise au lieu de la perdre.
+
+Ligne de crontab, sur le serveur :
+
+```
+*/15 * * * * /usr/bin/flock -n /tmp/premier-sync.lock curl -s --max-time 840 -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" -H "Content-Type: application/json" -d '{}' http://127.0.0.1:3000/api/premier/sync >> /var/log/premier-sync.log 2>&1
+```
+
+`flock -n` n'est pas décoratif : un passage complet dure environ cinq minutes
+(72 lectures d'historique, étranglement compris), ce qui laisse peu de marge
+sous le quart d'heure du cron. Sans lui, un passage en retard doublerait les
+appels et ferait tomber les deux sur des 429.
 
 ## Déploiement
 

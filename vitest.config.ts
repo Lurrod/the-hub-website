@@ -30,7 +30,7 @@ export default defineConfig({
       // liste). Ce qui reste à zéro demande de la plomberie de test :
       // match-stats.ts (API Riot + base), server-auth.ts et session.ts
       // (session Auth.js), countries.ts (table de données pure).
-      thresholds: { statements: 84, branches: 79, functions: 88, lines: 85 },
+      thresholds: { statements: 85, branches: 79, functions: 88, lines: 86 },
     },
   },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
