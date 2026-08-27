@@ -7,6 +7,8 @@ import {
   seasonNumberOf,
   mutualMatchIds,
   sideOfRoster,
+  playoffRounds,
+  bracketNameFor,
   tournamentStatusFor,
   type PremierTier,
   type PremierSeason,
@@ -181,6 +183,42 @@ export async function syncParticipants(
     skipDuplicates: true,
   });
   return r.count;
+}
+
+/**
+ * Retrouve ou crée le `Group` qui porte un arbre parallèle.
+ *
+ * Le Premier Contender joue plusieurs arbres de front ; chacun est un `Group`,
+ * sans quoi `matchGroupIdFor` ne peut pas les séparer et l'affichage les
+ * effondre en un seul arbre incohérent.
+ */
+async function ensureBracketGroup(tournamentId: string, name: string): Promise<string> {
+  const existing = await db.group.findFirst({
+    where: { tournamentId, name },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+  const g = await db.group.create({ data: { tournamentId, name }, select: { id: true } });
+  return g.id;
+}
+
+/**
+ * Date d'un arbre de playoffs, lue sur l'une de ses parties.
+ *
+ * L'API ne date pas les tournois : `tournament_matches` ne porte ni date ni
+ * saison. Un seul appel par arbre suffit — ils sont deux ou trois par saison —
+ * et c'est ce qui permet de ne retenir que le championnat visé au lieu de fondre
+ * vingt saisons d'historique en un seul arbre.
+ */
+async function dateDuBracket(riotMatchId: string): Promise<string | null> {
+  try {
+    const m = await getCustomMatchById("eu", riotMatchId, true);
+    return m.startedAt;
+  } catch (e) {
+    if (estQuotaDepasse(e)) throw e;
+    logger.warn("premier.bracket.date_failed", { riotMatchId, ...describeError(e) });
+    return null;
+  }
 }
 
 export type MatchImportOutcome = "IMPORTED" | "SKIPPED" | "FAILED";
@@ -382,8 +420,14 @@ export async function runPremierSync(
     // Un seul appel d'historique par équipe : il contient toutes les saisons.
     const historiesBySeason = new Map<string, string[][]>(targets.map((sid) => [sid, []]));
     const premierIdsOfMatch = new Map<string, Set<string>>();
+    const participations: { tournamentId: string; matches: string[]; premierId: string }[] = [];
     for (const premierId of parEquipePremier.keys()) {
       const h = await getPremierHistory(premierId);
+      for (const p of h.tournament_matches) {
+        if (p.matches.length > 0) {
+          participations.push({ tournamentId: p.tournament_id, matches: p.matches, premierId });
+        }
+      }
       const parSaison = new Map<string, string[]>(targets.map((sid) => [sid, []]));
       for (const m of h.league_matches) {
         const season = seasonOfMatch(windows, m.started_at);
@@ -422,13 +466,93 @@ export async function runPremierSync(
       }
     }
 
-    // Les playoffs ne sont pas encore importés, et le savoir a coûté un
-    // essai : `tournament_matches` ne liste pas UN tournoi de fin de saison
-    // mais TOUS les tournois Premier joués, à raison d'un par semaine — treize
-    // participations par équipe sur quatre mois. Les fondre dans un seul arbre
-    // donnait six « finales » et vingt-deux brackets parallèles pour treize
-    // matchs. Les modéliser demande de traiter chaque tournoi hebdomadaire pour
-    // ce qu'il est, ce qui dépasse le cadre du miroir de saison.
+    // Playoffs. Chaque `tournament_id` est un arbre parallèle du championnat de
+    // fin de saison — deux ou trois par saison, joués deux à trois jours avant
+    // sa clôture. L'API ne les datant pas, chacun est daté par l'une de ses
+    // parties, ce qui coûte un appel par arbre et permet de ne garder que la
+    // saison visée. Sans ce filtre, l'historique remontant à plus de deux ans,
+    // vingt championnats se fondaient en un seul.
+    //
+    // Seule la saison **en cours** est concernée. Les équipes sont identifiées
+    // par leur division d'aujourd'hui ; sur une saison passée, jouée avec les
+    // divisions d'alors, on ne retrouve qu'une partie des participants et
+    // l'arbre reconstruit est un fragment — brackets à un seul match, byes
+    // partout, et deux finales dans le même arbre parce que le vainqueur réel
+    // n'est pas suivi. Un arbre fragmentaire affiché comme un arbre complet
+    // raconte un tournoi qui n'a pas eu lieu.
+    const saisonEnCours = targets.find((sid) => {
+      const w = windows.find((x) => x.id === sid);
+      return w ? tournamentStatusFor(w, Date.now()) === "ONGOING" : false;
+    });
+    const saisonsAvecPlayoffs = saisonEnCours ? [saisonEnCours] : [];
+    const arbresParSaison = new Map<string, string[]>(saisonsAvecPlayoffs.map((sid) => [sid, []]));
+    const arbresVus = new Set(participations.map((p) => p.tournamentId));
+
+    for (const tournamentId of arbresVus) {
+      const premiereePartie = participations.find((p) => p.tournamentId === tournamentId)
+        ?.matches[0];
+      if (!premiereePartie) continue;
+      // Déjà importé : sa saison est acquise, inutile de repayer la date.
+      const connu = await db.matchMap.findUnique({
+        where: { riotMatchId: premiereePartie },
+        select: { match: { select: { tournament: { select: { premierSeasonId: true } } } } },
+      });
+      const seasonId = connu?.match.tournament.premierSeasonId ?? null;
+      if (seasonId) {
+        arbresParSaison.get(seasonId)?.push(tournamentId);
+        continue;
+      }
+      const date = await dateDuBracket(premiereePartie);
+      const saison = date ? seasonOfMatch(windows, date) : null;
+      if (saison) arbresParSaison.get(saison)?.push(tournamentId);
+    }
+
+    for (const seasonId of saisonsAvecPlayoffs) {
+      const arbres = arbresParSaison.get(seasonId) ?? [];
+      if (arbres.length === 0) continue;
+      const rounds = playoffRounds(participations.filter((p) => arbres.includes(p.tournamentId)));
+      const groupIdParArbre = new Map<string, string>();
+
+      for (const [riotMatchId, place] of rounds) {
+        if (report.matchesImported >= matchBudget) {
+          report.matchesPending += 1;
+          continue;
+        }
+        const premierIds = participations
+          .filter((p) => p.matches.includes(riotMatchId))
+          .map((p) => p.premierId);
+        const tier = parEquipePremier.get(premierIds[0] ?? "")?.tier;
+        if (!tier) continue;
+        const tournamentId = tournamentBySeasonTier.get(cle(seasonId, tier));
+        if (!tournamentId) continue;
+
+        // Un `Group` par arbre, et seulement pour le Contender : l'Invite n'en
+        // joue qu'un, lui en donner un le ferait passer pour un bracket
+        // parallèle et casserait sa disposition en arbre unique.
+        let groupId: string | null = null;
+        if (tier === "CONTENDER") {
+          const cache = groupIdParArbre.get(place.tournamentId);
+          groupId =
+            cache ??
+            (await ensureBracketGroup(
+              tournamentId,
+              bracketNameFor(arbres.indexOf(place.tournamentId))
+            ));
+          groupIdParArbre.set(place.tournamentId, groupId);
+        }
+
+        const r = await importPremierMatch(riotMatchId, tournamentId, teamIdByPremierId, {
+          stage: "BRACKET",
+          round: place.roundLabel,
+          groupId,
+        });
+        if (r === "IMPORTED") {
+          report.matchesImported += 1;
+          const ligne = report.seasons.find((x) => x.tournamentId === tournamentId);
+          if (ligne) ligne.matches += 1;
+        } else if (r === "FAILED") report.matchesFailed += 1;
+      }
+    }
   } catch (e) {
     // Un quota dépassé n'annule pas ce qui a déjà été écrit : équipes, tournois
     // et matchs importés sont acquis, et le passage suivant reprend là où
