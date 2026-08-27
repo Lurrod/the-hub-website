@@ -7,7 +7,7 @@ import {
   mutualMatchIds,
   sideOfRoster,
   bracketNameFor,
-  playoffRounds,
+  playoffSeries,
   tournamentStatusFor,
   quotaDelayMs,
   secretMatches,
@@ -181,55 +181,57 @@ describe("bracketNameFor", () => {
   });
 });
 
-describe("playoffRounds", () => {
-  // Le championnat d'une saison se joue en arbres parallèles de 8 : le
-  // vainqueur d'un arbre dispute donc trois matchs. Comme on suit toute la
-  // division, on observe l'arbre entier et sa profondeur est fiable.
-  const arbreDeHuit = [
-    { tournamentId: "t1", matches: ["qf1", "sf1", "f1"] },
-    { tournamentId: "t1", matches: ["qf2", "sf1"] },
-    { tournamentId: "t1", matches: ["qf3", "sf2", "f1"] },
-    { tournamentId: "t1", matches: ["qf4", "sf2"] },
-  ];
+describe("playoffSeries", () => {
+  // Parcours réel du vice-champion de la saison 16, remis dans l'ordre : deux
+  // tours en Bo1 puis une finale en Bo3 perdue 1-2. Les identifiants de partie
+  // que rend l'API ne sont PAS dans cet ordre — d'où le tri par heure.
+  const NOCORP = "nocorp";
+  const jeux = [
+    { matchId: "f2", startedAtMs: Date.parse("2026-04-26T19:48Z"), rosterIds: [NOCORP, "rank"] },
+    { matchId: "f3", startedAtMs: Date.parse("2026-04-26T20:43Z"), rosterIds: [NOCORP, "rank"] },
+    { matchId: "qf", startedAtMs: Date.parse("2026-04-26T17:20Z"), rosterIds: [NOCORP, "flow"] },
+    { matchId: "f1", startedAtMs: Date.parse("2026-04-26T19:04Z"), rosterIds: [NOCORP, "rank"] },
+    {
+      matchId: "sf",
+      startedAtMs: Date.parse("2026-04-26T18:14Z"),
+      rosterIds: [NOCORP, "fortnite"],
+    },
+  ] as const;
 
-  it("nomme les tours d'après la profondeur de l'arbre", () => {
-    const r = playoffRounds(arbreDeHuit);
-    expect(r.get("qf1")).toEqual({ tournamentId: "t1", roundLabel: "Quarts de finale" });
-    expect(r.get("sf1")).toEqual({ tournamentId: "t1", roundLabel: "Demi-finales" });
-    expect(r.get("f1")).toEqual({ tournamentId: "t1", roundLabel: "Finale" });
+  it("regroupe la finale Bo3 en une seule série", () => {
+    const series = playoffSeries("b1", jeux);
+    expect(series).toHaveLength(3);
+    expect(series.map((s) => s.matchIds)).toEqual([["qf"], ["sf"], ["f1", "f2", "f3"]]);
   });
 
-  it("donne le même tour aux deux équipes d'un match", () => {
-    const r = playoffRounds(arbreDeHuit);
-    expect(r.get("qf4")?.roundLabel).toBe("Quarts de finale");
-    expect(r.get("sf2")?.roundLabel).toBe("Demi-finales");
+  it("nomme les tours d'après la profondeur, pas le nombre de parties", () => {
+    const series = playoffSeries("b1", jeux);
+    expect(series.map((s) => s.roundLabel)).toEqual(["Quarts de finale", "Demi-finales", "Finale"]);
   });
 
-  it("sépare les arbres parallèles", () => {
-    const r = playoffRounds([
-      { tournamentId: "a", matches: ["m1", "m2"] },
-      { tournamentId: "b", matches: ["m3", "m4"] },
+  it("rend le Bo de chaque série", () => {
+    // Riot impose Bo1 partout sauf la finale : le compte de cartes le confirme
+    // plutôt que de le supposer.
+    expect(playoffSeries("b1", jeux).map((s) => s.bestOf)).toEqual([1, 1, 3]);
+  });
+
+  it("porte l'arbre auquel la série appartient", () => {
+    expect(playoffSeries("b7", jeux).every((s) => s.bracketId === "b7")).toBe(true);
+  });
+
+  it("ne fusionne pas deux rencontres séparées contre le même adversaire", () => {
+    // Deux séries distinctes contre la même équipe existent si un autre match
+    // s'intercale : les regrouper inventerait un Bo2.
+    const series = playoffSeries("b1", [
+      { matchId: "a", startedAtMs: 1000, rosterIds: ["x", "y"] },
+      { matchId: "b", startedAtMs: 2000, rosterIds: ["x", "z"] },
+      { matchId: "c", startedAtMs: 3000, rosterIds: ["x", "y"] },
     ]);
-    expect(r.get("m1")?.tournamentId).toBe("a");
-    expect(r.get("m3")?.tournamentId).toBe("b");
-    // Deux tours de part et d'autre : demies puis finale.
-    expect(r.get("m2")?.roundLabel).toBe("Finale");
-    expect(r.get("m4")?.roundLabel).toBe("Finale");
+    expect(series.map((s) => s.matchIds)).toEqual([["a"], ["b"], ["c"]]);
   });
 
-  it("range un match au tour le plus tardif quand deux équipes divergent", () => {
-    // Donnée incohérente : mieux vaut un tour que deux.
-    const r = playoffRounds([
-      { tournamentId: "t", matches: ["x", "y"] },
-      { tournamentId: "t", matches: ["y"] },
-    ]);
-    expect(r.get("y")?.roundLabel).toBe("Finale");
-    expect([...r.keys()].filter((k) => k === "y")).toHaveLength(1);
-  });
-
-  it("ignore les participations sans match joué", () => {
-    expect(playoffRounds([{ tournamentId: "t", matches: [] }]).size).toBe(0);
-    expect(playoffRounds([]).size).toBe(0);
+  it("supporte un arbre vide", () => {
+    expect(playoffSeries("b1", [])).toEqual([]);
   });
 });
 

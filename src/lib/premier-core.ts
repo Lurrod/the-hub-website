@@ -173,7 +173,21 @@ export function tournamentStatusFor(season: PremierSeason, nowMs: number): Premi
 }
 
 export type PremierParticipation = { tournamentId: string; matches: readonly string[] };
-export type PlayoffPlacement = { tournamentId: string; roundLabel: string };
+
+/** Une partie de playoffs, une fois connus son heure et ses deux camps. */
+export type PlayoffGame = {
+  matchId: string;
+  startedAtMs: number;
+  rosterIds: readonly string[];
+};
+
+/** Une rencontre : une seule carte en Bo1, deux ou trois en finale. */
+export type PlayoffSeries = {
+  bracketId: string;
+  roundLabel: string;
+  bestOf: number;
+  matchIds: string[];
+};
 
 /** Nom d'un arbre parallèle, par son rang. Borné à l'alphabet. */
 export function bracketNameFor(index: number): string {
@@ -181,52 +195,65 @@ export function bracketNameFor(index: number): string {
   return `Bracket ${String.fromCharCode(65 + i)}`;
 }
 
+/** Clé d'une paire d'adversaires, indépendante de l'ordre des camps. */
+function paire(rosterIds: readonly string[]): string {
+  return [...rosterIds].sort().join("|");
+}
+
 /**
- * Tour de chaque match de playoffs, déduit du rang dans le parcours d'une
- * équipe.
+ * Reconstruit les rencontres d'un arbre de playoffs à partir de ses parties.
  *
- * L'API ne nomme pas les tours : une participation ne donne que la liste
- * ordonnée des parties jouées par l'équipe. Le rang y tient lieu de tour, ce que
- * la mesure confirme — sur trois championnats réels, un match vu par ses deux
- * équipes apparaît au même rang chez l'une et chez l'autre, sans exception.
+ * Trois pièges, tous payés avant d'écrire cette fonction :
  *
- * La profondeur de l'arbre se lit sur le plus long parcours : trois matchs pour
- * le vainqueur d'un arbre de huit, donc un premier tour à quatre affiches. Cette
- * lecture n'est fiable que parce qu'on suit **toute la division** — un
- * échantillon d'équipes ferait manquer le vainqueur et rétrograderait tous les
- * tours d'un cran.
+ * - **`matches[]` n'est pas chronologique.** Sur un parcours réel, le rang 0
+ *   tombait à 19 h 48 et le rang 2 à 17 h 20. Déduire le tour du rang, comme
+ *   une première version le faisait, range les matchs n'importe où. Seule
+ *   l'heure fait foi.
+ * - **La finale se joue en Bo3**, donc en deux ou trois parties. Les compter
+ *   comme autant de tours donnait des arbres de profondeur 5 là où Riot en
+ *   joue 3. Des parties consécutives contre le même adversaire forment une
+ *   seule rencontre.
+ * - **Le Bo se mesure, il ne se suppose pas** : c'est le nombre de cartes de la
+ *   rencontre, ce qui redonne Bo1 partout et Bo3 en finale sans le coder en dur.
  *
- * **Les participations doivent être filtrées sur une seule saison.** Un premier
- * jet les prenait telles quelles : l'historique remontant à plus de deux ans,
- * les championnats de vingt saisons se retrouvaient fondus en un seul tournoi,
- * avec six « finales » et vingt-deux arbres parallèles pour treize matchs.
+ * La profondeur de l'arbre est le plus long parcours en rencontres — trois pour
+ * le vainqueur d'un arbre de huit. Elle n'est fiable que parce qu'on suit toute
+ * la division et qu'on observe donc l'arbre entier.
  */
-export function playoffRounds(
-  participations: readonly PremierParticipation[]
-): Map<string, PlayoffPlacement> {
-  const parArbre = new Map<string, { profondeur: number; rangs: Map<string, number> }>();
+export function playoffSeries(bracketId: string, games: readonly PlayoffGame[]): PlayoffSeries[] {
+  if (games.length === 0) return [];
+  const ordre = [...games].sort((a, b) => a.startedAtMs - b.startedAtMs);
 
-  for (const p of participations) {
-    const ids = p.matches.filter(Boolean);
-    if (ids.length === 0) continue;
-    const arbre = parArbre.get(p.tournamentId) ?? { profondeur: 0, rangs: new Map() };
-    arbre.profondeur = Math.max(arbre.profondeur, ids.length);
-    // Sur une divergence, le rang le plus tardif l'emporte : un même match ne
-    // peut pas figurer dans deux tours.
-    ids.forEach((id, rang) => arbre.rangs.set(id, Math.max(arbre.rangs.get(id) ?? 0, rang)));
-    parArbre.set(p.tournamentId, arbre);
-  }
-
-  const out = new Map<string, PlayoffPlacement>();
-  for (const [tournamentId, { profondeur, rangs }] of parArbre) {
-    for (const [id, rang] of rangs) {
-      // Un arbre de profondeur d s'ouvre sur 2^(d-1) affiches ; chaque tour
-      // franchi divise ce nombre par deux.
-      const taille = Math.max(1, 2 ** (profondeur - 1 - rang));
-      out.set(id, { tournamentId, roundLabel: roundLabelForSize(taille) });
+  // Regroupement par adversaire, en ne fusionnant que des parties qui se
+  // suivent : deux rencontres séparées contre la même équipe restent deux
+  // rencontres.
+  const rencontres: { cle: string; rosterIds: readonly string[]; matchIds: string[] }[] = [];
+  for (const g of ordre) {
+    const cle = paire(g.rosterIds);
+    const derniere = rencontres[rencontres.length - 1];
+    const memeAdversaireJusteAvant = rencontres.findLast((r) => r.cle === cle);
+    if (derniere && memeAdversaireJusteAvant === derniere) {
+      derniere.matchIds.push(g.matchId);
+    } else {
+      rencontres.push({ cle, rosterIds: g.rosterIds, matchIds: [g.matchId] });
     }
   }
-  return out;
+
+  // Rang d'une rencontre = son numéro dans le parcours de ses équipes.
+  const parcours = new Map<string, number>();
+  const rangs = rencontres.map((r) => {
+    const rang = Math.max(...r.rosterIds.map((id) => parcours.get(id) ?? 0));
+    r.rosterIds.forEach((id) => parcours.set(id, rang + 1));
+    return rang;
+  });
+
+  const profondeur = Math.max(...rangs) + 1;
+  return rencontres.map((r, i) => ({
+    bracketId,
+    roundLabel: roundLabelForSize(Math.max(1, 2 ** (profondeur - 1 - rangs[i]))),
+    bestOf: r.matchIds.length,
+    matchIds: r.matchIds,
+  }));
 }
 
 /**

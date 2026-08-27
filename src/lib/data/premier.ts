@@ -7,22 +7,25 @@ import {
   seasonNumberOf,
   mutualMatchIds,
   sideOfRoster,
-  playoffRounds,
+  playoffSeries,
   bracketNameFor,
+  type PlayoffSeries,
   tournamentStatusFor,
   type PremierTier,
   type PremierSeason,
 } from "@/lib/premier-core";
+import { defaultBestOfFor, matchGroupIdFor } from "@/lib/bracket";
 import {
   getCustomMatchById,
   getPremierHistory,
   getPremierLeaderboard,
   getPremierSeasons,
   RiotIdError,
+  type CustomMatch,
 } from "@/lib/henrikdev";
 import type { PremierTeamEntry } from "@/lib/validation/premier";
 import { importMatchMapFromRiotId } from "@/lib/match-stats";
-import type { TournamentFormat, MatchStage } from "@/lib/constants";
+import type { TournamentFormat } from "@/lib/constants";
 
 /**
  * Écritures du miroir Premier.
@@ -224,20 +227,18 @@ async function dateDuBracket(riotMatchId: string): Promise<string | null> {
 export type MatchImportOutcome = "IMPORTED" | "SKIPPED" | "FAILED";
 
 /**
- * Crée le match du site puis y importe la carte Riot.
+ * Crée le match de ligne régulière puis y importe sa carte.
  *
  * Un match de ligue Premier se joue en une seule carte : un `Match` du site
  * porte donc exactement une `MatchMap`. La déduplication s'appuie sur l'unicité
- * de `MatchMap.riotMatchId` — inutile d'ajouter un champ au `Match`.
+ * de `MatchMap.riotMatchId` — inutile d'ajouter un champ au `Match`. Les
+ * playoffs passent par `importPremierSerie`, une rencontre pouvant y compter
+ * jusqu'à trois cartes.
  */
 export async function importPremierMatch(
   riotMatchId: string,
   tournamentId: string,
-  teamIdByPremierId: ReadonlyMap<string, string>,
-  /** Ligne régulière (`GROUP`) ou playoffs (`BRACKET`), avec son tour. */
-  phase: { stage: MatchStage; round?: string | null; groupId?: string | null } = {
-    stage: "GROUP",
-  }
+  teamIdByPremierId: ReadonlyMap<string, string>
 ): Promise<MatchImportOutcome> {
   const already = await db.matchMap.findUnique({
     where: { riotMatchId },
@@ -275,9 +276,7 @@ export async function importPremierMatch(
       tournamentId,
       teamAId,
       teamBId,
-      stage: phase.stage,
-      round: phase.round ?? null,
-      groupId: phase.groupId ?? null,
+      stage: "GROUP",
       bestOf: 1,
       status: "FINISHED",
       date: raw.startedAt ? new Date(raw.startedAt) : null,
@@ -299,6 +298,80 @@ export async function importPremierMatch(
     // suppression ne touche que lui et ses cartes.
     await db.match.delete({ where: { id: match.id } });
     logger.warn("premier.match.import_failed", { riotMatchId, result: r });
+    return "FAILED";
+  }
+  return "IMPORTED";
+}
+
+/**
+ * Importe une rencontre de playoffs — une carte en Bo1, deux ou trois en finale
+ * — comme **un seul match du site** portant toutes ses cartes.
+ *
+ * C'est ce que le modèle attend d'un Bo3 : `importMatchMapFromRiotId` ajoute les
+ * cartes à la suite et recalcule le score sur l'ensemble. En créer un match par
+ * carte donnerait trois finales là où Riot n'en joue qu'une.
+ */
+async function importPremierSerie(
+  serie: PlayoffSeries,
+  parties: ReadonlyMap<string, CustomMatch>,
+  tournamentId: string,
+  format: TournamentFormat,
+  teamIdByPremierId: ReadonlyMap<string, string>,
+  groupId: string | null
+): Promise<MatchImportOutcome> {
+  const premiere = parties.get(serie.matchIds[0]);
+  if (!premiere) return "FAILED";
+
+  const deja = await db.matchMap.findUnique({
+    where: { riotMatchId: serie.matchIds[0] },
+    select: { id: true },
+  });
+  if (deja) return "SKIPPED";
+
+  const rosters = premiere.teams.map((t) => t.rosterId).filter((x): x is string => Boolean(x));
+  if (rosters.length !== 2) return "SKIPPED";
+  const teamAId = teamIdByPremierId.get(rosters[0]);
+  const teamBId = teamIdByPremierId.get(rosters[1]);
+  if (!teamAId || !teamBId) return "SKIPPED";
+
+  const match = await db.match.create({
+    data: {
+      tournamentId,
+      teamAId,
+      teamBId,
+      stage: "BRACKET",
+      round: serie.roundLabel,
+      // La règle du Bo vit dans `bracket.ts` : Bo1 partout sauf la finale. On
+      // retient la plus grande des deux valeurs, le nombre de cartes observé
+      // pouvant être inférieur si la rencontre s'est jouée en deux manches.
+      bestOf: Math.max(serie.bestOf, defaultBestOfFor(format, serie.roundLabel)),
+      groupId: matchGroupIdFor(format, "BRACKET", groupId),
+      status: "FINISHED",
+      date: premiere.startedAt ? new Date(premiere.startedAt) : null,
+      hasTime: Boolean(premiere.startedAt),
+    },
+    select: { id: true },
+  });
+
+  let importees = 0;
+  for (const riotMatchId of serie.matchIds) {
+    const partie = parties.get(riotMatchId);
+    if (!partie) continue;
+    // Les camps se rejouent carte par carte : « Red » et « Blue » changent d'une
+    // manche à l'autre, seul le roster Premier reste stable.
+    const sides = sideOfRoster(partie.teams, rosters[0]);
+    if (!sides) continue;
+    const r = await importMatchMapFromRiotId(
+      match.id,
+      { riotMatchId, outcomeOfTeamA: sides.outcomeOfTeamA },
+      partie
+    );
+    if (r === "IMPORTED") importees += 1;
+  }
+
+  if (importees === 0) {
+    await db.match.delete({ where: { id: match.id } });
+    logger.warn("premier.serie.vide", { round: serie.roundLabel });
     return "FAILED";
   }
   return "IMPORTED";
@@ -510,47 +583,71 @@ export async function runPremierSync(
     for (const seasonId of saisonsAvecPlayoffs) {
       const arbres = arbresParSaison.get(seasonId) ?? [];
       if (arbres.length === 0) continue;
-      const rounds = playoffRounds(participations.filter((p) => arbres.includes(p.tournamentId)));
-      const groupIdParArbre = new Map<string, string>();
 
-      for (const [riotMatchId, place] of rounds) {
-        if (report.matchesImported >= matchBudget) {
-          report.matchesPending += 1;
-          continue;
+      for (const [rang, bracketId] of arbres.entries()) {
+        const ids = [
+          ...new Set(
+            participations.filter((p) => p.tournamentId === bracketId).flatMap((p) => p.matches)
+          ),
+        ];
+
+        // Première passe : récupérer chaque partie pour connaître son heure et
+        // ses deux camps. Sans elle, impossible de reconstituer les rencontres —
+        // l'API ne rend ni l'ordre chronologique ni les adversaires.
+        const parties = new Map<string, CustomMatch>();
+        for (const id of ids) {
+          try {
+            parties.set(id, await getCustomMatchById("eu", id, true));
+          } catch (e) {
+            if (estQuotaDepasse(e)) throw e;
+            logger.warn("premier.playoff.fetch_failed", { id, ...describeError(e) });
+          }
         }
-        const premierIds = participations
-          .filter((p) => p.matches.includes(riotMatchId))
-          .map((p) => p.premierId);
-        const tier = parEquipePremier.get(premierIds[0] ?? "")?.tier;
+
+        const jeux = [...parties.values()]
+          .filter((m) => m.startedAt)
+          .map((m) => ({
+            matchId: m.matchId,
+            startedAtMs: Date.parse(m.startedAt as string),
+            rosterIds: m.teams.map((t) => t.rosterId).filter((x): x is string => Boolean(x)),
+          }))
+          .filter((g) => g.rosterIds.length === 2);
+
+        const series = playoffSeries(bracketId, jeux);
+        if (series.length === 0) continue;
+
+        const tier = parEquipePremier.get(jeux[0]?.rosterIds[0] ?? "")?.tier;
         if (!tier) continue;
         const tournamentId = tournamentBySeasonTier.get(cle(seasonId, tier));
         if (!tournamentId) continue;
+        const format = tier === "CONTENDER" ? "PREMIER_CONTENDER" : "PREMIER_INVITE";
 
-        // Un `Group` par arbre, et seulement pour le Contender : l'Invite n'en
-        // joue qu'un, lui en donner un le ferait passer pour un bracket
-        // parallèle et casserait sa disposition en arbre unique.
-        let groupId: string | null = null;
-        if (tier === "CONTENDER") {
-          const cache = groupIdParArbre.get(place.tournamentId);
-          groupId =
-            cache ??
-            (await ensureBracketGroup(
-              tournamentId,
-              bracketNameFor(arbres.indexOf(place.tournamentId))
-            ));
-          groupIdParArbre.set(place.tournamentId, groupId);
+        // Un `Group` par arbre, et seulement là où la disposition « multi » s'en
+        // sert : `matchGroupIdFor` le retirera de lui-même pour l'Invite.
+        const groupId =
+          tier === "CONTENDER"
+            ? await ensureBracketGroup(tournamentId, bracketNameFor(rang))
+            : null;
+
+        for (const serie of series) {
+          if (report.matchesImported >= matchBudget) {
+            report.matchesPending += 1;
+            continue;
+          }
+          const r = await importPremierSerie(
+            serie,
+            parties,
+            tournamentId,
+            format,
+            teamIdByPremierId,
+            groupId
+          );
+          if (r === "IMPORTED") {
+            report.matchesImported += 1;
+            const ligne = report.seasons.find((x) => x.tournamentId === tournamentId);
+            if (ligne) ligne.matches += 1;
+          } else if (r === "FAILED") report.matchesFailed += 1;
         }
-
-        const r = await importPremierMatch(riotMatchId, tournamentId, teamIdByPremierId, {
-          stage: "BRACKET",
-          round: place.roundLabel,
-          groupId,
-        });
-        if (r === "IMPORTED") {
-          report.matchesImported += 1;
-          const ligne = report.seasons.find((x) => x.tournamentId === tournamentId);
-          if (ligne) ligne.matches += 1;
-        } else if (r === "FAILED") report.matchesFailed += 1;
       }
     }
   } catch (e) {
