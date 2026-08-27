@@ -1,4 +1,14 @@
 import { logger, describeError } from "@/lib/logger";
+import {
+  premierLeaderboardSchema,
+  premierSeasonsSchema,
+  premierTeamDetailSchema,
+  premierHistorySchema,
+  type PremierTeamEntry,
+  type PremierSeasonResponse,
+  type PremierTeamDetail,
+  type PremierHistory,
+} from "@/lib/validation/premier";
 
 export type RiotIdErrorCode = "NOT_FOUND" | "RATE_LIMITED" | "API_ERROR" | "TAKEN";
 
@@ -32,18 +42,22 @@ const TIMEOUT_MS = 8000;
  * @param surAbsence code d'erreur pour un 404. `NOT_FOUND` là où l'absence est
  *   une réponse attendue (compte ou partie inconnus), `API_ERROR` là où elle
  *   trahit une anomalie.
+ * @param timeoutMs délai d'abandon. La valeur par défaut vise une soumission
+ *   de formulaire ; les appels en lot de la synchronisation Premier durent
+ *   plus longtemps et la remontent.
  * @returns le contenu du champ `data` de l'enveloppe, ou `null` s'il manque.
  */
 async function fetchHenrik<T>(
   path: string,
-  surAbsence: RiotIdErrorCode = "API_ERROR"
+  surAbsence: RiotIdErrorCode = "API_ERROR",
+  timeoutMs: number = TIMEOUT_MS
 ): Promise<T | null> {
   const key = process.env.HENRIKDEV_API_KEY;
   if (!key) throw new RiotIdError("API_ERROR");
 
   const url = `${BASE}${path}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;
   try {
@@ -130,12 +144,28 @@ export type CustomMatchKill = {
   weapon: string | null;
 };
 
+/**
+ * Un camp du match. `rosterId` n'est renseigné que sur les parties Premier :
+ * c'est le seul champ qui rattache « Red » ou « Blue » — attribués
+ * arbitrairement d'un match à l'autre — à une équipe Premier identifiée, et
+ * donc la seule façon de savoir qui a gagné pour qui lors d'un import
+ * automatique.
+ */
+export type CustomMatchTeam = {
+  teamId: string;
+  won: boolean;
+  rosterId: string | null;
+  roundsWon: number;
+  roundsLost: number;
+};
+
 export type CustomMatch = {
   matchId: string;
   map: string;
   startedAt: string | null;
   durationSec: number | null;
   teamRounds: Record<string, number>; // team_id -> rounds gagnés
+  teams: CustomMatchTeam[];
   players: CustomMatchPlayer[];
   rounds: CustomMatchRound[];
   kills: CustomMatchKill[];
@@ -204,7 +234,12 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
       started_at?: string;
       game_length_in_ms?: number;
     };
-    teams?: { team_id?: string; rounds?: { won?: number } }[];
+    teams?: {
+      team_id?: string;
+      won?: boolean;
+      rounds?: { won?: number; lost?: number };
+      premier_roster?: { id?: string } | null;
+    }[];
     rounds?: {
       winning_team?: string;
       result?: string;
@@ -241,6 +276,15 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
   for (const t of m.teams ?? []) {
     if (t.team_id) teamRounds[t.team_id] = num(t.rounds?.won);
   }
+  const teams: CustomMatchTeam[] = (m.teams ?? [])
+    .filter((t) => Boolean(t.team_id))
+    .map((t) => ({
+      teamId: t.team_id!,
+      won: t.won === true,
+      rosterId: t.premier_roster?.id ?? null,
+      roundsWon: num(t.rounds?.won),
+      roundsLost: num(t.rounds?.lost),
+    }));
   const players: CustomMatchPlayer[] = (m.players ?? []).map((p) => ({
     puuid: p.puuid ?? "",
     name: p.name ?? "",
@@ -289,8 +333,69 @@ function mapRawCustomMatch(raw: unknown): CustomMatch {
         ? Math.round(m.metadata.game_length_in_ms / 1000)
         : null,
     teamRounds,
+    teams,
     players,
     rounds,
     kills,
   };
+}
+
+/**
+ * Délai des appels de synchronisation Premier.
+ *
+ * `TIMEOUT_MS` vise une action de formulaire, où huit secondes d'attente sont
+ * déjà une éternité. Les appels de la synchronisation tournent hors du chemin
+ * d'un utilisateur : y couper une réponse valide coûterait un match manquant
+ * pour rien.
+ */
+const PREMIER_TIMEOUT_MS = 20_000;
+
+/**
+ * Classement d'une division Premier.
+ *
+ * Le filtre passe par des **segments de chemin**, pas par des paramètres de
+ * requête : la variante `?conference=&division=` documentée dans la
+ * spécification OpenAPI est ignorée par le serveur, qui renvoie alors les
+ * 4 523 équipes européennes au lieu des dizaines attendues.
+ */
+export async function getPremierLeaderboard(
+  conference: string,
+  division: number
+): Promise<PremierTeamEntry[]> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/leaderboard/eu/${encodeURIComponent(conference)}/${division}`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS
+  );
+  return premierLeaderboardSchema.parse(data ?? []);
+}
+
+/** Saisons Premier d'une région, de la plus ancienne à la plus récente. */
+export async function getPremierSeasons(affinity = "eu"): Promise<PremierSeasonResponse[]> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/seasons/${encodeURIComponent(affinity)}`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS
+  );
+  return premierSeasonsSchema.parse(data ?? []);
+}
+
+/** Fiche d'une équipe Premier, roster compris. */
+export async function getPremierTeam(id: string): Promise<PremierTeamDetail> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/${encodeURIComponent(id)}`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS
+  );
+  return premierTeamDetailSchema.parse(data);
+}
+
+/** Historique d'une équipe : matchs de ligue et matchs de playoffs. */
+export async function getPremierHistory(id: string): Promise<PremierHistory> {
+  const data = await fetchHenrik<unknown>(
+    `/valorant/v1/premier/${encodeURIComponent(id)}/history`,
+    "NOT_FOUND",
+    PREMIER_TIMEOUT_MS
+  );
+  return premierHistorySchema.parse(data ?? { league_matches: [], tournament_matches: [] });
 }

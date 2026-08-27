@@ -45,6 +45,12 @@ function match(
     startedAt,
     durationSec: 2400,
     teamRounds: { Red: 13, Blue: 9 },
+    // Pas de roster Premier : ces cas de test portent sur des parties
+    // personnalisées, où le rattachement des camps se fait par les joueurs.
+    teams: [
+      { teamId: "Red", won: true, rosterId: null, roundsWon: 13, roundsLost: 9 },
+      { teamId: "Blue", won: false, rosterId: null, roundsWon: 9, roundsLost: 13 },
+    ],
     players: [
       ...puuidsRed.map((p) => player(p, "Red")),
       ...puuidsBlue.map((p) => player(p, "Blue")),

@@ -49,4 +49,22 @@ describe("un match Premier traverse le parseur des parties personnalisées", () 
     expect(m.map.length).toBeGreaterThan(0);
     expect(m.startedAt).toBe("2026-05-14T17:05:32.448Z");
   });
+
+  it("expose le roster Premier de chaque camp", async () => {
+    // C'est le seul champ qui rattache « Red » ou « Blue » — attribués
+    // arbitrairement — à une équipe Premier identifiée.
+    const m = await getCustomMatchById("eu", "4def23a7-9631-42ac-a713-8c0e7de05149");
+    expect(m.teams).toHaveLength(2);
+    const blue = m.teams.find((t) => t.teamId === "Blue");
+    expect(blue).toEqual({
+      teamId: "Blue",
+      won: true,
+      rosterId: "e4822b92-0ae6-4595-b7e7-e52c89fe3f94",
+      roundsWon: 13,
+      roundsLost: 9,
+    });
+    const red = m.teams.find((t) => t.teamId === "Red");
+    expect(red?.won).toBe(false);
+    expect(red?.rosterId).toBe("4ab577e6-d351-4b30-9f03-4454bd3d089e");
+  });
 });
