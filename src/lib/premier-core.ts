@@ -1,5 +1,4 @@
 import { timingSafeEqual } from "node:crypto";
-import { roundLabelForSize } from "@/lib/bracket";
 
 /**
  * Logique pure du miroir Premier : aucun accès base, aucun appel réseau, aucune
@@ -170,50 +169,6 @@ export function tournamentStatusFor(season: PremierSeason, nowMs: number): Premi
   if (nowMs >= to) return "FINISHED";
   if (nowMs < from) return "UPCOMING";
   return "ONGOING";
-}
-
-export type PremierParticipation = { tournamentId: string; matches: readonly string[] };
-export type PlayoffRound = { tournamentId: string; label: string };
-
-/**
- * Tour de chaque match de playoffs, déduit du rang dans le parcours d'une
- * équipe.
- *
- * L'API ne nomme pas les tours : une participation ne donne que la liste
- * ordonnée des parties jouées par l'équipe. Le rang y tient lieu de tour, ce
- * que la mesure confirme — sur trois tournois réels, un match vu par ses deux
- * équipes apparaît au même rang chez l'une et chez l'autre, sans exception.
- *
- * La profondeur de l'arbre se lit sur le plus long parcours : trois matchs pour
- * le vainqueur d'un arbre de huit, donc un premier tour à quatre affiches.
- * Quand deux équipes divergent sur le rang d'un même match — donnée
- * incohérente — le plus tardif l'emporte, faute de quoi le match figurerait
- * dans deux tours à la fois.
- */
-export function playoffRounds(
-  participations: readonly PremierParticipation[]
-): Map<string, PlayoffRound> {
-  const parTournoi = new Map<string, { profondeur: number; rangs: Map<string, number> }>();
-
-  for (const p of participations) {
-    const ids = p.matches.filter(Boolean);
-    if (ids.length === 0) continue;
-    const t = parTournoi.get(p.tournamentId) ?? { profondeur: 0, rangs: new Map() };
-    t.profondeur = Math.max(t.profondeur, ids.length);
-    ids.forEach((id, rang) => t.rangs.set(id, Math.max(t.rangs.get(id) ?? 0, rang)));
-    parTournoi.set(p.tournamentId, t);
-  }
-
-  const out = new Map<string, PlayoffRound>();
-  for (const [tournamentId, { profondeur, rangs }] of parTournoi) {
-    for (const [id, rang] of rangs) {
-      // Un arbre de profondeur d commence à 2^(d-1) affiches ; chaque tour
-      // franchi divise ce nombre par deux.
-      const taille = Math.max(1, 2 ** (profondeur - 1 - rang));
-      out.set(id, { tournamentId, label: roundLabelForSize(taille) });
-    }
-  }
-  return out;
 }
 
 export type PremierBracket = { name: string; teamIds: string[] };

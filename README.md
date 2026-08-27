@@ -97,11 +97,23 @@ Le périmètre est volontairement étroit : le palier **Contender**
 (`EU_FRANCE_SUPER` division 22, 13 équipes). Les divisions inférieures sont
 hors sujet pour un site Tier 3.
 
-Chaque saison donne un tournoi au format `LEAGUE` par palier, dont les
-participants viennent du classement et les matchs de l'historique des équipes.
+Chaque saison donne **un seul tournoi par palier**, au format `PREMIER_CONTENDER`
+ou `PREMIER_INVITE` : ligne régulière et playoffs y cohabitent, la première en
+matchs de phase `GROUP`, les seconds en phase `BRACKET`, de sorte que le
+classement et l'arbre s'affichent sur la même page. Les participants viennent du
+classement et les matchs de l'historique des équipes.
+
 Les équipes sont rattachées par `Team.premierTeamId` — jamais par leur nom, qui
 change — et leurs logos sont rapatriés dans le stockage local plutôt que servis
 depuis le CDN de HenrikDev, que la CSP bloquerait.
+
+**Les playoffs ne sont pas encore importés**, et la place leur est faite sans
+être occupée. `tournament_matches` ne liste pas un tournoi de fin de saison mais
+tous les tournois Premier joués, à raison d'un par semaine — treize
+participations par équipe sur quatre mois. Les fondre dans un seul arbre donnait
+six « finales » et vingt-deux brackets parallèles pour treize matchs. Les
+modéliser correctement demande de traiter chaque tournoi hebdomadaire pour ce
+qu'il est.
 
 Seuls sont importés les matchs **dont les deux équipes sont suivies**, reconnus
 au fait qu'ils figurent dans deux historiques. Les autres — adversaire d'une

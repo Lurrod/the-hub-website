@@ -7,7 +7,6 @@ import {
   seasonNumberOf,
   mutualMatchIds,
   sideOfRoster,
-  playoffRounds,
   tournamentStatusFor,
   type PremierTier,
   type PremierSeason,
@@ -182,23 +181,6 @@ export async function syncParticipants(
     skipDuplicates: true,
   });
   return r.count;
-}
-
-/**
- * Retrouve ou crée le `Group` qui porte un arbre parallèle.
- *
- * Le Premier Contender joue plusieurs arbres de front ; chacun est un `Group`,
- * sans quoi `matchGroupIdFor` ne peut pas les séparer et l'affichage les
- * effondre en un seul arbre incohérent.
- */
-async function ensureBracketGroup(tournamentId: string, name: string): Promise<string> {
-  const existing = await db.group.findFirst({
-    where: { tournamentId, name },
-    select: { id: true },
-  });
-  if (existing) return existing.id;
-  const g = await db.group.create({ data: { tournamentId, name }, select: { id: true } });
-  return g.id;
 }
 
 export type MatchImportOutcome = "IMPORTED" | "SKIPPED" | "FAILED";
@@ -400,14 +382,8 @@ export async function runPremierSync(
     // Un seul appel d'historique par équipe : il contient toutes les saisons.
     const historiesBySeason = new Map<string, string[][]>(targets.map((sid) => [sid, []]));
     const premierIdsOfMatch = new Map<string, Set<string>>();
-    const participations: { tournamentId: string; matches: string[]; premierId: string }[] = [];
     for (const premierId of parEquipePremier.keys()) {
       const h = await getPremierHistory(premierId);
-      for (const p of h.tournament_matches) {
-        if (p.matches.length > 0) {
-          participations.push({ tournamentId: p.tournament_id, matches: p.matches, premierId });
-        }
-      }
       const parSaison = new Map<string, string[]>(targets.map((sid) => [sid, []]));
       for (const m of h.league_matches) {
         const season = seasonOfMatch(windows, m.started_at);
@@ -446,49 +422,13 @@ export async function runPremierSync(
       }
     }
 
-    // Playoffs. Ils n'ont pas de date dans l'API : leur saison se déduit du
-    // palier des équipes qui y jouent, et le tournoi visé est celui de la
-    // saison la plus récente demandée — c'est là qu'ils ont lieu.
-    const saisonDesPlayoffs = targets[targets.length - 1];
-    const rounds = playoffRounds(participations);
-    const arbres = [...new Set([...rounds.values()].map((r) => r.tournamentId))];
-    const groupIdByArbre = new Map<string, string>();
-
-    for (const [riotMatchId, round] of rounds) {
-      if (report.matchesImported >= matchBudget) {
-        report.matchesPending += 1;
-        continue;
-      }
-      const premierIds = participations
-        .filter((p) => p.matches.includes(riotMatchId))
-        .map((p) => p.premierId);
-      const tier = parEquipePremier.get(premierIds[0] ?? "")?.tier;
-      if (!tier) continue;
-      const tournamentId = tournamentBySeasonTier.get(cle(saisonDesPlayoffs, tier));
-      if (!tournamentId) continue;
-
-      // Un `Group` par arbre, et seulement pour le Contender : l'Invite n'en
-      // joue qu'un, lui en donner un le ferait passer pour un bracket parallèle.
-      let groupId: string | null = null;
-      if (tier === "CONTENDER") {
-        const rang = arbres.indexOf(round.tournamentId);
-        const nom = `Bracket ${String.fromCharCode(65 + Math.max(0, rang))}`;
-        const cache = groupIdByArbre.get(round.tournamentId);
-        groupId = cache ?? (await ensureBracketGroup(tournamentId, nom));
-        groupIdByArbre.set(round.tournamentId, groupId);
-      }
-
-      const r = await importPremierMatch(riotMatchId, tournamentId, teamIdByPremierId, {
-        stage: "BRACKET",
-        round: round.label,
-        groupId,
-      });
-      if (r === "IMPORTED") {
-        report.matchesImported += 1;
-        const ligne = report.seasons.find((x) => x.tournamentId === tournamentId);
-        if (ligne) ligne.matches += 1;
-      } else if (r === "FAILED") report.matchesFailed += 1;
-    }
+    // Les playoffs ne sont pas encore importés, et le savoir a coûté un
+    // essai : `tournament_matches` ne liste pas UN tournoi de fin de saison
+    // mais TOUS les tournois Premier joués, à raison d'un par semaine — treize
+    // participations par équipe sur quatre mois. Les fondre dans un seul arbre
+    // donnait six « finales » et vingt-deux brackets parallèles pour treize
+    // matchs. Les modéliser demande de traiter chaque tournoi hebdomadaire pour
+    // ce qu'il est, ce qui dépasse le cadre du miroir de saison.
   } catch (e) {
     // Un quota dépassé n'annule pas ce qui a déjà été écrit : équipes, tournois
     // et matchs importés sont acquis, et le passage suivant reprend là où

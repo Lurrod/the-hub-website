@@ -9,7 +9,6 @@ import {
   bracketsOf,
   tournamentStatusFor,
   quotaDelayMs,
-  playoffRounds,
   secretMatches,
   QUOTA_FLOOR,
 } from "@/lib/premier-core";
@@ -272,57 +271,5 @@ describe("secretMatches", () => {
   it("refuse un secret de longueur différente sans lever", () => {
     expect(secretMatches("Bearer abcdef", "abc")).toBe(false);
     expect(secretMatches("Bearer a", "abc")).toBe(false);
-  });
-});
-
-describe("playoffRounds", () => {
-  // Relevé sur l'API : un match partagé apparaît au même rang chez les deux
-  // équipes (7/7, 5/5, 5/5 sur trois tournois réels), ce qui fait de ce rang
-  // une source fiable pour le tour.
-  const participations = [
-    { tournamentId: "t1", matches: ["qf1", "sf1", "f1"] },
-    { tournamentId: "t1", matches: ["qf2", "sf1"] },
-    { tournamentId: "t1", matches: ["qf3", "sf2", "f1"] },
-    { tournamentId: "t1", matches: ["qf4"] },
-  ];
-
-  it("déduit la profondeur de l'arbre du plus long parcours", () => {
-    const r = playoffRounds(participations);
-    // Trois tours joués : le premier oppose donc quatre paires.
-    expect(r.get("qf1")).toEqual({ tournamentId: "t1", label: "Quarts de finale" });
-    expect(r.get("sf1")).toEqual({ tournamentId: "t1", label: "Demi-finales" });
-    expect(r.get("f1")).toEqual({ tournamentId: "t1", label: "Finale" });
-  });
-
-  it("donne le même tour aux deux équipes d'un match", () => {
-    const r = playoffRounds(participations);
-    expect(r.get("qf4")?.label).toBe("Quarts de finale");
-    expect(r.get("sf2")?.label).toBe("Demi-finales");
-  });
-
-  it("sépare les arbres parallèles par leur tournoi", () => {
-    const r = playoffRounds([
-      { tournamentId: "a", matches: ["m1", "m2"] },
-      { tournamentId: "b", matches: ["m3", "m4"] },
-    ]);
-    expect(r.get("m1")?.tournamentId).toBe("a");
-    expect(r.get("m3")?.tournamentId).toBe("b");
-    // Deux tours de part et d'autre : demies puis finale.
-    expect(r.get("m2")?.label).toBe("Finale");
-    expect(r.get("m4")?.label).toBe("Finale");
-  });
-
-  it("ignore les participations sans match joué", () => {
-    expect(playoffRounds([{ tournamentId: "t", matches: [] }]).size).toBe(0);
-    expect(playoffRounds([]).size).toBe(0);
-  });
-
-  it("retient le rang le plus précoce quand deux équipes divergent", () => {
-    // Une donnée incohérente ne doit pas ranger le même match dans deux tours.
-    const r = playoffRounds([
-      { tournamentId: "t", matches: ["x", "y"] },
-      { tournamentId: "t", matches: ["y"] },
-    ]);
-    expect(r.get("y")?.label).toBe("Finale");
   });
 });
