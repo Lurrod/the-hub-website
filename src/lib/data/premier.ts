@@ -7,6 +7,7 @@ import {
   seasonNumberOf,
   mutualMatchIds,
   sideOfRoster,
+  playoffRounds,
   tournamentStatusFor,
   type PremierTier,
   type PremierSeason,
@@ -20,7 +21,7 @@ import {
 } from "@/lib/henrikdev";
 import type { PremierTeamEntry } from "@/lib/validation/premier";
 import { importMatchMapFromRiotId } from "@/lib/match-stats";
-import type { TournamentFormat } from "@/lib/constants";
+import type { TournamentFormat, MatchStage } from "@/lib/constants";
 
 /**
  * Écritures du miroir Premier.
@@ -30,8 +31,6 @@ import type { TournamentFormat } from "@/lib/constants";
  * rattachement à une saison, dédoublonnage, camps, étranglement — vit dans
  * `premier-core.ts` et y est testé.
  */
-
-type Phase = "LEAGUE" | "PLAYOFFS";
 
 export type TeamSyncResult = {
   created: number;
@@ -107,38 +106,36 @@ async function storePremierLogo(teamId: string, url: string | undefined): Promis
   }
 }
 
-/** Format du site pour un couple palier/phase. */
-function formatFor(tier: PremierTier, phase: Phase): TournamentFormat {
-  if (phase === "LEAGUE") return "LEAGUE";
+/** Format du site pour un palier. Ligne régulière et playoffs y cohabitent. */
+function formatFor(tier: PremierTier): TournamentFormat {
   return tier === "CONTENDER" ? "PREMIER_CONTENDER" : "PREMIER_INVITE";
 }
 
-function nameFor(tier: PremierTier, phase: Phase, seasonNumber: number): string {
+function nameFor(tier: PremierTier, seasonNumber: number): string {
   const palier = tier === "CONTENDER" ? "Contender" : "Invite";
-  const suffixe = phase === "PLAYOFFS" ? " — Playoffs" : "";
-  return `Premier ${palier} France — Saison ${seasonNumber}${suffixe}`;
+  return `Premier ${palier} France — Saison ${seasonNumber}`;
 }
 
 /**
- * Retrouve ou crée le tournoi d'un couple saison/palier/phase.
+ * Retrouve ou crée le tournoi d'une saison et d'un palier.
  *
- * L'idempotence tient à la contrainte unique
- * `(premierSeasonId, premierTier, premierPhase)` : rejouée, la synchronisation
- * retrouve le tournoi au lieu d'en créer un second à chaque passage du cron.
+ * L'idempotence tient à la contrainte unique `(premierSeasonId, premierTier)` :
+ * rejouée, la synchronisation retrouve le tournoi au lieu d'en créer un second
+ * à chaque passage du cron.
  *
- * Les dates et le statut sont réécrits à chaque passage, pas seulement à la
- * création : les premiers tournois importés avaient été figés à « en cours »
- * sans dates, ce qui laissait les saisons passées éternellement ouvertes. Les
- * poser ici les remet d'aplomb, et le recalage nocturne des statuts prend
- * ensuite le relais tout seul.
+ * Format, dates et statut sont réécrits à chaque passage, pas seulement à la
+ * création. Les premiers tournois importés étaient au format `LEAGUE`, figés à
+ * « en cours » et sans dates : les réécrire ici les remet d'aplomb sans
+ * reprise de données, et le recalage nocturne des statuts prend ensuite le
+ * relais tout seul.
  */
 export async function ensurePremierTournament(
   season: PremierSeason,
   seasonNumber: number,
-  tier: PremierTier,
-  phase: Phase
+  tier: PremierTier
 ): Promise<string> {
-  const dates = {
+  const commun = {
+    format: formatFor(tier),
     startDate: new Date(season.startsAt),
     endDate: new Date(season.endsAt),
     status: tournamentStatusFor(season, Date.now()),
@@ -146,29 +143,23 @@ export async function ensurePremierTournament(
 
   const existing = await db.tournament.findUnique({
     where: {
-      premierSeasonId_premierTier_premierPhase: {
-        premierSeasonId: season.id,
-        premierTier: tier,
-        premierPhase: phase,
-      },
+      premierSeasonId_premierTier: { premierSeasonId: season.id, premierTier: tier },
     },
     select: { id: true },
   });
   if (existing) {
-    await db.tournament.update({ where: { id: existing.id }, data: dates });
+    await db.tournament.update({ where: { id: existing.id }, data: commun });
     return existing.id;
   }
 
   const t = await db.tournament.create({
     data: {
-      name: nameFor(tier, phase, seasonNumber),
+      name: nameFor(tier, seasonNumber),
       region: "France",
-      format: formatFor(tier, phase),
       organizer: "Riot Games",
       premierSeasonId: season.id,
       premierTier: tier,
-      premierPhase: phase,
-      ...dates,
+      ...commun,
     },
     select: { id: true },
   });
@@ -193,6 +184,23 @@ export async function syncParticipants(
   return r.count;
 }
 
+/**
+ * Retrouve ou crée le `Group` qui porte un arbre parallèle.
+ *
+ * Le Premier Contender joue plusieurs arbres de front ; chacun est un `Group`,
+ * sans quoi `matchGroupIdFor` ne peut pas les séparer et l'affichage les
+ * effondre en un seul arbre incohérent.
+ */
+async function ensureBracketGroup(tournamentId: string, name: string): Promise<string> {
+  const existing = await db.group.findFirst({
+    where: { tournamentId, name },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+  const g = await db.group.create({ data: { tournamentId, name }, select: { id: true } });
+  return g.id;
+}
+
 export type MatchImportOutcome = "IMPORTED" | "SKIPPED" | "FAILED";
 
 /**
@@ -205,7 +213,11 @@ export type MatchImportOutcome = "IMPORTED" | "SKIPPED" | "FAILED";
 export async function importPremierMatch(
   riotMatchId: string,
   tournamentId: string,
-  teamIdByPremierId: ReadonlyMap<string, string>
+  teamIdByPremierId: ReadonlyMap<string, string>,
+  /** Ligne régulière (`GROUP`) ou playoffs (`BRACKET`), avec son tour. */
+  phase: { stage: MatchStage; round?: string | null; groupId?: string | null } = {
+    stage: "GROUP",
+  }
 ): Promise<MatchImportOutcome> {
   const already = await db.matchMap.findUnique({
     where: { riotMatchId },
@@ -243,7 +255,9 @@ export async function importPremierMatch(
       tournamentId,
       teamAId,
       teamBId,
-      stage: "GROUP",
+      stage: phase.stage,
+      round: phase.round ?? null,
+      groupId: phase.groupId ?? null,
       bestOf: 1,
       status: "FINISHED",
       date: raw.startedAt ? new Date(raw.startedAt) : null,
@@ -371,7 +385,7 @@ export async function runPremierSync(
       const n = seasonNumberOf(seasonIds, seasonId) ?? seasonIds.length;
       const fenetre = windows.find((w) => w.id === seasonId)!;
       for (const { tier, entries } of entriesParTier) {
-        const id = await ensurePremierTournament(fenetre, n, tier, "LEAGUE");
+        const id = await ensurePremierTournament(fenetre, n, tier);
         tournamentBySeasonTier.set(cle(seasonId, tier), id);
         await syncParticipants(
           id,
@@ -386,8 +400,14 @@ export async function runPremierSync(
     // Un seul appel d'historique par équipe : il contient toutes les saisons.
     const historiesBySeason = new Map<string, string[][]>(targets.map((sid) => [sid, []]));
     const premierIdsOfMatch = new Map<string, Set<string>>();
+    const participations: { tournamentId: string; matches: string[]; premierId: string }[] = [];
     for (const premierId of parEquipePremier.keys()) {
       const h = await getPremierHistory(premierId);
+      for (const p of h.tournament_matches) {
+        if (p.matches.length > 0) {
+          participations.push({ tournamentId: p.tournament_id, matches: p.matches, premierId });
+        }
+      }
       const parSaison = new Map<string, string[]>(targets.map((sid) => [sid, []]));
       for (const m of h.league_matches) {
         const season = seasonOfMatch(windows, m.started_at);
@@ -424,6 +444,50 @@ export async function runPremierSync(
           if (ligne) ligne.matches += 1;
         } else if (r === "FAILED") report.matchesFailed += 1;
       }
+    }
+
+    // Playoffs. Ils n'ont pas de date dans l'API : leur saison se déduit du
+    // palier des équipes qui y jouent, et le tournoi visé est celui de la
+    // saison la plus récente demandée — c'est là qu'ils ont lieu.
+    const saisonDesPlayoffs = targets[targets.length - 1];
+    const rounds = playoffRounds(participations);
+    const arbres = [...new Set([...rounds.values()].map((r) => r.tournamentId))];
+    const groupIdByArbre = new Map<string, string>();
+
+    for (const [riotMatchId, round] of rounds) {
+      if (report.matchesImported >= matchBudget) {
+        report.matchesPending += 1;
+        continue;
+      }
+      const premierIds = participations
+        .filter((p) => p.matches.includes(riotMatchId))
+        .map((p) => p.premierId);
+      const tier = parEquipePremier.get(premierIds[0] ?? "")?.tier;
+      if (!tier) continue;
+      const tournamentId = tournamentBySeasonTier.get(cle(saisonDesPlayoffs, tier));
+      if (!tournamentId) continue;
+
+      // Un `Group` par arbre, et seulement pour le Contender : l'Invite n'en
+      // joue qu'un, lui en donner un le ferait passer pour un bracket parallèle.
+      let groupId: string | null = null;
+      if (tier === "CONTENDER") {
+        const rang = arbres.indexOf(round.tournamentId);
+        const nom = `Bracket ${String.fromCharCode(65 + Math.max(0, rang))}`;
+        const cache = groupIdByArbre.get(round.tournamentId);
+        groupId = cache ?? (await ensureBracketGroup(tournamentId, nom));
+        groupIdByArbre.set(round.tournamentId, groupId);
+      }
+
+      const r = await importPremierMatch(riotMatchId, tournamentId, teamIdByPremierId, {
+        stage: "BRACKET",
+        round: round.label,
+        groupId,
+      });
+      if (r === "IMPORTED") {
+        report.matchesImported += 1;
+        const ligne = report.seasons.find((x) => x.tournamentId === tournamentId);
+        if (ligne) ligne.matches += 1;
+      } else if (r === "FAILED") report.matchesFailed += 1;
     }
   } catch (e) {
     // Un quota dépassé n'annule pas ce qui a déjà été écrit : équipes, tournois

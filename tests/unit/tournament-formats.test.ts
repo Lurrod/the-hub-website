@@ -7,6 +7,7 @@ import {
   formatAllowsGroups,
   formatUsesGroupSize,
   isPremierFormat,
+  formatGroupsAreBrackets,
 } from "@/lib/constants";
 
 describe("formats Premier", () => {
@@ -15,16 +16,29 @@ describe("formats Premier", () => {
     expect(TOURNAMENT_FORMATS).toContain("PREMIER_INVITE");
   });
 
-  it("ne joue que des matchs de bracket", () => {
-    expect(STAGES_BY_FORMAT.PREMIER_CONTENDER).toEqual(["BRACKET"]);
-    expect(STAGES_BY_FORMAT.PREMIER_INVITE).toEqual(["BRACKET"]);
+  it("joue la ligne régulière puis les playoffs", () => {
+    // Une saison Premier tient dans un seul tournoi : les deux phases vivaient
+    // dans deux tournois séparés, ce qui obligeait à quitter la page pour
+    // passer du classement à l'arbre.
+    expect(STAGES_BY_FORMAT.PREMIER_CONTENDER).toEqual(["GROUP", "BRACKET"]);
+    expect(STAGES_BY_FORMAT.PREMIER_INVITE).toEqual(["GROUP", "BRACKET"]);
   });
 
-  it("laisse le Contender porter des groupes, mais pas l'Invite", () => {
-    // Les brackets parallèles du Contender sont des `Group` : « autorise les
-    // groupes » ne veut plus dire « joue une phase de poules ».
+  it("ne traite en brackets que les groupes du Contender", () => {
+    // L'Invite n'a qu'un arbre : ses `Group`, s'il en portait, seraient des
+    // poules. Le prédicat ne doit pas s'étendre au second format Premier.
+    expect(formatGroupsAreBrackets("PREMIER_CONTENDER")).toBe(true);
+    expect(formatGroupsAreBrackets("PREMIER_INVITE")).toBe(false);
+    expect(formatGroupsAreBrackets("GROUPS")).toBe(false);
+    expect(formatGroupsAreBrackets("LEAGUE")).toBe(false);
+  });
+
+  it("laisse les deux formats Premier porter des groupes", () => {
+    // Ils n'y mettent pas la même chose : les `Group` du Contender sont ses
+    // brackets parallèles, ceux de l'Invite seraient des poules. « Autorise les
+    // groupes » ne dit donc toujours pas « joue une phase de poules ».
     expect(formatAllowsGroups("PREMIER_CONTENDER")).toBe(true);
-    expect(formatAllowsGroups("PREMIER_INVITE")).toBe(false);
+    expect(formatAllowsGroups("PREMIER_INVITE")).toBe(true);
   });
 
   it("ne propose pas de taille de poule", () => {

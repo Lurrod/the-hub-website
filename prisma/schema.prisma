@@ -250,14 +250,17 @@ model Tournament {
   groupSize       Int?
   bestOf          Int?
   seeding         String?
-  /// Identité Premier du tournoi. Les trois champs vont ensemble : ils
+  /// Identité Premier du tournoi. Les deux champs vont ensemble : ils
   /// n'existent que sur les tournois créés par la synchronisation.
-  /// `premierTier` vaut CONTENDER ou INVITE, `premierPhase` LEAGUE ou
-  /// PLAYOFFS. Des `String?` et non des enums : ils servent l'idempotence de
-  /// l'import, jamais l'affichage — c'est `format` qui pilote le rendu.
+  /// `premierTier` vaut CONTENDER ou INVITE. Des `String?` et non des enums :
+  /// ils servent l'idempotence de l'import, jamais l'affichage — c'est
+  /// `format` qui pilote le rendu.
+  ///
+  /// Il y avait un troisième champ, `premierPhase`, qui séparait la ligne
+  /// régulière des playoffs en deux tournois. Les réunir en un seul a rendu la
+  /// distinction inutile : la phase est portée par le `stage` de chaque match.
   premierSeasonId String?
   premierTier     String?
-  premierPhase    String?
   createdById     String?
   createdBy       User?                   @relation("TournamentCreatedBy", fields: [createdById], references: [id])
   managers        TournamentManager[]
@@ -269,7 +272,7 @@ model Tournament {
 
   // Porte l'idempotence de la synchronisation Premier : rejouée, elle
   // retrouve le tournoi au lieu d'en créer un second.
-  @@unique([premierSeasonId, premierTier, premierPhase])
+  @@unique([premierSeasonId, premierTier])
   @@index([region])
   @@index([status])
 }
