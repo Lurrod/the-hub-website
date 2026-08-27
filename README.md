@@ -44,6 +44,7 @@ Toutes sont décrites dans `.env.example`.
 | `NEXTAUTH_URL`                            | URL publique, utilisée pour les callbacks OAuth            |
 | `NEXT_PUBLIC_BASE_URL`                    | URL publique des métadonnées, du sitemap et du robots.txt  |
 | `HENRIKDEV_API_KEY`                       | Clé de l'API HenrikDev (côté serveur uniquement)           |
+| `PREMIER_SYNC_SECRET`                     | Secret de déclenchement de la synchronisation Premier      |
 
 ## Scripts
 
@@ -87,6 +88,128 @@ job joue les parcours Playwright contre une base PostgreSQL éphémère.
 Les seuils de couverture portent sur `src/lib/**` et servent de cliquet : ils
 sont calés sur le niveau atteint, à relever au fil des ajouts de tests. Les
 composants et les pages relèvent des parcours end-to-end.
+
+## Synchronisation du Premier français
+
+Le site tient à jour un miroir du Premier français à partir de l'API HenrikDev.
+Le périmètre est volontairement étroit : le palier **Contender**
+(`EU_FRANCE` division 21, 59 équipes) et le palier **Invite**
+(`EU_FRANCE_SUPER` division 22, 13 équipes). Les divisions inférieures sont
+hors sujet pour un site Tier 3.
+
+Chaque saison donne **un seul tournoi par palier**, au format `PREMIER_CONTENDER`
+ou `PREMIER_INVITE` : ligne régulière et playoffs y cohabitent, la première en
+matchs de phase `GROUP`, les seconds en phase `BRACKET`, de sorte que le
+classement et l'arbre s'affichent sur la même page. Les participants viennent du
+classement et les matchs de l'historique des équipes.
+
+Les logos sont rapatriés dans le stockage local plutôt que servis depuis le CDN
+de HenrikDev, que la CSP bloquerait.
+
+### Rattachement des équipes
+
+Une équipe Premier est reconnue dans cet ordre :
+
+1. Par `Team.premierTeamId`, le cas normal une fois le premier passage fait.
+2. Par son **roster** : au moins trois `puuid` en commun avec une équipe déjà
+   présente sur le site. C'est le seul rapprochement automatique, parce que
+   c'est le seul signal fiable — les noms divergent souvent entre le site et le
+   Premier, et une fusion erronée se défait très mal. Une égalité parfaite entre
+   deux candidates ne tranche pas : le cas remonte dans le rapport.
+3. À défaut, elle est créée et marquée `premierManaged`. Si elle ressemble
+   quand même à une fiche existante (même nom ou même tag), elle est signalée
+   dans `teamsSuspects` plutôt que rattachée d'office.
+
+**Seules les équipes `premierManaged` suivent le nom de Riot.** Une équipe déjà
+présente puis rattachée garde le nom qu'on lui a donné ici.
+
+### Les playoffs
+
+Chaque saison se clôt par un championnat, joué deux à trois jours avant sa fin et
+réservé aux équipes ayant atteint le seuil de points de la saison. Il se dispute
+en **arbres parallèles** : chaque `tournament_id` de `tournament_matches` est un
+arbre, stocké comme un `Group` du tournoi.
+
+L'API ne date pas ces tournois et ne nomme pas leurs tours. Deux déductions, l'une
+et l'autre mesurées avant d'être codées :
+
+- **La saison** vient de la date d'une des parties de l'arbre — un appel par
+  arbre, ils sont deux ou trois par saison. Sans ce filtre, l'historique
+  remontant à plus de deux ans, vingt championnats se fondaient en un seul, avec
+  six « finales » et vingt-deux arbres pour treize matchs.
+- **Le tour** vient du rang du match dans le parcours de l'équipe, et la
+  profondeur de l'arbre du plus long parcours observé. Sur trois championnats
+  réels, un match vu par ses deux équipes apparaît au même rang chez l'une et
+  chez l'autre, sans exception.
+
+**Seule la saison en cours est importée.** Les équipes sont identifiées par leur
+division d'aujourd'hui ; sur une saison passée, jouée avec les divisions d'alors,
+on ne retrouve qu'une partie des participants et l'arbre reconstruit est un
+fragment — arbres à un seul match, byes partout, deux finales dans le même arbre
+parce que le vainqueur réel n'est pas suivi. Le site affiche des résultats, pas
+des simulations.
+
+Seuls sont importés les matchs **dont les deux équipes sont suivies**, reconnus
+au fait qu'ils figurent dans deux historiques. Les autres — adversaire d'une
+autre conférence, d'une division inférieure, ou descendu depuis — étaient
+sinon récupérés pour être aussitôt rejetés, et rerécupérés au passage suivant :
+227 appels par passage pour zéro match importé.
+
+Le paramètre `seasons` remonte le miroir de plusieurs saisons ; les deux
+paliers sont mis en commun avant ce filtre, sans quoi un match de saison passée
+entre une équipe aujourd'hui en Invite et une aujourd'hui en Contender serait
+écarté des deux côtés. **Limite assumée** : le classement est un instantané du
+présent, une saison passée est donc miroitée telle que la voient les équipes
+actuellement dans ces divisions.
+
+Le déclenchement passe par `POST /api/premier/sync`, protégée par
+`PREMIER_SYNC_SECRET` :
+
+```bash
+curl -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" \
+     -H "Content-Type: application/json" -d '{"dryRun":true}' \
+     http://127.0.0.1:3000/api/premier/sync
+```
+
+Le corps accepte `dryRun` (aucune écriture, compte seulement les équipes),
+`matchBudget` (40 par défaut) et `seasons` (1 par défaut). La réponse rend
+`matchesImported` et `matchesPending` : **le passage est borné exprès**. Le
+cron rappelle jusqu'à ce que `matchesPending` tombe à zéro ; les passages
+suivants sont bien plus courts, `MatchMap.riotMatchId` étant unique.
+
+Le quota HenrikDev n'est pas estimé mais **lu dans les en-têtes
+`x-ratelimit-*` de chaque réponse**. Trois choses s'y devinent mal et ont été
+mesurées :
+
+- La limite affichée est de 30 par minute, mais **un appel coûte deux crédits**
+  dès qu'il porte sur une donnée non mise en cache — les requêtes relayées vers
+  Riot sont comptées en plus. Une sonde répétant le même identifiant fait
+  croire à un crédit par appel : elle tape dans le cache.
+- Chaque famille d'endpoints a **son propre seau** (`x-ratelimit-bucket`). Le
+  suivi est donc tenu par famille : partager un compteur entre deux seaux fait
+  patienter une minute pour rien.
+- La fenêtre est fixe, pas glissante : passé `x-ratelimit-reset`, le crédit
+  repart au maximum.
+
+Si le quota tombe malgré tout, le rapport porte `rateLimited: true` et rend la
+progression acquise au lieu de la perdre.
+
+Ordres de grandeur mesurés sur le miroir de deux saisons : **environ 15 minutes
+pour un premier remplissage** (138 matchs) et **quatre minutes pour un passage
+incrémental**. Attention à ne pas couper le client en cours de route — une
+déconnexion avorte le traitement côté serveur, et ce qui restait à faire attend
+le passage suivant.
+
+Ligne de crontab, sur le serveur :
+
+```
+*/15 * * * * /usr/bin/flock -n /tmp/premier-sync.lock curl -s --max-time 840 -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" -H "Content-Type: application/json" -d '{}' http://127.0.0.1:3000/api/premier/sync >> /var/log/premier-sync.log 2>&1
+```
+
+`flock -n` n'est pas décoratif : un passage incrémental dure environ quatre
+minutes, mais un rattrapage après interruption peut approcher le quart d'heure
+du cron. Sans lui, un passage en retard doublerait les appels et ferait tomber
+les deux sur des 429.
 
 ## Déploiement
 

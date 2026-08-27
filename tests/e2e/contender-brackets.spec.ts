@@ -62,6 +62,11 @@ test("un match Contender garde le bracket choisi à la création", async ({ cont
     .locator("form")
     .filter({ has: page.getByRole("button", { name: "Créer le match" }) });
   await expect(creation.locator("label", { hasText: /^Bracket/ })).toBeVisible();
+  // La phase est choisie explicitement depuis que le format joue aussi une
+  // ligne régulière : le formulaire propose « Poule » et « Playoffs », et se
+  // place sur la première. Sans ce choix, le match partirait en phase de poule
+  // et le test ne vérifierait plus rien du bracket.
+  await creation.locator('select[name="stage"]').selectOption("BRACKET");
   await creation.locator('select[name="teamAId"]').selectOption(TEAM_A.id);
   await creation.locator('select[name="teamBId"]').selectOption(TEAM_B.id);
   await creation.locator('select[name="groupId"]').selectOption(bracketAId);

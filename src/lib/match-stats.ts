@@ -293,7 +293,16 @@ function pickRegion(known: Known[]): string {
  */
 export async function importMatchMapFromRiotId(
   matchId: string,
-  input: MatchMapImportInput
+  input: MatchMapImportInput,
+  /**
+   * Partie déjà récupérée par l'appelant.
+   *
+   * La synchronisation Premier doit lire le match **avant** d'appeler cette
+   * fonction : c'est `premier_roster` qui lui dit quelle équipe est A. Le
+   * relire ici doublait sa consommation de quota pour exactement la même
+   * donnée — 250 appels au lieu de 125 sur un import de deux saisons.
+   */
+  dejaRecuperee?: CustomMatch
 ): Promise<ManualImportResult> {
   const match = await db.match.findUnique({
     where: { id: matchId },
@@ -310,11 +319,15 @@ export async function importMatchMapFromRiotId(
   const known = await knownPlayers(match.teamAId, match.teamBId);
 
   let cm: CustomMatch;
-  try {
-    cm = await getCustomMatchById(pickRegion(known), input.riotMatchId);
-  } catch (e) {
-    if (e instanceof RiotIdError && e.code !== "TAKEN") return e.code;
-    return "API_ERROR";
+  if (dejaRecuperee) {
+    cm = dejaRecuperee;
+  } else {
+    try {
+      cm = await getCustomMatchById(pickRegion(known), input.riotMatchId);
+    } catch (e) {
+      if (e instanceof RiotIdError && e.code !== "TAKEN") return e.code;
+      return "API_ERROR";
+    }
   }
 
   const playerIdByPuuid = await playerIdsByPuuid(cm.players.map((p) => p.puuid));

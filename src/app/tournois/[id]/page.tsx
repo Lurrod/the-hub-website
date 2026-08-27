@@ -27,7 +27,7 @@ import StandingsTable from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import TournamentTeams from "@/components/tournament-teams";
 import { buildStandingRows } from "@/lib/standings";
-import { STAGES_BY_FORMAT } from "@/lib/constants";
+import { STAGES_BY_FORMAT, formatGroupsAreBrackets, isPremierFormat } from "@/lib/constants";
 import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
 
@@ -63,11 +63,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     getTournamentTeamStats(id),
   ]);
 
-  // Un `Group` ne vaut classement que si le format joue une phase de poule. Sur
-  // un Premier Contender ce sont des brackets parallèles : en faire des étapes
-  // de classement affichait « Bracket A » et « Bracket B » en deux tableaux
-  // entièrement à zéro, devant l'arbre qu'ils désignent.
-  const groupsAreStandings = STAGES_BY_FORMAT[tournament.format].includes("GROUP");
+  // Deux questions distinctes, longtemps confondues : le format joue-t-il une
+  // phase de poule (donc un classement a du sens), et ses `Group` sont-ils des
+  // poules ou des brackets ? Le Premier Contender répond « oui » à la première
+  // et « brackets » à la seconde : en faire des étapes de classement affichait
+  // « Bracket A » et « Bracket B » en tableaux à zéro devant l'arbre qu'ils
+  // désignent.
+  const playsGroupStage = STAGES_BY_FORMAT[tournament.format].includes("GROUP");
+  const groupsAreBrackets = formatGroupsAreBrackets(tournament.format);
+  const groupsAreStandings = playsGroupStage && !groupsAreBrackets;
 
   // Étapes : chaque poule → son classement ; les playoffs → l'arbre du bracket.
   const stageDefs: { key: string; label: string; content: ReactNode }[] = [];
@@ -86,16 +90,20 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     }
   }
 
-  // Suisse, ligue et round robin se jouent en phase « poule » sans qu'aucune
-  // poule ne soit créée : sans ce classement global, ces trois formats
-  // affichaient leurs matchs mais aucun classement — leur raison d'être.
-  // Couvre aussi une phase de poules dont l'organisateur n'a pas encore
-  // découpé les groupes.
-  //
-  // Même garde que ci-dessus : la question n'est pas « le format peut-il porter
-  // des groupes ? » (vrai pour le Premier Contender) mais « joue-t-il une phase
-  // de poule ? ». Sans elle, un Contender affiche un classement vide.
-  if (groups.length === 0 && groupsAreStandings) {
+  // Classement global. Il couvre trois cas : les formats qui se jouent en phase
+  // « poule » sans qu'aucune poule ne soit créée (suisse, ligue, round robin) —
+  // sans lui ils affichaient leurs matchs mais aucun classement, leur raison
+  // d'être ; une phase de poules que l'organisateur n'a pas encore découpée ; et
+  // le Premier Contender, dont les `Group` servent aux brackets et dont la ligne
+  // régulière n'a donc aucune poule où se ranger.
+  // Un format Premier n'affiche son classement que s'il a réellement joué une
+  // ligne régulière. Sans cette garde, un tournoi de playoffs seuls — ceux
+  // saisis à la main, ou une saison dont le championnat précède l'import —
+  // ouvrait sur un tableau entièrement à zéro qui masquait l'arbre derrière lui.
+  const ligneReguliereJouee = allMatches.some((m) => m.stage === "GROUP");
+  const classementUtile = !isPremierFormat(tournament.format) || ligneReguliereJouee;
+
+  if (playsGroupStage && classementUtile && (groups.length === 0 || groupsAreBrackets)) {
     const rows = buildStandingRows(
       tournament.participants.map((p) => ({
         teamId: p.teamId,

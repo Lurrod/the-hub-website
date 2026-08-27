@@ -293,8 +293,12 @@ export const STAGES_BY_FORMAT: Record<TournamentFormat, readonly MatchStage[]> =
   SWISS: ["GROUP"],
   ROUND_ROBIN: ["GROUP"],
   LEAGUE: ["GROUP"],
-  PREMIER_CONTENDER: ["BRACKET"],
-  PREMIER_INVITE: ["BRACKET"],
+  // Une saison Premier se joue en deux temps : la ligne régulière, dont le
+  // classement décide des qualifiés, puis les playoffs. Les deux vivaient dans
+  // deux tournois séparés, ce qui obligeait à quitter la page pour passer de
+  // l'un à l'autre alors qu'ils ne font qu'une seule saison.
+  PREMIER_CONTENDER: ["GROUP", "BRACKET"],
+  PREMIER_INVITE: ["GROUP", "BRACKET"],
 };
 
 /** Description courte de chaque format, affichée dans le sélecteur de création. */
@@ -307,9 +311,9 @@ export const TOURNAMENT_FORMAT_DESCRIPTIONS: Record<TournamentFormat, string> = 
   ROUND_ROBIN: "Toutes les équipes s'affrontent une fois, classement global.",
   LEAGUE: "Championnat sur la durée (aller ou aller-retour), classement cumulé.",
   PREMIER_CONTENDER:
-    "Playoffs Premier Contender : plusieurs arbres parallèles de 8 équipes, Bo1 jusqu'aux finales en Bo3.",
+    "Saison Premier Contender : ligne régulière classée, puis plusieurs arbres de playoffs en parallèle.",
   PREMIER_INVITE:
-    "Playoffs Premier Invite : un arbre à élimination directe de 8 équipes, Bo1 jusqu'à la finale en Bo3.",
+    "Saison Premier Invite : ligne régulière classée, puis un arbre de playoffs à élimination directe.",
 };
 
 /**
@@ -327,10 +331,27 @@ const FORMATS_WITH_GROUPS: readonly TournamentFormat[] = [
   "ROUND_ROBIN",
   "LEAGUE",
   "PREMIER_CONTENDER",
+  // Depuis que l'Invite joue lui aussi une ligne régulière, il peut porter des
+  // poules — au sens propre cette fois, contrairement au Contender dont les
+  // groupes sont des brackets.
+  "PREMIER_INVITE",
 ];
 
 export function formatAllowsGroups(format: TournamentFormat): boolean {
   return FORMATS_WITH_GROUPS.includes(format);
+}
+
+/**
+ * Les `Group` de ce format désignent-ils des brackets et non des poules ?
+ *
+ * Le Premier Contender est le seul cas : ses arbres parallèles sont stockés
+ * comme des `Group`. Le prédicat vivait en dur dans la page de gestion ; depuis
+ * que le format joue aussi une phase de poule, la page publique en a besoin
+ * elle aussi — sans quoi elle afficherait « Bracket A » et « Bracket B » en
+ * tableaux de classement vides devant l'arbre qu'ils désignent.
+ */
+export function formatGroupsAreBrackets(format: TournamentFormat): boolean {
+  return format === "PREMIER_CONTENDER";
 }
 
 /** Le format s'appuie-t-il sur une taille de poule configurable ? */
