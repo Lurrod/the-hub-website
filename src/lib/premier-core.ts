@@ -138,6 +138,28 @@ export function sideOfRoster(
   };
 }
 
+export type PremierTournamentStatus = "UPCOMING" | "ONGOING" | "FINISHED";
+
+/**
+ * Statut d'un tournoi Premier déduit de la fenêtre de sa saison.
+ *
+ * Le figer à « en cours » à la création laissait les saisons passées
+ * éternellement ouvertes. Les dates étant posées sur le tournoi, le recalage
+ * nocturne (`scripts/sync-tournament-statuses.mjs`) prend ensuite le relais —
+ * ce calcul ne sert qu'à ne pas afficher une bêtise entre-temps.
+ *
+ * Des dates illisibles rendent « en cours » : déclarer terminé sur une donnée
+ * qu'on n'a pas su lire masquerait le tournoi.
+ */
+export function tournamentStatusFor(season: PremierSeason, nowMs: number): PremierTournamentStatus {
+  const from = Date.parse(season.startsAt);
+  const to = Date.parse(season.endsAt);
+  if (Number.isNaN(from) || Number.isNaN(to)) return "ONGOING";
+  if (nowMs >= to) return "FINISHED";
+  if (nowMs < from) return "UPCOMING";
+  return "ONGOING";
+}
+
 export type PremierBracket = { name: string; teamIds: string[] };
 
 /** Taille d'un arbre Premier, imposée par Riot. */

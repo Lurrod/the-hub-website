@@ -7,7 +7,9 @@ import {
   seasonNumberOf,
   dedupeMatchIds,
   sideOfRoster,
+  tournamentStatusFor,
   type PremierTier,
+  type PremierSeason,
 } from "@/lib/premier-core";
 import {
   getCustomMatchById,
@@ -123,35 +125,50 @@ function nameFor(tier: PremierTier, phase: Phase, seasonNumber: number): string 
  * L'idempotence tient à la contrainte unique
  * `(premierSeasonId, premierTier, premierPhase)` : rejouée, la synchronisation
  * retrouve le tournoi au lieu d'en créer un second à chaque passage du cron.
+ *
+ * Les dates et le statut sont réécrits à chaque passage, pas seulement à la
+ * création : les premiers tournois importés avaient été figés à « en cours »
+ * sans dates, ce qui laissait les saisons passées éternellement ouvertes. Les
+ * poser ici les remet d'aplomb, et le recalage nocturne des statuts prend
+ * ensuite le relais tout seul.
  */
 export async function ensurePremierTournament(
-  seasonId: string,
+  season: PremierSeason,
   seasonNumber: number,
   tier: PremierTier,
   phase: Phase
 ): Promise<string> {
+  const dates = {
+    startDate: new Date(season.startsAt),
+    endDate: new Date(season.endsAt),
+    status: tournamentStatusFor(season, Date.now()),
+  };
+
   const existing = await db.tournament.findUnique({
     where: {
       premierSeasonId_premierTier_premierPhase: {
-        premierSeasonId: seasonId,
+        premierSeasonId: season.id,
         premierTier: tier,
         premierPhase: phase,
       },
     },
     select: { id: true },
   });
-  if (existing) return existing.id;
+  if (existing) {
+    await db.tournament.update({ where: { id: existing.id }, data: dates });
+    return existing.id;
+  }
 
   const t = await db.tournament.create({
     data: {
       name: nameFor(tier, phase, seasonNumber),
       region: "France",
       format: formatFor(tier, phase),
-      status: "ONGOING",
       organizer: "Riot Games",
-      premierSeasonId: seasonId,
+      premierSeasonId: season.id,
       premierTier: tier,
       premierPhase: phase,
+      ...dates,
     },
     select: { id: true },
   });
@@ -235,10 +252,13 @@ export async function importPremierMatch(
     select: { id: true },
   });
 
-  const r = await importMatchMapFromRiotId(match.id, {
-    riotMatchId,
-    outcomeOfTeamA: sides.outcomeOfTeamA,
-  });
+  // `raw` est passé tel quel : il vient d'être récupéré pour lire
+  // `premier_roster`, et le relire coûterait un second crédit par match.
+  const r = await importMatchMapFromRiotId(
+    match.id,
+    { riotMatchId, outcomeOfTeamA: sides.outcomeOfTeamA },
+    raw
+  );
   if (r !== "IMPORTED") {
     // Sans carte, le match du site est une coquille vide qui polluerait les
     // listes. `Match` n'est la cible d'aucune cascade destructrice : la
@@ -327,7 +347,8 @@ export async function runPremierSync(
       const idsBySeason = new Map<string, string[]>();
       for (const seasonId of targets) {
         const n = seasonNumberOf(seasonIds, seasonId) ?? seasonIds.length;
-        const id = await ensurePremierTournament(seasonId, n, tier, "LEAGUE");
+        const fenetre = windows.find((w) => w.id === seasonId)!;
+        const id = await ensurePremierTournament(fenetre, n, tier, "LEAGUE");
         tournamentBySeason.set(seasonId, id);
         idsBySeason.set(seasonId, []);
         await syncParticipants(id, [...teams.byPremierId.values()]);

@@ -7,6 +7,7 @@ import {
   dedupeMatchIds,
   sideOfRoster,
   bracketsOf,
+  tournamentStatusFor,
   quotaDelayMs,
   secretMatches,
   QUOTA_FLOOR,
@@ -175,6 +176,33 @@ describe("bracketsOf", () => {
 
   it("rend une liste vide sans équipe", () => {
     expect(bracketsOf([])).toEqual([]);
+  });
+});
+
+describe("tournamentStatusFor", () => {
+  const s19 = { id: "s19", startsAt: "2026-08-19T03:15:00Z", endsAt: "2026-10-14T03:15:00Z" };
+
+  it("dit « en cours » pendant la fenêtre", () => {
+    expect(tournamentStatusFor(s19, Date.parse("2026-09-01T00:00:00Z"))).toBe("ONGOING");
+  });
+
+  it("dit « terminé » après la fin", () => {
+    expect(tournamentStatusFor(s19, Date.parse("2026-10-15T00:00:00Z"))).toBe("FINISHED");
+  });
+
+  it("dit « à venir » avant le début", () => {
+    expect(tournamentStatusFor(s19, Date.parse("2026-08-01T00:00:00Z"))).toBe("UPCOMING");
+  });
+
+  it("bascule pile aux bornes", () => {
+    expect(tournamentStatusFor(s19, Date.parse("2026-08-19T03:15:00Z"))).toBe("ONGOING");
+    expect(tournamentStatusFor(s19, Date.parse("2026-10-14T03:15:00Z"))).toBe("FINISHED");
+  });
+
+  it("se rabat sur « en cours » quand les dates sont illisibles", () => {
+    // Une saison sans fenêtre exploitable ne doit pas être déclarée terminée :
+    // le recalage nocturne des statuts la corrigera si besoin.
+    expect(tournamentStatusFor({ id: "x", startsAt: "", endsAt: "" }, 0)).toBe("ONGOING");
   });
 });
 
