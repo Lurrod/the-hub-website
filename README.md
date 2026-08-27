@@ -181,7 +181,7 @@ Le déclenchement passe par `POST /api/premier/sync`, protégée par
 ```bash
 curl -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" \
      -H "Content-Type: application/json" -d '{"dryRun":true}' \
-     http://127.0.0.1:3000/api/premier/sync
+     http://127.0.0.1:3200/api/premier/sync
 ```
 
 Le corps accepte `dryRun` (aucune écriture, compte seulement les équipes),
@@ -216,7 +216,7 @@ le passage suivant.
 Ligne de crontab, sur le serveur :
 
 ```
-*/15 * * * * /usr/bin/flock -n /tmp/premier-sync.lock curl -s --max-time 840 -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" -H "Content-Type: application/json" -d '{}' http://127.0.0.1:3000/api/premier/sync >> /var/log/premier-sync.log 2>&1
+*/15 * * * * set -a && . /var/www/the-hub-vrc.fr/shared/.env && set +a && /usr/bin/flock -n /tmp/premier-sync.lock curl -s --max-time 840 -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" -H "Content-Type: application/json" -d '{}' http://127.0.0.1:3200/api/premier/sync >> /var/www/the-hub-vrc.fr/shared/logs/cron.log 2>&1
 ```
 
 `flock -n` n'est pas décoratif : un passage incrémental dure environ quatre
