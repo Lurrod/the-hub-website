@@ -174,6 +174,68 @@ export function tournamentStatusFor(season: PremierSeason, nowMs: number): Premi
 
 export type PremierParticipation = { tournamentId: string; matches: readonly string[] };
 
+/**
+ * Joueurs en commun exigés pour rattacher une équipe du site à une équipe
+ * Premier.
+ *
+ * Trois sur cinq : en dessous, c'est un transfert de joueurs entre deux
+ * équipes distinctes, pas la même équipe sous deux fiches.
+ */
+export const ROSTER_MATCH_MIN = 3;
+
+export type RosterCandidate = { teamId: string; puuids: readonly string[] };
+
+/**
+ * Équipe du site correspondant à un roster Premier, s'il y en a une.
+ *
+ * Le nom ne prouve rien — il diverge souvent entre le site et le Premier — mais
+ * le roster, si : les `puuid` sont la seule clé stable entre les deux mondes.
+ *
+ * Une égalité parfaite entre deux candidates rend `null` plutôt que d'en
+ * choisir une : rattacher la mauvaise fiche fusionnerait deux historiques, et
+ * cela se défait très mal. Le cas remonte alors dans le rapport, à trancher à
+ * la main.
+ */
+export function bestRosterMatch(
+  premierPuuids: readonly string[],
+  candidates: readonly RosterCandidate[]
+): { teamId: string; common: number } | null {
+  const roster = new Set(premierPuuids);
+  if (roster.size === 0) return null;
+
+  const scores = candidates
+    .map((c) => ({
+      teamId: c.teamId,
+      common: new Set([...new Set(c.puuids)].filter((p) => roster.has(p))).size,
+    }))
+    .filter((c) => c.common >= ROSTER_MATCH_MIN)
+    .sort((a, b) => b.common - a.common);
+
+  if (scores.length === 0) return null;
+  if (scores.length > 1 && scores[0].common === scores[1].common) return null;
+  return scores[0];
+}
+
+/** Nom ou tag, comparés sans casse, accents ni espaces superflus. */
+function cle(v: string): string {
+  return v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Deux fiches se ressemblent-elles assez pour mériter un coup d'œil ?
+ *
+ * Ne sert **pas** à rattacher — un homonyme fusionnerait deux équipes — mais à
+ * signaler dans le rapport les doublons probables que le roster n'a pas su
+ * reconnaître, par exemple faute de comptes Riot liés.
+ */
+export function looksLikeSameTeam(
+  a: { name: string; tag: string },
+  b: { name: string; tag: string }
+): boolean {
+  if (cle(a.name) && cle(a.name) === cle(b.name)) return true;
+  return Boolean(cle(a.tag)) && cle(a.tag) === cle(b.tag);
+}
+
 export type ValorantAct = { id: string; name: string };
 
 /** « ACT V » -> « Act V » : le catalogue crie, pas les noms de tournoi. */

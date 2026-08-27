@@ -47,6 +47,8 @@ export async function POST(req: Request) {
       seasons: report.seasons.length,
       teamsCreated: report.teamsCreated,
       teamsLinked: report.teamsLinked,
+      teamsRosterLinked: report.teamsRosterLinked,
+      teamsSuspects: report.teamsSuspects.length,
       matchesImported: report.matchesImported,
       matchesFailed: report.matchesFailed,
       matchesPending: report.matchesPending,

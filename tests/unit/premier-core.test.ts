@@ -8,6 +8,8 @@ import {
   sideOfRoster,
   bracketNameFor,
   actNameFor,
+  bestRosterMatch,
+  looksLikeSameTeam,
   playoffSeries,
   tournamentStatusFor,
   quotaDelayMs,
@@ -341,5 +343,74 @@ describe("actNameFor", () => {
 
   it("rend l'acte seul si aucune année ne le précède", () => {
     expect(actNameFor([{ id: "a1", name: "ACT I" }], "a1")).toBe("Act I");
+  });
+});
+
+describe("bestRosterMatch", () => {
+  const roster = ["p1", "p2", "p3", "p4", "p5"];
+
+  it("rattache l'équipe qui partage assez de joueurs", () => {
+    const m = bestRosterMatch(roster, [
+      { teamId: "t1", puuids: ["p1", "p2", "p3", "x"] },
+      { teamId: "t2", puuids: ["p4"] },
+    ]);
+    expect(m).toEqual({ teamId: "t1", common: 3 });
+  });
+
+  it("refuse en dessous du seuil", () => {
+    // Deux joueurs en commun, c'est un transfert, pas la même équipe.
+    expect(bestRosterMatch(roster, [{ teamId: "t1", puuids: ["p1", "p2"] }])).toBeNull();
+  });
+
+  it("prend l'équipe la plus proche quand plusieurs dépassent le seuil", () => {
+    const m = bestRosterMatch(roster, [
+      { teamId: "t1", puuids: ["p1", "p2", "p3"] },
+      { teamId: "t2", puuids: ["p1", "p2", "p3", "p4", "p5"] },
+    ]);
+    expect(m?.teamId).toBe("t2");
+  });
+
+  it("refuse en cas d'égalité parfaite entre deux équipes", () => {
+    // Départager au hasard rattacherait la mauvaise fiche, et une fusion
+    // erronée se défait très mal.
+    const m = bestRosterMatch(roster, [
+      { teamId: "t1", puuids: ["p1", "p2", "p3"] },
+      { teamId: "t2", puuids: ["p3", "p4", "p5"] },
+    ]);
+    expect(m).toBeNull();
+  });
+
+  it("ignore les doublons de puuid", () => {
+    expect(bestRosterMatch(roster, [{ teamId: "t1", puuids: ["p1", "p1", "p1"] }])).toBeNull();
+  });
+
+  it("rend null sans candidat ni roster", () => {
+    expect(bestRosterMatch(roster, [])).toBeNull();
+    expect(bestRosterMatch([], [{ teamId: "t1", puuids: ["p1", "p2", "p3"] }])).toBeNull();
+  });
+});
+
+describe("looksLikeSameTeam", () => {
+  it("reconnaît un nom identique à la casse et aux accents près", () => {
+    expect(
+      looksLikeSameTeam({ name: "Équipe Alpha", tag: "EA" }, { name: "equipe alpha", tag: "XX" })
+    ).toBe(true);
+  });
+
+  it("reconnaît un tag identique", () => {
+    expect(looksLikeSameTeam({ name: "Alpha", tag: "ALP" }, { name: "Bravo", tag: "alp" })).toBe(
+      true
+    );
+  });
+
+  it("ne rapproche pas deux équipes sans rapport", () => {
+    expect(looksLikeSameTeam({ name: "Alpha", tag: "ALP" }, { name: "Bravo", tag: "BRV" })).toBe(
+      false
+    );
+  });
+
+  it("ignore un tag vide", () => {
+    // Sans cette garde, toutes les équipes sans tag se ressembleraient.
+    expect(looksLikeSameTeam({ name: "Alpha", tag: "" }, { name: "Bravo", tag: "" })).toBe(false);
   });
 });

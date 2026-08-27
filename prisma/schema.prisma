@@ -101,6 +101,12 @@ model Team {
   /// rapprochement par nom+tag scinderait l'historique d'une équipe au premier
   /// renommage côté Riot.
   premierTeamId   String?                 @unique
+  /// L'équipe a-t-elle été créée par la synchronisation Premier ?
+  ///
+  /// Distingue « créée par le miroir », dont Riot est la source de vérité y
+  /// compris pour le nom, de « déjà présente sur le site et rattachée après
+  /// coup », dont le nom a été choisi ici et ne doit pas être écrasé.
+  premierManaged  Boolean                 @default(false)
   createdById     String?
   createdBy       User?                   @relation("TeamCreatedBy", fields: [createdById], references: [id])
   managers        TeamManager[]

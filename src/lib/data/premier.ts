@@ -10,6 +10,8 @@ import {
   playoffSeries,
   bracketNameFor,
   actNameFor,
+  bestRosterMatch,
+  looksLikeSameTeam,
   type PlayoffSeries,
   tournamentStatusFor,
   type PremierTier,
@@ -22,6 +24,7 @@ import {
   getPremierLeaderboard,
   getPremierSeasons,
   getValorantActs,
+  getPremierTeam,
   RiotIdError,
   type CustomMatch,
 } from "@/lib/henrikdev";
@@ -41,36 +44,79 @@ import type { TournamentFormat } from "@/lib/constants";
 export type TeamSyncResult = {
   created: number;
   linked: number;
+  /** Rattachées à une fiche déjà présente sur le site, par leur roster. */
+  rosterLinked: number;
+  /** Créées malgré une ressemblance avec une fiche existante : à arbitrer. */
+  suspects: string[];
   byPremierId: Map<string, string>;
 };
+
+/** Équipes du site non encore rattachées, avec les puuid de leur roster actif. */
+async function candidatesARattacher(): Promise<
+  { teamId: string; name: string; tag: string; puuids: string[] }[]
+> {
+  const teams = await db.team.findMany({
+    where: { premierTeamId: null },
+    select: {
+      id: true,
+      name: true,
+      tag: true,
+      memberships: {
+        where: { leaveDate: null },
+        select: { player: { select: { puuid: true } } },
+      },
+    },
+  });
+  return teams.map((t) => ({
+    teamId: t.id,
+    name: t.name,
+    tag: t.tag,
+    puuids: t.memberships.map((m) => m.player.puuid).filter((p): p is string => Boolean(p)),
+  }));
+}
 
 /**
  * Rattache ou crée les équipes d'un palier, et rend la correspondance
  * UUID Premier → identifiant d'équipe du site.
  *
- * Le rattachement passe par `premierTeamId` et jamais par le nom : une équipe
- * qui se renomme côté Riot doit rester la même ici, sans quoi son historique de
- * matchs se scinderait en deux fiches.
+ * Trois cas, dans cet ordre :
+ *
+ * 1. **Déjà rattachée** par `premierTeamId` — le chemin normal une fois le
+ *    premier passage fait. Aucun appel réseau.
+ * 2. **Reconnue par son roster** : au moins trois `puuid` en commun avec une
+ *    équipe du site. C'est le seul rapprochement automatique, parce que c'est
+ *    le seul signal fiable — les noms divergent entre le site et le Premier, et
+ *    une fusion erronée se défait très mal. Coûte un appel par équipe inconnue,
+ *    donc une fois pour toutes.
+ * 3. **Créée**, en la marquant `premierManaged` : Riot devient sa source de
+ *    vérité, nom compris. Si elle ressemble malgré tout à une fiche existante
+ *    (même nom ou même tag), elle est signalée dans le rapport plutôt que
+ *    rattachée d'office.
+ *
+ * Une équipe rattachée au cas 2 **garde le nom qu'on lui a donné ici** : il a
+ * été choisi, il ne doit pas être écrasé par la synchronisation.
  */
 export async function syncPremierTeams(
   entries: readonly PremierTeamEntry[]
 ): Promise<TeamSyncResult> {
   const byPremierId = new Map<string, string>();
+  const suspects: string[] = [];
   let created = 0;
   let linked = 0;
+  let rosterLinked = 0;
+  let candidates: Awaited<ReturnType<typeof candidatesARattacher>> | null = null;
 
   for (const e of entries) {
     const existing = await db.team.findUnique({
       where: { premierTeamId: e.id },
-      select: { id: true, name: true, tag: true },
+      select: { id: true, name: true, tag: true, premierManaged: true },
     });
 
     if (existing) {
       linked += 1;
       byPremierId.set(e.id, existing.id);
-      // Riot fait foi sur le nom d'une équipe Premier : c'est là qu'elle se
-      // renomme, et le site doit suivre plutôt qu'afficher un nom périmé.
-      if (existing.name !== e.name || existing.tag !== e.tag) {
+      // Riot fait foi sur le nom des seules équipes qu'il nous a données.
+      if (existing.premierManaged && (existing.name !== e.name || existing.tag !== e.tag)) {
         await db.team.update({
           where: { id: existing.id },
           data: { name: e.name, tag: e.tag },
@@ -79,8 +125,43 @@ export async function syncPremierTeams(
       continue;
     }
 
+    // La liste des candidates n'est chargée qu'au premier besoin : passé le
+    // remplissage initial, aucune équipe n'est inconnue et la requête ne part
+    // jamais.
+    candidates ??= await candidatesARattacher();
+
+    let roster: string[] = [];
+    try {
+      roster = (await getPremierTeam(e.id)).member.map((m) => m.puuid);
+    } catch (err) {
+      if (estQuotaDepasse(err)) throw err;
+      logger.warn("premier.roster.failed", { premierTeamId: e.id, ...describeError(err) });
+    }
+
+    const match = bestRosterMatch(roster, candidates);
+    if (match) {
+      await db.team.update({
+        where: { id: match.teamId },
+        data: { premierTeamId: e.id },
+      });
+      rosterLinked += 1;
+      byPremierId.set(e.id, match.teamId);
+      candidates = candidates.filter((c) => c.teamId !== match.teamId);
+      logger.info("premier.team.roster_linked", { premierTeamId: e.id, common: match.common });
+      continue;
+    }
+
+    const ressemblance = candidates.find((c) => looksLikeSameTeam(e, c));
+    if (ressemblance) suspects.push(`${e.name} (${e.tag})`);
+
     const team = await db.team.create({
-      data: { name: e.name, tag: e.tag, region: "France", premierTeamId: e.id },
+      data: {
+        name: e.name,
+        tag: e.tag,
+        region: "France",
+        premierTeamId: e.id,
+        premierManaged: true,
+      },
       select: { id: true },
     });
     created += 1;
@@ -88,7 +169,7 @@ export async function syncPremierTeams(
     await storePremierLogo(team.id, e.customization?.image);
   }
 
-  return { created, linked, byPremierId };
+  return { created, linked, rosterLinked, suspects, byPremierId };
 }
 
 /**
@@ -394,6 +475,10 @@ export type SyncReport = {
   seasons: { seasonNumber: number; tier: PremierTier; tournamentId: string; matches: number }[];
   teamsCreated: number;
   teamsLinked: number;
+  /** Rattachées à une fiche existante grâce à leur roster. */
+  teamsRosterLinked: number;
+  /** Créées malgré une ressemblance avec une fiche existante : à arbitrer. */
+  teamsSuspects: string[];
   matchesImported: number;
   matchesFailed: number;
   matchesPending: number;
@@ -440,6 +525,8 @@ export async function runPremierSync(
     seasons: [],
     teamsCreated: 0,
     teamsLinked: 0,
+    teamsRosterLinked: 0,
+    teamsSuspects: [],
     matchesImported: 0,
     matchesFailed: 0,
     matchesPending: 0,
@@ -473,6 +560,8 @@ export async function runPremierSync(
       const teams = await syncPremierTeams(entries);
       report.teamsCreated += teams.created;
       report.teamsLinked += teams.linked;
+      report.teamsRosterLinked += teams.rosterLinked;
+      report.teamsSuspects.push(...teams.suspects);
       for (const [premierId, teamId] of teams.byPremierId) {
         parEquipePremier.set(premierId, { teamId, tier });
       }
