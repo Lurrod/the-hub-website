@@ -182,16 +182,27 @@ export async function syncPremierTeams(
  */
 async function storePremierLogo(teamId: string, url: string | undefined): Promise<void> {
   if (!url) return;
+  // `fetch` de Node n'a aucun délai d'abandon par défaut : sans ce garde-fou,
+  // un CDN qui cale sur l'un des 72 logos suspend la synchronisation entière,
+  // sans fin ni trace. Tous les autres appels du miroir sont bornés ; celui-ci
+  // était passé au travers.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), LOGO_TIMEOUT_MS);
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) return;
     const buf = Buffer.from(await res.arrayBuffer());
     const key = await processAndStoreImage(buf, "teams", teamId);
     await db.team.update({ where: { id: teamId }, data: { logo: key } });
   } catch (e) {
     logger.warn("premier.logo.failed", { teamId, ...describeError(e) });
+  } finally {
+    clearTimeout(timeout);
   }
 }
+
+/** Au-delà, le logo est abandonné : une fiche sans image reste utilisable. */
+const LOGO_TIMEOUT_MS = 10_000;
 
 /** Format du site pour un palier. Ligne régulière et playoffs y cohabitent. */
 function formatFor(tier: PremierTier): TournamentFormat {
