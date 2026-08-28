@@ -12,6 +12,8 @@ import {
   actNameFor,
   bestRosterMatch,
   looksLikeSameTeam,
+  premierRecordFingerprint,
+  shouldRefreshHistory,
   type PlayoffSeries,
   tournamentStatusFor,
   type PremierTier,
@@ -257,7 +259,15 @@ export async function ensurePremierTournament(
     select: { id: true },
   });
   if (existing) {
-    await db.tournament.update({ where: { id: existing.id }, data: commun });
+    // Un nom d'acte inconnu n'écrase pas un nom déjà juste. Un passage qui ne
+    // relit aucun historique n'a aucune partie sous la main pour redériver
+    // l'acte : sans cette garde, « Premier Invite — V26 Act V » retomberait sur
+    // un nom générique à chaque passage calme. `undefined` dit à Prisma de ne
+    // pas toucher au champ, là où `null` l'effacerait.
+    await db.tournament.update({
+      where: { id: existing.id },
+      data: actName === null ? { ...commun, name: undefined } : commun,
+    });
     return existing.id;
   }
 
@@ -493,6 +503,13 @@ export type SyncReport = {
   matchesImported: number;
   matchesFailed: number;
   matchesPending: number;
+  /**
+   * Équipes dont l'historique n'a pas été relu, leur bilan au classement
+   * n'ayant pas bougé. C'est la mesure de ce que le passage a économisé : un
+   * chiffre qui resterait à zéro hors balayage complet trahirait une empreinte
+   * qui ne se compare pas.
+   */
+  teamsSkipped: number;
   /** Le passage s'est-il arrêté sur le quota plutôt qu'au bout de son travail ? */
   rateLimited: boolean;
 };
@@ -523,7 +540,8 @@ function estQuotaDepasse(e: unknown): boolean {
 export async function runPremierSync(
   matchBudget: number,
   dryRun: boolean,
-  seasonCount = 1
+  seasonCount = 1,
+  fullSweep = true
 ): Promise<SyncReport> {
   const seasons = await getPremierSeasons("eu");
   const seasonIds = seasons.map((s) => s.id);
@@ -541,6 +559,7 @@ export async function runPremierSync(
     matchesImported: 0,
     matchesFailed: 0,
     matchesPending: 0,
+    teamsSkipped: 0,
     rateLimited: false,
   };
   if (targets.length === 0) return report;
@@ -583,11 +602,31 @@ export async function runPremierSync(
       [...parEquipePremier].map(([premierId, v]) => [premierId, v.teamId])
     );
 
+    // Bilan lu au classement, contre bilan du dernier historique obtenu : ce
+    // qui n'a pas bougé n'a pas rejoué, et son historique ne sera pas rappelé.
+    // Les deux classements coûtent deux appels pour les 72 équipes, là où les
+    // historiques en coûtent un chacun.
+    const empreinteParPremierId = new Map<string, string | null>();
+    for (const { entries } of entriesParTier) {
+      for (const e of entries) empreinteParPremierId.set(e.id, premierRecordFingerprint(e));
+    }
+    const enregistrees = await db.team.findMany({
+      where: { id: { in: [...parEquipePremier.values()].map((v) => v.teamId) } },
+      select: { id: true, premierRecord: true },
+    });
+    const derniereParTeamId = new Map(enregistrees.map((t) => [t.id, t.premierRecord]));
+
     // Un seul appel d'historique par équipe : il contient toutes les saisons.
     const historiesBySeason = new Map<string, string[][]>(targets.map((sid) => [sid, []]));
     const premierIdsOfMatch = new Map<string, Set<string>>();
     const participations: { tournamentId: string; matches: string[]; premierId: string }[] = [];
-    for (const premierId of parEquipePremier.keys()) {
+    for (const [premierId, { teamId }] of parEquipePremier) {
+      const courante = empreinteParPremierId.get(premierId) ?? null;
+      const derniere = derniereParTeamId.get(teamId) ?? null;
+      if (!shouldRefreshHistory(courante, derniere, fullSweep)) {
+        report.teamsSkipped += 1;
+        continue;
+      }
       const h = await getPremierHistory(premierId);
       for (const p of h.tournament_matches) {
         if (p.matches.length > 0) {
@@ -605,6 +644,13 @@ export async function runPremierSync(
       }
       for (const seasonId of targets) {
         historiesBySeason.get(seasonId)!.push(parSaison.get(seasonId)!);
+      }
+
+      // Écrit **après** l'historique, jamais avant : un appel tombé en échec
+      // laisse l'empreinte en l'état, et l'équipe sera réessayée au passage
+      // suivant au lieu d'être sautée pour toujours.
+      if (courante !== null && courante !== derniere) {
+        await db.team.update({ where: { id: teamId }, data: { premierRecord: courante } });
       }
     }
 

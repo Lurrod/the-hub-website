@@ -107,6 +107,15 @@ model Team {
   /// compris pour le nom, de « déjà présente sur le site et rattachée après
   /// coup », dont le nom a été choisi ici et ne doit pas être écrasé.
   premierManaged  Boolean                 @default(false)
+  /// Empreinte « victoires-défaites-score » du dernier historique Premier
+  /// obtenu pour cette équipe.
+  ///
+  /// Sert uniquement à détecter qu'elle a rejoué : le classement du site reste
+  /// calculé depuis les matchs, et stocker ce bilan comme donnée créerait une
+  /// seconde source de vérité qui finirait par le contredire. Nullable tant
+  /// qu'aucun historique n'a abouti — un appel en échec ne l'écrit pas, sans
+  /// quoi l'équipe serait sautée pour toujours.
+  premierRecord   String?
   createdById     String?
   createdBy       User?                   @relation("TeamCreatedBy", fields: [createdById], references: [id])
   managers        TeamManager[]
