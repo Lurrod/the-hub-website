@@ -5,6 +5,15 @@ import EmptyState, { ListDecor } from "@/components/empty-state";
 import { getPremierOverview, listPremierResults } from "@/lib/data/premier-view";
 import { pageMetadata } from "@/lib/metadata";
 
+/**
+ * La page lit la base sans aucune entrée dynamique — ni `params`, ni
+ * `searchParams`. Next la juge donc prérendable et l'exécute au build, où elle
+ * tombe sur le `DATABASE_URL` factice de la CI : « Authentication failed against
+ * database server ». Les autres pages de liste y échappent par accident, en
+ * attendant `searchParams` pour leurs filtres.
+ */
+export const dynamic = "force-dynamic";
+
 export const metadata = pageMetadata({
   path: "/premier",
   title: "Premier",
