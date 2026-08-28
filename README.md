@@ -213,16 +213,40 @@ incrémental**. Attention à ne pas couper le client en cours de route — une
 déconnexion avorte le traitement côté serveur, et ce qui restait à faire attend
 le passage suivant.
 
-Ligne de crontab, sur le serveur :
+Planification, sur le serveur. L'appel est enveloppé dans
+`shared/premier-sync.sh` — tenu hors du dépôt, avec les autres fichiers
+d'exploitation : il source le `.env`, prend un budget de matchs en argument et
+journalise lui-même dans `shared/logs/cron.log`.
 
 ```
-*/15 * * * * set -a && . /var/www/the-hub-vrc.fr/shared/.env && set +a && /usr/bin/flock -n /tmp/premier-sync.lock curl -s --max-time 840 -X POST -H "Authorization: Bearer $PREMIER_SYNC_SECRET" -H "Content-Type: application/json" -d '{}' http://127.0.0.1:3200/api/premier/sync >> /var/www/the-hub-vrc.fr/shared/logs/cron.log 2>&1
+# Samedi 20h00 -> 23h55 : les creneaux de 19h15 et 21h15 se
+# terminent dans cette fenetre, le flock enchaine les passages.
+*/5 20-23 * * 6 /var/www/the-hub-vrc.fr/shared/premier-sync.sh
+# Dimanche a vendredi : un passage, budget elargi pour absorber
+# une journee de playoffs sans etaler le rattrapage.
+0 6 * * 0-5 /var/www/the-hub-vrc.fr/shared/premier-sync.sh 100
 ```
 
-`flock -n` n'est pas décoratif : un passage incrémental dure environ quatre
-minutes, mais un rattrapage après interruption peut approcher le quart d'heure
-du cron. Sans lui, un passage en retard doublerait les appels et ferait tomber
-les deux sur des 429.
+Le découpage horaire n'est pas cosmétique : **un passage à vide n'est pas
+gratuit**. Avant le moindre import, il consomme un appel de saisons, deux de
+classement et **un d'historique par équipe** — soit 76 appels et environ 150
+crédits incompressibles à chaque fois. Tourner en `*/15` toute la semaine
+brûlait ce plancher 96 fois par jour pour regarder des journées sans match. Les
+deux rencontres de saison régulière tombent le samedi à 19h15 et 21h15, et
+leurs résultats n'existent qu'une fois les parties finies : la fenêtre part
+donc de 20h00. Le reste du temps, un passage quotidien suffit à rattraper le
+classement, les équipes qui changent de division et les matchs tombés en
+`NOT_FOUND` transitoire.
+
+Les paliers payants HenrikDev ont été évalués et écartés : le premier (130
+crédits/min) ramènerait un passage de samedi soir de dix à deux minutes, mais
+les appels sont émis **en séquentiel**, et passé ce palier c'est la latence
+HTTP cumulée qui devient le goulet, pas le quota. Rien à gagner au-dessus tant
+que les appels ne sont pas parallélisés.
+
+`flock -n` n'est pas décoratif non plus : un passage dure de quatre à dix
+minutes pour un cron qui tombe toutes les cinq minutes le samedi. Sans lui, les
+passages se superposeraient et tomberaient tous sur des 429.
 
 ## Déploiement
 
