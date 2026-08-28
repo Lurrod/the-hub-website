@@ -2,7 +2,7 @@ import Link from "next/link";
 import StandingsTable from "@/components/standings-table";
 import MatchMiniList from "@/components/match-mini-list";
 import EmptyState, { ListDecor } from "@/components/empty-state";
-import { getPremierOverview, listPremierResults } from "@/lib/data/premier-view";
+import { getPremierOverview } from "@/lib/data/premier-view";
 import { pageMetadata } from "@/lib/metadata";
 
 /**
@@ -22,7 +22,7 @@ export const metadata = pageMetadata({
 });
 
 export default async function PremierPage() {
-  const [panels, results] = await Promise.all([getPremierOverview(), listPremierResults()]);
+  const panels = await getPremierOverview();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -43,10 +43,10 @@ export default async function PremierPage() {
           action={{ label: "Voir les tournois", href: "/tournois" }}
         />
       ) : (
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid items-start gap-x-6 gap-y-10 md:grid-cols-2">
           {panels.map((p) => (
-            <section key={p.tournamentId}>
-              <h2 className="mb-3 text-sm font-semibold">
+            <section key={p.tournamentId} className="flex flex-col gap-3">
+              <h2 className="text-sm font-semibold">
                 <Link
                   href={`/tournois/${p.tournamentId}`}
                   className="transition-colors hover:text-[var(--accent)]"
@@ -54,29 +54,34 @@ export default async function PremierPage() {
                   {p.tournamentName}
                 </Link>
               </h2>
-              {/* Six colonnes ne tiennent pas dans 390 px : le débordement est
-                  contenu ici plutôt que laissé à la page. */}
-              <div className="scroll-x rounded-lg border border-[var(--border)]">
+
+              {/* `.panel` et pas une bordure improvisée : `.scroll-x` peint ses
+                  couvre-bords en `--scroll-x-bg`, qui vaut `--surface`. Sur un
+                  conteneur sans fond, ces couvre-bords laissaient deux bandes
+                  colorées aux deux bords — le symptôme décrit dans
+                  `src/styles/transitions.css`. */}
+              <div className="panel scroll-x">
                 <StandingsTable rows={p.rows} />
               </div>
+
               <Link
                 href={`/tournois/${p.tournamentId}`}
-                className="mt-2 inline-block text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--accent)]"
+                className="self-start rounded-lg border border-[var(--border-strong)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >
                 Classement complet
               </Link>
+
+              {p.results.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+                    Derniers résultats
+                  </h3>
+                  <MatchMiniList matches={p.results} />
+                </div>
+              )}
             </section>
           ))}
         </div>
-      )}
-
-      {results.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-            Derniers résultats
-          </h2>
-          <MatchMiniList matches={results} />
-        </section>
       )}
     </main>
   );

@@ -27,9 +27,21 @@ test("les deux panneaux de classement sont affichés et mènent à leur tournoi"
   await expect(page).toHaveURL(/\/tournois\/fx-premier-invite$/);
 });
 
-test("les derniers résultats sont listés", async ({ page }) => {
+test("chaque palier porte ses propres résultats", async ({ page }) => {
   await page.goto("/premier");
-  await expect(page.getByRole("heading", { level: 2, name: "Derniers résultats" })).toBeVisible();
+
+  // Un bloc de résultats par palier, sous son classement, et non une liste
+  // commune : un palier très actif prendrait sinon toutes les places de l'autre.
+  await expect(page.getByRole("heading", { level: 3, name: "Derniers résultats" })).toHaveCount(2);
+
   // Les deux matchs des fixtures, un par palier.
   await expect(page.locator("a[href^='/matchs/fx-premier-m-']")).toHaveCount(2);
+});
+
+test("chaque palier a son bouton vers le classement complet", async ({ page }) => {
+  await page.goto("/premier");
+  const boutons = page.getByRole("link", { name: "Classement complet" });
+  await expect(boutons).toHaveCount(2);
+  await boutons.first().click();
+  await expect(page).toHaveURL(/\/tournois\/fx-premier-invite$/);
 });
