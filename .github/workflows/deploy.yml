@@ -69,6 +69,11 @@ jobs:
           cp scripts/prune-orphan-images.mjs release/scripts/
           cp scripts/sync-tournament-statuses.mjs release/scripts/
           cp scripts/recalibrate-ratings.mjs release/scripts/
+          # Le seul .sh du lot : il n'appelle pas Prisma, il tape la route de
+          # synchronisation Premier sur la boucle locale. Versionné parce que
+          # trois collages successifs l'ont mutilé quand il était tenu à la main
+          # dans `shared/`, dont un `cat >` qui l'a vidé sans le réécrire.
+          cp scripts/premier-sync.sh release/scripts/
           # Le traçage de fichiers de Next embarque un dossier `uploads` s'il
           # existe au moment du build. Il doit être un lien vers le volume
           # persistant du serveur, pas un vrai dossier livré avec la release.
