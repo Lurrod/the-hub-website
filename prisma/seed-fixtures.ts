@@ -508,6 +508,87 @@ async function main() {
     withStats: false,
   });
 
+  // --- Premier ------------------------------------------------------------
+  // Deux tournois Premier, un par palier, pour que la page /premier ait deux
+  // panneaux à afficher. Les équipes existantes sont réutilisées : le but est
+  // d'obtenir un classement et des résultats, pas de simuler 72 équipes.
+  //
+  // Le `format` reprend celui qu'écrit la synchronisation — `formatFor` dans
+  // `src/lib/data/premier.ts`. Un LEAGUE ferait rendre la page de tournoi par un
+  // chemin que la production n'emprunte jamais, et le parcours vaudrait pour un
+  // cas qui n'existe pas.
+  const premierTournois = [
+    {
+      id: "fx-premier-invite",
+      tier: "INVITE",
+      format: "PREMIER_INVITE" as const,
+      name: "Premier Invite — Fixtures",
+    },
+    {
+      id: "fx-premier-contender",
+      tier: "CONTENDER",
+      format: "PREMIER_CONTENDER" as const,
+      name: "Premier Contender — Fixtures",
+    },
+  ];
+  for (const t of premierTournois) {
+    const donnees = {
+      name: t.name,
+      region: "France",
+      organizer: "Riot Games",
+      format: t.format,
+      status: "ONGOING" as const,
+      // Postérieures à toute saison réellement synchronisée. La page /premier
+      // retient le tournoi le plus récent de chaque palier : sur une base de
+      // développement qui a vu passer une vraie synchronisation, des fixtures
+      // plus anciennes seraient masquées, et le parcours échouerait ici tout en
+      // passant en CI, où aucune donnée Premier réelle n'existe.
+      startDate: new Date("2026-08-25T00:00:00Z"),
+      endDate: new Date("2026-09-25T00:00:00Z"),
+      bestOf: 1,
+      premierSeasonId: `fx-season-${t.tier.toLowerCase()}`,
+      premierTier: t.tier,
+    };
+    await db.tournament.upsert({
+      where: { id: t.id },
+      update: donnees,
+      create: { id: t.id, ...donnees },
+    });
+    for (const [i, teamId] of ["fx-team-a", "fx-team-b", "fx-team-c"].entries()) {
+      await db.tournamentParticipant.upsert({
+        where: { id: `${t.id}-part-${i}` },
+        update: { tournamentId: t.id, teamId },
+        create: { id: `${t.id}-part-${i}`, tournamentId: t.id, teamId },
+      });
+    }
+  }
+
+  // Un match terminé par palier : le classement a des lignes non nulles, et la
+  // liste « Derniers résultats » a de quoi s'afficher.
+  for (const m of [
+    { id: "fx-premier-m-invite", tournamentId: "fx-premier-invite" },
+    { id: "fx-premier-m-contender", tournamentId: "fx-premier-contender" },
+  ]) {
+    const donnees = {
+      tournamentId: m.tournamentId,
+      teamAId: "fx-team-a",
+      teamBId: "fx-team-b",
+      stage: "GROUP" as const,
+      bestOf: 1,
+      status: "FINISHED" as const,
+      scoreA: 1,
+      scoreB: 0,
+      winnerId: "fx-team-a",
+      date: new Date("2026-08-22T17:15:00Z"),
+      hasTime: true,
+    };
+    await db.match.upsert({
+      where: { id: m.id },
+      update: donnees,
+      create: { id: m.id, ...donnees },
+    });
+  }
+
   const stats = await db.playerGameStat.count({
     where: { matchMap: { match: { tournamentId: TID } } },
   });
