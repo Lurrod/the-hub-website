@@ -16,6 +16,11 @@ const bodySchema = z.object({
   // environnement de développement : en production, le cron n'a besoin que de
   // la saison en cours.
   seasons: z.number().int().min(1).max(5).default(1),
+  // Relire l'historique de toutes les équipes, y compris celles dont le bilan
+  // au classement n'a pas bougé. Vrai par défaut : c'est le seul chemin qui
+  // voie les participations de playoffs et rattrape un import tombé en échec.
+  // La crontab dense du samedi soir est la seule à demander le chemin rapide.
+  fullSweep: z.boolean().default(true),
 });
 
 /**
@@ -38,7 +43,8 @@ export async function POST(req: Request) {
     const report = await runPremierSync(
       parsed.data.matchBudget,
       parsed.data.dryRun,
-      parsed.data.seasons
+      parsed.data.seasons,
+      parsed.data.fullSweep
     );
     // Le contexte de journalisation n'accepte que des valeurs scalaires : la
     // liste des tournois se réduit à son décompte, l'identifiant de chacun
@@ -52,6 +58,7 @@ export async function POST(req: Request) {
       matchesImported: report.matchesImported,
       matchesFailed: report.matchesFailed,
       matchesPending: report.matchesPending,
+      teamsSkipped: report.teamsSkipped,
       rateLimited: report.rateLimited,
     });
     return Response.json(report);

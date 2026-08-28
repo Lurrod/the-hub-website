@@ -15,6 +15,8 @@ import {
   quotaDelayMs,
   secretMatches,
   QUOTA_FLOOR,
+  premierRecordFingerprint,
+  shouldRefreshHistory,
 } from "@/lib/premier-core";
 
 describe("frenchTierOf", () => {
@@ -412,5 +414,52 @@ describe("looksLikeSameTeam", () => {
   it("ignore un tag vide", () => {
     // Sans cette garde, toutes les équipes sans tag se ressembleraient.
     expect(looksLikeSameTeam({ name: "Alpha", tag: "" }, { name: "Bravo", tag: "" })).toBe(false);
+  });
+});
+
+describe("premierRecordFingerprint", () => {
+  it("résume un bilan complet", () => {
+    expect(premierRecordFingerprint({ wins: 5, losses: 2, score: 340 })).toBe("5-2-340");
+  });
+
+  it("distingue deux bilans qui ne diffèrent que par le score", () => {
+    // Une victoire en playoffs ne bouge ni `wins` ni `losses` de la saison
+    // régulière, mais elle déplace le score : sans lui, l'équipe serait sautée.
+    expect(premierRecordFingerprint({ wins: 5, losses: 2, score: 340 })).not.toBe(
+      premierRecordFingerprint({ wins: 5, losses: 2, score: 375 })
+    );
+  });
+
+  it("rend null quand l'API n'a pas donné le bilan", () => {
+    // Un bilan absent n'est pas un bilan inchangé : le comparer ferait sauter
+    // une équipe qui a peut-être joué.
+    expect(premierRecordFingerprint({})).toBeNull();
+    expect(premierRecordFingerprint({ wins: 5, losses: 2 })).toBeNull();
+  });
+});
+
+describe("shouldRefreshHistory", () => {
+  it("relit une équipe dont le bilan a bougé", () => {
+    expect(shouldRefreshHistory("5-2-340", "4-2-310", false)).toBe(true);
+  });
+
+  it("saute une équipe dont le bilan est identique", () => {
+    expect(shouldRefreshHistory("5-2-340", "5-2-340", false)).toBe(false);
+  });
+
+  it("relit une équipe jamais lue avec succès", () => {
+    // `lastSeen` n'est écrit qu'après un historique effectivement obtenu : un
+    // appel tombé en échec ne doit pas condamner l'équipe à être sautée.
+    expect(shouldRefreshHistory("5-2-340", null, false)).toBe(true);
+  });
+
+  it("relit quand le bilan courant n'est pas comparable", () => {
+    expect(shouldRefreshHistory(null, "5-2-340", false)).toBe(true);
+  });
+
+  it("relit tout le monde en balayage complet", () => {
+    // Le balayage quotidien rattrape ce que la comparaison ne voit pas : les
+    // participations de playoffs, et les matchs dont l'import avait échoué.
+    expect(shouldRefreshHistory("5-2-340", "5-2-340", true)).toBe(true);
   });
 });

@@ -218,25 +218,39 @@ Planification, sur le serveur. L'appel est enveloppé dans
 d'exploitation : il source le `.env`, prend un budget de matchs en argument et
 journalise lui-même dans `shared/logs/cron.log`.
 
+Le script prend le budget de matchs en premier argument et `fullSweep` en
+second.
+
 ```
 # Samedi 20h00 -> 23h55 : les creneaux de 19h15 et 21h15 se
 # terminent dans cette fenetre, le flock enchaine les passages.
-*/5 20-23 * * 6 /var/www/the-hub-vrc.fr/shared/premier-sync.sh
-# Dimanche a vendredi : un passage, budget elargi pour absorber
-# une journee de playoffs sans etaler le rattrapage.
-0 6 * * 0-5 /var/www/the-hub-vrc.fr/shared/premier-sync.sh 100
+*/5 20-23 * * 6 /var/www/the-hub-vrc.fr/shared/premier-sync.sh 40 false
+# Dimanche a vendredi : balayage complet, budget elargi pour
+# absorber une journee de playoffs sans etaler le rattrapage.
+0 6 * * 0-5 /var/www/the-hub-vrc.fr/shared/premier-sync.sh 100 true
 ```
 
 Le découpage horaire n'est pas cosmétique : **un passage à vide n'est pas
 gratuit**. Avant le moindre import, il consomme un appel de saisons, deux de
-classement et **un d'historique par équipe** — soit 76 appels et environ 150
-crédits incompressibles à chaque fois. Tourner en `*/15` toute la semaine
-brûlait ce plancher 96 fois par jour pour regarder des journées sans match. Les
-deux rencontres de saison régulière tombent le samedi à 19h15 et 21h15, et
-leurs résultats n'existent qu'une fois les parties finies : la fenêtre part
-donc de 20h00. Le reste du temps, un passage quotidien suffit à rattraper le
-classement, les équipes qui changent de division et les matchs tombés en
-`NOT_FOUND` transitoire.
+classement et — en balayage complet — **un d'historique par équipe**. Tourner
+en `*/15` toute la semaine brûlait ce plancher 96 fois par jour pour regarder
+des journées sans match : mesuré dans les journaux, 63 attentes de quota de 59
+secondes chacune. Les deux rencontres de saison régulière tombent le samedi à
+19h15 et 21h15, et leurs résultats n'existent qu'une fois les parties finies :
+la fenêtre part donc de 20h00.
+
+`fullSweep` est le second levier, et le plus efficace. À `false`, l'historique
+n'est rappelé que pour les équipes dont le bilan a bougé au classement — les
+deux appels de classement portent `wins`, `losses` et `score` des 72 équipes,
+là où les historiques en coûtent un chacun. Un passage sans nouveauté retombe
+de 77 appels à 3, et la fenêtre du samedi passe d'environ 2 300 appels à 240.
+C'est ce qui rend le `*/5` réellement effectif : sans nouveauté, un passage
+dure quelques secondes au lieu de dix minutes, et le suivant enchaîne.
+
+Il vaut **`true` par défaut**, et le passage quotidien le garde. Deux choses ne
+se voient que par l'historique : les participations de playoffs, et les matchs
+dont l'import avait échoué. Un appelant qui oublie le drapeau retombe donc sur
+le comportement complet, jamais sur un match manqué.
 
 Les paliers payants HenrikDev ont été évalués et écartés : le premier (130
 crédits/min) ramènerait un passage de samedi soir de dix à deux minutes, mais

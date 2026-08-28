@@ -115,6 +115,56 @@ export function mutualMatchIds(histories: readonly (readonly string[])[]): strin
   return order.filter((id) => (seenIn.get(id) ?? 0) >= 2);
 }
 
+/**
+ * Empreinte du bilan d'une équipe au classement, pour détecter qu'elle a joué.
+ *
+ * Le classement porte `wins`, `losses` et `score` des 72 équipes en deux
+ * appels ; l'historique en coûte un **par équipe**. Comparer l'empreinte d'un
+ * passage à l'autre évite de relire l'historique d'une équipe qui n'a pas
+ * bougé — mesuré : 63 attentes de quota de 59 secondes chacune sur un miroir
+ * qui, la plupart du temps, n'avait rien de neuf à importer.
+ *
+ * `score` fait partie de l'empreinte parce qu'une partie de playoffs ne touche
+ * ni `wins` ni `losses`, qui comptent la saison régulière.
+ *
+ * Rend `null` quand l'API n'a pas donné les trois champs : un bilan absent
+ * n'est pas un bilan inchangé, et le confondre ferait sauter une équipe qui a
+ * peut-être joué.
+ */
+export function premierRecordFingerprint(entry: {
+  wins?: number;
+  losses?: number;
+  score?: number;
+}): string | null {
+  const { wins, losses, score } = entry;
+  if (wins === undefined || losses === undefined || score === undefined) return null;
+  return `${wins}-${losses}-${score}`;
+}
+
+/**
+ * Faut-il relire l'historique de cette équipe ?
+ *
+ * `fullSweep` court-circuite la comparaison. Le balayage complet rattrape ce
+ * que l'empreinte ne peut pas voir : les participations de playoffs, que seul
+ * l'historique liste, et les matchs dont l'import avait échoué. Il est donc le
+ * **défaut** — un appelant qui oublie le drapeau retombe sur le comportement
+ * d'avant, jamais sur un match manqué.
+ *
+ * @param courante empreinte lue au classement de ce passage.
+ * @param derniere empreinte du dernier historique **effectivement obtenu**.
+ *   Un appel tombé en échec ne l'écrit pas, sans quoi l'équipe serait sautée
+ *   pour toujours.
+ */
+export function shouldRefreshHistory(
+  courante: string | null,
+  derniere: string | null,
+  fullSweep: boolean
+): boolean {
+  if (fullSweep) return true;
+  if (courante === null || derniere === null) return true;
+  return courante !== derniere;
+}
+
 export type PremierMatchTeam = {
   teamId: string;
   won: boolean;
