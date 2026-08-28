@@ -214,21 +214,32 @@ déconnexion avorte le traitement côté serveur, et ce qui restait à faire att
 le passage suivant.
 
 Planification, sur le serveur. L'appel est enveloppé dans
-`shared/premier-sync.sh` — tenu hors du dépôt, avec les autres fichiers
-d'exploitation : il source le `.env`, prend un budget de matchs en argument et
-journalise lui-même dans `shared/logs/cron.log`.
+`scripts/premier-sync.sh`, livré par le déploiement comme les autres scripts de
+maintenance : il source le `.env`, prend le budget de matchs en premier
+argument et `fullSweep` en second, et journalise lui-même dans
+`shared/logs/cron.log`.
 
-Le script prend le budget de matchs en premier argument et `fullSweep` en
-second.
+Il a d'abord été tenu à la main dans `shared/`, avec les autres fichiers
+d'exploitation. Trois collages successifs l'ont mutilé — lignes tronquées,
+lignes dupliquées, et pour finir un `cat >` dont le marqueur de fin n'est jamais
+arrivé, qui a vidé le fichier sans le réécrire. Un script que le déploiement
+livre ne se recolle pas.
+
+La crontab passe par une variable pour que ses lignes restent courtes, un
+collage long étant précisément ce qui a échoué :
 
 ```
+S=/var/www/the-hub-vrc.fr/current/scripts/premier-sync.sh
 # Samedi 20h00 -> 23h55 : les creneaux de 19h15 et 21h15 se
 # terminent dans cette fenetre, le flock enchaine les passages.
-*/5 20-23 * * 6 /var/www/the-hub-vrc.fr/shared/premier-sync.sh 40 false
-# Dimanche a vendredi : balayage complet, budget elargi pour
-# absorber une journee de playoffs sans etaler le rattrapage.
-0 6 * * 0-5 /var/www/the-hub-vrc.fr/shared/premier-sync.sh 100 true
+*/5 20-23 * * 6 /bin/sh $S 40 false
+# Dimanche a vendredi : balayage complet, il voit les playoffs
+# et rattrape les imports tombes en echec.
+0 6 * * 0-5 /bin/sh $S 100 true
 ```
+
+`/bin/sh` explicite plutôt que l'exécution directe : le bit exécutable survit au
+déploiement, mais ne pas en dépendre retire un mode de panne.
 
 Le découpage horaire n'est pas cosmétique : **un passage à vide n'est pas
 gratuit**. Avant le moindre import, il consomme un appel de saisons, deux de
