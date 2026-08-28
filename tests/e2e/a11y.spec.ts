@@ -16,6 +16,7 @@ const PAGES = [
   { path: "/", name: "accueil" },
   { path: "/joueurs", name: "annuaire des joueurs" },
   { path: "/tournois", name: "liste des tournois" },
+  { path: "/premier", name: "page Premier" },
   { path: "/tournois/fmt-league", name: "fiche tournoi" },
   { path: "/matchs/fmt-groups-elim-m-a-1", name: "fiche match" },
 ];

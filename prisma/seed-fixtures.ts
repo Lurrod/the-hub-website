@@ -579,7 +579,12 @@ async function main() {
       scoreA: 1,
       scoreB: 0,
       winnerId: "fx-team-a",
-      date: new Date("2026-08-22T17:15:00Z"),
+      // Postérieure aux rencontres d'une vraie synchronisation, pour la même
+      // raison que la date des tournois ci-dessus : « Derniers résultats » est
+      // borné à dix lignes, et des fixtures plus anciennes en seraient chassées
+      // sur une base de développement, faisant échouer ici un parcours qui
+      // passerait en CI.
+      date: new Date("2026-08-26T19:15:00Z"),
       hasTime: true,
     };
     await db.match.upsert({
