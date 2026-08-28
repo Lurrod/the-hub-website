@@ -13,6 +13,37 @@ export const metadata = { title: "Administration" };
 /** Fenêtre de la zone de fréquentation. */
 const AUDIENCE_DAYS = 30;
 
+function ActiviteListe({
+  titre,
+  vide,
+  children,
+}: {
+  titre: string;
+  vide: string;
+  children: React.ReactNode[];
+}) {
+  return (
+    <div className="panel p-4">
+      <h3 className="mb-2 text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">
+        {titre}
+      </h3>
+      <ul className="flex flex-col gap-1 text-xs">
+        {children.length > 0 ? children : <li className="text-[var(--text-muted)]">{vide}</li>}
+      </ul>
+    </div>
+  );
+}
+
+function LigneActivite({ href, libelle }: { href: string; libelle: string }) {
+  return (
+    <li>
+      <Link href={href} className="transition-colors hover:text-[var(--accent)]">
+        {libelle}
+      </Link>
+    </li>
+  );
+}
+
 function Tuile({ libelle, valeur }: { libelle: string; valeur: number }) {
   return (
     <div className="panel p-4">
@@ -73,57 +104,25 @@ export default async function AdminDashboardPage() {
             ? `Dernière synchronisation Premier le ${shortDate(activite.derniereSynchro)} à ${timeLabel(activite.derniereSynchro)}.`
             : "Aucune synchronisation Premier enregistrée."}
         </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="panel p-4">
-            <h3 className="mb-2 text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">
-              Derniers matchs
-            </h3>
-            <ul className="flex flex-col gap-1 text-xs">
-              {activite.matchs.map((m) => (
-                <li key={m.id}>
-                  <Link
-                    href={`/matchs/${m.id}`}
-                    className="transition-colors hover:text-[var(--accent)]"
-                  >
-                    {m.nom}
-                  </Link>
-                </li>
-              ))}
-              {activite.matchs.length === 0 && (
-                <li className="text-[var(--text-muted)]">Aucun match.</li>
-              )}
-            </ul>
-          </div>
-          <div className="panel p-4">
-            <h3 className="mb-2 text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">
-              Dernières équipes et inscriptions
-            </h3>
-            <ul className="flex flex-col gap-1 text-xs">
-              {activite.equipes.map((t) => (
-                <li key={t.id}>
-                  <Link
-                    href={`/equipes/${t.id}`}
-                    className="transition-colors hover:text-[var(--accent)]"
-                  >
-                    {t.nom}
-                  </Link>
-                </li>
-              ))}
-              {activite.inscriptions.map((p) => (
-                <li key={p.id} className="text-[var(--text-muted)]">
-                  <Link
-                    href={`/joueurs/${p.id}`}
-                    className="transition-colors hover:text-[var(--accent)]"
-                  >
-                    {p.pseudo}
-                  </Link>
-                </li>
-              ))}
-              {activite.equipes.length === 0 && activite.inscriptions.length === 0 && (
-                <li className="text-[var(--text-muted)]">Rien de récent.</li>
-              )}
-            </ul>
-          </div>
+        {/* Trois panneaux et non deux : réunir équipes et inscriptions dans une
+            même liste ne les distinguait que par une nuance de gris, et rien ne
+            disait lequel des deux noms était une équipe. */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <ActiviteListe titre="Derniers matchs" vide="Aucun match.">
+            {activite.matchs.map((m) => (
+              <LigneActivite key={m.id} href={`/matchs/${m.id}`} libelle={m.nom} />
+            ))}
+          </ActiviteListe>
+          <ActiviteListe titre="Dernières équipes" vide="Aucune équipe.">
+            {activite.equipes.map((t) => (
+              <LigneActivite key={t.id} href={`/equipes/${t.id}`} libelle={t.nom} />
+            ))}
+          </ActiviteListe>
+          <ActiviteListe titre="Dernières inscriptions" vide="Aucune inscription.">
+            {activite.inscriptions.map((p) => (
+              <LigneActivite key={p.id} href={`/joueurs/${p.id}`} libelle={p.pseudo} />
+            ))}
+          </ActiviteListe>
         </div>
       </section>
 
