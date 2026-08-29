@@ -155,6 +155,22 @@ export function clePaire(miroirId: string, manuelleId: string): string {
   return `${miroirId}:${manuelleId}`;
 }
 
+/**
+ * Relit une clé de paire.
+ *
+ * Rend `null` plutôt que de lever : les clés arrivent d'une case à cocher, donc
+ * du client. Une clé malformée est ignorée, pas fatale — refuser tout le lot
+ * parce qu'une valeur a été bricolée priverait l'utilisateur des fusions
+ * légitimes qu'il venait de préparer.
+ */
+export function relirePaire(cle: string): { miroirId: string; manuelleId: string } | null {
+  const parts = cle.split(":");
+  if (parts.length !== 2) return null;
+  const [miroirId, manuelleId] = parts;
+  if (!miroirId || !manuelleId || miroirId === manuelleId) return null;
+  return { miroirId, manuelleId };
+}
+
 /** Tags portés par plus d'une équipe dans une population. */
 function tagsAmbigus(equipes: readonly EquipeRapprochable[]): Set<string> {
   const vus = new Map<string, number>();

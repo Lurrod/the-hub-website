@@ -3,6 +3,7 @@ import {
   normaliserLibelle,
   chercherDoublons,
   clePaire,
+  relirePaire,
   type EquipeRapprochable,
 } from "@/lib/doublons-equipes-core";
 
@@ -187,5 +188,26 @@ describe("chercherDoublons", () => {
   it("rend une paire par couple, sans doublonner un rapprochement nom + tag", () => {
     const paires = chercherDoublons([miroir], [main]);
     expect(paires).toHaveLength(1);
+  });
+});
+
+describe("relirePaire", () => {
+  it("relit une clé produite par clePaire", () => {
+    expect(relirePaire(clePaire("p1", "m1"))).toEqual({ miroirId: "p1", manuelleId: "m1" });
+  });
+
+  it("refuse une clé malformée plutôt que de lever", () => {
+    // Les clés viennent de cases à cocher, donc du client. Une valeur bricolée
+    // ne doit pas faire échouer tout le lot préparé.
+    expect(relirePaire("sans-deux-points")).toBeNull();
+    expect(relirePaire("a:b:c")).toBeNull();
+    expect(relirePaire(":m1")).toBeNull();
+    expect(relirePaire("p1:")).toBeNull();
+  });
+
+  it("refuse une fiche rapprochée d'elle-même", () => {
+    // Écarter ou fusionner une fiche avec elle-même n'a pas de sens et, côté
+    // fusion, la supprimerait après lui avoir déplacé ses propres matchs.
+    expect(relirePaire("p1:p1")).toBeNull();
   });
 });
