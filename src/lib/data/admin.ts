@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import type { CleAlerte } from "@/lib/admin-core";
+import { chercherDoublons } from "@/lib/doublons-equipes-core";
+import { getPopulationsRapprochables } from "@/lib/data/doublons-equipes";
 
 /**
  * Comptes des indicateurs du tableau de bord.
@@ -8,7 +10,7 @@ import type { CleAlerte } from "@/lib/admin-core";
  * ils ne rapatrient aucune ligne.
  */
 export async function getAlerteCounts(now = new Date()): Promise<Record<CleAlerte, number>> {
-  const [matchsASaisir, sansVainqueur, sansInscrit, miroirSansLogo, miroirIncoherent] =
+  const [matchsASaisir, sansVainqueur, sansInscrit, miroirSansLogo, miroirIncoherent, doublons] =
     await Promise.all([
       db.match.count({ where: { status: { not: "FINISHED" }, date: { lt: now } } }),
       db.match.count({ where: { status: "FINISHED", winnerId: null, forfeit: "NONE" } }),
@@ -18,9 +20,26 @@ export async function getAlerteCounts(now = new Date()): Promise<Record<CleAlert
       // l'absence est normale — et le compteur passerait à 20, sans rien dire.
       db.team.count({ where: { premierManaged: true, logo: null } }),
       db.team.count({ where: { premierManaged: true, premierTeamId: null } }),
+      // Seul indicateur qui ne se compte pas en SQL : le rapprochement vit dans
+      // le noyau, pour rester testable sans base. Trois requêtes plutôt qu'un
+      // `count`, sur une centaine de fiches — le tableau de bord s'en remet.
+      compterDoublons(),
     ]);
 
-  return { matchsASaisir, sansVainqueur, sansInscrit, miroirSansLogo, miroirIncoherent };
+  return {
+    matchsASaisir,
+    sansVainqueur,
+    sansInscrit,
+    miroirSansLogo,
+    miroirIncoherent,
+    doublonsEquipes: doublons,
+  };
+}
+
+/** Nombre de rapprochements d'équipes encore à trancher. */
+async function compterDoublons(): Promise<number> {
+  const { miroir, manuelles, ecartees } = await getPopulationsRapprochables();
+  return chercherDoublons(miroir, manuelles, ecartees).length;
 }
 
 export type AdminActivity = {

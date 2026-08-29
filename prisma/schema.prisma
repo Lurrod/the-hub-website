@@ -74,39 +74,39 @@ enum TeamStatus {
 }
 
 model Team {
-  id              String                  @id @default(cuid())
+  id                   String                   @id @default(cuid())
   // Pas de contrainte SQL sur name/tag : les jeux de démonstration importent
   // les mêmes équipes réelles depuis deux sources (`seed-dev` et
   // `seed-vlr-emea`), et la CI joue les deux. L'unicité est vérifiée à la
   // saisie — voir `findTeamConflict` — là où elle a un sens pour l'utilisateur.
-  name            String
-  tag             String
-  logo            String?
-  region          String
-  description     String?
-  socials         Json?
-  status          TeamStatus              @default(ACTIVE)
+  name                 String
+  tag                  String
+  logo                 String?
+  region               String
+  description          String?
+  socials              Json?
+  status               TeamStatus               @default(ACTIVE)
   /// Pendant du LFT côté équipe : « on recrute ». Même paire drapeau +
   /// horodatage que `Player.lft`, pour trier les annonces les plus fraîches.
-  lfp             Boolean                 @default(false)
-  lfpSince        DateTime?
+  lfp                  Boolean                  @default(false)
+  lfpSince             DateTime?
   /// Postes recherchés. Vide = ouvert à tous les rôles.
-  lfpRoles        ValorantRole[]          @default([])
+  lfpRoles             ValorantRole[]           @default([])
   /// Précision libre de l'annonce (niveau attendu, disponibilités…).
-  lfpMessage      String?
-  inviteToken     String?                 @unique
-  inviteExpiresAt DateTime?
+  lfpMessage           String?
+  inviteToken          String?                  @unique
+  inviteExpiresAt      DateTime?
   /// UUID de l'équipe côté Premier. Nullable : les équipes saisies à la main
   /// n'en ont pas. C'est la clé de rattachement de la synchronisation — un
   /// rapprochement par nom+tag scinderait l'historique d'une équipe au premier
   /// renommage côté Riot.
-  premierTeamId   String?                 @unique
+  premierTeamId        String?                  @unique
   /// L'équipe a-t-elle été créée par la synchronisation Premier ?
   ///
   /// Distingue « créée par le miroir », dont Riot est la source de vérité y
   /// compris pour le nom, de « déjà présente sur le site et rattachée après
   /// coup », dont le nom a été choisi ici et ne doit pas être écrasé.
-  premierManaged  Boolean                 @default(false)
+  premierManaged       Boolean                  @default(false)
   /// Empreinte « victoires-défaites-score » du dernier historique Premier
   /// obtenu pour cette équipe.
   ///
@@ -115,23 +115,49 @@ model Team {
   /// seconde source de vérité qui finirait par le contredire. Nullable tant
   /// qu'aucun historique n'a abouti — un appel en échec ne l'écrit pas, sans
   /// quoi l'équipe serait sautée pour toujours.
-  premierRecord   String?
-  createdById     String?
-  createdBy       User?                   @relation("TeamCreatedBy", fields: [createdById], references: [id])
-  managers        TeamManager[]
-  memberships     TeamMembership[]
-  participations  TournamentParticipant[]
-  matchesAsA      Match[]                 @relation("MatchTeamA")
-  matchesAsB      Match[]                 @relation("MatchTeamB")
-  matchesWon      Match[]                 @relation("MatchWinner")
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
+  premierRecord        String?
+  createdById          String?
+  createdBy            User?                    @relation("TeamCreatedBy", fields: [createdById], references: [id])
+  managers             TeamManager[]
+  memberships          TeamMembership[]
+  participations       TournamentParticipant[]
+  matchesAsA           Match[]                  @relation("MatchTeamA")
+  matchesAsB           Match[]                  @relation("MatchTeamB")
+  matchesWon           Match[]                  @relation("MatchWinner")
+  ecarteeCommeMiroir   TeamDuplicateDismissal[] @relation("EcartMiroir")
+  ecarteeCommeManuelle TeamDuplicateDismissal[] @relation("EcartManuelle")
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
 
   @@index([region])
   // Créé par la migration 20260805180000_team_lfp mais jamais déclaré ici :
   // le schéma et la base avaient divergé, et la migration suivante proposait
   // de supprimer l'index. Il sert la page LFP, qui filtre sur ce drapeau.
   @@index([lfp])
+}
+
+/**
+ * Paire d'équipes écartée à la main du rapprochement des doublons.
+ * La détection rapproche une fiche du miroir Premier d'une fiche saisie à la
+ * main sur le nom ou le tag. Trois rapprochements de production sont des faux
+ * positifs légitimes et permanents : « ARKAD » contre « ARKAD B2 »,
+ * « ORIGINS ALPHA » contre « Origin's Omega », « PCS NEPTUNE » contre
+ * « PCS Nova » — des équipes distinctes d'une même structure, qui partagent un
+ * tag. Sans trace de la décision, elles reviendraient à chaque passage et
+ * finiraient par être fusionnées par lassitude.
+ * Les deux cascades sont volontaires : si l'une des fiches disparaît, la paire
+ * n'a plus d'objet.
+ */
+model TeamDuplicateDismissal {
+  id         String   @id @default(cuid())
+  miroirId   String
+  manuelleId String
+  miroir     Team     @relation("EcartMiroir", fields: [miroirId], references: [id], onDelete: Cascade)
+  manuelle   Team     @relation("EcartManuelle", fields: [manuelleId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([miroirId, manuelleId])
+  @@index([miroirId])
 }
 
 /**
