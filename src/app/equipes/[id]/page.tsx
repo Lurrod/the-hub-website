@@ -1,6 +1,8 @@
 import Link from "next/link";
 import SocialLinks from "@/components/social-links";
 import EmptyState, { RosterDecor } from "@/components/empty-state";
+import FormeFrieze from "@/components/charts/forme-frieze";
+import { construireForme } from "@/lib/forme-recente-core";
 import { notFound } from "next/navigation";
 import { getTeam } from "@/lib/data/teams";
 import { getTeamRosterCards, getTeamAlumni } from "@/lib/data/players";
@@ -62,6 +64,10 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const STAFF_ROLES = new Set(["COACH", "MANAGER"]);
   const players = roster.filter((m) => !STAFF_ROLES.has(m.role));
   const staff = roster.filter((m) => STAFF_ROLES.has(m.role));
+
+  // La frise repart des mêmes matchs que le bandeau latéral : une seconde
+  // requête donnerait deux vérités possibles sur la même page.
+  const forme = construireForme(recent, team.id);
   const playerCard = (m: (typeof roster)[number]) => (
     <TeamPlayerCard
       key={m.membershipId}
@@ -152,6 +158,18 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {staff.map(playerCard)}
               </div>
+            </section>
+          )}
+
+          {/* Sous l'effectif, pas au-dessus : on vient d'abord voir qui compose
+              l'équipe. La frise dit ensuite ce que le bandeau de gauche ne peut
+              pas montrer — l'ampleur de chaque résultat, et la dynamique. */}
+          {forme.matchs.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+                Forme récente
+              </h2>
+              <FormeFrieze forme={forme} teamName={team.name} />
             </section>
           )}
         </div>
