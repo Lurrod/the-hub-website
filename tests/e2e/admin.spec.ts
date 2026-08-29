@@ -132,3 +132,25 @@ test("la page des doublons rapproche la paire des fixtures", async ({ page, cont
     await compte.cleanup();
   }
 });
+
+test("aucune violation d'accessibilité sérieuse sur les pages de doublons", async ({
+  page,
+  context,
+}) => {
+  // Les deux pages portent l'essentiel des commandes de la section : cases à
+  // cocher sans étiquette visible et boutons multiples dans un même formulaire.
+  const compte = await compteAdmin();
+  try {
+    await signIn(context, compte);
+    for (const chemin of ["/admin/doublons", "/admin/doublons/fusion"]) {
+      await page.goto(chemin);
+      const resultats = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
+      const bloquantes = resultats.violations.filter(
+        (v) => v.impact === "serious" || v.impact === "critical"
+      );
+      expect(bloquantes.map((v) => `${chemin} — ${v.id}`)).toEqual([]);
+    }
+  } finally {
+    await compte.cleanup();
+  }
+});

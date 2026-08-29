@@ -1,20 +1,26 @@
 import { z } from "zod";
 
 /**
- * Paire soumise depuis la page de rapprochement des doublons.
+ * Clé de paire soumise depuis la page de rapprochement des doublons.
  *
- * Les deux identifiants viennent d'un formulaire, donc du client : ils sont
- * validés comme tout ce qui franchit une frontière. Le refus du couple
- * identique n'est pas théorique — un lien mal construit écarterait une fiche
- * d'elle-même et créerait une ligne que rien ne viendrait jamais nettoyer.
+ * Forme `<idMiroir>:<idManuelle>`. Les identifiants viennent d'un formulaire,
+ * donc du client : ils sont validés comme tout ce qui franchit une frontière.
+ * Le jeu de caractères est celui d'un cuid, élargi au tiret et au souligné —
+ * les jeux de données de test posent des identifiants lisibles du genre
+ * `fx-doublon-miroir`.
+ *
+ * Le refus du couple identique n'est pas théorique : une clé bricolée
+ * fusionnerait une fiche avec elle-même, c'est-à-dire lui déplacerait ses
+ * propres matchs avant de la supprimer.
  */
-export const pairePotentielleSchema = z
-  .object({
-    miroirId: z.string().min(1).max(64),
-    manuelleId: z.string().min(1).max(64),
-  })
-  .refine((p) => p.miroirId !== p.manuelleId, {
-    message: "Une fiche ne peut pas être écartée d'elle-même.",
-  });
+export const clePaireSchema = z
+  .string()
+  .max(129)
+  .regex(/^[A-Za-z0-9_-]+:[A-Za-z0-9_-]+$/, "Clé de paire malformée.")
+  .refine((c) => {
+    const [a, b] = c.split(":");
+    return a !== b;
+  }, "Une fiche ne peut pas être rapprochée d'elle-même.");
 
-export type PairePotentielle = z.infer<typeof pairePotentielleSchema>;
+/** Lot de clés cochées. Le plafond borne l'URL du récapitulatif. */
+export const lotPairesSchema = z.array(clePaireSchema).max(100);

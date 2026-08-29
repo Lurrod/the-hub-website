@@ -3,8 +3,17 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/server-auth";
 import { isAdmin } from "@/lib/permissions";
 import { getPopulationsRapprochables, listerPairesEcartees } from "@/lib/data/doublons-equipes";
-import { chercherDoublons, type Confiance, type PaireDoublon } from "@/lib/doublons-equipes-core";
-import { ecarterPaireAction, retablirPaireAction } from "@/app/admin/actions/doublons";
+import {
+  chercherDoublons,
+  clePaire,
+  type Confiance,
+  type PaireDoublon,
+} from "@/lib/doublons-equipes-core";
+import {
+  ecarterPaireAction,
+  retablirPaireAction,
+  preparerFusionAction,
+} from "@/app/admin/actions/doublons";
 import { EmptyLine } from "@/components/empty-state";
 
 export const metadata = { title: "Admin · Doublons d'équipes" };
@@ -76,9 +85,23 @@ function Fiche({
   );
 }
 
-export default async function AdminDoublonsPage() {
+export default async function AdminDoublonsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    fusionnees?: string;
+    refus?: string | string[];
+    refusRestants?: string;
+    rien?: string;
+  }>;
+}) {
   const user = await getSessionUser();
   if (!isAdmin(user)) redirect("/");
+
+  const params = await searchParams;
+  const fusionnees = Number(params.fusionnees ?? 0);
+  const refus = Array.isArray(params.refus) ? params.refus : params.refus ? [params.refus] : [];
+  const refusRestants = Number(params.refusRestants ?? 0);
 
   const [{ miroir, manuelles, ecartees }, pairesEcartees] = await Promise.all([
     getPopulationsRapprochables(),
@@ -95,6 +118,36 @@ export default async function AdminDoublonsPage() {
       <h1 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
         Doublons d&apos;équipes
       </h1>
+
+      {(fusionnees > 0 || refus.length > 0) && (
+        <div className="mb-6 rounded-lg border border-[var(--accent)] bg-[var(--surface)] p-4">
+          {fusionnees > 0 && (
+            <p className="text-white">
+              <span className="stat">{fusionnees}</span> fusion{fusionnees > 1 ? "s" : ""} effectuée
+              {fusionnees > 1 ? "s" : ""}.
+            </p>
+          )}
+          {refus.length > 0 && (
+            <>
+              <p className="mt-1 text-[var(--text-muted)]">
+                Refus — ces paires sont restées en place :
+              </p>
+              <ul className="mt-1 text-[var(--text-muted)]">
+                {refus.map((r) => (
+                  <li key={r}>· {r}</li>
+                ))}
+                {refusRestants > 0 && <li>· et {refusRestants} autre(s).</li>}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      {params.rien && (
+        <p className="mb-6 text-[var(--text-muted)]">
+          Aucune paire n&apos;était cochée : rien n&apos;a été fusionné.
+        </p>
+      )}
 
       <p className="mb-6 max-w-2xl text-[var(--text-muted)]">
         La synchronisation Premier rattache les équipes par leur identifiant Riot, ce qui protège
@@ -130,52 +183,82 @@ export default async function AdminDoublonsPage() {
         </EmptyLine>
       )}
 
-      {parConfiance.map(({ confiance, lignes }) => (
-        <section key={confiance} className="mb-10">
-          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
-            {LIBELLE[confiance]} <span className="text-[var(--text-muted)]">({lignes.length})</span>
-          </h2>
-          <p className="mb-3 max-w-2xl text-[var(--text-muted)]">{EXPLICATION[confiance]}</p>
+      {/* Un seul formulaire pour toute la liste : les formulaires HTML ne
+          s'imbriquent pas, et chaque ligne porte à la fois une case à cocher de
+          fusion et un bouton d'écartement. Chaque bouton s'envoie sous son
+          propre nom de champ, donc l'action sait ce qui a été cliqué. */}
+      {paires.length > 0 && (
+        <form action={preparerFusionAction}>
+          {parConfiance.map(({ confiance, lignes }) => (
+            <section key={confiance} className="mb-10">
+              <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
+                {LIBELLE[confiance]}{" "}
+                <span className="text-[var(--text-muted)]">({lignes.length})</span>
+              </h2>
+              <p className="mb-3 max-w-2xl text-[var(--text-muted)]">{EXPLICATION[confiance]}</p>
 
-          <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
-            {lignes.map((p) => (
-              <li key={`${p.miroir.id}:${p.manuelle.id}`} className="bg-[var(--surface)] p-4">
-                {p.tagAmbigu && (
-                  <p className="mb-2 text-[var(--accent)]">
-                    Tag porté par plusieurs équipes — vérifier qu&apos;il ne s&apos;agit pas de deux
-                    effectifs d&apos;une même structure.
-                  </p>
-                )}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                  <Fiche equipe={p.miroir} role="Miroir Premier" />
-                  <Fiche equipe={p.manuelle} role="Saisie à la main" />
-                  <div className="flex shrink-0 flex-col gap-2 sm:w-40">
-                    <Link
-                      href={`/equipes/${p.manuelle.id}`}
-                      className="rounded-lg border border-[var(--border)] px-3 py-2 text-center transition-colors hover:bg-[var(--card-hover)]"
-                    >
-                      Voir la fiche saisie
-                    </Link>
-                    <form action={ecarterPaireAction}>
-                      <input type="hidden" name="miroirId" value={p.miroir.id} />
-                      <input type="hidden" name="manuelleId" value={p.manuelle.id} />
-                      <button
-                        type="submit"
-                        className="w-full rounded-lg border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--card-hover)] hover:text-white"
-                      >
-                        Ce n&apos;est pas un doublon
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+              <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
+                {lignes.map((p) => {
+                  const cle = clePaire(p.miroir.id, p.manuelle.id);
+                  return (
+                    <li key={cle} className="bg-[var(--surface)] p-4">
+                      {p.tagAmbigu && (
+                        <p className="mb-2 text-[var(--accent)]">
+                          Tag porté par plusieurs équipes — vérifier qu&apos;il ne s&apos;agit pas
+                          de deux effectifs d&apos;une même structure.
+                        </p>
+                      )}
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                        <label className="flex shrink-0 cursor-pointer items-center gap-2 pt-4 text-[var(--text-muted)]">
+                          <input
+                            type="checkbox"
+                            name="paire"
+                            value={cle}
+                            className="h-4 w-4 accent-[var(--accent)]"
+                            aria-label={`Fusionner ${p.miroir.name} dans ${p.manuelle.name}`}
+                          />
+                        </label>
+                        <Fiche equipe={p.miroir} role="Miroir Premier" />
+                        <Fiche equipe={p.manuelle} role="Saisie à la main" />
+                        <div className="flex shrink-0 flex-col gap-2 sm:w-40">
+                          <Link
+                            href={`/equipes/${p.manuelle.id}`}
+                            className="rounded-lg border border-[var(--border)] px-3 py-2 text-center transition-colors hover:bg-[var(--card-hover)]"
+                          >
+                            Voir la fiche saisie
+                          </Link>
+                          <button
+                            type="submit"
+                            formAction={ecarterPaireAction.bind(null, cle)}
+                            className="w-full rounded-lg border border-[var(--border)] px-3 py-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--card-hover)] hover:text-white"
+                          >
+                            Ce n&apos;est pas un doublon
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+
+          <div className="sticky bottom-0 -mx-4 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3">
+            <button
+              type="submit"
+              className="rounded-lg bg-[var(--accent)] px-3 py-2 font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Préparer la fusion des paires cochées
+            </button>
+            <span className="ml-3 text-[var(--text-muted)]">
+              Un récapitulatif nommera ce qui va bouger avant que rien ne soit écrit.
+            </span>
+          </div>
+        </form>
+      )}
 
       {pairesEcartees.length > 0 && (
-        <section>
+        <section className="mt-10">
           <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
             Écartés <span className="text-[var(--text-muted)]">({pairesEcartees.length})</span>
           </h2>
@@ -185,7 +268,7 @@ export default async function AdminDoublonsPage() {
           <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
             {pairesEcartees.map((e) => (
               <li
-                key={`${e.miroir.id}:${e.manuelle.id}`}
+                key={clePaire(e.miroir.id, e.manuelle.id)}
                 className="flex flex-wrap items-center justify-between gap-3 bg-[var(--surface)] px-4 py-3"
               >
                 <span className="text-[var(--text-muted)]">
@@ -197,9 +280,7 @@ export default async function AdminDoublonsPage() {
                     {e.manuelle.name} [{e.manuelle.tag}]
                   </span>
                 </span>
-                <form action={retablirPaireAction}>
-                  <input type="hidden" name="miroirId" value={e.miroir.id} />
-                  <input type="hidden" name="manuelleId" value={e.manuelle.id} />
+                <form action={retablirPaireAction.bind(null, clePaire(e.miroir.id, e.manuelle.id))}>
                   <button
                     type="submit"
                     className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--card-hover)] hover:text-white"
