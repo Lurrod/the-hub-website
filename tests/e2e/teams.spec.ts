@@ -25,3 +25,28 @@ test("une page admin redirige un visiteur non connecté", async ({ page }) => {
   await page.goto("/admin/equipes");
   await expect(page).toHaveURL("http://localhost:3200/");
 });
+
+test("la fiche équipe montre la frise de forme récente", async ({ page }) => {
+  // `fx-team-a` a cinq rencontres terminées dans les fixtures, dont trois avec
+  // le détail des maps : de quoi éprouver à la fois les barres mesurées et le
+  // repli quand l'écart de rounds n'est pas enregistré.
+  await page.goto("/equipes/fx-team-a");
+
+  const forme = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { name: "Forme récente" }) });
+  await expect(forme).toHaveCount(1);
+
+  // Une barre par rencontre, chacune menant à son match.
+  await expect(forme.locator('a[href^="/matchs/"]')).toHaveCount(5);
+
+  // Le sens porte le résultat indépendamment de la couleur : chaque barre
+  // s'annonce en toutes lettres, sans quoi la frise ne dirait rien à qui ne
+  // distingue pas le vert du rouge.
+  const premiere = forme.locator('a[href^="/matchs/"]').first();
+  await expect(premiere).toHaveAttribute("aria-label", /Victoire|Défaite|Sans vainqueur/);
+
+  // La jumelle textuelle : une infobulle ne doit jamais être le seul chemin
+  // vers une valeur.
+  await expect(forme.locator("table tbody tr")).toHaveCount(5);
+});
