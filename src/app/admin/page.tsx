@@ -2,96 +2,139 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/server-auth";
 import { isAdmin } from "@/lib/permissions";
-import { db } from "@/lib/db";
+import { alertesVisibles } from "@/lib/admin-core";
+import { getAlerteCounts, getAdminActivity, getAdminCounts } from "@/lib/data/admin";
 import { getAudienceSummary } from "@/lib/data/audience";
 import AdminAudience from "@/components/admin-audience";
+import { shortDate, timeLabel } from "@/lib/dates";
 
 export const metadata = { title: "Administration" };
 
 /** Fenêtre de la zone de fréquentation. */
 const AUDIENCE_DAYS = 30;
 
-type AdminSection = {
-  href: string;
-  label: string;
-  count: number;
-  description: string;
-  createHref?: string;
-  createLabel?: string;
-};
+function ActiviteListe({
+  titre,
+  vide,
+  children,
+}: {
+  titre: string;
+  vide: string;
+  children: React.ReactNode[];
+}) {
+  return (
+    <div className="panel p-4">
+      <h3 className="mb-2 text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">
+        {titre}
+      </h3>
+      <ul className="flex flex-col gap-1 text-xs">
+        {children.length > 0 ? children : <li className="text-[var(--text-muted)]">{vide}</li>}
+      </ul>
+    </div>
+  );
+}
+
+function LigneActivite({ href, libelle }: { href: string; libelle: string }) {
+  return (
+    <li>
+      <Link href={href} className="transition-colors hover:text-[var(--accent)]">
+        {libelle}
+      </Link>
+    </li>
+  );
+}
+
+function Tuile({ libelle, valeur }: { libelle: string; valeur: number }) {
+  return (
+    <div className="panel p-4">
+      <p className="text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">{libelle}</p>
+      <p className="stat mt-1 text-2xl text-white">{valeur}</p>
+    </div>
+  );
+}
 
 export default async function AdminDashboardPage() {
   const user = await getSessionUser();
   if (!isAdmin(user)) redirect("/");
 
-  const [teams, players, tournaments, matches, audience] = await Promise.all([
-    db.team.count(),
-    db.player.count(),
-    db.tournament.count(),
-    db.match.count(),
+  const [comptes, activite, volumes, audience] = await Promise.all([
+    getAlerteCounts(),
+    getAdminActivity(),
+    getAdminCounts(),
     getAudienceSummary(AUDIENCE_DAYS),
   ]);
-
-  const sections: AdminSection[] = [
-    {
-      href: "/admin/tournois",
-      label: "Tournois",
-      count: tournaments,
-      description: "Compétitions, poules, brackets et matchs.",
-      createHref: "/admin/tournois/nouvelle",
-      createLabel: "Nouveau tournoi",
-    },
-    {
-      href: "/admin/equipes",
-      label: "Équipes",
-      count: teams,
-      description: "Fiches d'équipes, logos, managers et rosters.",
-      createHref: "/admin/equipes/nouvelle",
-      createLabel: "Nouvelle équipe",
-    },
-    {
-      href: "/admin/joueurs",
-      label: "Joueurs",
-      count: players,
-      description: "Fiches de joueurs et rattachement aux équipes.",
-    },
-  ];
+  const alertes = alertesVisibles(comptes);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">
         Administration
       </h1>
-      <p className="mb-6 mt-1 text-xs text-[var(--text-muted)]">
-        {matches} match{matches > 1 ? "s" : ""} enregistré{matches > 1 ? "s" : ""} au total.
-      </p>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {sections.map((s) => (
-          <div key={s.href} className="flex flex-col gap-3">
-            <Link
-              href={s.href}
-              className="flex flex-1 flex-col gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 transition-colors hover:border-[var(--border-strong)]"
-            >
-              <div className="flex items-baseline justify-between">
-                <span className="text-sm font-semibold uppercase tracking-wide text-white">
-                  {s.label}
-                </span>
-                <span className="stat text-2xl text-[var(--accent)]">{s.count}</span>
-              </div>
-              <p className="text-xs text-[var(--text-muted)]">{s.description}</p>
-            </Link>
-            {s.createHref && (
-              <Link
-                href={s.createHref}
-                className="rounded-lg bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                {s.createLabel}
-              </Link>
-            )}
-          </div>
-        ))}
-      </div>
+      {/* N'affiche que les indicateurs non nuls. Un mur de zéros n'apprend rien
+          et fait perdre l'habitude de regarder ; une anomalie se voit
+          précisément parce qu'elle n'est pas là d'habitude. */}
+      <section className="mt-6">
+        <h2 className="mb-3 text-sm font-semibold text-white">À traiter</h2>
+        {alertes.length === 0 ? (
+          <p className="text-xs text-[var(--text-muted)]">Rien à traiter.</p>
+        ) : (
+          <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
+            {alertes.map((a) => (
+              <li key={a.cle}>
+                <Link
+                  href={a.href}
+                  className="flex items-center justify-between p-3 transition-colors hover:bg-[var(--table-row-hover)]"
+                >
+                  <span className="text-white">{a.libelle}</span>
+                  <span className="stat text-[var(--accent)]">{a.compte}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-1 text-sm font-semibold text-white">Activité récente</h2>
+        {/* Date **et** heure : la synchro passe toutes les cinq minutes le
+            samedi soir, une date seule n'apprendrait rien. */}
+        <p className="mb-3 text-xs text-[var(--text-muted)]">
+          {activite.derniereSynchro
+            ? `Dernière synchronisation Premier le ${shortDate(activite.derniereSynchro)} à ${timeLabel(activite.derniereSynchro)}.`
+            : "Aucune synchronisation Premier enregistrée."}
+        </p>
+        {/* Trois panneaux et non deux : réunir équipes et inscriptions dans une
+            même liste ne les distinguait que par une nuance de gris, et rien ne
+            disait lequel des deux noms était une équipe. */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <ActiviteListe titre="Derniers matchs" vide="Aucun match.">
+            {activite.matchs.map((m) => (
+              <LigneActivite key={m.id} href={`/matchs/${m.id}`} libelle={m.nom} />
+            ))}
+          </ActiviteListe>
+          <ActiviteListe titre="Dernières équipes" vide="Aucune équipe.">
+            {activite.equipes.map((t) => (
+              <LigneActivite key={t.id} href={`/equipes/${t.id}`} libelle={t.nom} />
+            ))}
+          </ActiviteListe>
+          <ActiviteListe titre="Dernières inscriptions" vide="Aucune inscription.">
+            {activite.inscriptions.map((p) => (
+              <LigneActivite key={p.id} href={`/joueurs/${p.id}`} libelle={p.pseudo} />
+            ))}
+          </ActiviteListe>
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-sm font-semibold text-white">Chiffres</h2>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Tuile libelle="Tournois" valeur={volumes.tournois} />
+          <Tuile libelle="Équipes" valeur={volumes.equipes} />
+          <Tuile libelle="Joueurs" valeur={volumes.joueurs} />
+          <Tuile libelle="Matchs" valeur={volumes.matchs} />
+        </div>
+      </section>
 
       <AdminAudience summary={audience} days={AUDIENCE_DAYS} />
     </main>

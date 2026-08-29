@@ -1,0 +1,100 @@
+import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { PrismaClient } from "@prisma/client";
+import { createAccount, signIn, disconnect, type TestAccount } from "./session";
+
+const db = new PrismaClient();
+
+test.afterAll(async () => {
+  await db.$disconnect();
+  await disconnect();
+});
+
+/**
+ * Compte d'administration jetable.
+ *
+ * `createAccount` ne sait pas poser `globalRole` : c'est un helper de parcours
+ * joueur. Le promouvoir ici évite de charger le helper partagé d'un besoin
+ * propre à cette spécification.
+ */
+async function compteAdmin(): Promise<TestAccount> {
+  const compte = await createAccount({ onboarded: true });
+  await db.user.update({ where: { id: compte.userId }, data: { globalRole: "ADMIN" } });
+  return compte;
+}
+
+test("un non-admin est renvoyé hors de l'administration", async ({ page, context }) => {
+  const compte = await createAccount({ onboarded: true });
+  try {
+    await signIn(context, compte);
+    await page.goto("/admin");
+    await page.waitForURL("/");
+    await expect(page).not.toHaveURL(/\/admin/);
+  } finally {
+    await compte.cleanup();
+  }
+});
+
+test("le tableau de bord affiche ses trois étages", async ({ page, context }) => {
+  const compte = await compteAdmin();
+  try {
+    await signIn(context, compte);
+    await page.goto("/admin");
+
+    await expect(page.getByRole("heading", { level: 2, name: "À traiter" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Activité récente" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Chiffres" })).toBeVisible();
+  } finally {
+    await compte.cleanup();
+  }
+});
+
+test("la recherche filtre la liste des équipes", async ({ page, context }) => {
+  const compte = await compteAdmin();
+  try {
+    await signIn(context, compte);
+
+    await page.goto("/admin/equipes");
+    await expect(page.locator("main ul li").first()).toBeVisible();
+
+    await page.getByPlaceholder("Nom ou tag").fill("Fixture Alpha");
+    await page.getByRole("button", { name: "Rechercher" }).click();
+
+    await expect(page).toHaveURL(/q=Fixture\+Alpha/);
+    // `toHaveCount` et non `count()` : le second prend un instantané sans
+    // réessayer, et `toHaveURL` réussit dès que l'URL change — le comptage
+    // lisait le document avant que la nouvelle liste soit rendue.
+    //
+    // Un compte exact plutôt qu'une comparaison au total : une seule équipe des
+    // fixtures porte ce nom, dans tous les environnements.
+    await expect(page.locator("main ul li")).toHaveCount(1);
+    await expect(page.getByText("Fixture Alpha")).toBeVisible();
+  } finally {
+    await compte.cleanup();
+  }
+});
+
+test("aucune violation d'accessibilité sérieuse sur le tableau de bord", async ({
+  page,
+  context,
+}) => {
+  // Le scan vit ici et non dans a11y.spec.ts : celui-ci navigue sans session,
+  // et /admin y renverrait vers l'accueil — on aurait scanné la page d'accueil
+  // en croyant couvrir l'administration.
+  const compte = await compteAdmin();
+  try {
+    await signIn(context, compte);
+    await page.goto("/admin");
+
+    // `color-contrast` est écartée pour la même raison que dans a11y.spec.ts :
+    // les écarts A11Y-01 et A11Y-02 sont des arbitrages de charte, pas des
+    // défauts de cette page. Toute autre exclusion serait une dette nouvelle.
+    const resultats = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
+    const bloquantes = resultats.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical"
+    );
+    expect(bloquantes.map((v) => `${v.id} — ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
+  } finally {
+    await compte.cleanup();
+  }
+});
