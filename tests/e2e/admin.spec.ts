@@ -154,3 +154,43 @@ test("aucune violation d'accessibilité sérieuse sur les pages de doublons", as
     await compte.cleanup();
   }
 });
+
+test("le tableau de bord mène aux sections et à leurs formulaires de création", async ({
+  page,
+  context,
+}) => {
+  // Régression du 2026-08-29 : la refonte du tableau de bord avait emporté la
+  // grille de cartes, seule navigation vers les sections. Les formulaires
+  // existaient toujours mais plus rien n'y menait, et créer une équipe ou un
+  // tournoi à la main demandait de connaître l'URL par cœur.
+  const compte = await compteAdmin();
+  try {
+    await signIn(context, compte);
+    await page.goto("/admin");
+
+    // Portée au `main` : la barre de navigation porte les mêmes libellés, et
+    // c'est bien la présence dans le tableau de bord qui est en cause.
+    const gerer = page.locator("main");
+    for (const section of ["Tournois", "Équipes", "Joueurs", "Doublons"]) {
+      await expect(gerer.getByRole("link", { name: section, exact: true })).toBeVisible();
+    }
+
+    await page.getByRole("link", { name: "Nouvelle équipe" }).click();
+    await page.waitForURL("**/admin/equipes/nouvelle");
+    await expect(page.getByRole("button", { name: "Créer l'équipe" })).toBeVisible();
+
+    await page.goto("/admin");
+    await page.getByRole("link", { name: "Nouveau tournoi" }).click();
+    await page.waitForURL("**/admin/tournois/nouvelle");
+    await expect(page.getByRole("button", { name: "Créer le tournoi" })).toBeVisible();
+
+    // Les joueurs se créent sur la page de liste : le lien doit y mener et le
+    // formulaire s'y trouver.
+    await page.goto("/admin");
+    await page.locator("main").getByRole("link", { name: "Joueurs", exact: true }).click();
+    await page.waitForURL("**/admin/joueurs");
+    await expect(page.getByRole("heading", { name: "Nouveau joueur" })).toBeVisible();
+  } finally {
+    await compte.cleanup();
+  }
+});
