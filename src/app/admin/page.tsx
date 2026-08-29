@@ -13,6 +13,49 @@ export const metadata = { title: "Administration" };
 /** Fenêtre de la zone de fréquentation. */
 const AUDIENCE_DAYS = 30;
 
+/**
+ * Accès aux sections d'administration.
+ *
+ * La refonte du tableau de bord a remplacé une grille de cartes par les trois
+ * étages « à traiter / activité / chiffres », et a emporté avec elle la seule
+ * navigation vers `/admin/equipes`, `/admin/joueurs` et `/admin/tournois`. Les
+ * pages existaient toujours, leurs formulaires de création aussi, mais plus rien
+ * n'y menait : créer une équipe ou un tournoi à la main était devenu impossible
+ * sans connaître l'URL.
+ *
+ * Les indicateurs « à traiter » ne remplacent pas cette navigation : ils ne
+ * s'affichent que lorsqu'ils sont non nuls, donc jamais quand tout va bien.
+ *
+ * `creer` est nul là où la création se fait sur la page de liste elle-même —
+ * c'est le cas des joueurs, dont le formulaire est en bas de `/admin/joueurs`.
+ */
+const SECTIONS = [
+  {
+    libelle: "Tournois",
+    href: "/admin/tournois",
+    creer: "/admin/tournois/nouvelle",
+    creerLibelle: "Nouveau tournoi",
+  },
+  {
+    libelle: "Équipes",
+    href: "/admin/equipes",
+    creer: "/admin/equipes/nouvelle",
+    creerLibelle: "Nouvelle équipe",
+  },
+  {
+    libelle: "Joueurs",
+    href: "/admin/joueurs",
+    creer: null,
+    creerLibelle: "Création sur la page",
+  },
+  {
+    libelle: "Doublons",
+    href: "/admin/doublons",
+    creer: null,
+    creerLibelle: "Rapprocher les fiches",
+  },
+] as const;
+
 function ActiviteListe({
   titre,
   vide,
@@ -93,6 +136,32 @@ export default async function AdminDashboardPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-sm font-semibold text-white">Gérer</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {SECTIONS.map((s) => (
+            <div key={s.href} className="panel flex flex-col gap-1 p-4">
+              <Link
+                href={s.href}
+                className="text-white transition-colors hover:text-[var(--accent)]"
+              >
+                {s.libelle}
+              </Link>
+              {s.creer ? (
+                <Link
+                  href={s.creer}
+                  className="text-[var(--accent)] transition-opacity hover:opacity-80"
+                >
+                  {s.creerLibelle}
+                </Link>
+              ) : (
+                <span className="text-[var(--text-muted)]">{s.creerLibelle}</span>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="mt-10">
