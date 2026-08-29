@@ -98,3 +98,37 @@ test("aucune violation d'accessibilité sérieuse sur le tableau de bord", async
     await compte.cleanup();
   }
 });
+
+test("la page des doublons rapproche la paire des fixtures", async ({ page, context }) => {
+  const compte = await compteAdmin();
+  // La mise à l'écart est persistée : sans ce nettoyage, un test qui échoue
+  // après le clic laisserait la paire écartée et ferait échouer tous les
+  // suivants sans qu'on comprenne pourquoi.
+  const nettoyerEcart = () =>
+    db.teamDuplicateDismissal.deleteMany({ where: { miroirId: "fx-doublon-miroir" } });
+  try {
+    await nettoyerEcart();
+    await signIn(context, compte);
+    await page.goto("/admin/doublons");
+
+    // Le suffixe « Esports » ne doit pas empêcher le rapprochement : les deux
+    // fiches portent le même tag et le même radical.
+    const paire = page.locator("main section ul li").filter({ hasText: "Fixture Delta" });
+    await expect(paire).toHaveCount(1);
+    await expect(paire.getByText("Fixture Delta Esports")).toBeVisible();
+
+    await paire.getByRole("button", { name: "Ce n'est pas un doublon" }).click();
+
+    // Écartée, elle quitte les propositions et rejoint la liste des écartés.
+    await expect(page.getByRole("heading", { level: 2, name: /^Écartés/ })).toBeVisible();
+    await expect(
+      page.locator("main section ul li").filter({ hasText: "Fixture Delta Esports" })
+    ).toHaveCount(1);
+
+    await page.getByRole("button", { name: "Reproposer" }).first().click();
+    await expect(page.getByRole("heading", { level: 2, name: /^Écartés/ })).toHaveCount(0);
+  } finally {
+    await nettoyerEcart();
+    await compte.cleanup();
+  }
+});

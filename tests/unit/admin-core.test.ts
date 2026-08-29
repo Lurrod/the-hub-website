@@ -7,6 +7,7 @@ const zero = {
   sansInscrit: 0,
   miroirSansLogo: 0,
   miroirIncoherent: 0,
+  doublonsEquipes: 0,
 };
 
 describe("alertesVisibles", () => {

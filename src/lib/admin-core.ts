@@ -43,6 +43,14 @@ export const ALERTES = [
     libelle: "Équipes du miroir sans identifiant Premier",
     href: "/admin/equipes?anomalie=miroir-incoherent",
   },
+  {
+    // Se remplit tout seul à chaque Act : la synchronisation crée une fiche
+    // neuve quand elle rencontre une équipe qu'elle ne connaît pas, sans
+    // regarder si le site en a déjà une. 21 paires au premier relevé.
+    cle: "doublonsEquipes",
+    libelle: "Doublons d'équipes à rapprocher",
+    href: "/admin/doublons",
+  },
 ] as const;
 
 export type CleAlerte = (typeof ALERTES)[number]["cle"];

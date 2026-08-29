@@ -285,6 +285,17 @@ async function main() {
   // Nom volontairement long : éprouve les troncatures des cartes et des OG.
   await upsertTeam("fx-team-c", "Fixture Charlie Esports Club", "FXC", null);
 
+  // Paire de doublon pour la page de rapprochement : la fiche du miroir porte
+  // le nom court que donne Riot, la fiche saisie la forme longue. C'est le cas
+  // exact de « HL Tauri » contre « HL Tauri eSports » en production, celui que
+  // le rapprochement doit voir malgré le suffixe.
+  await upsertTeam("fx-doublon-miroir", "Fixture Delta", "FXD", null);
+  await db.team.update({
+    where: { id: "fx-doublon-miroir" },
+    data: { premierManaged: true, premierTeamId: "fx-premier-delta" },
+  });
+  await upsertTeam("fx-doublon-saisie", "Fixture Delta Esports", "FXD", null);
+
   // --- Joueurs -----------------------------------------------------------
   const roles = ["DUELIST", "CONTROLLER", "INITIATOR", "SENTINEL", null] as const;
   for (let i = 0; i < 5; i++) {
