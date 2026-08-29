@@ -165,13 +165,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   });
 
   const upcoming = allMatches.filter((m) => m.status === "SCHEDULED" || m.status === "LIVE");
-  // Mêmes derniers résultats que sur les fiches équipe et joueur : les quatre
-  // matchs terminés les plus récents, la liste complète restant dans l'onglet
-  // Matches.
+  // Tous les matchs terminés, et pas les quatre plus récents comme avant : sur
+  // un tournoi Premier, quatre lignes sur les dizaines jouées ne disaient rien.
+  // C'est la hauteur de la colonne qui borne désormais l'affichage, elle défile
+  // pour le reste.
   const recent = allMatches
     .filter((m) => m.status === "FINISHED")
-    .sort((a, b) => (b.date?.getTime() ?? -Infinity) - (a.date?.getTime() ?? -Infinity))
-    .slice(0, 4);
+    .sort((a, b) => (b.date?.getTime() ?? -Infinity) - (a.date?.getTime() ?? -Infinity));
   const miniMatch = (m: (typeof allMatches)[number], played: boolean) => ({
     id: m.id,
     date: m.date,

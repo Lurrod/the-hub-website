@@ -358,8 +358,21 @@ export async function getTeamMatchesByTournament(teamId: string, limit = 200) {
   return [...byTournament.values()];
 }
 
+/**
+ * Plafond des matchs remontés à la colonne latérale « Matchs à venir /
+ * Derniers résultats ».
+ *
+ * La colonne n'est plus un aperçu de quatre lignes : elle se cale sur la
+ * hauteur du contenu voisin et défile dedans, donc le nombre de lignes visibles
+ * n'est plus une décision de requête. Il reste un plafond parce qu'un joueur de
+ * longue date sortirait plusieurs centaines de `<li>` pour une colonne qu'on
+ * parcourt sur une dizaine — jamais atteint en pratique, il n'est là que pour
+ * borner le HTML.
+ */
+export const MATCH_COLUMN_LIMIT = 50;
+
 /** Prochains matchs d'une équipe (programmés ou en direct), du plus proche au plus lointain. */
-export function listTeamUpcomingMatches(teamId: string, limit = 4) {
+export function listTeamUpcomingMatches(teamId: string, limit = MATCH_COLUMN_LIMIT) {
   return db.match.findMany({
     where: {
       status: { in: ["SCHEDULED", "LIVE"] },
@@ -393,7 +406,11 @@ function cutoffBounds(cutoff: MatchCutoff): Prisma.MatchWhereInput {
  * `src/app/equipes/[id]/page.tsx` garde son comportement — une seconde
  * fonction pour une clause `where` de plus finirait par diverger de celle-ci.
  */
-export function listTeamRecentMatches(teamId: string, limit = 4, cutoff?: MatchCutoff) {
+export function listTeamRecentMatches(
+  teamId: string,
+  limit = MATCH_COLUMN_LIMIT,
+  cutoff?: MatchCutoff
+) {
   const bounds = cutoff ? cutoffBounds(cutoff) : {};
   return db.match.findMany({
     where: {
@@ -479,7 +496,7 @@ export async function getHeadToHead(
  * scoreboard, pas de son équipe. Un joueur sans équipe actuelle, ou qui a
  * changé d'équipe depuis, garde ainsi tout son historique.
  */
-export function listPlayerRecentMatches(playerId: string, limit = 4) {
+export function listPlayerRecentMatches(playerId: string, limit = MATCH_COLUMN_LIMIT) {
   return db.match.findMany({
     where: { maps: { some: { stats: { some: { playerId } } } } },
     include: { teamA: true, teamB: true, ...MAPS_SCORES },
@@ -494,7 +511,7 @@ export function listPlayerRecentMatches(playerId: string, limit = 4) {
  * rattachement possible — mais il passe par ses adhésions actives, pas par une
  * équipe « principale » choisie arbitrairement.
  */
-export function listPlayerUpcomingMatches(playerId: string, limit = 4) {
+export function listPlayerUpcomingMatches(playerId: string, limit = MATCH_COLUMN_LIMIT) {
   const onRoster = { memberships: { some: { playerId, leaveDate: null } } };
   return db.match.findMany({
     where: {
