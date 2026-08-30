@@ -144,6 +144,43 @@
     letter-spacing: 0.02em;
   }
 
+  /* Bandeau des matchs : deux nappes d'accent, une par bord horizontal, sur la
+     liste entière et non ligne par ligne.
+
+     Remplace l'ancien halo posé dans le coin bas-droit de chaque ligne, qui
+     tirait l'œil hors de la ligne, se répétait à l'identique et laissait le
+     reste en aplat. Le motif est celui des cartes de communication : base
+     sombre et floraison colorée qui déborde du cadre. Une nappe en bas seule
+     s'éteignait dès que la colonne dépassait quatre matchs — les deux bords
+     tiennent la colonne quelle que soit sa hauteur. La touche secondaire est
+     inversée en x d'un bord à l'autre pour que ça ne se lise pas comme un
+     tampon dupliqué. Aucune couche au-dessus de 30 % : la charte proscrit les
+     halos saturés (DESIGN.md §1). */
+  .match-bloom-box {
+    background:
+      radial-gradient(95% 55% at 45% 112%, rgba(237, 94, 41, 0.3), transparent 62%),
+      radial-gradient(70% 45% at 90% 105%, rgba(242, 146, 94, 0.12), transparent 60%),
+      radial-gradient(95% 55% at 55% -12%, rgba(237, 94, 41, 0.3), transparent 62%),
+      radial-gradient(70% 45% at 10% -5%, rgba(242, 146, 94, 0.12), transparent 60%),
+      /* Vignette latérale seulement : une vignette radiale mordrait sur les
+         deux nappes puisqu'elles occupent maintenant le haut ET le bas. */
+        linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0.34),
+          transparent 24%,
+          transparent 76%,
+          rgba(0, 0, 0, 0.34)
+        );
+  }
+
+  /* Le survol ne peut plus être `--card-hover` : cette couleur est opaque et
+     recouvrirait la nappe, si bien que passer la souris sur les lignes du bas
+     éteignait la couleur. Un voile blanc translucide laisse le dégradé
+     transparaître. */
+  .match-bloom-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
   .live-dot {
     position: relative;
     display: inline-block;
