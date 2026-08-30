@@ -1,5 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { isOnboardingExempt, stripWwwUrl } from "@/proxy";
+import { isOnboardingExempt, stripWwwUrl, isRenderExpensivePath } from "@/proxy";
+
+describe("isRenderExpensivePath", () => {
+  it("reconnaît les cartes partageables", () => {
+    expect(isRenderExpensivePath("/matchs/abc/carte")).toBe(true);
+    expect(isRenderExpensivePath("/joueurs/xyz/carte")).toBe(true);
+    expect(isRenderExpensivePath("/tournois/t1/carte")).toBe(true);
+  });
+
+  it("reconnaît les images OpenGraph, avec ou sans extension", () => {
+    expect(isRenderExpensivePath("/matchs/abc/opengraph-image")).toBe(true);
+    expect(isRenderExpensivePath("/matchs/abc/opengraph-image.png")).toBe(true);
+    expect(isRenderExpensivePath("/equipes/opengraph-image")).toBe(true);
+  });
+
+  it("laisse passer les pages normales", () => {
+    expect(isRenderExpensivePath("/matchs/abc")).toBe(false);
+    expect(isRenderExpensivePath("/equipes")).toBe(false);
+    expect(isRenderExpensivePath("/")).toBe(false);
+    // Le mot « carte » ailleurs dans le chemin ne doit pas déclencher la limite.
+    expect(isRenderExpensivePath("/carte-du-site")).toBe(false);
+  });
+});
 
 describe("stripWwwUrl", () => {
   it("redirige www vers l'apex en conservant chemin et query", () => {

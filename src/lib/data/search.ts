@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { capSearchQuery } from "@/lib/search-core";
 
 export type SearchResults = {
   teams: { id: string; name: string; tag: string; region: string; logo: string | null }[];
@@ -18,7 +19,9 @@ export type SearchResults = {
 
 /** Recherche insensible à la casse sur équipes (nom/tag), joueurs (pseudo/realName), tournois (nom). */
 export async function searchAll(query: string): Promise<SearchResults> {
-  const q = query.trim();
+  // Bornée avant d'atteindre Prisma : `contains` est paramétré (pas d'injection),
+  // mais un `q` de plusieurs kilo-octets répété ferait travailler la base pour rien.
+  const q = capSearchQuery(query);
   if (q.length === 0) {
     return { teams: [], players: [], tournaments: [] };
   }

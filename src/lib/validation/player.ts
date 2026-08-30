@@ -24,3 +24,14 @@ export const rosterAddSchema = z.object({
   role: z.enum(MEMBERSHIP_ROLES).default("JOUEUR"),
 });
 export type RosterAddInput = z.infer<typeof rosterAddSchema>;
+
+/**
+ * Rôle d'un membre du roster, isolé pour le changement de rôle.
+ *
+ * Sans lui, l'action castait `formData.get("role")` directement en enum : une
+ * valeur hors liste ne se heurtait qu'à la contrainte Prisma, un échec de base
+ * plutôt qu'un refus propre à la frontière.
+ */
+export const memberRoleSchema = z.object({
+  role: z.enum(MEMBERSHIP_ROLES).default("JOUEUR"),
+});

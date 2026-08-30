@@ -1,7 +1,13 @@
 import { z } from "zod";
-import { secretMatches } from "@/lib/premier-core";
+import { secretMatches, cameFromProxy } from "@/lib/premier-core";
 import { runPremierSync } from "@/lib/data/premier";
+import { allow, type RateLimitRule } from "@/lib/rate-limit";
 import { logger, describeError } from "@/lib/logger";
+
+// La crontab frappe au plus une fois toutes les cinq minutes, et `flock`
+// sérialise déjà les passages : ce plafond ne gêne aucun usage légitime, il
+// borne un déclencheur qui aurait mis la main sur le secret.
+const SYNC_RULE: RateLimitRule = { limit: 6, windowMs: 60 * 1000 };
 
 // La route interroge la base et une API tierce à chaque appel : rien à
 // prérendre, et le build de la CI ne doit pas tenter de la joindre.
@@ -30,10 +36,24 @@ const bodySchema = z.object({
  * seul contrôle d'accès : la route n'a pas de session, et elle écrit en base.
  */
 export async function POST(req: Request) {
+  // Route réservée à la crontab locale, qui frappe 127.0.0.1 en direct. Un
+  // appel venu d'Internet traverse Apache, qui pose des en-têtes X-Forwarded-*.
+  // On le traite en 404 : publiquement, la route n'existe pas — inutile de
+  // confirmer son existence à qui la sonde.
+  if (cameFromProxy((name) => req.headers.get(name))) {
+    return new Response("Not found", { status: 404 });
+  }
+
   if (!secretMatches(req.headers.get("authorization"), process.env.PREMIER_SYNC_SECRET ?? "")) {
     // Aucun détail : un message distinguant « secret absent » de « secret
     // faux » renseignerait qui sonde la route.
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  // Après le secret : seul un appelant authentifié peut faire tourner le
+  // compteur, un flot non authentifié se heurte au 401 sans l'atteindre.
+  if (!allow("premier-sync", SYNC_RULE)) {
+    return new Response("Too Many Requests", { status: 429 });
   }
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => ({})));

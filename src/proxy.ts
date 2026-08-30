@@ -2,9 +2,41 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { buildCsp, generateNonce, CSP_HEADER } from "@/lib/csp";
 import { ficheExists, type FicheSection } from "@/lib/data/existence";
+import { allow, type RateLimitRule } from "@/lib/rate-limit";
 import { describeError, logger } from "@/lib/logger";
 
 const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
+
+/**
+ * Routes d'image rendues à la volée : carte partageable et images OpenGraph.
+ *
+ * Chacune enchaîne une requête base, une mise en page Satori, un encodage PNG
+ * `sharp` et jusqu'à deux `fetch` de logos — sur un process Node unique, sans
+ * cache partagé devant. Publiques et sans session, elles échappent à toute
+ * limite : un `?vue=` martelé saturait la boucle d'événements et figeait tout
+ * le site. Le suffixe d'extension est optionnel : Next sert l'OG en
+ * `/opengraph-image` comme en `/opengraph-image.png`.
+ */
+const EXPENSIVE_RENDER = /\/(carte|opengraph-image|twitter-image)(\.[a-z0-9]+)?$/i;
+
+export function isRenderExpensivePath(pathname: string): boolean {
+  return EXPENSIVE_RENDER.test(pathname);
+}
+
+/**
+ * Un scraper de partage ne tire qu'une poignée d'images par lien ; ce plafond
+ * ne le gêne pas, mais il coupe le martèlement depuis une même adresse. La
+ * défense complète contre un flot distribué reste un cache en amont (voir
+ * `docs/ops/durcissement-apache.md`).
+ */
+const IMAGE_RENDER_RULE: RateLimitRule = { limit: 30, windowMs: 60 * 1000 };
+
+/** Dernier maillon du X-Forwarded-For, celui posé par Apache ; jamais le premier, écrit par le client. */
+function clientIp(request: NextRequest): string {
+  const xff = request.headers.get("x-forwarded-for");
+  const last = xff?.split(",").pop()?.trim();
+  return last || request.headers.get("x-real-ip")?.trim() || "inconnu";
+}
 
 /**
  * Chemins que le gate d'onboarding laisse passer.
@@ -52,7 +84,24 @@ export async function proxy(request: NextRequest) {
 
   const hasSession = SESSION_COOKIES.some((name) => request.cookies.has(name));
   const path = request.nextUrl.pathname;
-  const isGestion = path.includes("/gestion");
+
+  // Limite de débit des images rendues à la volée, avant tout travail : un 429
+  // ne doit rien coûter de plus que la lecture de l'en-tête.
+  if (
+    (request.method === "GET" || request.method === "HEAD") &&
+    isRenderExpensivePath(path) &&
+    !allow(`image:${clientIp(request)}`, IMAGE_RENDER_RULE)
+  ) {
+    return new NextResponse("Too Many Requests", {
+      status: 429,
+      headers: { "Retry-After": "60" },
+    });
+  }
+
+  // Backstop d'authentification sur la gestion d'équipe/tournoi ET sur l'admin.
+  // `/admin` n'était couvert que par le `requireAdmin()` de ses pages : correct,
+  // mais c'était la seule barrière. Le proxy tranche désormais avant tout rendu.
+  const needsAuth = path.includes("/gestion") || path === "/admin" || path.startsWith("/admin/");
 
   // Le nonce doit voyager dans les en-têtes de *requête* : c'est là que Next le
   // lit pour le recopier sur ses propres balises <script> et <style>.
@@ -62,8 +111,8 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set(CSP_HEADER, csp);
 
-  // Backstop auth sur les routes de gestion.
-  if (isGestion && !hasSession) {
+  // Backstop auth sur les routes de gestion et d'administration.
+  if (needsAuth && !hasSession) {
     const signInUrl = new URL("/api/auth/signin", request.url);
     signInUrl.searchParams.set("callbackUrl", path);
     return withCsp(NextResponse.redirect(signInUrl), csp);
