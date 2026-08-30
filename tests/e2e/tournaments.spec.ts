@@ -72,6 +72,8 @@ test("le bandeau de l'aperçu se règle sur sa hauteur, sans défiler ni débord
 });
 
 test("la page admin tournois redirige un visiteur non connecté", async ({ page }) => {
+  // Non connecté : redirection vers la connexion par le backstop du proxy,
+  // désormais actif sur /admin comme sur /gestion.
   await page.goto("/admin/tournois");
-  await expect(page).toHaveURL("http://localhost:3200/");
+  await expect(page).toHaveURL(/\/api\/auth\/signin/);
 });

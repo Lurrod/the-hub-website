@@ -22,8 +22,12 @@ test("la page équipe affiche le nom et la section roster", async ({ page }) => 
 });
 
 test("une page admin redirige un visiteur non connecté", async ({ page }) => {
+  // Non connecté, le backstop du proxy renvoie vers la connexion — avant tout
+  // rendu — et non plus vers l'accueil comme le faisait le seul requireAdmin()
+  // de la page. Un non-admin *connecté*, lui, retombe bien sur l'accueil
+  // (couvert par admin.spec.ts).
   await page.goto("/admin/equipes");
-  await expect(page).toHaveURL("http://localhost:3200/");
+  await expect(page).toHaveURL(/\/api\/auth\/signin/);
 });
 
 test("la fiche équipe montre la frise de forme récente", async ({ page }) => {
