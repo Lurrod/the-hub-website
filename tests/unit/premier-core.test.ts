@@ -14,6 +14,7 @@ import {
   tournamentStatusFor,
   quotaDelayMs,
   secretMatches,
+  cameFromProxy,
   QUOTA_FLOOR,
   premierRecordFingerprint,
   shouldRefreshHistory,
@@ -461,5 +462,31 @@ describe("shouldRefreshHistory", () => {
     // Le balayage quotidien rattrape ce que la comparaison ne voit pas : les
     // participations de playoffs, et les matchs dont l'import avait échoué.
     expect(shouldRefreshHistory("5-2-340", "5-2-340", true)).toBe(true);
+  });
+});
+
+describe("cameFromProxy", () => {
+  const from = (headers: Record<string, string>) => (name: string) => headers[name] ?? null;
+
+  it("est faux sans X-Forwarded-For (aucun proxy en amont)", () => {
+    expect(cameFromProxy(from({ authorization: "Bearer x" }))).toBe(false);
+  });
+
+  it("est faux quand le dernier maillon est en boucle locale (crontab : XFF posé par Next)", () => {
+    // Next remplit X-Forwarded-For depuis l'adresse du socket, même en direct :
+    // l'appel local de la crontab porte donc 127.0.0.1 / ::1, à laisser passer.
+    expect(cameFromProxy(from({ "x-forwarded-for": "127.0.0.1" }))).toBe(false);
+    expect(cameFromProxy(from({ "x-forwarded-for": "::1" }))).toBe(false);
+    expect(cameFromProxy(from({ "x-forwarded-for": "::ffff:127.0.0.1" }))).toBe(false);
+  });
+
+  it("est vrai quand le dernier maillon est une adresse publique (via Apache)", () => {
+    expect(cameFromProxy(from({ "x-forwarded-for": "1.2.3.4" }))).toBe(true);
+  });
+
+  it("regarde le dernier maillon, pas le premier : un préfixe menteur ne trompe pas", () => {
+    // Apache accole l'adresse réelle en fin de liste ; le client ne contrôle que
+    // le début. Un « 127.0.0.1, <ip publique> » reste un appel externe.
+    expect(cameFromProxy(from({ "x-forwarded-for": "127.0.0.1, 1.2.3.4" }))).toBe(true);
   });
 });

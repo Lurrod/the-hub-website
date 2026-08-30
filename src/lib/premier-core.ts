@@ -449,3 +449,34 @@ export function secretMatches(header: string | null, expected: string): boolean 
   if (given.length !== want.length) return false;
   return timingSafeEqual(given, want);
 }
+
+/** Adresse de boucle locale, IPv4, IPv6, ou IPv4 mappée en IPv6 (`::ffff:127.…`). */
+function isLoopbackAddr(ip: string): boolean {
+  const v = ip.trim().replace(/^::ffff:/i, "");
+  return v === "::1" || v === "127.0.0.1" || v.startsWith("127.");
+}
+
+/**
+ * La requête vient-elle d'Internet plutôt que de la boucle locale ?
+ *
+ * La synchro du Premier n'est appelée que par la crontab du serveur, qui frappe
+ * `http://127.0.0.1:3200` en direct. On ne peut pas se fier à la seule
+ * *présence* de `X-Forwarded-For` : Next le pose lui-même sur chaque requête,
+ * même directe, à partir de l'adresse du socket — celle de la crontab vaut donc
+ * `127.0.0.1` (ou `::1`).
+ *
+ * C'est la *valeur du dernier maillon* qui tranche. Apache ajoute toujours
+ * l'adresse réelle du client en fin de liste, sans que celui-ci puisse
+ * l'empêcher (il peut préfixer une valeur mensongère, jamais réécrire celle
+ * qu'Apache accole). Un dernier maillon public désigne donc un appel externe, à
+ * refuser ; un dernier maillon en boucle locale, l'appel légitime de la
+ * crontab. Exposer publiquement cette route n'était qu'une coïncidence de
+ * configuration : le secret n'a jamais eu à quitter la machine.
+ */
+export function cameFromProxy(header: (name: string) => string | null): boolean {
+  const xff = header("x-forwarded-for");
+  if (!xff) return false;
+  const hops = xff.split(",").filter((h) => h.trim().length > 0);
+  const last = hops[hops.length - 1];
+  return last != null && !isLoopbackAddr(last);
+}

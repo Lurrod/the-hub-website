@@ -18,6 +18,7 @@ import {
   findTeamConflict,
 } from "@/lib/data/teams";
 import { readUploadedImage, processAndStoreImage, deleteStoredImage } from "@/lib/images";
+import { allow, UPLOAD_RULE } from "@/lib/rate-limit";
 import { flashCodeFromError } from "@/lib/form-errors";
 
 function parseTeamForm(formData: FormData) {
@@ -55,6 +56,11 @@ function parseRoster(formData: FormData) {
 async function maybeStoreLogo(formData: FormData, teamId: string): Promise<void> {
   const buffer = await readUploadedImage(formData.get("logo"));
   if (!buffer) return;
+  // Un envoi = un redimensionnement `sharp` + une écriture disque. L'action est
+  // déjà autorisée ; la limite ne borne qu'un compte qui re-soumet en boucle.
+  if (!allow(`upload:team:${teamId}`, UPLOAD_RULE)) {
+    redirect(`/equipes/${teamId}/gestion?error=ratelimited`);
+  }
   const key = await processAndStoreImage(buffer, "teams", teamId);
   await setTeamLogo(teamId, key);
 }

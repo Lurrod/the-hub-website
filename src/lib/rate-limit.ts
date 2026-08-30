@@ -14,6 +14,14 @@ export type RateLimitRule = { limit: number; windowMs: number };
 /** Vérification d'un Riot ID : coûteuse côté API, rare côté usage légitime. */
 export const RIOT_CHECK_RULE: RateLimitRule = { limit: 5, windowMs: 10 * 60 * 1000 };
 
+/**
+ * Dépôt d'image (logo d'équipe, photo de joueur) : chaque envoi déclenche un
+ * redimensionnement `sharp` et une écriture disque. L'action est déjà derrière
+ * une session et une autorisation ; ce plafond borne le seul abus qui reste,
+ * un compte qui re-soumet sa propre image en boucle. Large pour l'usage normal.
+ */
+export const UPLOAD_RULE: RateLimitRule = { limit: 10, windowMs: 60 * 1000 };
+
 /** Au-delà, on purge les clés dont la fenêtre est entièrement expirée. */
 const SWEEP_THRESHOLD = 1000;
 

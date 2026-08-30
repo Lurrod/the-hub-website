@@ -19,7 +19,7 @@ import { parseAccountType } from "@/lib/account-types";
 import { nextLftState } from "@/lib/lft";
 import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
-import { allow } from "@/lib/rate-limit";
+import { allow, UPLOAD_RULE } from "@/lib/rate-limit";
 
 /**
  * Fiche joueur du visiteur, ou redirection.
@@ -52,6 +52,18 @@ export async function updateMyProfileAction(formData: FormData) {
   });
   if (!parsed.success) redirect(`/profil?error=${flashCodeFromError(parsed.error)}`);
   const data = parsed.data;
+
+  // Un envoi de photo = un redimensionnement `sharp` + une écriture disque : on
+  // ne borne que ce cas, pas un simple changement de pseudo. La fiche est celle
+  // du visiteur (session), la clé de limite est donc son propre identifiant.
+  const photo = formData.get("photo");
+  if (
+    photo instanceof File &&
+    photo.size > 0 &&
+    !allow(`upload:player:${player.id}`, UPLOAD_RULE)
+  ) {
+    redirect("/profil?error=ratelimited");
+  }
 
   await updatePlayer(player.id, data);
   await setPlayerAccountType(player.id, parseAccountType(formData.get("accountType")));

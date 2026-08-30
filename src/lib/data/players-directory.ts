@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { clampPage, pageOffset } from "@/lib/pagination";
 import { killDeathRatio, type PlayerDirectoryFilters } from "@/lib/players-directory";
+import { capSearchQuery } from "@/lib/search-core";
 
 /** Joueurs affichés par page dans l'annuaire. */
 export const PLAYERS_PER_PAGE = 25;
@@ -44,7 +45,9 @@ type RawRow = {
 function conditions(f: PlayerDirectoryFilters): Prisma.Sql {
   const parts: Prisma.Sql[] = [Prisma.sql`TRUE`];
   if (f.role) parts.push(Prisma.sql`p."valorantRole"::text = ${f.role}`);
-  if (f.q) parts.push(Prisma.sql`p."pseudo" ILIKE ${`%${f.q}%`}`);
+  // `f.q` est déjà borné par `normalizePlayerSearch` côté page, mais la couche
+  // data ne doit pas dépendre de son appelant : on replafonne ici.
+  if (f.q) parts.push(Prisma.sql`p."pseudo" ILIKE ${`%${capSearchQuery(f.q)}%`}`);
   if (f.team === "team") parts.push(Prisma.sql`m."id" IS NOT NULL`);
   if (f.team === "free") parts.push(Prisma.sql`m."id" IS NULL`);
   return Prisma.join(parts, " AND ");

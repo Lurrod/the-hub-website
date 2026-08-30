@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, assertCanManageTeam } from "@/lib/server-auth";
-import { playerInputSchema, rosterAddSchema } from "@/lib/validation/player";
+import { playerInputSchema, rosterAddSchema, memberRoleSchema } from "@/lib/validation/player";
 import {
   createPlayer,
   updatePlayer,
@@ -19,7 +19,6 @@ import { resolveRiotAccount, riotFlashCode } from "@/lib/riot-account";
 import { storePlayerPhotoFromForm } from "@/lib/player-photo";
 import { deleteStoredImage } from "@/lib/images";
 import { flashCodeFromError } from "@/lib/form-errors";
-import type { MembershipRole } from "@prisma/client";
 
 function parsePlayerForm(formData: FormData) {
   return playerInputSchema.parse({
@@ -129,7 +128,7 @@ export async function setMemberRoleAction(
   formData: FormData
 ) {
   await assertMembershipInTeam(teamId, membershipId);
-  const role = String(formData.get("role") ?? "JOUEUR") as MembershipRole;
+  const { role } = memberRoleSchema.parse({ role: formData.get("role") ?? "JOUEUR" });
   await setMembershipRole(membershipId, role);
   revalidatePath(`/equipes/${teamId}/gestion/roster`);
   revalidatePath(`/equipes/${teamId}`);
