@@ -17,6 +17,20 @@ describe("parseRiotId", () => {
   it("rejette un nom trop court", () => {
     expect(() => parseRiotId("ab#1234")).toThrow("RIOT_FORMAT");
   });
+  // Compte réel, signalé le 2026-08-31 : le tag porte une espace et l'ancienne
+  // règle le refusait. Vérifié auprès de Riot, il existe.
+  it("accepte une espace dans le tag", () => {
+    expect(parseRiotId("Ruskof#DO IT")).toEqual({ name: "Ruskof", tag: "DO IT" });
+  });
+  it("accepte la ponctuation dans le nom", () => {
+    expect(parseRiotId("T.o.p_1#EUW")).toEqual({ name: "T.o.p_1", tag: "EUW" });
+  });
+  it("rejette un tag trop long", () => {
+    expect(() => parseRiotId("Name#ABCDEF")).toThrow("RIOT_FORMAT");
+  });
+  it("rejette un caractère de contrôle", () => {
+    expect(() => parseRiotId("Na\u0000me#EUW")).toThrow("RIOT_FORMAT");
+  });
 });
 
 describe("riotIdSchema", () => {
