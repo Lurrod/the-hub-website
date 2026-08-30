@@ -54,7 +54,8 @@ function TeamLine({
 }
 
 /** Colonne continue de matchs : date/heure au-dessus, logo + tag (+ score si le
-    match est joué), avec une lueur orange en fond de chaque match. */
+    match est joué), sur une nappe orange qui monte du bas de la liste
+    (`.match-bloom-box`, voir `src/styles/components.css`). */
 export default function MatchMiniList({
   matches,
   empty = "Aucun match.",
@@ -66,7 +67,7 @@ export default function MatchMiniList({
     return <EmptyLine>{empty}</EmptyLine>;
   }
   return (
-    <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
+    <ul className="match-bloom-box divide-y divide-[var(--border)] overflow-hidden rounded-lg border border-[var(--border)]">
       {matches.map((m) => {
         const played = m.scoreA != null && m.scoreB != null;
         const score = played
@@ -86,12 +87,8 @@ export default function MatchMiniList({
           <li key={m.id}>
             <Link
               href={`/matchs/${m.id}`}
-              className="relative isolate block px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
+              className="match-bloom-row block px-3 py-2.5 transition-colors"
             >
-              <div
-                aria-hidden
-                className="absolute inset-0 -z-10 bg-[radial-gradient(55%_75%_at_100%_100%,var(--accent-glow),transparent_60%)]"
-              />
               <div className="mb-1.5 flex items-center gap-2 text-[10px]">
                 <span className="text-white">{timeLabel(m.date, m.hasTime ?? false)}</span>
                 <span className="text-[var(--text-muted)]">{shortDate(m.date)}</span>
