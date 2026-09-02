@@ -246,7 +246,7 @@ export default async function AdminDoublonsPage({
           <div className="sticky bottom-0 -mx-4 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3">
             <button
               type="submit"
-              className="rounded-lg bg-[var(--accent)] px-3 py-2 font-semibold text-white transition-opacity hover:opacity-90"
+              className="rounded-lg bg-[var(--accent)] px-3 py-2 font-semibold transition-opacity hover:opacity-90"
             >
               Préparer la fusion des paires cochées
             </button>

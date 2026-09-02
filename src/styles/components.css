@@ -281,7 +281,30 @@
 }
 
 /* --- Survol moderne des boutons (cible les classes Tailwind, DRY app-wide) --- */
-/* Boutons/liens accent : assombrissement + ombre portée douce au survol. */
+
+/* Texte de tout élément posé sur l'accent.
+ *
+ * Le blanc sur --accent ne tient que 3,37:1, sous le seuil AA de 4,5 pour du
+ * texte courant — et ces boutons sont les plus structurants du site :
+ * « Connexion Discord », les appels à l'action de l'accueil, le lien
+ * d'évitement. --accent-foreground, qui existait déjà et n'était employé qu'à
+ * un seul endroit, tient 5,39:1.
+ *
+ * Règle non-layered et même sélecteur que le survol ci-dessous : elle bat le
+ * `text-white` des utilitaires Tailwind, ce qui corrige les 41 emplacements
+ * d'un coup — et couvre ceux qu'on écrira demain. Les `text-white` devenus
+ * inertes ont été retirés du JSX pour que le code ne mente pas.
+ */
+.bg-\[var\(--accent\)\],
+.focus\:bg-\[var\(--accent\)\]:focus {
+  color: var(--accent-foreground);
+}
+
+/* Boutons/liens accent : éclaircissement + ombre portée douce au survol.
+ *
+ * Le survol éclaircit désormais au lieu d'assombrir : avec un texte sombre,
+ * l'ancien --accent-hover (#d14e1f) descendait à 4,17:1. Il échouait d'ailleurs
+ * avec le blanc aussi (4,36:1) — l'état de survol n'avait jamais été mesuré. */
 button:not(:disabled).bg-\[var\(--accent\)\]:hover,
 a.bg-\[var\(--accent\)\]:hover {
   background-color: var(--accent-hover);

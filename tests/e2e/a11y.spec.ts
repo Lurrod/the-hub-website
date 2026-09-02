@@ -25,12 +25,14 @@ const PAGES = [
  * Règles écartées, avec leur raison. Toute entrée ici est une dette assumée,
  * pas un faux positif : elle doit disparaître quand le finding est corrigé.
  *
- * - `color-contrast` : findings A11Y-01 (bouton « Connexion Discord », 3.36:1)
- *   et A11Y-02 (jeton --text-subtle, 3.5:1). Les deux se corrigent en changeant
- *   une couleur de la charte — un arbitrage visuel, pas une correction
- *   technique. Retirer cette exclusion dès que les deux jetons sont remontés.
+ * `color-contrast` a été retiré de cette liste : les deux jetons qui le
+ * faisaient échouer sont remontés au-dessus de 4,5:1 sur tous les fonds du
+ * site (--accent-foreground sur les boutons d'accent, --text-subtle à
+ * #909298). La règle est de nouveau active, et c'est elle qui empêchera la
+ * dérive de reprendre — la laisser éteinte après correction revenait à
+ * repartir pour un an.
  */
-const DISABLED_RULES = ["color-contrast"];
+const DISABLED_RULES: string[] = [];
 
 for (const { path, name } of PAGES) {
   test(`aucune violation d'accessibilité sérieuse sur ${name}`, async ({ page }) => {

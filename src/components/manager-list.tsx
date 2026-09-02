@@ -101,7 +101,7 @@ export default function ManagerList({
                 </option>
               ))}
             </select>
-            <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white">
+            <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium">
               Ajouter
             </button>
           </form>

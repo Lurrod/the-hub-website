@@ -20,7 +20,7 @@ import { DiscordIcon } from "@/components/icons";
  * de `lg`, l'icône seule suffisant en dessous.
  */
 const AUTH_BUTTON =
-  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded bg-[var(--accent)] px-2.5 py-1.5 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)] lg:px-3";
+  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded bg-[var(--accent)] px-2.5 py-1.5 text-sm font-medium transition-colors duration-[130ms] hover:bg-[var(--accent-hover)] lg:px-3";
 
 export async function NavSessionLinks({ variant }: { variant?: "bar" | "drawer" }) {
   const session = await getCachedSession();

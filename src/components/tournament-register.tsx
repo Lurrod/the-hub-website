@@ -81,7 +81,7 @@ export default function TournamentRegister({
           ) : (
             <input type="hidden" name="teamId" value={eligible[0].id} />
           )}
-          <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white">
+          <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold">
             {eligible.length > 1 ? "Inscrire" : `Inscrire ${eligible[0].name}`}
           </button>
         </form>

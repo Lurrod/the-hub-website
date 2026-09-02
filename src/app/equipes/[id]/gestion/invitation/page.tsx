@@ -68,7 +68,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ id:
             Aucun lien actif. Génère un lien à partager (valable 7 jours, réutilisable).
           </p>
           <form action={generateWithId}>
-            <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium">
               Générer un lien
             </button>
           </form>

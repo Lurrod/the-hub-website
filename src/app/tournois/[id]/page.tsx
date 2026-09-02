@@ -388,7 +388,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
               {canManage && (
                 <Link
                   href={`/tournois/${id}/gestion`}
-                  className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+                  className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium"
                 >
                   Gérer
                 </Link>

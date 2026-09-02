@@ -16,7 +16,7 @@ const HEAD_ROW = "mb-3 flex items-baseline justify-between gap-4";
 const SEE_ALL =
   "shrink-0 text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--accent)]";
 const BTN_PRIMARY =
-  "rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90";
+  "rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90";
 
 /**
  * Contenu vivant de l'accueil sous le hero : tournois, derniers résultats,

@@ -128,7 +128,7 @@ export default async function TeamGestionPage({ params }: { params: Promise<{ id
             className={
               team.lfp
                 ? "justify-self-start rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
-                : "justify-self-start rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                : "justify-self-start rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
             }
           >
             {team.lfp ? "Retirer l'annonce" : "Publier l'annonce"}

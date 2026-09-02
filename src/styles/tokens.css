@@ -23,11 +23,22 @@
   /* Texte */
   --text: #fafafa;
   --text-muted: #9b9c9e;
-  --text-subtle: #6f7178;
+  /* Remonté de #6f7178, qui ne tenait que 3,02:1 sur --card-hover et 3,73:1
+     sur --bg. La charte le réservait au décor, mais 68 emplacements y
+     mettaient de l'information — en-têtes de colonnes, compteurs de
+     pagination, messages d'erreur. #909298 est le premier palier au-dessus
+     de 4,5:1 sur les cinq fonds, --card-hover compris (4,74:1).
+     Conséquence assumée : l'écart avec --text-muted (#9b9c9e) devient
+     ténu. Trois niveaux de gris lisibles n'existent pas sur fond sombre ;
+     la hiérarchie se joue désormais à la taille et à la graisse. */
+  --text-subtle: #909298;
 
   /* Accent (orange de marque - remplace le periwinkle rft.gg) */
   --accent: #ed5e29;
-  --accent-hover: #d14e1f;
+  /* Éclaircit au lieu d'assombrir : le texte posé sur l'accent est sombre
+     (--accent-foreground), et l'ancien #d14e1f n'y tenait que 4,17:1 — il
+     échouait aussi avec du blanc, à 4,36:1. #f0763f donne 6,37:1. */
+  --accent-hover: #f0763f;
   --accent-2: #f2925e;
   --accent-foreground: #131619;
   --accent-soft: rgba(237, 94, 41, 0.12);

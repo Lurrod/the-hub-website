@@ -246,7 +246,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               href={match.vodUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-block rounded-[var(--r-sm)] bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+              className="inline-block rounded-[var(--r-sm)] bg-[var(--accent)] px-4 py-2 text-sm font-medium transition-colors hover:bg-[var(--accent-hover)]"
             >
               Voir la VOD
             </a>
@@ -312,7 +312,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             {canManage && (
               <Link
                 href={`/tournois/${match.tournamentId}/gestion/matchs/${match.id}`}
-                className="rounded bg-[var(--accent)] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+                className="rounded bg-[var(--accent)] px-2.5 py-1 text-xs font-medium transition-colors hover:bg-[var(--accent-hover)]"
               >
                 Gérer
               </Link>
