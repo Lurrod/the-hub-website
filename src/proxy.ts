@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { buildCsp, generateNonce, CSP_HEADER } from "@/lib/csp";
 import { ficheName } from "@/lib/data/existence";
 import { idFromSegment, isCanonicalSegment, fichePath, type FicheSection } from "@/lib/slug";
-import { allow, type RateLimitRule } from "@/lib/rate-limit";
+import { allow, imageRenderRule, type RateLimitRule } from "@/lib/rate-limit";
 import { describeError, logger } from "@/lib/logger";
 
 const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
@@ -29,8 +29,11 @@ export function isRenderExpensivePath(pathname: string): boolean {
  * ne le gêne pas, mais il coupe le martèlement depuis une même adresse. La
  * défense complète contre un flot distribué reste un cache en amont (voir
  * `docs/ops/durcissement-apache.md`).
+ *
+ * Lu une fois au chargement du module : le proxy s'exécute sur chaque requête,
+ * et relire l'environnement à chaque passage ne changerait rien qu'un coût.
  */
-const IMAGE_RENDER_RULE: RateLimitRule = { limit: 30, windowMs: 60 * 1000 };
+const IMAGE_RENDER_RULE: RateLimitRule = imageRenderRule(process.env.IMAGE_RENDER_LIMIT);
 
 /** Dernier maillon du X-Forwarded-For, celui posé par Apache ; jamais le premier, écrit par le client. */
 function clientIp(request: NextRequest): string {

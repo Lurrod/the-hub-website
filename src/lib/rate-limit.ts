@@ -87,3 +87,28 @@ export function allow(key: string, rule: RateLimitRule = RIOT_CHECK_RULE): boole
 export function resetRateLimits(): void {
   store.clear();
 }
+
+/** Plafond de rendu d'images par adresse et par minute, sans configuration. */
+const IMAGE_RENDER_DEFAUT = 30;
+
+/**
+ * Plafond des routes d'image rendues à la volée, configurable par
+ * `IMAGE_RENDER_LIMIT`.
+ *
+ * Le seau est keyé sur l'adresse cliente, et « une adresse » ne veut pas
+ * partout dire « un visiteur ». En production Apache pose un
+ * `X-Forwarded-For` distinct par client et la valeur par défaut vise ce cas ;
+ * mais derrière un NAT partagé, ou dans la suite de parcours où tout part de
+ * la boucle locale, des dizaines de requêtes légitimes tombent dans le même
+ * seau — les tests de carte de partage l'ont payé en 429.
+ *
+ * Le cas limite qui a dicté le garde-fou : `Number("beaucoup")` vaut `NaN`, et
+ * un `NaN` propagé jusqu'à `consume` rend `fresh.length >= rule.limit`
+ * toujours faux. Un plafond mal saisi supprimerait donc la limite au lieu de
+ * la resserrer, exactement l'inverse de l'intention.
+ */
+export function imageRenderRule(brut: string | undefined): RateLimitRule {
+  const valeur = Number(brut);
+  const limit = Number.isInteger(valeur) && valeur > 0 ? valeur : IMAGE_RENDER_DEFAUT;
+  return { limit, windowMs: 60 * 1000 };
+}
