@@ -70,7 +70,10 @@ export default function LftFilters({
           defaultValue={q ?? ""}
           placeholder="Rechercher un pseudo"
           ariaLabel="Rechercher un pseudo"
-          className="min-w-0 flex-1 sm:max-w-56"
+          // `basis-full` sous sm : la rangée se replie, et sans base propre le
+          // champ se faisait écraser par les selects voisins — 48px de large,
+          // « Reche » tronqué. À partir de sm il reprend sa place dans la ligne.
+          className="basis-full sm:min-w-0 sm:flex-1 sm:basis-auto sm:max-w-56"
         />
 
         <label className="sr-only" htmlFor="lft-type">

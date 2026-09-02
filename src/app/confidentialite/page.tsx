@@ -126,7 +126,12 @@ export default function ConfidentialitePage() {
       </Section>
 
       <Section title="Finalités et bases légales">
-        <div className="scroll-x scroll-x-on-bg">
+        <div
+          className="scroll-x scroll-x-on-bg"
+          tabIndex={0}
+          role="region"
+          aria-label="Tableau, défilement horizontal"
+        >
           <table className="w-full min-w-[520px] border-collapse">
             <thead>
               <tr>
@@ -236,7 +241,12 @@ export default function ConfidentialitePage() {
           Le site dépose des cookies pour deux finalités seulement, toutes deux strictement
           nécessaires à son fonctionnement :
         </p>
-        <div className="scroll-x scroll-x-on-bg">
+        <div
+          className="scroll-x scroll-x-on-bg"
+          tabIndex={0}
+          role="region"
+          aria-label="Tableau, défilement horizontal"
+        >
           <table className="w-full min-w-[520px] border-collapse">
             <thead>
               <tr>

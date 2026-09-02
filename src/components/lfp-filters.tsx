@@ -53,7 +53,9 @@ export default function LfpFilters({ filters, total }: { filters: LfpFilters; to
           defaultValue={q ?? ""}
           placeholder="Nom ou tag d'équipe"
           ariaLabel="Rechercher une équipe"
-          className="min-w-0 flex-1 sm:max-w-56"
+          // Même repli que sur les deux autres barres : sans base propre le
+          // champ se faisait écraser par les selects voisins sous sm.
+          className="basis-full sm:min-w-0 sm:flex-1 sm:basis-auto sm:max-w-56"
         />
 
         <button className="rounded border border-[var(--border)] px-3 py-1.5 text-sm text-white transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">

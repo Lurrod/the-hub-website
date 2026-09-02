@@ -29,7 +29,12 @@ export default function MapHeatmap({ teams }: { teams: TeamStats[] }) {
   const fill = (winrate: number) => 0.15 + (winrate / 100) * 0.6;
 
   return (
-    <div className="scroll-x">
+    <div
+      className="scroll-x"
+      tabIndex={0}
+      role="region"
+      aria-label="Taux de victoire par carte, défilement horizontal"
+    >
       <table className="w-full min-w-[560px] border-separate border-spacing-0.5 text-xs">
         <thead>
           <tr>

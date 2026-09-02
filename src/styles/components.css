@@ -912,10 +912,16 @@ body :is(h1, h2, h3, h4, h5, h6) {
   background: #2b2d31;
   color: #dbdee1;
 }
+/* Maquette Discord : les valeurs reproduisent volontairement sa palette, d'où
+   l'exception à la règle « pas d'hexadécimal » — ce ne sont pas nos couleurs.
+   Le gris du texte est passé de #82858f à #a8adb5 : le premier ne tenait que
+   3,09:1, et `aria-hidden` n'exempte pas du contraste — à juste titre, le texte
+   reste visible pour qui voit mal. #a8adb5 tient 5,04:1 et reste un gris de
+   remplissage crédible dans cette interface. */
 .lf-dc-input {
   border-radius: 8px;
   background: #383a40;
-  color: #82858f;
+  color: #a8adb5;
 }
 .lf-dc-plus {
   background: #b5bac1;
