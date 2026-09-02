@@ -30,10 +30,6 @@ const nextConfig: NextConfig = {
   // sur le Kimsufi, qui n'a donc ni à installer node_modules ni à compiler.
   output: "standalone",
   images: {
-    // AVIF d'abord, WebP en repli : sur des logos et des photos réduits à
-    // quelques dizaines de pixels, l'écart se compte en centaines d'octets par
-    // image, mais une liste de 25 joueurs en affiche 25.
-    formats: ["image/avif", "image/webp"],
     // Les seules tailles réellement rendues par le site. Les restreindre borne
     // le travail de sharp : chaque paire (image, largeur) est optimisée une
     // fois, et le process est unique.
