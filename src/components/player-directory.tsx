@@ -34,7 +34,12 @@ export default function PlayerDirectory({
 
   const num = "stat py-2.5 pr-3 text-right";
   return (
-    <div className="overflow-x-auto">
+    <div
+      className="overflow-x-auto"
+      tabIndex={0}
+      role="region"
+      aria-label="Tableau des joueurs, défilement horizontal"
+    >
       <table className="w-full min-w-[560px] text-sm">
         <thead>
           <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--text-subtle)]">

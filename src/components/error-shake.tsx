@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { ERROR_MESSAGES } from "@/lib/flash-messages";
 
@@ -24,6 +24,7 @@ export default function ErrorShake({
   const matched = code !== null && codes.includes(code);
   const [errored, setErrored] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const messageId = useId();
   const revertTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function ErrorShake({
     const clearError = () => {
       setErrored(false);
       field.classList.remove("is-error");
+      wrap.querySelector("input, textarea, select")?.removeAttribute("aria-invalid");
     };
     revertTimer.current = window.setTimeout(clearError, shakeMs + ms("--revert-hold", 3000));
 
@@ -60,22 +62,35 @@ export default function ErrorShake({
       if (revertTimer.current) window.clearTimeout(revertTimer.current);
       clearError();
     };
-    const inputEl = wrap.querySelector("input, textarea");
+    const inputEl = wrap.querySelector("input, textarea, select");
     inputEl?.addEventListener("input", onInput);
+
+    // Rattache le message au champ. `role="alert"` seul ne l'annonce qu'à son
+    // apparition : qui revient sur le champ par tabulation ne l'entend plus, et
+    // rien ne dit que la valeur est invalide. L'état d'erreur ne reposait que
+    // sur une couleur et une secousse — WCAG 1.4.1 et 3.3.1.
+    inputEl?.setAttribute("aria-invalid", "true");
+    inputEl?.setAttribute("aria-describedby", messageId);
 
     return () => {
       window.clearTimeout(stop);
       if (revertTimer.current) window.clearTimeout(revertTimer.current);
       inputEl?.removeEventListener("input", onInput);
+      inputEl?.removeAttribute("aria-invalid");
+      inputEl?.removeAttribute("aria-describedby");
     };
-  }, [matched, code]);
+  }, [matched, code, messageId]);
 
   const message = matched && code ? ERROR_MESSAGES[code]?.message : undefined;
 
   return (
     <div ref={wrapRef} className={`t-input-wrap ${errored ? "is-error" : ""}`}>
       {children}
-      <p className="t-error-msg mt-1.5 text-xs text-[var(--destructive)]" role="alert">
+      <p
+        id={messageId}
+        className="t-error-msg mt-1.5 text-xs text-[var(--destructive)]"
+        role="alert"
+      >
         {message}
       </p>
     </div>

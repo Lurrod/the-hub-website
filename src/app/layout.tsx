@@ -72,7 +72,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SkipLink />
         <div className="flex min-h-screen flex-col">
           <NavBar />
-          <div id="contenu" className="flex-1">
+          {/* `tabIndex={-1}` : sans lui, le saut depuis le lien d'évitement fait
+              défiler la page mais laisse le focus sur le lien — la tabulation
+              suivante repart de la barre de navigation (WCAG 2.4.1). */}
+          <div id="contenu" tabIndex={-1} className="flex-1">
             {children}
           </div>
           <Footer />
