@@ -23,6 +23,17 @@ export class RiotIdError extends Error {
   }
 }
 
+/**
+ * Le dépassement de quota est-il la cause de cette erreur ?
+ *
+ * Vit ici plutôt que chez ses appelants : c'est un prédicat sur RiotIdError,
+ * et deux modules du miroir Premier en avaient besoin depuis que le
+ * rattachement d'équipes a été extrait.
+ */
+export function estQuotaDepasse(e: unknown): boolean {
+  return e instanceof RiotIdError && e.code === "RATE_LIMITED";
+}
+
 export type RiotAccount = { puuid: string; region: string; name: string; tag: string };
 
 const BASE = "https://api.henrikdev.xyz";

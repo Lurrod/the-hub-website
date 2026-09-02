@@ -13,6 +13,14 @@
   --shell: #0d0f10;
   --surface: #191c22;
   --card: #191c22;
+
+  /* Damier de transparence du recadreur d'image. Deux jetons dédiés plutôt
+     que deux hexadécimaux dans le JSX : c'était la seule couleur en dur du
+     code applicatif, et rien ne l'aurait raccordée à un changement de
+     palette. Volontairement proches de --bg et --surface, sans s'y
+     confondre : le damier doit rester lisible sous une image transparente. */
+  --checker-a: #1b1e26;
+  --checker-b: #15181f;
   --card-hover: #242832;
   --border: #303133;
   --border-strong: #404040;
