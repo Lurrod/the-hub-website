@@ -1,6 +1,22 @@
 import type { Instrumentation } from "next";
 import { buildErrorReport } from "@/lib/error-report";
+import { assertEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
+
+/**
+ * Exécuté une fois avant la première requête. On y contrôle l'environnement :
+ * c'est le seul endroit où une variable manquante peut encore être signalée
+ * avant qu'elle ne devienne une panne silencieuse en production.
+ *
+ * `register` tourne aussi pendant `next build`, où la CI ne fournit que des
+ * valeurs factices pour DATABASE_URL et AUTH_SECRET : on saute le contrôle
+ * dans cette phase, sinon le build échouerait sur des variables dont il n'a
+ * pas besoin.
+ */
+export function register(): void {
+  if (process.env.NEXT_PHASE === "phase-production-build") return;
+  assertEnv();
+}
 
 /**
  * Journalisation des erreurs serveur non rattrapées.

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { allow, consume, resetRateLimits, type RateLimitRule } from "@/lib/rate-limit";
 
 const RULE: RateLimitRule = { limit: 3, windowMs: 1000 };
@@ -50,5 +50,55 @@ describe("allow", () => {
     Array.from({ length: 3 }, () => allow("user-1", RULE));
     expect(allow("user-1", RULE)).toBe(false);
     expect(allow("user-2", RULE)).toBe(true);
+  });
+});
+
+/**
+ * Le magasin est partagé par des règles de fenêtres très différentes : 60 s
+ * pour les images rendues à la volée et les dépôts d'image, 10 minutes pour la
+ * vérification des Riot ID. Le balayage tranchait sur la fenêtre de la règle en
+ * cours d'appel et non sur celle de la clé examinée : un appel porté par une
+ * règle courte évinçait donc les compteurs d'une règle longue encore valides.
+ *
+ * Concrètement, le quota de 5 vérifications Riot par 10 minutes — la seule
+ * raison d'être du module, protéger le quota de la clé HenrikDev — pouvait être
+ * remis à zéro toutes les 60 secondes en faisant grossir le magasin au-delà du
+ * seuil de balayage. Les clés `image:<ip>` sont créées à raison d'une par
+ * adresse cliente : y parvenir ne demande qu'un flot distribué.
+ */
+describe("balayage du magasin", () => {
+  const COURTE: RateLimitRule = { limit: 30, windowMs: 60_000 };
+  const LONGUE: RateLimitRule = { limit: 2, windowMs: 600_000 };
+
+  beforeEach(() => {
+    resetRateLimits();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-02T12:00:00Z"));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("n'évince pas une clé dont la fenêtre court encore", () => {
+    expect(allow("riot:joueur", LONGUE)).toBe(true);
+    expect(allow("riot:joueur", LONGUE)).toBe(true);
+    expect(allow("riot:joueur", LONGUE)).toBe(false);
+
+    // Une minute plus tard : la fenêtre courte est expirée, la longue non.
+    vi.advanceTimersByTime(61_000);
+
+    // Le magasin dépasse le seuil de balayage, sous une règle à fenêtre courte.
+    for (let i = 0; i < 1_100; i++) allow(`image:10.0.${i >> 8}.${i & 255}`, COURTE);
+
+    // Le quota de la règle longue n'a que 61 s : il doit tenir encore 9 minutes.
+    expect(allow("riot:joueur", LONGUE)).toBe(false);
+  });
+
+  it("évince bien une clé dont la fenêtre est réellement expirée", () => {
+    expect(allow("riot:joueur", LONGUE)).toBe(true);
+    vi.advanceTimersByTime(601_000);
+    for (let i = 0; i < 1_100; i++) allow(`image:10.1.${i >> 8}.${i & 255}`, COURTE);
+    // La clé a disparu du magasin, et un nouvel appel repart d'un quota plein.
+    expect(allow("riot:joueur", LONGUE)).toBe(true);
+    expect(allow("riot:joueur", LONGUE)).toBe(true);
+    expect(allow("riot:joueur", LONGUE)).toBe(false);
   });
 });
