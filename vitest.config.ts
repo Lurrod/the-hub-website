@@ -4,6 +4,19 @@ import path from "node:path";
 export default defineConfig({
   test: {
     environment: "node",
+    // Fuseau épinglé sur UTC, volontairement différent de celui de production.
+    //
+    // `monthKey` et `monthLabel` lisaient le fuseau du système : elles se
+    // rangeaient sur le mauvais mois partout sauf à Paris. Leurs tests
+    // passaient quand même, parce qu'ils tournaient sur une machine parisienne
+    // avec des dates écrites sans suffixe de fuseau — la CI, elle, aurait
+    // rougi. Épingler UTC ici fait tomber ce genre de dérive en local, au
+    // moment où on l'écrit, et non trois commits plus tard.
+    //
+    // Le code qui doit afficher l'heure de Paris passe par
+    // `src/lib/timezone.ts`, qui la force : ces tests-là sont indifférents au
+    // réglage.
+    env: { TZ: "UTC" },
     include: ["tests/unit/**/*.test.ts"],
     coverage: {
       provider: "v8",

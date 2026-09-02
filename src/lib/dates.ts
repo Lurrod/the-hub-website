@@ -34,17 +34,26 @@ export function tournamentCountdownLabel(status: TournamentStatus, days: number 
   return countdownLabel(days);
 }
 
-/** Clé de regroupement par mois (AAAA-MM), "0000-00" si date absente. */
+/**
+ * Clé de regroupement par mois (AAAA-MM), "0000-00" si date absente.
+ *
+ * Le mois est celui de Paris. Ces deux fonctions étaient les seules de ce
+ * module à lire le fuseau du système, alors qu'ecosystem.config.cjs affirme
+ * que « les dates saisies et affichées sont ancrées sur Paris par le code, qui
+ * ne dépend donc pas de ce réglage ». C'était faux : elles ne marchaient que
+ * grâce au TZ posé par pm2. Un tournoi commençant le 1er août à 00h30 heure de
+ * Paris se rangeait sous « Juillet » partout ailleurs — CI, conteneur, poste à
+ * l'étranger.
+ */
 export function monthKey(date: Date | null): string {
   if (!date) return "0000-00";
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return toDateInput(new Date(date)).slice(0, 7);
 }
 
-/** Libellé de mois (« juillet 2026 »), capitalisé. */
+/** Libellé de mois (« Juillet 2026 »), capitalisé, sur le fuseau de Paris. */
 export function monthLabel(date: Date | null): string {
   if (!date) return "Dates à définir";
-  const s = new Date(date).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const s = formatSite(new Date(date), { month: "long", year: "numeric" });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 

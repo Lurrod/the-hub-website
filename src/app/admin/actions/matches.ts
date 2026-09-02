@@ -28,6 +28,7 @@ import {
   syncMatchScoreFromMaps,
   getMatch,
 } from "@/lib/data/matches";
+import { groupNameSchema } from "@/lib/validation/tournament";
 import {
   countRegisteredAmong,
   getTournamentFormat,
@@ -103,8 +104,8 @@ export async function createGroupAction(tournamentId: string, formData: FormData
   const base = `/tournois/${tournamentId}/gestion/competition`;
   const t = await getTournamentFormat(tournamentId);
   if (t && !formatAllowsGroups(t.format)) redirect(`${base}?error=nogroups`);
-  const name = String(formData.get("name") ?? "").trim();
-  if (name) await createGroup(tournamentId, name);
+  const nom = groupNameSchema.safeParse(formData.get("name") ?? "");
+  if (nom.success) await createGroup(tournamentId, nom.data);
   revalidateCompetition(tournamentId);
   redirect(base);
 }
