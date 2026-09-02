@@ -164,15 +164,6 @@ jobs:
             ln -s "$APP_DIR/shared/uploads" "$RELEASE/uploads"
             ln -s "$APP_DIR/shared/.env" "$RELEASE/.env"
 
-            # Cache d'optimisation d'images de Next. Chaque release est un
-            # dossier neuf : sans ce lien, le cache repart vide à chaque
-            # déploiement et le premier visiteur de chaque page relance sharp
-            # sur toutes les vignettes — sur un process unique, ça se sent.
-            mkdir -p "$APP_DIR/shared/next-image-cache"
-            mkdir -p "$RELEASE/.next/cache"
-            rm -rf "$RELEASE/.next/cache/images"
-            ln -s "$APP_DIR/shared/next-image-cache" "$RELEASE/.next/cache/images"
-
             cd "$RELEASE"
 
             # Secrets exportés dans l'environnement : pm2 les transmet au process

@@ -1,5 +1,28 @@
 import { promises as fs } from "node:fs";
 import sharp from "sharp";
+
+/**
+ * `next/image` est incompatible avec ce module, et le sujet a coûté une demi-
+ * journée : ne pas le réintroduire sans lire ce qui suit.
+ *
+ * L'optimiseur d'images de Next appelle `sharp.block({ operation:
+ * ["VipsForeignLoad"] })` au premier `/_next/image` servi, puis ne débloque
+ * que six chargeurs — `VipsForeignLoadSvg` n'en fait pas partie
+ * (`next/dist/server/image-optimizer.js:getSharp`). Or `block` est un réglage
+ * GLOBAL au processus, et `@vercel/og` rastérise le SVG de Satori avec ce
+ * même sharp (`compiled/@vercel/og/index.node.js:21420`).
+ *
+ * Conséquence : dès qu'une seule vignette est optimisée, toutes les cartes de
+ * partage et toutes les images OpenGraph du processus tombent en « Input
+ * buffer contains unsupported image format », définitivement jusqu'au
+ * redémarrage. Sur un pm2 en `instances: 1`, c'est tout le site.
+ *
+ * Débloquer le SVG de notre côté rouvrirait ce que Next ferme à dessein : le
+ * chargeur SVG de libvips est une surface d'attaque, et l'optimiseur, lui,
+ * décode des images distantes. Le gisement de PERF-01 se prend donc au dépôt,
+ * en stockant une petite variante dans `processAndStoreImage`, pas à
+ * l'exécution.
+ */
 import { EXTERNAL_IMAGE_HOSTS } from "@/lib/csp";
 import { resolveUploadPath } from "@/lib/images";
 import { logger, describeError } from "@/lib/logger";

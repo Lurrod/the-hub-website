@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { longDate, tournamentCountdownLabel } from "@/lib/dates";
 import type { TournamentStatus } from "@/lib/constants";
-import Image from "next/image";
 import { fichePath } from "@/lib/slug";
 
 type Row = {
@@ -32,10 +31,11 @@ export default function TournamentListRow({ t }: { t: Row }) {
       </div>
 
       {t.logo ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          loading="lazy"
+          decoding="async"
           src={t.logo}
-          width={48}
-          height={48}
           alt={`Logo ${t.name}`}
           className="h-12 w-12 shrink-0 rounded-lg object-cover"
         />

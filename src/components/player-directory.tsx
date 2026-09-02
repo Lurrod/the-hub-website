@@ -3,7 +3,6 @@ import EmptyState, { ListDecor } from "@/components/empty-state";
 import Flag from "@/components/flag";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
 import type { DirectoryRow } from "@/lib/data/players-directory";
-import Image from "next/image";
 
 /**
  * Classement des joueurs.
@@ -89,10 +88,11 @@ export default function PlayerDirectory({
                 <td className="py-2.5 pr-2">
                   <Link href={`/joueurs/${p.id}`} className="group flex items-center gap-2.5">
                     {p.photo ? (
-                      <Image
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        loading="lazy"
+                        decoding="async"
                         src={p.photo}
-                        width={32}
-                        height={32}
                         alt=""
                         className="h-8 w-8 shrink-0 rounded-full object-cover"
                       />

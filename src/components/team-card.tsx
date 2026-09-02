@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { fichePath } from "@/lib/slug";
 
 type TeamCardData = {
@@ -17,10 +16,11 @@ export default function TeamCard({ team }: { team: TeamCardData }) {
       className="card card-interactive flex items-center gap-3 p-3"
     >
       {team.logo ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          loading="lazy"
+          decoding="async"
           src={team.logo}
-          width={40}
-          height={40}
           alt={`Logo ${team.name}`}
           className="h-10 w-10 rounded object-cover"
         />

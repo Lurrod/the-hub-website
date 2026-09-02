@@ -1,5 +1,4 @@
 import type { TeamStats } from "@/lib/tournament-teams-core";
-import Image from "next/image";
 
 /**
  * Grille équipes × maps, couleur selon le winrate.
@@ -65,11 +64,11 @@ export default function MapHeatmap({ teams }: { teams: TeamStats[] }) {
               >
                 <span className="flex items-center gap-1.5">
                   {t.team.logo ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                       src={t.team.logo}
-                      width={16}
-                      height={16}
                       alt=""
+                      loading="lazy"
                       className="h-4 w-4 shrink-0 rounded object-cover"
                     />
                   ) : (
