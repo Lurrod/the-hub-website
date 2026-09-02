@@ -1,7 +1,23 @@
 import type { ReactNode } from "react";
 
-/** Date de dernière révision affichée en tête des pages légales. */
-export const LEGAL_UPDATED = "1er août 2026";
+/**
+ * Date de dernière révision, propre à chaque document.
+ *
+ * C'était une constante unique pour les trois pages : réviser la politique de
+ * confidentialité redatait donc aussi les mentions légales et les CGU, qui
+ * n'avaient pas bougé. La politique s'engage pourtant à signaler toute
+ * modification substantielle par cette date — une date fausse fragilise la
+ * démonstration de conformité (article 5.2 du RGPD).
+ *
+ * À mettre à jour dès qu'on touche au fond du document correspondant.
+ */
+export const LEGAL_UPDATED = {
+  mentions: "1er août 2026",
+  cgu: "1er août 2026",
+  confidentialite: "2 septembre 2026",
+} as const;
+
+export type LegalDocument = keyof typeof LEGAL_UPDATED;
 
 /** Canal de contact unique de l'éditeur (mentions légales, RGPD, signalements). */
 export const DISCORD_INVITE = "https://discord.com/invite/XN5aXeMMB8";
@@ -43,10 +59,12 @@ export function Section({ title, children }: { title: string; children: ReactNod
 
 export function LegalPage({
   title,
+  document,
   intro,
   children,
 }: {
   title: string;
+  document: LegalDocument;
   intro?: string;
   children: ReactNode;
 }) {
@@ -54,7 +72,7 @@ export function LegalPage({
     <main className="legal mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-2xl font-bold text-white">{title}</h1>
       <p className="mt-1 text-xs text-[var(--text-subtle)]">
-        Dernière mise à jour : {LEGAL_UPDATED}
+        Dernière mise à jour : {LEGAL_UPDATED[document]}
       </p>
       {intro && <p className="mt-5 text-[var(--text-muted)]">{intro}</p>}
       {children}

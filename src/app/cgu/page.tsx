@@ -11,6 +11,7 @@ export default function CguPage() {
   return (
     <LegalPage
       title="Conditions générales d'utilisation"
+      document="cgu"
       intro="Les présentes conditions régissent l'accès au site The Hub et son utilisation. Créer un compte vaut acceptation pleine et entière de ces conditions."
     >
       <Section title="1. Objet du service">

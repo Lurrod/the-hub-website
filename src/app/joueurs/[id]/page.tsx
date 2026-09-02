@@ -6,6 +6,7 @@ import PlayerMatches from "@/components/player-matches";
 import PlayerCareerTable from "@/components/player-career-table";
 import { notFound } from "next/navigation";
 import EmptyState, { StatsDecor } from "@/components/empty-state";
+import FicheSansCompte from "@/components/fiche-sans-compte";
 import { getPlayer } from "@/lib/data/players";
 import { getPlayerMatches } from "@/lib/data/player-matches";
 import { getPlayerCareer } from "@/lib/data/player-career";
@@ -335,6 +336,12 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
           { key: "carriere", label: "Carrière", content: carriere },
         ]}
       />
+
+      {/* `user` est nul quand aucun compte ne porte la fiche : elle vient alors
+          d'un organisateur ou de l'import des matchs, sans que l'intéressé ait
+          rien demandé. C'est cette population que l'article 14 du RGPD oblige à
+          informer. */}
+      {!player.user && <FicheSansCompte pseudo={player.pseudo} />}
     </main>
   );
 }
