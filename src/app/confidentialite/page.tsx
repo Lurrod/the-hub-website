@@ -59,7 +59,12 @@ export default function ConfidentialitePage() {
         <Ul>
           <li>pseudo, nom réel, date de naissance, nationalité, région ;</li>
           <li>photo de profil, liens vers vos réseaux sociaux ;</li>
-          <li>rôle Valorant et appartenance à une équipe.</li>
+          <li>rôle Valorant et appartenance à une équipe ;</li>
+          <li>
+            type de compte déclaré (joueur, coach ou manager) et statut de recherche d&apos;équipe,
+            publié sur la page <span className="text-white">LFT / LFP</span> lorsque vous
+            l&apos;activez.
+          </li>
         </Ul>
 
         <h3 className="pt-2 font-semibold text-white">3. Compte Valorant</h3>
@@ -70,9 +75,11 @@ export default function ConfidentialitePage() {
 
         <h3 className="pt-2 font-semibold text-white">4. Statistiques de match</h3>
         <p>
-          Pour chaque carte jouée dans un tournoi référencé : agent, éliminations, morts, assists,
-          ACS, ADR, pourcentage de tirs à la tête, KAST, premières éliminations et premières morts,
-          rating. Ces données décrivent une performance sportive et sont publiques sur le site.
+          Pour chaque carte jouée dans un tournoi référencé : agent, camp, éliminations, morts,
+          assists, ACS, ADR, pourcentage de tirs à la tête, KAST, premières éliminations et
+          premières morts, multikills (triples, quadras, aces), clutchs tentés et réussis,
+          éliminations par arme, et rating. Ces données décrivent une performance sportive et sont
+          publiques sur le site.
         </p>
       </Section>
 
@@ -176,7 +183,12 @@ export default function ConfidentialitePage() {
       <Section title="Durées de conservation">
         <Ul>
           <li>Compte et fiche joueur : jusqu&apos;à la suppression du compte.</li>
-          <li>Sessions de connexion : expiration automatique, puis effacement.</li>
+          <li>Sessions de connexion : 30 jours, prolongés à chaque connexion, puis effacement.</li>
+          <li>
+            Mesure de fréquentation : les empreintes de visiteur sont supprimées au bout de trois
+            jours, les compteurs agrégés sont conservés sans limite car ils ne concernent plus
+            personne.
+          </li>
           <li>
             Résultats et statistiques de match : conservés après la suppression du compte, sous
             forme dissociée de votre identité (le lien vers votre fiche est rompu), afin de
@@ -199,6 +211,16 @@ export default function ConfidentialitePage() {
             <span className="text-white">OVH SAS</span> (marque Kimsufi), 2 rue Kellermann, 59100
             Roubaix - hébergement du serveur, de la base de données et des images déposées.
           </li>
+          <li>
+            <span className="text-white">flagcdn.com</span> - drapeaux de nationalité affichés sur
+            les fiches et les listes. Votre navigateur les demande directement à ce service, qui
+            reçoit donc votre adresse IP. Aucun cookie n&apos;est déposé.
+          </li>
+          <li>
+            <span className="text-white">cdn.discordapp.com</span> - photos de profil reprises de
+            Discord à la création du compte, tant qu&apos;elles n&apos;ont pas été remplacées. Même
+            remarque : votre navigateur les demande directement à Discord.
+          </li>
         </Ul>
         <p>
           Aucune donnée n&apos;est vendue ni cédée à des fins publicitaires. La base de données et
@@ -214,6 +236,45 @@ export default function ConfidentialitePage() {
           Le site dépose des cookies pour deux finalités seulement, toutes deux strictement
           nécessaires à son fonctionnement :
         </p>
+        <div className="scroll-x scroll-x-on-bg">
+          <table className="w-full min-w-[520px] border-collapse">
+            <thead>
+              <tr>
+                <th scope="col" className={TH}>
+                  Cookie
+                </th>
+                <th scope="col" className={TH}>
+                  Finalité
+                </th>
+                <th scope="col" className={TH}>
+                  Durée
+                </th>
+              </tr>
+            </thead>
+            <tbody className="text-[var(--text-muted)]">
+              <tr>
+                <td className={TD}>authjs.session-token</td>
+                <td className={TD}>Maintien de votre session</td>
+                <td className={TD}>30 jours</td>
+              </tr>
+              <tr>
+                <td className={TD}>authjs.csrf-token</td>
+                <td className={TD}>Protection du formulaire de connexion</td>
+                <td className={TD}>Durée de la session</td>
+              </tr>
+              <tr>
+                <td className={TD}>authjs.callback-url, authjs.state, authjs.pkce.code_verifier</td>
+                <td className={TD}>État de l&apos;échange avec Discord</td>
+                <td className={TD}>Le temps de la connexion</td>
+              </tr>
+              <tr>
+                <td className={TD}>onboarded</td>
+                <td className={TD}>Mémorise que l&apos;inscription est terminée</td>
+                <td className={TD}>1 an</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <Ul>
           <li>
             <span className="text-white">Connexion</span> - les cookies posés par le mécanisme
@@ -229,10 +290,12 @@ export default function ConfidentialitePage() {
           </li>
         </Ul>
         <p>
-          Il n&apos;y a ni cookie publicitaire, ni traceur tiers, et la mesure de fréquentation
-          décrite ci-dessous n&apos;en dépose aucun. Aucun de ces cookies ne sert à vous suivre :
-          tous étant nécessaires au service que vous demandez, aucun consentement préalable
-          n&apos;est requis et aucune bannière n&apos;est affichée.
+          Il n&apos;y a ni cookie publicitaire, ni outil de mesure tiers, ni script externe, et la
+          mesure de fréquentation décrite ci-dessous ne dépose aucun cookie. Les deux services
+          d&apos;images cités plus haut ne déposent rien non plus ; ils voient seulement votre
+          adresse IP, comme tout serveur à qui votre navigateur demande un fichier. Aucun de ces
+          cookies ne sert à vous suivre : tous étant nécessaires au service que vous demandez, aucun
+          consentement préalable n&apos;est requis et aucune bannière n&apos;est affichée.
         </p>
         <p>
           Un visiteur qui ne lance jamais la connexion Discord ne reçoit aucun cookie : la
