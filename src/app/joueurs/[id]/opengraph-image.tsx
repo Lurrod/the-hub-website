@@ -1,5 +1,5 @@
 import { getActiveMembership, getPlayer } from "@/lib/data/players";
-import { db } from "@/lib/db";
+import { playerCareerAverages } from "@/lib/data/counts";
 import { Avatar, Meta, Stats, Title } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
@@ -9,22 +9,14 @@ import { ROLE_LABELS, type ValorantRoleKey } from "@/lib/roles";
 export const alt = "Joueur";
 export { contentType, size } from "@/lib/og/size";
 
-/** Moyennes de carrière du joueur, `null` tant qu'aucune map n'est enregistrée. */
+/** Mise en forme des moyennes pour l'image : la requête vit dans la couche données. */
 async function careerAverages(playerId: string) {
-  const agg = await db.playerGameStat.aggregate({
-    where: { playerId },
-    _avg: { rating: true, acs: true },
-    _sum: { kills: true, deaths: true },
-    _count: { _all: true },
-  });
-  if (agg._count._all === 0) return null;
-
-  const kills = agg._sum.kills ?? 0;
-  const deaths = agg._sum.deaths ?? 0;
+  const agg = await playerCareerAverages(playerId);
+  if (!agg) return null;
   return {
-    rating: (agg._avg.rating ?? 0).toFixed(2),
-    acs: Math.round(agg._avg.acs ?? 0),
-    kd: deaths > 0 ? (kills / deaths).toFixed(2) : kills.toFixed(2),
+    rating: agg.rating.toFixed(2),
+    acs: Math.round(agg.acs),
+    kd: agg.deaths > 0 ? (agg.kills / agg.deaths).toFixed(2) : agg.kills.toFixed(2),
   };
 }
 

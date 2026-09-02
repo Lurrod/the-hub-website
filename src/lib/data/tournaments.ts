@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { isLastOwner } from "@/lib/permissions";
 import type { TournamentFormat, TournamentStatus } from "@/lib/constants";
 import type { TournamentInput } from "@/lib/validation/tournament";
-import { nextTournamentStatus, syncTournamentStatusesIfStale } from "@/lib/tournament-status";
+import { nextTournamentStatus } from "@/lib/tournament-status";
+import { syncTournamentStatusesIfStale } from "@/lib/data/tournament-status";
 
 /** Le statut saisi, recalé sur les dates (démarré → en cours, fini → terminé). */
 function effectiveStatus(data: TournamentInput): TournamentStatus {
@@ -245,4 +246,82 @@ export function setTournamentManagerRole(
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
+}
+
+/**
+ * Format d'un tournoi, seul champ dont les actions ont besoin pour valider une
+ * étape ou l'existence de poules.
+ */
+export function getTournamentFormat(
+  tournamentId: string
+): Promise<{ format: TournamentFormat } | null> {
+  return db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+}
+
+/** Cette poule appartient-elle bien à ce tournoi ? */
+export async function groupBelongsToTournament(
+  groupId: string,
+  tournamentId: string
+): Promise<boolean> {
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+    select: { tournamentId: true },
+  });
+  return group?.tournamentId === tournamentId;
+}
+
+/** Combien des équipes citées sont inscrites à ce tournoi. */
+export function countRegisteredAmong(tournamentId: string, teamIds: string[]): Promise<number> {
+  return db.tournamentParticipant.count({
+    where: { tournamentId, teamId: { in: teamIds } },
+  });
+}
+
+/** Ce qu'il faut savoir du tournoi pour décider d'une inscription. */
+export function getTournamentRegistrationInfo(tournamentId: string) {
+  return db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { status: true, maxTeams: true, startDate: true, endDate: true },
+  });
+}
+
+/** Cette équipe est-elle déjà inscrite ? */
+export async function isTeamRegistered(tournamentId: string, teamId: string): Promise<boolean> {
+  const existing = await db.tournamentParticipant.findUnique({
+    where: { tournamentId_teamId: { tournamentId, teamId } },
+    select: { id: true },
+  });
+  return existing !== null;
+}
+
+/** Levée dans la transaction quand la limite d'équipes est atteinte. */
+const COMPLET = "TOURNAMENT_FULL";
+
+/**
+ * Inscrit l'équipe si la limite n'est pas atteinte.
+ *
+ * Le comptage et l'insertion sont dans la même transaction : sans ça, deux
+ * inscriptions simultanées pourraient toutes deux passer la limite.
+ *
+ * Le sentinelle de dépassement ne traverse pas la frontière — l'appelant reçoit
+ * un booléen, pas une erreur à reconnaître au message.
+ *
+ * @returns false si le tournoi était complet.
+ */
+export async function registerTeamIfRoom(
+  tournamentId: string,
+  teamId: string,
+  maxTeams: number | null
+): Promise<boolean> {
+  try {
+    await db.$transaction(async (tx) => {
+      const count = await tx.tournamentParticipant.count({ where: { tournamentId } });
+      if (maxTeams != null && count >= maxTeams) throw new Error(COMPLET);
+      await tx.tournamentParticipant.create({ data: { tournamentId, teamId } });
+    });
+    return true;
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === COMPLET) return false;
+    throw error;
+  }
 }

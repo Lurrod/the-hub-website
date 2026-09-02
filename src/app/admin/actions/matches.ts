@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { allow } from "@/lib/rate-limit";
-import { db } from "@/lib/db";
 import { assertCanManageTournament } from "@/lib/server-auth";
 import { logger, describeError } from "@/lib/logger";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
@@ -30,6 +29,11 @@ import {
   getMatch,
 } from "@/lib/data/matches";
 import {
+  countRegisteredAmong,
+  getTournamentFormat,
+  groupBelongsToTournament,
+} from "@/lib/data/tournaments";
+import {
   fetchAndStoreMatchStats,
   importMatchMapFromRiotId,
   type ManualImportResult,
@@ -42,8 +46,7 @@ async function assertMatchInTournament(matchId: string, tournamentId: string) {
 }
 
 async function assertGroupInTournament(groupId: string, tournamentId: string) {
-  const group = await db.group.findUnique({ where: { id: groupId } });
-  if (!group || group.tournamentId !== tournamentId) throw new Error("INVALID_GROUP");
+  if (!(await groupBelongsToTournament(groupId, tournamentId))) throw new Error("INVALID_GROUP");
 }
 
 /**
@@ -59,10 +62,7 @@ async function areBothRegistered(
   teamAId: string,
   teamBId: string
 ): Promise<boolean> {
-  const count = await db.tournamentParticipant.count({
-    where: { tournamentId, teamId: { in: [teamAId, teamBId] } },
-  });
-  return count === 2;
+  return (await countRegisteredAmong(tournamentId, [teamAId, teamBId])) === 2;
 }
 
 function parseMatchForm(formData: FormData) {
@@ -101,10 +101,7 @@ function revalidateMatch(tournamentId: string, matchId: string) {
 export async function createGroupAction(tournamentId: string, formData: FormData) {
   await assertCanManageTournament(tournamentId);
   const base = `/tournois/${tournamentId}/gestion/competition`;
-  const t = await db.tournament.findUnique({
-    where: { id: tournamentId },
-    select: { format: true },
-  });
+  const t = await getTournamentFormat(tournamentId);
   if (t && !formatAllowsGroups(t.format)) redirect(`${base}?error=nogroups`);
   const name = String(formData.get("name") ?? "").trim();
   if (name) await createGroup(tournamentId, name);
@@ -141,10 +138,7 @@ export async function createMatchAction(tournamentId: string, formData: FormData
   } catch (e) {
     redirect(`${base}?error=${flashCodeFromError(e)}`);
   }
-  const t = await db.tournament.findUnique({
-    where: { id: tournamentId },
-    select: { format: true },
-  });
+  const t = await getTournamentFormat(tournamentId);
   if (!t) redirect(base);
   if (!STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
@@ -170,10 +164,7 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
   } catch (e) {
     redirect(`${editBase}?error=${flashCodeFromError(e)}`);
   }
-  const t = await db.tournament.findUnique({
-    where: { id: tournamentId },
-    select: { format: true },
-  });
+  const t = await getTournamentFormat(tournamentId);
   if (!t) redirect(editBase);
   if (!STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {

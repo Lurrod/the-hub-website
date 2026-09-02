@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { countPlayers } from "@/lib/data/counts";
 import { Stats, Title } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
 
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Image() {
   return renderOg("JOUEURS", async () => {
-    const total = await db.player.count();
+    const total = await countPlayers();
     return (
       <>
         <Title>Tous les joueurs</Title>

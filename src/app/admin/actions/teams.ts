@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, assertCanManageTeam, assertCanAdministerTeam } from "@/lib/server-auth";
 import { parseManagerRole } from "@/lib/manager-roles";
-import { db } from "@/lib/db";
 import { teamInputSchema, rosterEntrySchema } from "@/lib/validation/team";
 import {
   createTeam,
@@ -17,6 +16,7 @@ import {
   addInitialRoster,
   findTeamConflict,
 } from "@/lib/data/teams";
+import { findUserIdByDiscordId } from "@/lib/data/users";
 import { readUploadedImage, processAndStoreImage, deleteStoredImage } from "@/lib/images";
 import { allow, UPLOAD_RULE } from "@/lib/rate-limit";
 import { flashCodeFromError } from "@/lib/form-errors";
@@ -126,9 +126,9 @@ export async function addManagerAction(teamId: string, formData: FormData) {
   const base = `/equipes/${teamId}/gestion/managers`;
   const discordId = String(formData.get("discordId") ?? "").trim();
   if (!discordId) redirect(`${base}?error=empty`);
-  const user = await db.user.findUnique({ where: { discordId }, select: { id: true } });
-  if (!user) redirect(`${base}?error=notfound`);
-  await addTeamManager(teamId, user.id, parseManagerRole(formData.get("role")));
+  const userId = await findUserIdByDiscordId(discordId);
+  if (!userId) redirect(`${base}?error=notfound`);
+  await addTeamManager(teamId, userId, parseManagerRole(formData.get("role")));
   revalidatePath(base);
   redirect(`${base}?ok=manager-added`);
 }

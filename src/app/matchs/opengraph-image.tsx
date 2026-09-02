@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { countFinishedMatches } from "@/lib/data/counts";
 import { Stats, Title } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
 
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Image() {
   return renderOg("MATCHS", async () => {
-    const played = await db.match.count({ where: { status: "FINISHED" } });
+    const played = await countFinishedMatches();
     return (
       <>
         <Title>Tous les matchs</Title>
