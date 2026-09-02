@@ -222,8 +222,12 @@
   z-index: 1;
   transition: color var(--tabs-dur) var(--tabs-ease);
 }
-.t-tab:not([aria-selected="true"]):hover,
-.t-tab[aria-selected="true"] {
+/* `aria-current="page"` autant que `aria-selected` : la barre sert aux vrais
+   onglets, qui echangent un panneau, ET aux filtres, qui sont des liens vers
+   une autre URL. Ces derniers portent desormais l'attribut des liens. */
+.t-tab:not([aria-selected="true"]):not([aria-current="page"]):hover,
+.t-tab[aria-selected="true"],
+.t-tab[aria-current="page"] {
   color: var(--tabs-text-active);
 }
 

@@ -55,14 +55,13 @@ export default async function MatchesPage({
       <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Matchs</h1>
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-        <Segmented activeKey={filter} className="mb-4">
+        <Segmented nav="Filtrer les matchs" activeKey={filter} className="mb-4">
           {FILTERS.map((x) => (
             <Link
               key={x.key}
               href={x.key === "all" ? "/matchs" : `/matchs?f=${x.key}`}
               className="t-tab"
-              role="tab"
-              aria-selected={filter === x.key}
+              aria-current={filter === x.key ? "page" : undefined}
             >
               {x.label}
             </Link>

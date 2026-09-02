@@ -55,12 +55,17 @@ export default async function AdminTournamentsPage({
           conserver={{ statut, anomalie }}
           placeholder="Nom du tournoi"
         />
-        <Segmented activeKey={statut ?? "all"}>
-          <Link href={href()} className="t-tab" role="tab" aria-selected={!statut}>
+        <Segmented nav="Filtrer par statut" activeKey={statut ?? "all"}>
+          <Link href={href()} className="t-tab" aria-current={!statut ? "page" : undefined}>
             Tous
           </Link>
           {TOURNAMENT_STATUSES.map((s) => (
-            <Link key={s} href={href(s)} className="t-tab" role="tab" aria-selected={statut === s}>
+            <Link
+              key={s}
+              href={href(s)}
+              className="t-tab"
+              aria-current={statut === s ? "page" : undefined}
+            >
               {TOURNAMENT_STATUS_LABELS[s]}
             </Link>
           ))}

@@ -4,8 +4,8 @@ import Segmented from "@/components/segmented";
 
 export default function RegionFilter({ active }: { active?: string }) {
   return (
-    <Segmented activeKey={active ?? "all"}>
-      <Link href="/equipes" className="t-tab" role="tab" aria-selected={!active}>
+    <Segmented nav="Filtrer par région" activeKey={active ?? "all"}>
+      <Link href="/equipes" className="t-tab" aria-current={!active ? "page" : undefined}>
         Toutes
       </Link>
       {REGIONS.map((r) => (
@@ -13,8 +13,7 @@ export default function RegionFilter({ active }: { active?: string }) {
           key={r}
           href={`/equipes?region=${encodeURIComponent(r)}`}
           className="t-tab"
-          role="tab"
-          aria-selected={active === r}
+          aria-current={active === r ? "page" : undefined}
         >
           {r}
         </Link>

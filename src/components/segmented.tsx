@@ -5,23 +5,36 @@ import { useCallback, useEffect, useRef, type ReactNode } from "react";
 /**
  * Barre d'options à choix unique, avec la pastille coulissante du snippet
  * `16-tabs-sliding`. Les options restent fournies par l'appelant : il suffit
- * qu'elles portent `.t-tab` et `aria-selected`.
+ * qu'elles portent `.t-tab` et, selon leur nature, `aria-selected`
+ * (vrais onglets) ou `aria-current="page"` (liens de filtre).
  *
  * `activeKey` déclenche le déplacement. Au premier rendu la pastille est
  * posée sans transition, sinon elle arriverait depuis translate(0) / width 0.
  *
  * Variante `underline` : la pastille est stylée en trait accent (onglets de
  * tournoi, menu d'étapes) plutôt qu'en fond plein.
+ *
+ * `nav` bascule le conteneur en `<nav aria-label>` au lieu de
+ * `role="tablist"`. La barre servait indifféremment à deux choses très
+ * différentes : de vrais onglets, qui échangent un panneau sans quitter la
+ * page, et des filtres qui sont des LIENS vers une autre URL. Sur ces
+ * derniers, le rôle d'onglet écrasait le rôle natif de lien : le lecteur
+ * d'écran annonçait « onglet », l'utilisateur essayait les flèches, et
+ * obtenait un rechargement de page. Une promesse d'interaction non tenue nuit
+ * plus qu'une absence de rôle.
  */
 export default function Segmented({
   activeKey,
   variant = "pill",
   className,
+  nav,
   children,
 }: {
   activeKey: string;
   variant?: "pill" | "underline";
   className?: string;
+  /** Nom du groupe de liens. Bascule le conteneur en `<nav>`. */
+  nav?: string;
   children: ReactNode;
 }) {
   const barRef = useRef<HTMLDivElement>(null);
@@ -34,8 +47,9 @@ export default function Segmented({
       const pill = pillRef.current;
       if (!bar || !pill) return;
       const tab =
-        bar.querySelector<HTMLElement>('.t-tab[aria-selected="true"]') ??
-        bar.querySelector<HTMLElement>(".t-tab");
+        bar.querySelector<HTMLElement>(
+          '.t-tab[aria-selected="true"], .t-tab[aria-current="page"]'
+        ) ?? bar.querySelector<HTMLElement>(".t-tab");
       if (!tab) return;
 
       const write = () => {
@@ -74,10 +88,21 @@ export default function Segmented({
     return () => window.removeEventListener("resize", onResize);
   }, [move]);
 
-  return (
-    <div ref={barRef} role="tablist" data-variant={variant} className={`t-tabs ${className ?? ""}`}>
+  const contenu = (
+    <>
       <span ref={pillRef} className="t-tabs-pill" aria-hidden="true" />
       {children}
+    </>
+  );
+  const classes = `t-tabs ${className ?? ""}`;
+
+  return nav ? (
+    <nav ref={barRef} aria-label={nav} data-variant={variant} className={classes}>
+      {contenu}
+    </nav>
+  ) : (
+    <div ref={barRef} role="tablist" data-variant={variant} className={classes}>
+      {contenu}
     </div>
   );
 }

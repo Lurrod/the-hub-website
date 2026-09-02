@@ -73,14 +73,17 @@ export default async function LftPage({ searchParams }: { searchParams: Promise<
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
         {/* Changer d'onglet repart d'une page propre : les filtres des deux
             moitiés ne portent pas sur les mêmes objets. */}
-        <Segmented activeKey={view} className="mb-4 justify-self-start">
+        <Segmented
+          nav="Filtrer par type de profil"
+          activeKey={view}
+          className="mb-4 justify-self-start"
+        >
           {LFT_VIEWS.map((v) => (
             <Link
               key={v.key}
               href={v.key === "lft" ? "/lft" : "/lft?vue=lfp"}
               className="t-tab"
-              role="tab"
-              aria-selected={view === v.key}
+              aria-current={view === v.key ? "page" : undefined}
             >
               {v.label}
             </Link>
