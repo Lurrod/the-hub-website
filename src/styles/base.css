@@ -33,6 +33,15 @@ body {
   outline-offset: 2px;
 }
 
+/* Dépôt d'image : le champ de fichier est hors écran (`sr-only`) pour rester
+   atteignable au clavier, mais c'est la zone de dépôt que l'utilisateur
+   regarde. On lui reporte l'anneau de focus, sinon la tabulation traverse le
+   composant sans que rien ne bouge à l'écran. */
+.t-input-wrap:has(input[type="file"]:focus-visible) .t-drop {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Le champ de recherche effaçable délègue son habillage à un conteneur : c'est
    lui qui doit porter le contour, l'`<input>` nu qu'il enveloppe étant sans
    bordure. */

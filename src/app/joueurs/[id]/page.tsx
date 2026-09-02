@@ -265,9 +265,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 style={{ fontSize: "24px" }} className="font-bold text-white">
-                  {player.pseudo}
-                </h1>
+                <h1 className="n-24 font-bold text-white">{player.pseudo}</h1>
                 <SocialLinks
                   socials={socials}
                   labels={discord ? { discord: discord.label } : undefined}
@@ -298,9 +296,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                         prime donc sur les utilitaires, y compris sur un
                         `text-sm` porté par le parent. Même échappatoire que le
                         pseudo juste au-dessus. */}
-                    <span style={{ fontSize: "14px" }} className="text-white">
-                      {currentTeam.team.name}
-                    </span>
+                    <span className="n-14 text-white">{currentTeam.team.name}</span>
                   </Link>
                 )}
                 {roleIcon && (
@@ -312,11 +308,7 @@ export default async function PlayerProfilePage({ params }: { params: Promise<{ 
                     className="h-4 w-4 shrink-0"
                   />
                 )}
-                {age != null && (
-                  <span style={{ fontSize: "14px" }} className="stat">
-                    {age} ans
-                  </span>
-                )}
+                {age != null && <span className="n-14 stat">{age} ans</span>}
               </div>
             </div>
 

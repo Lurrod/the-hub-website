@@ -49,7 +49,12 @@ export default function PlayerForm({
       </label>
       <div className="grid gap-1 text-sm text-[var(--text-muted)]">
         Photo (png/jpg/webp, max 5 Mo)
-        <ImageUpload name="photo" shape="round" currentUrl={values?.photo ?? null} />
+        <ImageUpload
+          name="photo"
+          label="Photo du joueur"
+          shape="round"
+          currentUrl={values?.photo ?? null}
+        />
       </div>
       <fieldset className="grid gap-2">
         <legend className="text-sm text-[var(--text-muted)]">Réseaux (optionnel)</legend>

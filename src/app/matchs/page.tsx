@@ -9,12 +9,26 @@ import { pageMetadata } from "@/lib/metadata";
 import JsonLdScript from "@/components/json-ld";
 import { itemListJsonLd } from "@/lib/structured-data";
 
-export const metadata = pageMetadata({
-  path: "/matchs",
-  title: "Matchs",
-  description:
-    "Tous les matchs du Tier 3 Valorant francophone, tournoi par tournoi, avec leurs scores.",
-});
+/**
+ * Canonique conscient de la pagination : `?p=5` se déclare lui-même et non
+ * la page 1. Statique, la métadonnée faisait dire à chaque page de rang
+ * supérieur qu'elle était un doublon de la première — un signal explicite de
+ * ne pas l'indexer.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ f?: string; p?: string }>;
+}) {
+  const { p } = await searchParams;
+  return pageMetadata({
+    path: "/matchs",
+    title: "Matchs",
+    description:
+      "Tous les matchs du Tier 3 Valorant francophone, tournoi par tournoi, avec leurs scores.",
+    page: parsePage(p),
+  });
+}
 
 const FILTERS = [
   { key: "all", label: "Tout" },
@@ -55,14 +69,13 @@ export default async function MatchesPage({
       <h1 className="text-sm font-semibold uppercase tracking-wide text-[var(--accent)]">Matchs</h1>
 
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-        <Segmented activeKey={filter} className="mb-4">
+        <Segmented nav="Filtrer les matchs" activeKey={filter} className="mb-4">
           {FILTERS.map((x) => (
             <Link
               key={x.key}
               href={x.key === "all" ? "/matchs" : `/matchs?f=${x.key}`}
               className="t-tab"
-              role="tab"
-              aria-selected={filter === x.key}
+              aria-current={filter === x.key ? "page" : undefined}
             >
               {x.label}
             </Link>

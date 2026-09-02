@@ -44,14 +44,13 @@ export default async function AdminPlayersPage({
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <AdminSearch action="/admin/joueurs" q={q} conserver={{ compte }} placeholder="Pseudo" />
-        <Segmented activeKey={compte ?? "all"}>
+        <Segmented nav="Filtrer les joueurs" activeKey={compte ?? "all"}>
           {COMPTES.map((c) => (
             <Link
               key={c.label}
               href={href(c.cle)}
               className="t-tab"
-              role="tab"
-              aria-selected={compte === c.cle}
+              aria-current={compte === c.cle ? "page" : undefined}
             >
               {c.label}
             </Link>

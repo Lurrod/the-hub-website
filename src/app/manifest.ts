@@ -27,7 +27,16 @@ export default function manifest(): MetadataRoute.Manifest {
       // automatiquement qu'une seule taille par convention de nom.
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icon.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      // Variante dédiée, et non la même image que ci-dessus : Android rogne les
+      // icônes adaptatives au cercle central couvrant 80 % de la largeur, et le
+      // logo de `icon.png` s'étend jusqu'aux bords — ses pointes tombaient hors
+      // de la zone conservée. Ici le motif est réduit à 62 % sur fond prolongé.
+      {
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
       { src: "/apple-icon.png", sizes: "180x180", type: "image/png" },
     ],
   };

@@ -127,7 +127,12 @@ export default function TeamForm({
         </label>
         <div className={lbl}>
           Logo (png/jpg/webp, max 5 Mo)
-          <ImageUpload name="logo" shape="square" currentUrl={values?.logo ?? null} />
+          <ImageUpload
+            name="logo"
+            label="Logo de l'équipe"
+            shape="square"
+            currentUrl={values?.logo ?? null}
+          />
         </div>
       </Section>
 

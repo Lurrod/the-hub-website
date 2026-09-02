@@ -56,14 +56,13 @@ export default async function AdminTeamsPage({
           conserver={{ origine, anomalie }}
           placeholder="Nom ou tag"
         />
-        <Segmented activeKey={origine ?? "all"}>
+        <Segmented nav="Filtrer les équipes" activeKey={origine ?? "all"}>
           {ORIGINES.map((o) => (
             <Link
               key={o.label}
               href={href(o.cle)}
               className="t-tab"
-              role="tab"
-              aria-selected={origine === o.cle}
+              aria-current={origine === o.cle ? "page" : undefined}
             >
               {o.label}
             </Link>

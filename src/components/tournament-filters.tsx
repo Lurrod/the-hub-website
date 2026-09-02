@@ -19,12 +19,11 @@ export default function TournamentFilters({
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <Segmented activeKey={activeStatus ?? "all"}>
+      <Segmented nav="Filtrer les tournois" activeKey={activeStatus ?? "all"}>
         <Link
           href={buildHref({ region: activeRegion })}
           className="t-tab"
-          role="tab"
-          aria-selected={!activeStatus}
+          aria-current={!activeStatus ? "page" : undefined}
         >
           Tous statuts
         </Link>
@@ -33,19 +32,17 @@ export default function TournamentFilters({
             key={s}
             href={buildHref({ region: activeRegion, status: s })}
             className="t-tab"
-            role="tab"
-            aria-selected={activeStatus === s}
+            aria-current={activeStatus === s ? "page" : undefined}
           >
             {TOURNAMENT_STATUS_LABELS[s]}
           </Link>
         ))}
       </Segmented>
-      <Segmented activeKey={activeRegion ?? "all"}>
+      <Segmented nav="Filtrer les tournois" activeKey={activeRegion ?? "all"}>
         <Link
           href={buildHref({ status: activeStatus })}
           className="t-tab"
-          role="tab"
-          aria-selected={!activeRegion}
+          aria-current={!activeRegion ? "page" : undefined}
         >
           Toutes régions
         </Link>
@@ -54,8 +51,7 @@ export default function TournamentFilters({
             key={r}
             href={buildHref({ region: r, status: activeStatus })}
             className="t-tab"
-            role="tab"
-            aria-selected={activeRegion === r}
+            aria-current={activeRegion === r ? "page" : undefined}
           >
             {r}
           </Link>

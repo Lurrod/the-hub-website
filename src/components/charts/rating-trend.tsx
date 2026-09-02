@@ -76,8 +76,7 @@ export default function RatingTrend({ points }: { points: TrendPoint[] }) {
               x={PAD.left - 6}
               y={y(t) + 3}
               textAnchor="end"
-              className="fill-[var(--text-subtle)]"
-              style={{ fontSize: "10px" }}
+              className="n-10 fill-[var(--text-subtle)]"
             >
               {t.toFixed(1)}
             </text>
@@ -124,8 +123,8 @@ export default function RatingTrend({ points }: { points: TrendPoint[] }) {
           x={x(lastIdx) + 9}
           y={y(points[lastIdx].rating) + 3}
           textAnchor="start"
-          className="fill-[var(--text)]"
-          style={{ fontSize: "11px", fontWeight: 600 }}
+          className="n-11 fill-[var(--text)]"
+          style={{ fontWeight: 600 }}
         >
           {points[lastIdx].rating.toFixed(2)}
         </text>

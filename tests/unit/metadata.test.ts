@@ -102,3 +102,20 @@ describe("carte de partage X", () => {
     expect(m.twitter).toMatchObject({ title: "A vs B" });
   });
 });
+
+// Sans le rang, `/joueurs?p=5` déclarait le canonique de `/joueurs` : chaque
+// page de rang supérieur disait à Google qu'elle était un doublon de la
+// première, donc de ne pas l'indexer.
+describe("canonique et pagination", () => {
+  it("la page 1 garde le chemin nu", () => {
+    expect(pageMetadata({ path: "/joueurs", page: 1 }).alternates?.canonical).toBe("/joueurs");
+    expect(pageMetadata({ path: "/joueurs" }).alternates?.canonical).toBe("/joueurs");
+  });
+
+  it("les pages suivantes se déclarent elles-mêmes", () => {
+    const m = pageMetadata({ path: "/joueurs", page: 5 });
+    expect(m.alternates?.canonical).toBe("/joueurs?p=5");
+    // L'URL OpenGraph suit, sinon le partage d'une page 5 pointerait la page 1.
+    expect(m.openGraph?.url).toBe("/joueurs?p=5");
+  });
+});

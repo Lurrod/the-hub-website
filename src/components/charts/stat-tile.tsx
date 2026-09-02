@@ -23,9 +23,7 @@ export default function StatTile({
       <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{label}</div>
       <div className="mt-2 flex items-center gap-2">
         {icon}
-        <span style={{ fontSize: "24px" }} className="stat font-bold leading-none text-white">
-          {value}
-        </span>
+        <span className="n-24 stat font-bold leading-none text-white">{value}</span>
       </div>
       {sub && <div className="mt-2 truncate text-xs text-[var(--text-muted)]">{sub}</div>}
     </>

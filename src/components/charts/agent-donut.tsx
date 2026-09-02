@@ -138,8 +138,8 @@ export default function AgentDonut({
           x={CENTER}
           y={CENTER - 2}
           textAnchor="middle"
-          className="fill-white"
-          style={{ fontSize: "34px", fontWeight: 700 }}
+          className="n-34 fill-white"
+          style={{ fontWeight: 700 }}
         >
           {totalMaps}
         </text>
@@ -147,8 +147,8 @@ export default function AgentDonut({
           x={CENTER}
           y={CENTER + 18}
           textAnchor="middle"
-          className="fill-[var(--text-muted)]"
-          style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.06em" }}
+          className="n-11 fill-[var(--text-muted)]"
+          style={{ textTransform: "uppercase", letterSpacing: "0.06em" }}
         >
           {totalMaps > 1 ? "cartes" : "carte"}
         </text>

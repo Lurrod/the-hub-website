@@ -33,12 +33,11 @@ export default function LftFilters({
 
   return (
     <div className="grid gap-3">
-      <Segmented activeKey={role ?? "all"} className="justify-self-start">
+      <Segmented nav="Filtrer les joueurs" activeKey={role ?? "all"} className="justify-self-start">
         <Link
           href={lftHref({ ...filters, role: undefined })}
           className="t-tab"
-          role="tab"
-          aria-selected={!role}
+          aria-current={!role ? "page" : undefined}
         >
           Tous les rôles
         </Link>
@@ -47,8 +46,7 @@ export default function LftFilters({
             key={r}
             href={lftHref({ ...filters, role: r })}
             className="t-tab"
-            role="tab"
-            aria-selected={role === r}
+            aria-current={role === r ? "page" : undefined}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

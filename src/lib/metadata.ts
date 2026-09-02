@@ -27,20 +27,31 @@ export function pageMetadata(params: {
   description?: string;
   /** Titre affiché sur les cartes de partage, si différent du titre de page. */
   shareTitle?: string;
+  /**
+   * Rang de pagination, quand la page en a un.
+   *
+   * Sans lui, les pages de liste déclaraient toutes le canonique de la page 1,
+   * y compris `?p=5` : chaque page de rang supérieur disait à Google de ne pas
+   * l'indexer et d'en réduire le crawl. L'effet était atténué — les fiches sont
+   * listées une à une au sitemap, leur découverte n'en dépendait pas — mais le
+   * signal était faux.
+   */
+  page?: number;
 }): Metadata {
-  const { path, title, description, shareTitle } = params;
+  const { path, title, description, shareTitle, page } = params;
+  const canonical = page && page > 1 ? `${path}?p=${page}` : path;
   const ogTitle = shareTitle ?? (title ? `${title} · ${SITE_NAME}` : `${SITE_NAME} - T3 Valorant`);
   return {
     ...(title ? { title } : {}),
     ...(description ? { description } : {}),
-    alternates: { canonical: path },
+    alternates: { canonical },
     openGraph: {
       type: "website",
       siteName: SITE_NAME,
       locale: "fr_FR",
       title: ogTitle,
       description: description ?? SITE_DESCRIPTION,
-      url: path,
+      url: canonical,
     },
     // `twitter` n'était pas redéfini ici : le layout racine le fixe une fois
     // pour toutes, et Next ne fusionne pas ces deux blocs en profondeur. Chaque

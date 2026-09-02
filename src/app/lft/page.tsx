@@ -28,12 +28,22 @@ import Pagination from "@/components/pagination";
 import { parsePage } from "@/lib/pagination";
 import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = pageMetadata({
-  path: "/lft",
-  title: "LFT / LFP",
-  description:
-    "Les joueurs à la recherche d'une équipe et les équipes qui recrutent, sur la scène T3 Valorant francophone.",
-});
+/**
+ * Canonique conscient de la pagination : `?p=5` se déclare lui-même et non
+ * la page 1. Statique, la métadonnée faisait dire à chaque page de rang
+ * supérieur qu'elle était un doublon de la première — un signal explicite de
+ * ne pas l'indexer.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Params> }) {
+  const { p } = await searchParams;
+  return pageMetadata({
+    path: "/lft",
+    title: "LFT / LFP",
+    description:
+      "Les joueurs à la recherche d'une équipe et les équipes qui recrutent, sur la scène T3 Valorant francophone.",
+    page: parsePage(p),
+  });
+}
 
 type Params = {
   vue?: string;
@@ -73,14 +83,17 @@ export default async function LftPage({ searchParams }: { searchParams: Promise<
       <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
         {/* Changer d'onglet repart d'une page propre : les filtres des deux
             moitiés ne portent pas sur les mêmes objets. */}
-        <Segmented activeKey={view} className="mb-4 justify-self-start">
+        <Segmented
+          nav="Filtrer par type de profil"
+          activeKey={view}
+          className="mb-4 justify-self-start"
+        >
           {LFT_VIEWS.map((v) => (
             <Link
               key={v.key}
               href={v.key === "lft" ? "/lft" : "/lft?vue=lfp"}
               className="t-tab"
-              role="tab"
-              aria-selected={view === v.key}
+              aria-current={view === v.key ? "page" : undefined}
             >
               {v.label}
             </Link>

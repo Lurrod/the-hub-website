@@ -9,12 +9,21 @@ import type { PlayerPoint } from "@/lib/data/tournament-stats";
  * ne fait pas un classement — un remplaçant à 1.60 sur sa game unique
  * passerait devant tout le monde. Si personne n'atteint le seuil (début de
  * tournoi), on montre tout de même tout le monde plutôt qu'un tableau vide.
+ *
+ * Rendu en `<table>` et non en liste de `<div>` : les colonnes étaient des
+ * `<span>` alignés à la largeur, sans aucune association ligne/colonne. Un
+ * lecteur d'écran énonçait donc une suite de nombres nus — sur des statistiques
+ * (cartes, K/D/A, ACS, KAST, rating), c'est inexploitable. Le reste du projet
+ * utilise déjà `<th scope>` partout ailleurs.
+ *
+ * Le lien vit dans la cellule du nom et non autour de la ligne : un `<tr>` ne
+ * peut pas être enveloppé dans un `<a>`. C'est le motif déjà retenu par
+ * `player-directory.tsx`.
  */
 const MIN_MAPS = MIN_MAPS_FOR_AVG;
 
-/** Ligne d'en-tête calée sur les largeurs des colonnes chiffrées. */
-const COLS_HEAD =
-  "mb-1.5 flex items-center gap-2 text-[9px] uppercase tracking-wide text-[var(--text-subtle)]";
+const TH = "py-2 font-medium text-[9px] uppercase tracking-wide";
+const TD = "py-1.5 align-middle";
 
 export default function TournamentPlayerTable({ players }: { players: PlayerPoint[] }) {
   const qualified = players.filter((p) => p.maps >= MIN_MAPS);
@@ -24,72 +33,108 @@ export default function TournamentPlayerTable({ players }: { players: PlayerPoin
 
   return (
     <div>
-      <div className={COLS_HEAD}>
-        <span className="w-5 shrink-0 text-right">#</span>
-        <span className="min-w-0 flex-1">Joueur</span>
-        <span className="hidden min-w-16 flex-1 md:block" aria-hidden />
-        <span className="hidden w-10 shrink-0 text-right sm:block">Cartes</span>
-        <span className="w-16 shrink-0 text-right">K / D / A</span>
-        <span className="hidden w-10 shrink-0 text-right sm:block">ACS</span>
-        <span className="hidden w-10 shrink-0 text-right sm:block">KAST</span>
-        <span className="w-11 shrink-0 text-right">Rating</span>
+      <div
+        className="overflow-x-auto"
+        tabIndex={0}
+        role="region"
+        aria-label="Classement des joueurs, défilement horizontal"
+      >
+        <table className="w-full min-w-[420px] text-xs">
+          <thead>
+            <tr className="text-left text-[var(--text-subtle)]">
+              <th scope="col" className={`${TH} w-8 pr-2 text-right`}>
+                #
+              </th>
+              <th scope="col" className={`${TH} pr-2`}>
+                Joueur
+              </th>
+              {/* Colonne de la barre : purement visuelle, elle ne porte aucune
+                  donnée que les chiffres ne disent déjà. */}
+              <th className="hidden md:table-cell" aria-hidden />
+              <th scope="col" className={`${TH} hidden w-12 pr-2 text-right sm:table-cell`}>
+                Cartes
+              </th>
+              <th scope="col" className={`${TH} w-20 pr-2 text-right`}>
+                K / D / A
+              </th>
+              <th scope="col" className={`${TH} hidden w-12 pr-2 text-right sm:table-cell`}>
+                ACS
+              </th>
+              <th scope="col" className={`${TH} hidden w-12 pr-2 text-right sm:table-cell`}>
+                KAST
+              </th>
+              <th scope="col" className={`${TH} w-14 text-right`}>
+                Rating
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((p, i) => (
+              <tr
+                key={p.playerId ?? `${p.name}-${i}`}
+                className="group/row transition-colors hover:bg-[var(--table-row-hover)]"
+              >
+                <td className={`stat ${TD} pr-2 text-right text-[var(--text-subtle)]`}>{i + 1}</td>
+                <th scope="row" className={`${TD} min-w-0 pr-2 text-left font-normal`}>
+                  {p.playerId ? (
+                    <Link
+                      href={`/joueurs/${p.playerId}`}
+                      className="block truncate text-white hover:underline"
+                    >
+                      {p.name}
+                      {p.teamTag && (
+                        <>
+                          <span className="dot-sep">·</span>
+                          <span className="text-[var(--text-muted)]">{p.teamTag}</span>
+                        </>
+                      )}
+                    </Link>
+                  ) : (
+                    <span className="block truncate text-white">
+                      {p.name}
+                      {p.teamTag && (
+                        <>
+                          <span className="dot-sep">·</span>
+                          <span className="text-[var(--text-muted)]">{p.teamTag}</span>
+                        </>
+                      )}
+                    </span>
+                  )}
+                </th>
+                {/* La barre ré-encode le rating en longueur : l'écart entre le
+                    haut et le ventre du classement se voit sans lire un chiffre. */}
+                <td className={`${TD} hidden w-full pr-2 md:table-cell`} aria-hidden>
+                  <span className="block h-1.5 rounded bg-[var(--bg)]">
+                    <span
+                      className="block h-full rounded bg-[var(--accent)] opacity-80 transition-opacity group-hover/row:opacity-100"
+                      style={{ width: `${Math.max((p.rating / maxRating) * 100, 2)}%` }}
+                    />
+                  </span>
+                </td>
+                <td
+                  className={`stat ${TD} hidden pr-2 text-right text-[var(--text-muted)] sm:table-cell`}
+                >
+                  {p.maps}
+                </td>
+                <td className={`stat ${TD} pr-2 text-right text-white`}>
+                  {p.kills}/{p.deaths}/{p.assists}
+                </td>
+                <td className={`stat ${TD} hidden pr-2 text-right text-white sm:table-cell`}>
+                  {p.acs}
+                </td>
+                <td
+                  className={`stat ${TD} hidden pr-2 text-right text-[var(--text-muted)] sm:table-cell`}
+                >
+                  {p.kast}%
+                </td>
+                <td className={`stat ${TD} text-right font-semibold text-[var(--accent)]`}>
+                  {p.rating.toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      <ol className="flex flex-col">
-        {rows.map((p, i) => {
-          const line = (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="stat w-5 shrink-0 text-right text-[var(--text-subtle)]">
-                {i + 1}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-white">
-                {p.name}
-                {p.teamTag && (
-                  <>
-                    <span className="dot-sep">·</span>
-                    <span className="text-[var(--text-muted)]">{p.teamTag}</span>
-                  </>
-                )}
-              </span>
-              {/* La barre ré-encode le rating en longueur : l'écart entre le
-                  haut et le ventre du classement se voit sans lire un chiffre. */}
-              <span className="hidden h-1.5 min-w-16 flex-1 rounded bg-[var(--bg)] md:block">
-                <span
-                  className="block h-full rounded bg-[var(--accent)] opacity-80 transition-opacity group-hover/row:opacity-100"
-                  style={{ width: `${Math.max((p.rating / maxRating) * 100, 2)}%` }}
-                />
-              </span>
-              <span className="stat hidden w-10 shrink-0 text-right text-[var(--text-muted)] sm:block">
-                {p.maps}
-              </span>
-              <span className="stat w-16 shrink-0 text-right text-white">
-                {p.kills}/{p.deaths}/{p.assists}
-              </span>
-              <span className="stat hidden w-10 shrink-0 text-right text-white sm:block">
-                {p.acs}
-              </span>
-              <span className="stat hidden w-10 shrink-0 text-right text-[var(--text-muted)] sm:block">
-                {p.kast}%
-              </span>
-              <span className="stat w-11 shrink-0 text-right font-semibold text-[var(--accent)]">
-                {p.rating.toFixed(2)}
-              </span>
-            </div>
-          );
-          const cls =
-            "group/row -mx-1.5 block rounded px-1.5 py-1.5 transition-colors hover:bg-[var(--table-row-hover)]";
-          return (
-            <li key={p.playerId ?? `${p.name}-${i}`}>
-              {p.playerId ? (
-                <Link href={`/joueurs/${p.playerId}`} className={cls}>
-                  {line}
-                </Link>
-              ) : (
-                <div className={cls}>{line}</div>
-              )}
-            </li>
-          );
-        })}
-      </ol>
       {qualified.length > 0 && qualified.length < players.length && (
         <p className="mt-2 text-[10px] text-[var(--text-subtle)]">
           Min. {MIN_MAPS} cartes jouées — {players.length - qualified.length} joueur(s) hors
