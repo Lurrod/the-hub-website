@@ -13,6 +13,19 @@
 export const MAX_SEARCH_LENGTH = 60;
 
 /** Coupe et borne une requête. Rend `""` si elle est vide après nettoyage. */
+/**
+ * Neutralise les jokers de `LIKE`/`ILIKE`.
+ *
+ * Aucune injection n'était possible — les valeurs passent en paramètres liés —
+ * mais « % » et « _ » restaient interprétés par PostgreSQL : une recherche sur
+ * « % » renvoyait l'annuaire entier au lieu d'un résultat vide, en forçant un
+ * parcours séquentiel. La barre oblique inverse s'échappe en premier, sans quoi
+ * on échapperait les échappements qu'on vient d'écrire.
+ */
+export function escapeLikeWildcards(q: string): string {
+  return q.replace(/\\/g, "\\\\").replace(/[%_]/g, (c) => `\\${c}`);
+}
+
 export function capSearchQuery(raw: string | null | undefined): string {
   return (raw ?? "").trim().slice(0, MAX_SEARCH_LENGTH);
 }
