@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from "react";
 
 /**
  * Infobulle au survol ou au focus clavier, snippet `17-tooltip`. Pur CSS :
@@ -20,8 +20,15 @@ export default function Tooltip({
   const id = useId();
   return (
     <span className={`t-tt-wrap ${className ?? ""}`}>
-      <span className="t-tt-trigger contents" aria-describedby={id}>
-        {children}
+      {/* `aria-describedby` était posé ici, sur un `display:contents` sans
+          boîte ni focus : la description n'était jamais annoncée. On le
+          transmet à l'enfant réel — l'élément que l'utilisateur atteint. */}
+      <span className="t-tt-trigger contents">
+        {isValidElement(children)
+          ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, {
+              "aria-describedby": id,
+            })
+          : children}
       </span>
       <span className="t-tt" id={id} role="tooltip">
         {label}

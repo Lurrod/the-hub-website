@@ -8,6 +8,7 @@ import { generateInviteAction, revokeInviteAction } from "@/app/equipes/actions"
 import InviteLink from "@/components/invite-link";
 
 import { teamTitle } from "@/lib/data/titles";
+import { fullDate } from "@/lib/dates";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,7 +49,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ id:
       {link ? (
         <div className="rounded-lg border border-[var(--border)] p-4">
           <p className="mb-2 text-sm text-[var(--text-muted)]">
-            Lien actif (expire le {new Date(team.inviteExpiresAt!).toLocaleDateString("fr-FR")}) :
+            Lien actif (expire le {fullDate(team.inviteExpiresAt)}) :
           </p>
           <InviteLink link={link} />
           <div className="mt-4 flex gap-2">

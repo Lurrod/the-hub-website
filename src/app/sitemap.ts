@@ -19,7 +19,6 @@ const STATIC_ROUTES: Array<{
   { path: "/joueurs", changeFrequency: "daily", priority: 0.8 },
   { path: "/lft", changeFrequency: "daily", priority: 0.7 },
   { path: "/rating", changeFrequency: "monthly", priority: 0.4 },
-  { path: "/recherche", changeFrequency: "monthly", priority: 0.3 },
   { path: "/mentions-legales", changeFrequency: "yearly", priority: 0.2 },
   { path: "/confidentialite", changeFrequency: "yearly", priority: 0.2 },
   { path: "/cgu", changeFrequency: "yearly", priority: 0.2 },

@@ -324,7 +324,7 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
           onPointerUp={endPointer}
           onPointerCancel={endPointer}
           style={{ aspectRatio: String(CROP_ASPECT[shape]), touchAction: "none" }}
-          className="relative mt-4 w-full cursor-grab overflow-hidden rounded-lg border border-[var(--border)] bg-[repeating-conic-gradient(#1b1e26_0_25%,#15181f_0_50%)] bg-[length:16px_16px] active:cursor-grabbing"
+          className="relative mt-4 w-full cursor-grab overflow-hidden rounded-lg border border-[var(--border)] bg-[repeating-conic-gradient(var(--checker-a)_0_25%,var(--checker-b)_0_50%)] bg-[length:16px_16px] active:cursor-grabbing"
         >
           {url && shownSize && (
             // eslint-disable-next-line @next/next/no-img-element

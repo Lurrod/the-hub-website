@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { assertCanManageTeam } from "@/lib/server-auth";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { generateTeamInvite, revokeTeamInvite, setTeamLfp } from "@/lib/data/teams";
+import { generateTeamInvite, getTeamLfp, revokeTeamInvite, setTeamLfp } from "@/lib/data/teams";
 import { nextLfpState } from "@/lib/lfp";
 
 export async function generateInviteAction(teamId: string) {
@@ -27,7 +26,7 @@ export async function revokeInviteAction(teamId: string) {
  */
 export async function toggleTeamLfpAction(teamId: string, formData: FormData) {
   await assertCanManageTeam(teamId);
-  const team = await db.team.findUnique({ where: { id: teamId }, select: { lfp: true } });
+  const team = await getTeamLfp(teamId);
   if (!team) redirect("/equipes");
 
   const state = nextLfpState(team.lfp, {

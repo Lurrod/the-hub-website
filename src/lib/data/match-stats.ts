@@ -22,6 +22,18 @@ import {
 import type { MatchMapImportInput } from "@/lib/validation/match";
 import { logger, describeError } from "@/lib/logger";
 
+/**
+ * Import des feuilles de match Riot et écriture des scoreboards.
+ *
+ * Vivait dans `src/lib` alors que le module ne fait qu'appeler HenrikDev et
+ * écrire en base — huit requêtes Prisma dont deux transactions. Il était donc
+ * compté dans le périmètre de couverture sans pouvoir y être testé, ce qui
+ * tirait les seuils vers le bas sans rien garantir.
+ *
+ * Tout ce qui se décide sans base — dérivées, impact, KAST, camps — vit dans
+ * `match-stats-core.ts` et y est testé.
+ */
+
 const MATCH_THRESHOLD = 8;
 const MAX_PLAYER_QUERIES = 4;
 

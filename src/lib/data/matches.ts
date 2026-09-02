@@ -4,7 +4,7 @@ import type { MatchForfeit, MatchStage, MatchStatus, TournamentFormat } from "@/
 import { forfeitWinnerId } from "@/lib/forfeit";
 import { matchGroupIdFor } from "@/lib/bracket";
 import type { MatchInput, MatchMapInput } from "@/lib/validation/match";
-import { syncTournamentStatusesIfStale } from "@/lib/tournament-status";
+import { syncTournamentStatusesIfStale } from "@/lib/data/tournament-status";
 import { seriesScore } from "@/lib/match-stats-core";
 import { cutoffWhere, headToHeadTally, type MatchCutoff } from "@/lib/match-context-core";
 import { clampPage, pageOffset } from "@/lib/pagination";

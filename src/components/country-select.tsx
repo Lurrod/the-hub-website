@@ -84,7 +84,6 @@ export default function CountrySelect({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
         aria-expanded={open}
         className={`flex items-center gap-2 ${input} ${value ? "" : "text-[var(--text-muted)]"}`}
       >
@@ -118,10 +117,11 @@ export default function CountrySelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Rechercher un pays…"
+              aria-label="Rechercher un pays"
               className={input}
             />
           </div>
-          <ul role="listbox" className="max-h-64 overflow-y-auto pb-1">
+          <ul className="max-h-64 overflow-y-auto pb-1">
             <li>
               <button
                 type="button"

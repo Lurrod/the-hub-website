@@ -71,7 +71,12 @@ export default function RatingPage() {
           pour Counter-Strike, adaptée à Valorant. Elle est appliquée telle quelle, sans réglage par
           joueur ni par équipe :
         </p>
-        <pre className="stat overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[12px] leading-relaxed text-white">
+        <pre
+          className="stat overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[12px] leading-relaxed text-white"
+          tabIndex={0}
+          role="region"
+          aria-label="Formule de calcul du rating, défilement horizontal"
+        >
           {`rating = 0,0073 × KAST
        + 0,3591 × kills par round
        − 0,5329 × morts par round

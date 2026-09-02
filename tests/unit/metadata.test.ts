@@ -78,3 +78,27 @@ describe("mapSplashUrl", () => {
     }
   });
 });
+
+// Le bloc `twitter` du layout racine n'est pas fusionné en profondeur avec
+// celui d'une page : sans redéfinition ici, chaque fiche partagée sur X
+// affichait le titre générique du site, alors que son image de partage est
+// générée sur mesure.
+describe("carte de partage X", () => {
+  it("reprend le titre et la description de la page", () => {
+    const m = pageMetadata({
+      path: "/joueurs/abc",
+      title: "Ruskof",
+      description: "Statistiques de Ruskof.",
+    });
+    expect(m.twitter).toMatchObject({
+      card: "summary_large_image",
+      title: "Ruskof · The Hub",
+      description: "Statistiques de Ruskof.",
+    });
+  });
+
+  it("suit le titre de partage quand il diffère du titre de page", () => {
+    const m = pageMetadata({ path: "/matchs/x", title: "Match", shareTitle: "A vs B" });
+    expect(m.twitter).toMatchObject({ title: "A vs B" });
+  });
+});

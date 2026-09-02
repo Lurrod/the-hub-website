@@ -23,8 +23,22 @@ const AUDIENCE_RULE: RateLimitRule = { limit: 120, windowMs: 10 * 60 * 1000 };
 /** Le corps attendu est un chemin. Au-delà, on ne lit même pas. */
 const MAX_BODY_BYTES = 1024;
 
-/** Une purge sur mille signalements suffit à contenir la table des empreintes. */
-const PURGE_ODDS = 1000;
+/**
+ * Intervalle minimal entre deux purges d'empreintes.
+ *
+ * C'était un tirage au sort — une purge sur mille signalements. La politique de
+ * confidentialité annonce pourtant que « les empreintes du jour sont supprimées
+ * au bout de trois jours » : sur un site en phase de lancement, atteindre mille
+ * pages vues peut demander plusieurs jours, et le déclenchement restait
+ * aléatoire par-dessus. L'engagement publié n'était donc pas tenu.
+ *
+ * Une fois par heure suffit largement pour une rétention exprimée en jours, et
+ * le compteur est en mémoire du process : au pire un redémarrage avance une
+ * purge, ce qui est sans conséquence.
+ */
+const PURGE_INTERVAL_MS = 60 * 60 * 1000;
+
+let lastPurgeAt = 0;
 
 const NO_CONTENT = new Response(null, { status: 204 });
 
@@ -81,9 +95,13 @@ export async function POST(request: Request): Promise<Response> {
   after(async () => {
     try {
       await recordView(path, hash, now);
-      // Purge opportuniste plutôt qu'une tâche planifiée de plus : la table ne
-      // grossit que si le site est visité, autant la nettoyer au même rythme.
-      if (Math.floor(Math.random() * PURGE_ODDS) === 0) await purgeOldVisitors(now);
+      // Purge portée par le trafic plutôt qu'une tâche planifiée de plus, mais
+      // sur un intervalle et non sur un tirage : la rétention annoncée doit
+      // être celle qui est pratiquée.
+      if (now.getTime() - lastPurgeAt >= PURGE_INTERVAL_MS) {
+        lastPurgeAt = now.getTime();
+        await purgeOldVisitors(now);
+      }
     } catch (error) {
       logger.warn("audience.record_failed", { path, ...describeError(error) });
     }

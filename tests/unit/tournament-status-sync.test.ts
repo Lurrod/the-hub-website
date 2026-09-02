@@ -17,13 +17,11 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-const {
-  syncTournamentStatuses,
-  syncTournamentStatusesIfStale,
-  resetSyncThrottle,
-  finishedCutoff,
-  SYNC_INTERVAL_MS,
-} = await import("@/lib/tournament-status");
+// L'écriture et son étranglement ont rejoint la couche données ; les
+// décisions pures restent dans le module d'origine.
+const { syncTournamentStatuses, syncTournamentStatusesIfStale, resetSyncThrottle } =
+  await import("@/lib/data/tournament-status");
+const { finishedCutoff, SYNC_INTERVAL_MS } = await import("@/lib/tournament-status");
 
 beforeEach(() => {
   updateMany.mockClear();

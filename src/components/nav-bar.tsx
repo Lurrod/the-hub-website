@@ -43,6 +43,10 @@ export default function NavBar() {
             width={130}
             height={128}
             alt="The Hub"
+            // Candidat au plus grand rendu visible sur toutes les pages hors
+            // accueil : il est en tête de document et rien de plus lourd ne le
+            // précède. Le différer serait un contresens — on le priorise.
+            fetchPriority="high"
             className="h-8 w-auto object-contain"
           />
         </Link>

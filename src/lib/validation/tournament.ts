@@ -62,6 +62,20 @@ export const tournamentInputSchema = z
 
 export type TournamentInput = z.infer<typeof tournamentInputSchema>;
 
+/**
+ * Nom d'une poule.
+ *
+ * Seule frontière d'écriture du site qui acceptait une chaîne libre non
+ * bornée : `Group.name` est un `String` Prisma, donc un `text` PostgreSQL sans
+ * limite, et l'action se contentait d'un `trim()`. Un organisateur — déjà
+ * authentifié et autorisé, la portée reste limitée — pouvait casser la mise en
+ * page de la page compétition avec un nom de trois mille caractères.
+ *
+ * 60 caractères : « Poule A », « Groupe Alpha », « Play-in — poule haute »
+ * tiennent tous largement.
+ */
+export const groupNameSchema = z.string().trim().min(1).max(60);
+
 export const participantAddSchema = z.object({
   teamId: z.string().trim().min(1, "Équipe requise"),
   seed: z.coerce.number().int().positive().optional(),

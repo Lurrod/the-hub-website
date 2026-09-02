@@ -112,7 +112,6 @@ function baseRow(
   side: "A" | "B",
   agent: string,
   won: boolean,
-  rounds: number,
   starTier: number
 ): Row {
   const boost = won ? 1.12 : 0.92;
@@ -280,10 +279,10 @@ async function main() {
         );
         const rows: Row[] = [
           ...rosterA.map((r, idx) =>
-            baseRow(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, rounds, idx)
+            baseRow(r.player.pseudo, r.playerId, "A", agentsA[idx], aWon, idx)
           ),
           ...rosterB.map((r, idx) =>
-            baseRow(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, rounds, idx)
+            baseRow(r.player.pseudo, r.playerId, "B", agentsB[idx], !aWon, idx)
           ),
         ];
         balanceDuels(rows, rounds, aWon);

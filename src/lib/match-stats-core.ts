@@ -436,7 +436,7 @@ export function attackingTeamByRound(rounds: readonly CustomMatchRound[]): (stri
   const teamIds = [...new Set(rounds.map((r) => r.winningTeamId).filter(Boolean))];
   const other = (id: string) => teamIds.find((t) => t !== id) ?? null;
 
-  return rounds.map((r, i) => {
+  return rounds.map((_, i) => {
     const half = halfOf(i);
     const known = attackerOfHalf.get(half);
     if (known) return known;

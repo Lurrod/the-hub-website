@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   clientIp,
-  dayKey,
+  utcDayKey,
   dayOf,
   isBot,
   isCountable,
@@ -103,10 +103,10 @@ describe("visitorHash", () => {
   });
 });
 
-describe("dayOf / dayKey", () => {
+describe("dayOf / utcDayKey", () => {
   it("ramène à minuit UTC, quelle que soit l'heure", () => {
     expect(dayOf(new Date("2026-08-12T23:59:59Z")).toISOString()).toBe("2026-08-12T00:00:00.000Z");
-    expect(dayKey(dayOf(new Date("2026-08-12T23:59:59Z")))).toBe("2026-08-12");
+    expect(utcDayKey(dayOf(new Date("2026-08-12T23:59:59Z")))).toBe("2026-08-12");
   });
 });
 

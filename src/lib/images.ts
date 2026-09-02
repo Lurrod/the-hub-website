@@ -35,14 +35,28 @@ const ALLOWED_SHARP_FORMATS = new Set(["png", "jpeg", "webp"]);
  * le fichier EST. Un SVG renommé en .png passait le contrôle du type déclaré et
  * arrivait tel quel dans le pipeline de traitement.
  */
+/**
+ * Plafond de pixels décodés.
+ *
+ * Seule la taille du FICHIER était bornée (5 Mo) : un PNG de quelques centaines
+ * de kilo-octets décode en 16000 × 16000, et sharp retombait sur son défaut de
+ * 268 Mpx. Le traitement se fait dans le fil de la server action, sur un
+ * process Node unique — dix envois à la minute suffisaient à figer le site.
+ * 40 Mpx laissent passer tout ce qu'un appareil photo produit.
+ */
+const MAX_PIXELS = 40_000_000;
+
 export async function assertRealImage(buffer: Buffer): Promise<ValidateResult> {
   try {
-    const { format } = await sharp(buffer).metadata();
+    const { format } = await sharp(buffer, { limitInputPixels: MAX_PIXELS }).metadata();
     if (!format || !ALLOWED_SHARP_FORMATS.has(format)) {
       return { ok: false, error: "Le fichier n'est pas une image png, jpg ou webp." };
     }
     return { ok: true };
   } catch {
+    // sharp lève aussi quand l'image dépasse `limitInputPixels` : le message
+    // reste volontairement générique, l'utilisateur n'a pas à connaître le
+    // plafond exact pour comprendre qu'il doit fournir autre chose.
     return { ok: false, error: "Fichier illisible : ce n'est pas une image valide." };
   }
 }
@@ -115,7 +129,7 @@ export async function processAndStoreImage(
   await fs.mkdir(dir, { recursive: true });
   const suffix = variant === "banner" ? "-banner" : "";
   const out = path.join(dir, `${id}${suffix}.webp`);
-  const pipeline = sharp(buffer);
+  const pipeline = sharp(buffer, { limitInputPixels: MAX_PIXELS });
   if (variant === "banner") {
     pipeline.resize(1280, 360, { fit: "cover" });
   } else {

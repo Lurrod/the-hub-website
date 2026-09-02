@@ -219,7 +219,7 @@ export default function ImageUpload({
                 clear();
               }}
               aria-label="Retirer l'image"
-              className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/70 text-sm leading-none text-white transition-colors hover:bg-black"
+              className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-sm leading-none text-white transition-colors hover:bg-black"
             >
               ×
             </button>

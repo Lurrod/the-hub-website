@@ -167,7 +167,12 @@ export default function ShareCardButton({ variants, pageUrl, title, alt }: Share
               </div>
 
               {variants.length > 1 && (
-                <div className="mt-3 -mx-1 overflow-x-auto px-1">
+                <div
+                  className="mt-3 -mx-1 overflow-x-auto px-1"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Variantes de carte, défilement horizontal"
+                >
                   <Segmented activeKey={current.key} variant="pill">
                     {variants.map((v) => (
                       <button

@@ -5,6 +5,8 @@ import { pageMetadata } from "@/lib/metadata";
 export const metadata = pageMetadata({
   path: "/mentions-legales",
   title: "Mentions légales",
+  description:
+    "Éditeur, directeur de publication et hébergeur du site The Hub, et procédure de signalement de contenu.",
 });
 
 export default function MentionsLegalesPage() {

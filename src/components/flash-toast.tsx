@@ -90,70 +90,81 @@ export default function FlashToast() {
     router.replace(qs ? `${url.pathname}?${qs}` : url.pathname, { scroll: false });
   };
 
-  if (!flash) return null;
+  // Le conteneur `role="status"` était monté AVEC son contenu : plusieurs
+  // lecteurs d'écran n'annoncent alors rien, une région live devant préexister
+  // à la mutation qu'elle décrit. Il est désormais rendu en permanence, vide,
+  // et seul son contenu apparaît (WCAG 4.1.3).
 
-  const tone = flash.kind === "success" ? "var(--success)" : "var(--destructive)";
-  const halo = flash.kind === "success" ? "var(--success-soft)" : "var(--destructive-soft)";
+  const tone = flash?.kind === "success" ? "var(--success)" : "var(--destructive)";
+  const halo = flash?.kind === "success" ? "var(--success-soft)" : "var(--destructive-soft)";
 
   return (
-    <div className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex justify-end sm:inset-x-auto sm:bottom-5 sm:right-5">
-      <div
-        key={flash.id}
-        role="status"
-        data-state={leaving ? "out" : "in"}
-        onAnimationEnd={(e) => {
-          if (e.animationName.includes("toast-out") || e.animationName.includes("toast-fade-out")) {
-            setFlash(null);
-            setLeaving(false);
-            cleanUrl();
-          }
-        }}
-        style={{ "--toast-duration": `${DURATIONS[flash.kind]}ms` } as CSSProperties}
-        className="t-toast pointer-events-auto relative w-full overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--card)] shadow-[var(--shadow-elev)] sm:w-[336px]"
-      >
-        <div className="flex items-start gap-3 p-3.5 pr-9">
-          <span
-            className="mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
-            style={{ background: halo }}
-          >
-            <Icon kind={flash.kind} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-white">{flash.title}</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-muted)]">
-              {flash.message}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setLeaving(true)}
-          aria-label="Fermer"
-          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-subtle)] transition-colors hover:bg-[var(--card-hover)] hover:text-white"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            className="h-3.5 w-3.5"
-            aria-hidden="true"
-          >
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-
-        <span
-          aria-hidden="true"
-          className="t-toast-timer absolute inset-x-0 bottom-0 h-[2px]"
-          style={{ background: tone }}
+    <div
+      className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex justify-end sm:inset-x-auto sm:bottom-5 sm:right-5"
+      role={flash?.kind === "success" ? "status" : "alert"}
+      aria-live={flash?.kind === "success" ? "polite" : "assertive"}
+    >
+      {flash && (
+        <div
+          key={flash.id}
+          data-state={leaving ? "out" : "in"}
           onAnimationEnd={(e) => {
-            if (e.animationName.includes("toast-timer")) setLeaving(true);
+            if (
+              e.animationName.includes("toast-out") ||
+              e.animationName.includes("toast-fade-out")
+            ) {
+              setFlash(null);
+              setLeaving(false);
+              cleanUrl();
+            }
           }}
-        />
-      </div>
+          style={{ "--toast-duration": `${DURATIONS[flash.kind]}ms` } as CSSProperties}
+          className="t-toast pointer-events-auto relative w-full overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--card)] shadow-[var(--shadow-elev)] sm:w-[336px]"
+        >
+          <div className="flex items-start gap-3 p-3.5 pr-9">
+            <span
+              className="mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+              style={{ background: halo }}
+            >
+              <Icon kind={flash.kind} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-white">{flash.title}</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-muted)]">
+                {flash.message}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setLeaving(true)}
+            aria-label="Fermer"
+            className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-subtle)] transition-colors hover:bg-[var(--card-hover)] hover:text-white"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              className="h-3.5 w-3.5"
+              aria-hidden="true"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+
+          <span
+            aria-hidden="true"
+            className="t-toast-timer absolute inset-x-0 bottom-0 h-[2px]"
+            style={{ background: tone }}
+            onAnimationEnd={(e) => {
+              if (e.animationName.includes("toast-timer")) setLeaving(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -268,6 +268,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
               <img
                 src={match.tournament.logo}
                 alt={`Logo ${match.tournament.name}`}
+                loading="lazy"
                 className="h-8 w-8 shrink-0 rounded object-cover"
               />
             ) : (

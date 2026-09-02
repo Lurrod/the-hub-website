@@ -2,14 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
 import { assertCanManageTeam } from "@/lib/server-auth";
 import { countActiveRosterPlayers } from "@/lib/data/teams";
+import {
+  getTournamentRegistrationInfo,
+  isTeamRegistered,
+  registerTeamIfRoom,
+} from "@/lib/data/tournaments";
 import { MIN_ROSTER_FOR_TOURNAMENT } from "@/lib/constants";
 import { isRegistrationOpen } from "@/lib/tournament-status";
-
-/** Levée dans la transaction quand la limite d'équipes est atteinte. */
-const FULL = "TOURNAMENT_FULL";
 
 /**
  * Inscription d'une équipe à un tournoi par son manager.
@@ -26,40 +27,27 @@ export async function registerTeamAction(tournamentId: string, formData: FormDat
   // Seul un manager de CETTE équipe (ou un admin) peut l'inscrire.
   await assertCanManageTeam(teamId);
 
-  const tournament = await db.tournament.findUnique({
-    where: { id: tournamentId },
-    select: { status: true, maxTeams: true, startDate: true, endDate: true },
-  });
+  const tournament = await getTournamentRegistrationInfo(tournamentId);
   if (!tournament) redirect(`${base}?error=invalid`);
   // La règle porte sur les dates, pas seulement sur le statut : un tournoi dont
   // personne n'a basculé le statut à la main restait ouvert aux inscriptions
   // pendant toute sa durée.
   if (!isRegistrationOpen(tournament)) redirect(`${base}?error=notupcoming`);
 
-  const existing = await db.tournamentParticipant.findUnique({
-    where: { tournamentId_teamId: { tournamentId, teamId } },
-    select: { id: true },
-  });
-  if (existing) redirect(`${base}?error=alreadyregistered`);
+  if (await isTeamRegistered(tournamentId, teamId)) {
+    redirect(`${base}?error=alreadyregistered`);
+  }
 
   if ((await countActiveRosterPlayers(teamId)) < MIN_ROSTER_FOR_TOURNAMENT) {
     redirect(`${base}?error=rosterincomplete`);
   }
 
-  // Le comptage et l'insertion sont dans la même transaction : sans ça, deux
-  // inscriptions simultanées pourraient toutes deux passer la limite.
-  let isFull = false;
-  try {
-    await db.$transaction(async (tx) => {
-      const count = await tx.tournamentParticipant.count({ where: { tournamentId } });
-      if (tournament.maxTeams != null && count >= tournament.maxTeams) throw new Error(FULL);
-      await tx.tournamentParticipant.create({ data: { tournamentId, teamId } });
-    });
-  } catch (error: unknown) {
-    if (error instanceof Error && error.message === FULL) isFull = true;
-    else throw error;
+  // Le comptage et l'insertion sont dans la même transaction, côté données :
+  // sans ça, deux inscriptions simultanées pourraient toutes deux passer la
+  // limite.
+  if (!(await registerTeamIfRoom(tournamentId, teamId, tournament.maxTeams))) {
+    redirect(`${base}?error=tournamentfull`);
   }
-  if (isFull) redirect(`${base}?error=tournamentfull`);
 
   revalidatePath(base);
   revalidatePath("/tournois");

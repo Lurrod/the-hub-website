@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TOURNAMENT_STATUS_LABELS, type TournamentStatus } from "@/lib/constants";
 import StatusBadge from "@/components/status-badge";
+import { mediumDate } from "@/lib/dates";
 
 type TournamentCardData = {
   id: string;
@@ -16,10 +17,8 @@ type TournamentCardData = {
 
 function formatDateRange(start: Date | null, end: Date | null): string {
   if (!start) return "Date à définir";
-  const fmt = (d: Date) =>
-    new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
-  if (!end) return fmt(start);
-  return `${fmt(start)} - ${fmt(end)}`;
+  if (!end) return mediumDate(start);
+  return `${mediumDate(start)} - ${mediumDate(end)}`;
 }
 
 function StatItem({ label, value, mono }: { label: string; value: string; mono?: boolean }) {

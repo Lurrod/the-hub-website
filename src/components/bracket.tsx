@@ -49,7 +49,12 @@ export default function Bracket({
     // rarement le même nombre de colonnes, deux zones de scroll distinctes
     // décaleraient les deux tableaux l'un par rapport à l'autre.
     return (
-      <div className="scroll-accent overflow-x-auto pb-2">
+      <div
+        className="scroll-accent overflow-x-auto pb-2"
+        tabIndex={0}
+        role="region"
+        aria-label="Arbre du tournoi, défilement horizontal"
+      >
         <BracketGrandFinalLines>
           <div className="flex items-stretch gap-10">
             <div className="flex flex-col gap-8">
@@ -129,6 +134,9 @@ function SectionBlock({
       <div
         className={`flex items-stretch ${scroll ? "scroll-accent overflow-x-auto pb-2" : "w-max"}`}
         style={{ gap: GAP }}
+        {...(scroll
+          ? { tabIndex: 0, role: "region", "aria-label": "Tour du tournoi, défilement horizontal" }
+          : {})}
       >
         {section.rounds.map((round, ri) => {
           const next = section.rounds[ri + 1];

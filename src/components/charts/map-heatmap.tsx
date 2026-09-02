@@ -63,6 +63,7 @@ export default function MapHeatmap({ teams }: { teams: TeamStats[] }) {
                     <img
                       src={t.team.logo}
                       alt=""
+                      loading="lazy"
                       className="h-4 w-4 shrink-0 rounded object-cover"
                     />
                   ) : (

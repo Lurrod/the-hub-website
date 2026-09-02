@@ -332,3 +332,8 @@ export function countActiveRosterPlayers(teamId: string): Promise<number> {
     where: { teamId, leaveDate: null, role: { in: ["JOUEUR", "SUB"] } },
   });
 }
+
+/** État « cherche des joueurs » de l'équipe, seul champ utile à la bascule. */
+export function getTeamLfp(teamId: string) {
+  return db.team.findUnique({ where: { id: teamId }, select: { lfp: true } });
+}

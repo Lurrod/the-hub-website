@@ -63,6 +63,16 @@ describe("monthKey / monthLabel", () => {
     expect(monthLabel(new Date("2026-07-25T12:00:00"))).toBe("Juillet 2026");
     expect(monthLabel(null)).toBe("Dates à définir");
   });
+
+  // Ces deux cas passaient dans n'importe quel fuseau : les dates d'essai
+  // étaient écrites sans suffixe, donc interprétées en heure locale. Un instant
+  // en UTC proche de minuit est le seul qui distingue vraiment Paris d'UTC —
+  // le 31 juillet à 22h30 UTC, il est déjà le 1er août à Paris.
+  it("range un tournoi sur le mois de Paris, pas sur celui d'UTC", () => {
+    const veilleEnUtc = new Date("2026-07-31T22:30:00Z");
+    expect(monthKey(veilleEnUtc)).toBe("2026-08");
+    expect(monthLabel(veilleEnUtc)).toBe("Août 2026");
+  });
 });
 
 describe("dayKey", () => {

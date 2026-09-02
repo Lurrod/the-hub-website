@@ -135,7 +135,7 @@ export default function UserMenu({ pseudo, photo, profilHref, signOutAction }: P
           </Icon>
           Paramètres
         </Link>
-        <div className="my-1 h-px bg-[var(--border)]" />
+        <div role="separator" className="my-1 h-px bg-[var(--border)]" />
         <form action={signOutAction}>
           <button role="menuitem" className={item}>
             <Icon>

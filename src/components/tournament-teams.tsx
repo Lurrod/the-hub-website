@@ -39,7 +39,7 @@ const OUTCOME_ORDER = ["elim", "detonate", "defuse", "time"];
 function Crest({ team }: { team: TeamStats["team"] }) {
   return team.logo ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={team.logo} alt="" className="h-6 w-6 shrink-0 rounded object-cover" />
+    <img src={team.logo} alt="" loading="lazy" className="h-6 w-6 shrink-0 rounded object-cover" />
   ) : (
     <span className="monogram grid h-6 w-6 shrink-0 place-items-center rounded text-[9px]">
       {team.tag.slice(0, 2).toUpperCase()}

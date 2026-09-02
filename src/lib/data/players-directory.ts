@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { clampPage, pageOffset } from "@/lib/pagination";
 import { killDeathRatio, type PlayerDirectoryFilters } from "@/lib/players-directory";
-import { capSearchQuery } from "@/lib/search-core";
+import { capSearchQuery, escapeLikeWildcards } from "@/lib/search-core";
 
 /** Joueurs affichés par page dans l'annuaire. */
 export const PLAYERS_PER_PAGE = 25;
@@ -47,7 +47,14 @@ function conditions(f: PlayerDirectoryFilters): Prisma.Sql {
   if (f.role) parts.push(Prisma.sql`p."valorantRole"::text = ${f.role}`);
   // `f.q` est déjà borné par `normalizePlayerSearch` côté page, mais la couche
   // data ne doit pas dépendre de son appelant : on replafonne ici.
-  if (f.q) parts.push(Prisma.sql`p."pseudo" ILIKE ${`%${capSearchQuery(f.q)}%`}`);
+  // `escapeLikeWildcards` : sans lui, % et _ saisis par le visiteur restent
+  // des jokers PostgreSQL — chercher « % » renvoyait l'annuaire entier au lieu
+  // d'un résultat vide. La clause ESCAPE déclare le caractère d'échappement,
+  // le défaut n'étant pas garanti par la norme.
+  if (f.q) {
+    const motif = `%${escapeLikeWildcards(capSearchQuery(f.q))}%`;
+    parts.push(Prisma.sql`p."pseudo" ILIKE ${motif} ESCAPE '\\'`);
+  }
   if (f.team === "team") parts.push(Prisma.sql`m."id" IS NOT NULL`);
   if (f.team === "free") parts.push(Prisma.sql`m."id" IS NULL`);
   return Prisma.join(parts, " AND ");

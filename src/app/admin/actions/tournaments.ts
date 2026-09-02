@@ -8,7 +8,6 @@ import {
   assertCanAdministerTournament,
 } from "@/lib/server-auth";
 import { parseManagerRole } from "@/lib/manager-roles";
-import { db } from "@/lib/db";
 import {
   tournamentInputSchema,
   participantAddSchema,
@@ -26,6 +25,7 @@ import {
   removeTournamentManagerIfNotLast,
   setTournamentManagerRole,
 } from "@/lib/data/tournaments";
+import { findUserIdByDiscordId } from "@/lib/data/users";
 import { readUploadedImage, processAndStoreImage, deleteStoredImage } from "@/lib/images";
 
 function parseTournamentForm(formData: FormData) {
@@ -180,9 +180,9 @@ export async function addTournamentManagerAction(tournamentId: string, formData:
   const base = `/tournois/${tournamentId}/gestion/managers`;
   const discordId = String(formData.get("discordId") ?? "").trim();
   if (!discordId) redirect(`${base}?error=empty`);
-  const user = await db.user.findUnique({ where: { discordId }, select: { id: true } });
-  if (!user) redirect(`${base}?error=notfound`);
-  await addTournamentManager(tournamentId, user.id, parseManagerRole(formData.get("role")));
+  const userId = await findUserIdByDiscordId(discordId);
+  if (!userId) redirect(`${base}?error=notfound`);
+  await addTournamentManager(tournamentId, userId, parseManagerRole(formData.get("role")));
   revalidatePath(base);
   redirect(`${base}?ok=manager-added`);
 }

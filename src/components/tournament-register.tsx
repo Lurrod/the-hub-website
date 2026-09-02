@@ -71,7 +71,12 @@ export default function TournamentRegister({
       {eligible.length > 0 ? (
         <form action={action} className="flex flex-wrap items-center gap-2">
           {eligible.length > 1 ? (
-            <select name="teamId" required className={`${input} min-w-48 flex-1`}>
+            <select
+              name="teamId"
+              required
+              aria-label="Équipe à inscrire au tournoi"
+              className={`${input} min-w-48 flex-1`}
+            >
               {eligible.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}

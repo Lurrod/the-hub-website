@@ -4,10 +4,10 @@ import EmptyState, { ListDecor } from "@/components/empty-state";
 import LiveDuration from "@/components/live-duration";
 import { lengthLabel } from "@/lib/duration";
 import type { CareerStint } from "@/lib/data/player-career";
+import { shortMonth } from "@/lib/dates";
 
 function monthYear(d: Date | null): string {
-  if (!d) return "-";
-  return new Date(d).toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+  return d ? shortMonth(d) : "-";
 }
 
 const TH = "px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]";

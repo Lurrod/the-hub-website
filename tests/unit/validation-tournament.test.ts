@@ -3,6 +3,7 @@ import {
   tournamentInputSchema,
   participantAddSchema,
   participantSeedSchema,
+  groupNameSchema,
 } from "@/lib/validation/tournament";
 
 describe("tournamentInputSchema", () => {
@@ -135,5 +136,25 @@ describe("participantSeedSchema", () => {
 
   it("refuse teamId vide", () => {
     expect(() => participantSeedSchema.parse({ teamId: "", seed: null })).toThrow();
+  });
+});
+
+describe("groupNameSchema", () => {
+  it("accepte un nom de poule usuel et élague les blancs", () => {
+    expect(groupNameSchema.parse("  Poule A  ")).toBe("Poule A");
+    expect(groupNameSchema.parse("Play-in — poule haute")).toBe("Play-in — poule haute");
+  });
+
+  it("refuse le vide et les blancs seuls", () => {
+    expect(groupNameSchema.safeParse("").success).toBe(false);
+    expect(groupNameSchema.safeParse("   ").success).toBe(false);
+  });
+
+  // Group.name est un `text` PostgreSQL sans limite, et l'action se contentait
+  // d'un trim() : rien n'empêchait de casser la mise en page de la page
+  // compétition avec un nom de plusieurs milliers de caractères.
+  it("refuse au-delà de soixante caractères", () => {
+    expect(groupNameSchema.safeParse("A".repeat(60)).success).toBe(true);
+    expect(groupNameSchema.safeParse("A".repeat(61)).success).toBe(false);
   });
 });

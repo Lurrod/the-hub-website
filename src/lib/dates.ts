@@ -34,17 +34,26 @@ export function tournamentCountdownLabel(status: TournamentStatus, days: number 
   return countdownLabel(days);
 }
 
-/** Clé de regroupement par mois (AAAA-MM), "0000-00" si date absente. */
+/**
+ * Clé de regroupement par mois (AAAA-MM), "0000-00" si date absente.
+ *
+ * Le mois est celui de Paris. Ces deux fonctions étaient les seules de ce
+ * module à lire le fuseau du système, alors qu'ecosystem.config.cjs affirme
+ * que « les dates saisies et affichées sont ancrées sur Paris par le code, qui
+ * ne dépend donc pas de ce réglage ». C'était faux : elles ne marchaient que
+ * grâce au TZ posé par pm2. Un tournoi commençant le 1er août à 00h30 heure de
+ * Paris se rangeait sous « Juillet » partout ailleurs — CI, conteneur, poste à
+ * l'étranger.
+ */
 export function monthKey(date: Date | null): string {
   if (!date) return "0000-00";
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return toDateInput(new Date(date)).slice(0, 7);
 }
 
-/** Libellé de mois (« juillet 2026 »), capitalisé. */
+/** Libellé de mois (« Juillet 2026 »), capitalisé, sur le fuseau de Paris. */
 export function monthLabel(date: Date | null): string {
   if (!date) return "Dates à définir";
-  const s = new Date(date).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const s = formatSite(new Date(date), { month: "long", year: "numeric" });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
@@ -119,4 +128,48 @@ export function durationShort(from: Date | null, now: Date = new Date()): string
     (now.getDate() < start.getDate() ? 1 : 0);
   if (months >= 1) return `${months}m`;
   return `${Math.max(0, Math.round((now.getTime() - start.getTime()) / DAY_MS))}j`;
+}
+
+/**
+ * Les cinq formats ci-dessous vivaient dupliqués dans huit composants, chacun
+ * appelant `toLocaleDateString("fr-FR", …)` sans `timeZone` — donc sur le
+ * fuseau du système, la dérive décrite plus haut pour `monthKey`. Ils rejoignent
+ * ce module pour la même raison : une date affichée par le site est une date de
+ * Paris, et cela ne doit pas dépendre de la machine qui rend la page.
+ */
+
+/** « juil. 2026 » — passages d'un joueur dans une équipe. */
+export function shortMonth(date: Date): string {
+  return formatSite(new Date(date), { month: "short", year: "numeric" });
+}
+
+/** « lun. 27 juil. 2026 » — en-tête de journée dans une liste de matchs. */
+export function weekdayDate(date: Date): string {
+  return formatSite(new Date(date), {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/** « 27 juil. 2026 » — période d'un tournoi sur sa vignette. */
+export function mediumDate(date: Date): string {
+  return formatSite(new Date(date), { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** « 27 juillet 2026 » — date d'un tournoi en pleine largeur. */
+export function longDate(date: Date): string {
+  return formatSite(new Date(date), { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** « 27/07/2026 18:30 » — horodatage d'une récupération de statistiques. */
+export function dateTimeLabel(date: Date): string {
+  return formatSite(new Date(date), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

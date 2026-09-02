@@ -4,6 +4,19 @@ import path from "node:path";
 export default defineConfig({
   test: {
     environment: "node",
+    // Fuseau épinglé sur UTC, volontairement différent de celui de production.
+    //
+    // `monthKey` et `monthLabel` lisaient le fuseau du système : elles se
+    // rangeaient sur le mauvais mois partout sauf à Paris. Leurs tests
+    // passaient quand même, parce qu'ils tournaient sur une machine parisienne
+    // avec des dates écrites sans suffixe de fuseau — la CI, elle, aurait
+    // rougi. Épingler UTC ici fait tomber ce genre de dérive en local, au
+    // moment où on l'écrit, et non trois commits plus tard.
+    //
+    // Le code qui doit afficher l'heure de Paris passe par
+    // `src/lib/timezone.ts`, qui la force : ces tests-là sont indifférents au
+    // réglage.
+    env: { TZ: "UTC" },
     include: ["tests/unit/**/*.test.ts"],
     coverage: {
       provider: "v8",
@@ -24,13 +37,21 @@ export default defineConfig({
       // ils servent de cliquet — la couverture ne peut plus baisser sans
       // faire échouer la CI. À relever au fur et à mesure.
       //
-      // La cible de 80 % d'instructions est tenue depuis la campagne de
-      // couverture du finding QUAL-02 (tournament-teams-core, metadata, maps,
-      // le recalage de statut, deleteStoredImage et les données structurées de
-      // liste). Ce qui reste à zéro demande de la plomberie de test :
-      // match-stats.ts (API Riot + base), server-auth.ts et session.ts
-      // (session Auth.js), countries.ts (table de données pure).
-      thresholds: { statements: 86, branches: 80, functions: 89, lines: 87 },
+      // Posés un point sous le niveau atteint, et non pile dessus : calés à
+      // l'exact, ils cassent la CI au premier ajout de code non couvert — ce
+      // qui est arrivé, la couverture ayant glissé de 93,07 à 92,8 entre le
+      // moment où je les ai écrits et le commit suivant. Un cliquet doit
+      // laisser passer le bruit, pas la régression.
+      //
+      // Relevés de 86/80/89/87 après que match-stats.ts et l'écriture de
+      // tournament-status.ts ont rejoint src/lib/data : ces modules étaient
+      // comptés dans le périmètre sans pouvoir y être testés — ils n'appellent
+      // que Prisma — et tiraient les seuils vers le bas sans rien garantir. Le
+      // périmètre mesuré ne contient plus que du code réellement testable.
+      //
+      // Ce qui reste à zéro : server-auth.ts et session.ts (session Auth.js),
+      // countries.ts (table de données pure).
+      thresholds: { statements: 92, branches: 87, functions: 92, lines: 93 },
     },
   },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },

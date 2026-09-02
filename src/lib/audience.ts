@@ -71,8 +71,16 @@ export function dayOf(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
-/** `YYYY-MM-DD` en UTC, forme utilisée dans le sel de l'empreinte. */
-export function dayKey(day: Date): string {
+/**
+ * `YYYY-MM-DD` en UTC, forme utilisée dans le sel de l'empreinte.
+ *
+ * Nommée `utcDayKey` et non `dayKey` : `src/lib/dates.ts` exporte un `dayKey`
+ * qui rend le jour de PARIS, pour regrouper les matchs. Deux fonctions du même
+ * nom aux sémantiques opposées, dans un dépôt où l'import automatique propose
+ * les deux — un composant qui aurait pris la mauvaise aurait compilé et décalé
+ * silencieusement ses regroupements d'un jour.
+ */
+export function utcDayKey(day: Date): string {
   return day.toISOString().slice(0, 10);
 }
 
@@ -89,7 +97,7 @@ export function dayKey(day: Date): string {
  */
 export function visitorHash(ip: string, userAgent: string, day: Date, secret: string): string {
   return createHash("sha256")
-    .update(`${secret}:${dayKey(day)}:${ip}:${userAgent}`)
+    .update(`${secret}:${utcDayKey(day)}:${ip}:${userAgent}`)
     .digest("hex");
 }
 
