@@ -98,7 +98,12 @@ export default function ProfileFields({
       </div>
       <div className={lbl}>
         Photo
-        <ImageUpload name="photo" shape="round" currentUrl={values.photo} />
+        <ImageUpload
+          name="photo"
+          label="Ta photo de profil"
+          shape="round"
+          currentUrl={values.photo}
+        />
       </div>
     </>
   );

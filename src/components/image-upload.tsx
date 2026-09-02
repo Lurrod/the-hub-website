@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type DragEvent } from "react";
+import { useEffect, useId, useRef, useState, type DragEvent } from "react";
 import ImageCropper from "@/components/image-cropper";
 import type { CropShape } from "@/lib/crop";
 
@@ -22,16 +22,20 @@ interface Applied {
  */
 export default function ImageUpload({
   name,
+  label,
   currentUrl = null,
   shape = "square",
   maxSizeMb = 5,
 }: {
   name: string;
+  /** Ce que l'image représente. Sert de nom accessible au champ de fichier. */
+  label: string;
   currentUrl?: string | null;
   shape?: CropShape;
   maxSizeMb?: number;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const [preview, setPreview] = useState<string | null>(currentUrl);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -178,7 +182,7 @@ export default function ImageUpload({
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className={`t-input relative grid ${box} ${radius} shrink-0 cursor-pointer place-items-center border ${
+          className={`t-drop t-input relative grid ${box} ${radius} shrink-0 cursor-pointer place-items-center border ${
             error ? "is-error " : ""
           }${
             dragging
@@ -281,13 +285,24 @@ export default function ImageUpload({
         {error}
       </p>
 
+      {/* `sr-only` et non `hidden` : `display:none` sortait ce champ de l'ordre
+          de tabulation ET de l'arbre d'accessibilité. La zone de dépôt
+          au-dessus ne porte qu'un `onClick` — aucun chemin clavier ne
+          subsistait pour définir une image (WCAG 2.1.1, niveau A). Hors écran
+          mais focusable, il s'active par Entrée comme n'importe quel champ de
+          fichier, et `base.css` dessine l'anneau de focus sur la zone de dépôt
+          quand il le reçoit. */}
+      <label htmlFor={inputId} className="sr-only">
+        {label}
+      </label>
       <input
         ref={ref}
+        id={inputId}
         type="file"
         name={name}
         accept={ACCEPT.join(",")}
         onChange={(e) => handleFile(e.target.files?.[0])}
-        className="hidden"
+        className="sr-only"
       />
 
       {editing && (

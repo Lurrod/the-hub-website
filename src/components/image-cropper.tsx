@@ -216,6 +216,35 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
     }
   }
 
+  /**
+   * Déplacement au clavier.
+   *
+   * Le cadre ne répondait qu'aux événements de pointeur : un utilisateur au
+   * clavier subissait le cadrage centré par défaut, sans aucun moyen de le
+   * corriger (WCAG 2.1.1 et 2.5.1). Le zoom, lui, était déjà accessible par le
+   * curseur et les deux boutons.
+   *
+   * Dix pixels par pression, un seul avec Maj pour l'ajustement fin. Le même
+   * `clampOffset` que le glisser : impossible de sortir l'image du cadre.
+   */
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (!natural) return;
+    const pas = e.shiftKey ? 1 : 10;
+    const deltas: Record<string, Offset> = {
+      ArrowLeft: { x: -pas, y: 0 },
+      ArrowRight: { x: pas, y: 0 },
+      ArrowUp: { x: 0, y: -pas },
+      ArrowDown: { x: 0, y: pas },
+    };
+    const d = deltas[e.key];
+    if (!d) return;
+    e.preventDefault();
+    setView((v) => ({
+      zoom: v.zoom,
+      offset: clampOffset({ x: v.offset.x + d.x, y: v.offset.y + d.y }, natural, frame, v.zoom),
+    }));
+  }
+
   function onPointerMove(e: React.PointerEvent) {
     if (!natural || !pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -314,11 +343,15 @@ export default function ImageCropper({ file, shape, onCancel, onApply }: ImageCr
       >
         <h2 className="text-base font-semibold text-white">Recadrer l&apos;image</h2>
         <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Glissez pour déplacer, molette ou curseur pour zoomer.
+          Glissez ou utilisez les flèches pour déplacer, molette ou curseur pour zoomer.
         </p>
 
         <div
           ref={frameRef}
+          tabIndex={0}
+          role="group"
+          aria-label="Cadrage de l'image : flèches pour déplacer"
+          onKeyDown={onKeyDown}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={endPointer}

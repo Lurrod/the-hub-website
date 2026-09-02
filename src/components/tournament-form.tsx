@@ -338,11 +338,21 @@ export default function TournamentForm({
       <Section title="Visuels">
         <div className={lbl}>
           Logo carré (png/jpg/webp, max 5 Mo)
-          <ImageUpload name="logo" shape="square" currentUrl={values?.logo ?? null} />
+          <ImageUpload
+            name="logo"
+            label="Logo du tournoi"
+            shape="square"
+            currentUrl={values?.logo ?? null}
+          />
         </div>
         <div className={lbl}>
           Bannière large (png/jpg/webp, max 5 Mo)
-          <ImageUpload name="banner" shape="wide" currentUrl={values?.banner ?? null} />
+          <ImageUpload
+            name="banner"
+            label="Bannière du tournoi"
+            shape="wide"
+            currentUrl={values?.banner ?? null}
+          />
         </div>
       </Section>
 
