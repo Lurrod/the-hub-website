@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { tournamentCountdownLabel } from "@/lib/dates";
+import { longDate, tournamentCountdownLabel } from "@/lib/dates";
 import type { TournamentStatus } from "@/lib/constants";
 
 type Row = {
@@ -14,12 +14,7 @@ type Row = {
 };
 
 function fullDate(date: Date | null): string {
-  if (!date) return "Date à définir";
-  return new Date(date).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return date ? longDate(date) : "Date à définir";
 }
 
 export default function TournamentListRow({ t }: { t: Row }) {

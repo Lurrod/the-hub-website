@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import EmptyState, { ListDecor } from "@/components/empty-state";
 import AgentIcon from "@/components/agent-icon";
 import type { PlayerMatchDay, PlayerMapRow, TeamAgents } from "@/lib/data/player-matches";
+import { weekdayDate } from "@/lib/dates";
 
 // Teintes vives : ces deux couleurs habillent du texte (« Victoire » / le score),
 // pas un aplat. Les variantes sourdes sont réservées à la frise de rounds.
@@ -18,13 +19,7 @@ function fmtDuration(sec: number): string {
 }
 
 function fmtDay(date: Date | null): string {
-  if (!date) return "Date inconnue";
-  return new Date(date).toLocaleDateString("fr-FR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return date ? weekdayDate(date) : "Date inconnue";
 }
 
 function Crest({

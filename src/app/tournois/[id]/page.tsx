@@ -35,6 +35,7 @@ import { tournamentSeo } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
 import { tournamentJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
+import { fullDate } from "@/lib/dates";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -203,7 +204,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
     }))
   );
 
-  const fmt = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : null);
+  const fmt = (d: Date | null) => (d ? fullDate(d) : null);
   const dateRange =
     [fmt(tournament.startDate), fmt(tournament.endDate)].filter(Boolean).join(" - ") ||
     "Dates à définir";

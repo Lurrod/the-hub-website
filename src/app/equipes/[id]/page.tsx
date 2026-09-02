@@ -25,6 +25,7 @@ import { teamSeo } from "@/lib/data/titles";
 import JsonLdScript from "@/components/json-ld";
 import { teamJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
+import { fullDate } from "@/lib/dates";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -114,7 +115,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
     bestOf: m.bestOf,
     maps: m.maps,
   });
-  const fmtDate = (d: Date | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "…");
+  const fmtDate = (d: Date | null) => (d ? fullDate(d) : "…");
 
   const socials = (team.socials ?? {}) as Record<string, string | undefined>;
 

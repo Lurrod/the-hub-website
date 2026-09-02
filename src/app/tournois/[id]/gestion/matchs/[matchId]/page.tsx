@@ -19,6 +19,7 @@ import { hasRiotStats } from "@/lib/match-stats-core";
 import { toDateInput, toDateTimeInput } from "@/lib/timezone";
 
 import { tournamentTitle } from "@/lib/data/titles";
+import { dateTimeLabel } from "@/lib/dates";
 
 export async function generateMetadata({
   params,
@@ -76,10 +77,7 @@ export default async function EditMatchPage({
           <p className="text-xs text-[var(--success)]">
             Stats récupérées depuis Riot
             {match.statsStatus === "MANUAL" ? " (import manuel)" : " (recherche automatique)"}
-            {match.statsFetchedAt
-              ? ` le ${new Date(match.statsFetchedAt).toLocaleString("fr-FR")}`
-              : ""}
-            .
+            {match.statsFetchedAt ? ` le ${dateTimeLabel(match.statsFetchedAt)}` : ""}.
           </p>
         ) : match.statsStatus === "NOT_FOUND" ? (
           <p className="text-xs text-[var(--text-muted)]">

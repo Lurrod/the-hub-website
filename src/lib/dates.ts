@@ -129,3 +129,47 @@ export function durationShort(from: Date | null, now: Date = new Date()): string
   if (months >= 1) return `${months}m`;
   return `${Math.max(0, Math.round((now.getTime() - start.getTime()) / DAY_MS))}j`;
 }
+
+/**
+ * Les cinq formats ci-dessous vivaient dupliqués dans huit composants, chacun
+ * appelant `toLocaleDateString("fr-FR", …)` sans `timeZone` — donc sur le
+ * fuseau du système, la dérive décrite plus haut pour `monthKey`. Ils rejoignent
+ * ce module pour la même raison : une date affichée par le site est une date de
+ * Paris, et cela ne doit pas dépendre de la machine qui rend la page.
+ */
+
+/** « juil. 2026 » — passages d'un joueur dans une équipe. */
+export function shortMonth(date: Date): string {
+  return formatSite(new Date(date), { month: "short", year: "numeric" });
+}
+
+/** « lun. 27 juil. 2026 » — en-tête de journée dans une liste de matchs. */
+export function weekdayDate(date: Date): string {
+  return formatSite(new Date(date), {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/** « 27 juil. 2026 » — période d'un tournoi sur sa vignette. */
+export function mediumDate(date: Date): string {
+  return formatSite(new Date(date), { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** « 27 juillet 2026 » — date d'un tournoi en pleine largeur. */
+export function longDate(date: Date): string {
+  return formatSite(new Date(date), { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** « 27/07/2026 18:30 » — horodatage d'une récupération de statistiques. */
+export function dateTimeLabel(date: Date): string {
+  return formatSite(new Date(date), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
