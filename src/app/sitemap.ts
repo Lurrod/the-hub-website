@@ -9,6 +9,10 @@ const STATIC_ROUTES: Array<{
   priority: number;
 }> = [
   { path: "/", changeFrequency: "daily", priority: 1 },
+  // Premier : premier lien de la navigation et contenu à plus forte
+  // valeur de requête du site. Elle manquait ici alors que rien ne
+  // l'excluait dans robots.ts — un simple oubli.
+  { path: "/premier", changeFrequency: "daily", priority: 0.9 },
   { path: "/tournois", changeFrequency: "daily", priority: 0.9 },
   { path: "/matchs", changeFrequency: "daily", priority: 0.9 },
   { path: "/equipes", changeFrequency: "weekly", priority: 0.8 },

@@ -46,6 +46,11 @@ export default function NavLinks({
             key={l.href}
             href={l.href}
             data-active={active}
+            // `data-active` ne porte que l'apparence : sans `aria-current`,
+            // un lecteur d'écran n'a aucun moyen de savoir dans quelle
+            // rubrique on se trouve (WCAG 1.4.1, l'information ne peut pas
+            // reposer sur la seule couleur).
+            aria-current={active ? "page" : undefined}
             onClick={onNavigate}
             // `whitespace-nowrap` : sans lui « LFT / LFP » se coupait sur
             // plusieurs lignes dès que la place manquait.

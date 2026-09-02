@@ -1,5 +1,13 @@
 name: Déploiement (Kimsufi)
 
+# Le jeton hérite sinon du réglage par défaut du dépôt, historiquement
+# `contents: write` : chaque étape exécutant du code tiers (npm ci et ses
+# centaines de paquets transitifs, prisma generate, playwright install)
+# disposerait d'un jeton capable d'écrire dans le dépôt. Aucun de ces
+# workflows n'en a besoin — `upload-artifact` non plus.
+permissions:
+  contents: read
+
 # Déclenché par la FIN de la CI sur main, jamais par le push lui-même.
 #
 # Les deux workflows étaient auparavant branchés sur `push: main` et partaient

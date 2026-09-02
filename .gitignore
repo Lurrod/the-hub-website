@@ -74,10 +74,14 @@ next-env.d.ts
 # Rapports d'audit : livrables ponctuels, transmis hors depot.
 /audit/
 
-# Exploitation : configuration Apache de production, procedure de deploiement,
-# procedure d'effacement RGPD. Gardees en local, hors du depot public.
-/deploy/
-/docs/
+# Exploitation : deploy/apache.conf, docs/DEPLOIEMENT.md et
+# docs/RGPD-EFFACEMENT.md sont desormais versionnes. Ils etaient tenus hors
+# depot au motif qu'il serait public : il ne l'est pas. Ils n'existaient donc
+# qu'en un exemplaire, sur un seul disque, sans sauvegarde -- alors que ce
+# sont la configuration du serveur et la procedure d'effacement RGPD.
+# Aucun secret n'y figure : les valeurs vivent dans shared/.env sur le Kimsufi.
+# Seules les notes de travail des agents restent ignorees.
+/docs/superpowers/
 
 # Caches d'outillage tiers
 .ruff_cache/
