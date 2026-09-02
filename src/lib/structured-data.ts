@@ -1,4 +1,5 @@
 import { SITE_ALT_NAME, SITE_NAME, SITE_URL } from "@/lib/site";
+import { fichePath, matchFicheName } from "@/lib/slug";
 
 /**
  * Données structurées Schema.org des fiches publiques.
@@ -110,7 +111,7 @@ export function teamJsonLd(team: {
     name: team.name,
     alternateName: team.tag || null,
     sport: "Valorant",
-    url: absolute(`/equipes/${team.id}`),
+    url: absolute(fichePath("equipes", team.id, team.name)),
     logo: absolute(team.logo),
     description: team.description,
   });
@@ -134,7 +135,7 @@ export function playerJsonLd(player: {
     alternateName: hasRealName ? player.pseudo : null,
     nationality: player.nationality,
     image: absolute(player.photo),
-    url: absolute(`/joueurs/${player.id}`),
+    url: absolute(fichePath("joueurs", player.id, player.pseudo)),
   });
 }
 
@@ -153,7 +154,7 @@ export function tournamentJsonLd(t: {
     "@type": "SportsEvent",
     name: t.name,
     sport: "Valorant",
-    url: absolute(`/tournois/${t.id}`),
+    url: absolute(fichePath("tournois", t.id, t.name)),
     image: absolute(t.logo),
     description: t.description,
     startDate: t.startDate?.toISOString() ?? null,
@@ -166,13 +167,18 @@ export function tournamentJsonLd(t: {
     // validateurs de données structurées : ils attendent une VirtualLocation
     // précisément là où il n'y a pas de lieu physique. Sans elle, la fiche
     // perdait toute chance de résultat enrichi « Événement ».
-    location: { "@type": "VirtualLocation", url: absolute(`/tournois/${t.id}`) },
+    location: { "@type": "VirtualLocation", url: absolute(fichePath("tournois", t.id, t.name)) },
     organizer: compact({
       "@type": "Organization",
       name: t.organizer ?? SITE_NAME,
       url: SITE_URL,
     }),
   });
+}
+
+/** Chemin canonique d'un match : son nom est celui de ses deux équipes. */
+function cheminMatch(m: { id: string; teamA: { name: string }; teamB: { name: string } }): string {
+  return fichePath("matchs", m.id, matchFicheName(m.teamA.name, m.teamB.name));
 }
 
 export function matchJsonLd(m: {
@@ -185,17 +191,17 @@ export function matchJsonLd(m: {
   const competitor = (t: { id: string; name: string }) => ({
     "@type": "SportsTeam",
     name: t.name,
-    url: absolute(`/equipes/${t.id}`),
+    url: absolute(fichePath("equipes", t.id, t.name)),
   });
   return compact({
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     name: `${m.teamA.name} vs ${m.teamB.name}`,
     sport: "Valorant",
-    url: absolute(`/matchs/${m.id}`),
+    url: absolute(cheminMatch(m)),
     startDate: m.date?.toISOString() ?? null,
     eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-    location: { "@type": "VirtualLocation", url: absolute(`/matchs/${m.id}`) },
+    location: { "@type": "VirtualLocation", url: absolute(cheminMatch(m)) },
     // L'image OpenGraph de la rencontre est produite sur mesure : l'omettre ici
     // privait le résultat enrichi de la seule illustration disponible.
     image: absolute(`/matchs/${m.id}/opengraph-image`),

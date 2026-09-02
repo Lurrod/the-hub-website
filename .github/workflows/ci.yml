@@ -157,6 +157,11 @@ jobs:
       # Signale à playwright.config.ts qu'il doit servir le build de production
       # plutôt que le serveur de développement.
       CI: "true"
+      # Le limiteur des routes de carte est keyé sur l'adresse cliente. Ici
+      # tout part de la boucle locale sans en-tête de proxy : les 120 parcours
+      # partagent un seul seau et le franchissaient, six tests tombant en 429.
+      # On desserre pour la suite, sans toucher au plafond de production.
+      IMAGE_RENDER_LIMIT: "100000"
     steps:
       - uses: actions/checkout@v4
 

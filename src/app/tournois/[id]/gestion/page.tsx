@@ -8,9 +8,11 @@ import ConfirmDeleteButton from "@/components/confirm-delete-button";
 import { updateTournamentAction, deleteTournamentAction } from "@/app/admin/actions/tournaments";
 
 import { tournamentTitle } from "@/lib/data/titles";
+import { idFromSegment } from "@/lib/slug";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const name = await tournamentTitle(id);
   return { title: name ? `Gestion · ${name}` : "Gestion du tournoi" };
 }
@@ -27,7 +29,8 @@ export default async function TournamentGestionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const tournament = await getTournament(id);
   if (!tournament) notFound();
 

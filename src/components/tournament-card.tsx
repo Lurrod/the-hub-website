@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TOURNAMENT_STATUS_LABELS, type TournamentStatus } from "@/lib/constants";
 import StatusBadge from "@/components/status-badge";
 import { mediumDate } from "@/lib/dates";
+import { fichePath } from "@/lib/slug";
 
 type TournamentCardData = {
   id: string;
@@ -37,7 +38,7 @@ export default function TournamentCard({ tournament }: { tournament: TournamentC
     // impose sa largeur de contenu à la piste, et la piste déborde du conteneur
     // — les `truncate` internes ne servent alors à rien.
     <Link
-      href={`/tournois/${tournament.id}`}
+      href={fichePath("tournois", tournament.id, tournament.name)}
       className="card card-interactive flex min-w-0 flex-col gap-4 p-5"
     >
       <div className="flex items-center gap-3">

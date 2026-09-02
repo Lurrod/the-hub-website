@@ -1,6 +1,7 @@
 import MatchRow, { type MatchRowData } from "@/components/match-row";
 import SummaryLink from "@/components/summary-link";
 import EmptyState, { ListDecor } from "@/components/empty-state";
+import { fichePath } from "@/lib/slug";
 
 export type MatchGroup = {
   tournamentId: string;
@@ -67,7 +68,7 @@ export default function TeamMatchGroups({
               {/* Seuls le logo et le nom mènent au tournoi. Le reste de la ligne,
                   espace vide compris, sert à replier la zone. */}
               <SummaryLink
-                href={`/tournois/${g.tournamentId}`}
+                href={fichePath("tournois", g.tournamentId, g.tournamentName)}
                 className="group/link flex min-w-0 items-center gap-3"
               >
                 {g.tournamentLogo ? (

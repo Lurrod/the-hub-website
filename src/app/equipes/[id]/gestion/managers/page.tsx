@@ -11,15 +11,18 @@ import ManagerList from "@/components/manager-list";
 import type { ManagerRoleKey } from "@/lib/manager-roles";
 
 import { teamTitle } from "@/lib/data/titles";
+import { idFromSegment } from "@/lib/slug";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const name = await teamTitle(id);
   return { title: name ? `Managers · ${name}` : "Managers" };
 }
 
 export default async function TeamManagersPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const user = await getSessionUser();
   const managers = await getTeamManagers(id);
   if (!canManageTeam(user, managerUserIds(managers))) redirect("/");

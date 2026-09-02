@@ -4,12 +4,14 @@ import { Avatar, Meta, Stats, Title } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
 import { dateRangeLabel, metaLine, teamCountLabel, tournamentBadge } from "@/lib/og/labels";
+import { idFromSegment } from "@/lib/slug";
 
 export const alt = "Tournoi";
 export { contentType, size } from "@/lib/og/size";
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const tournament = await getTournament(id);
   if (!tournament) return renderOg("TOURNOI", () => null);
 

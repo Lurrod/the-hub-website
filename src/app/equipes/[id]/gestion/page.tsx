@@ -11,9 +11,11 @@ import ConfirmDeleteButton from "@/components/confirm-delete-button";
 import { updateTeamAction, deleteTeamAction } from "@/app/admin/actions/teams";
 
 import { teamTitle } from "@/lib/data/titles";
+import { idFromSegment } from "@/lib/slug";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const name = await teamTitle(id);
   return { title: name ? `Gestion · ${name}` : "Gestion de l'équipe" };
 }
@@ -22,7 +24,8 @@ const TAB_LINK =
   "rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[130ms] hover:border-[var(--accent)] hover:bg-[var(--card-hover)] hover:text-[var(--accent)]";
 
 export default async function TeamGestionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const team = await getTeam(id);
   if (!team) notFound();
 

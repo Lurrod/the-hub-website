@@ -14,6 +14,7 @@ import type {
   MarginBucket,
   TournamentOverview,
 } from "@/lib/tournament-stats-core";
+import { fichePath } from "@/lib/slug";
 import type {
   HighlightStats,
   PlayerPoint,
@@ -181,7 +182,7 @@ function BigStatCard({ record, showAgent }: { record: StatRecord; showAgent?: bo
   const shell = "block rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3";
   return e.playerId ? (
     <Link
-      href={`/joueurs/${e.playerId}`}
+      href={fichePath("joueurs", e.playerId, e.name)}
       className={`${shell} transition-colors hover:border-[var(--accent)]`}
     >
       {body}

@@ -3,6 +3,7 @@ import Flag from "@/components/flag";
 import { roleIconUrl, roleLabel } from "@/lib/roles";
 import MembershipRoleIcon from "@/components/membership-role-icon";
 import { ACCOUNT_TYPE_LABELS, type AccountTypeKey } from "@/lib/account-types";
+import { fichePath } from "@/lib/slug";
 
 export type LftPlayerCardData = {
   id: string;
@@ -24,7 +25,7 @@ export default function LftCard({ player }: { player: LftPlayerCardData }) {
 
   return (
     <Link
-      href={`/joueurs/${player.id}`}
+      href={fichePath("joueurs", player.id, player.pseudo)}
       className="card card-interactive flex items-center gap-3 bg-[var(--card-hover)] p-4"
     >
       {player.photo ? (

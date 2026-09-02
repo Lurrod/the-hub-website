@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
-import { listSitemapEntries } from "@/lib/data/sitemap";
+import { listSitemapEntries, type SitemapEntry } from "@/lib/data/sitemap";
+import { fichePath, type FicheSection } from "@/lib/slug";
 
 /** Pages fixes, hors sections réservées (voir robots.ts). */
 const STATIC_ROUTES: Array<{
@@ -49,14 +50,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: r.priority,
   }));
 
+  // `fichePath` et non une concaténation : le sitemap doit émettre la forme
+  // canonique `<slug>-<id>`. Déclarer l'identifiant nu reviendrait à proposer
+  // 440 URLs qui redirigent toutes en 301, alors qu'un sitemap ne doit
+  // contenir que des destinations finales.
   const collection = (
-    prefix: string,
-    entries: Array<{ id: string; updatedAt: Date }>,
+    section: FicheSection,
+    entries: SitemapEntry[],
     changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"],
     priority: number
   ) =>
     entries.map((e) => ({
-      url: `${SITE_URL}${prefix}/${e.id}`,
+      url: `${SITE_URL}${fichePath(section, e.id, e.nom)}`,
       lastModified: e.updatedAt,
       changeFrequency,
       priority,
@@ -64,9 +69,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...statics,
-    ...collection("/tournois", tournaments, "weekly", 0.8),
-    ...collection("/matchs", matches, "weekly", 0.7),
-    ...collection("/equipes", teams, "weekly", 0.7),
-    ...collection("/joueurs", players, "weekly", 0.6),
+    ...collection("tournois", tournaments, "weekly", 0.8),
+    ...collection("matchs", matches, "weekly", 0.7),
+    ...collection("equipes", teams, "weekly", 0.7),
+    ...collection("joueurs", players, "weekly", 0.6),
   ];
 }

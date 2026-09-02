@@ -28,13 +28,21 @@ import ShareCardButton from "@/components/share-card-button";
 import { playerJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 import { playerShareVariants } from "@/lib/og/share-variants";
+import { fichePath, idFromSegment } from "@/lib/slug";
 import { SITE_URL } from "@/lib/site";
+import { ficheName } from "@/lib/data/existence";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const seo = await playerSeo(id);
   return pageMetadata({
-    path: `/joueurs/${id}`,
+    // Le canonique doit être la forme vers laquelle le proxy redirige, au
+    // caractère près : les deux passent donc par `ficheName`. Reprendre
+    // `seo.title` aurait suffi pour trois sections sur quatre — mais
+    // `matchSeo` rend « TAG vs TAG », et chaque fiche de match aurait
+    // rebouclé indéfiniment.
+    path: fichePath("joueurs", id, await ficheName("joueurs", id)),
     title: seo?.title ?? "Joueur",
     description: seo?.description,
   });
@@ -55,7 +63,8 @@ function computeAge(birthdate: Date | null): number | null {
 }
 
 export default async function PlayerProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const player = await getPlayer(id);
   if (!player) notFound();
 

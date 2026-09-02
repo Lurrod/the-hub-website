@@ -28,6 +28,7 @@ import Bracket from "@/components/bracket";
 import TournamentTeams from "@/components/tournament-teams";
 import { buildStandingRows } from "@/lib/standings";
 import { STAGES_BY_FORMAT, formatGroupsAreBrackets, isPremierFormat } from "@/lib/constants";
+import { fichePath, idFromSegment } from "@/lib/slug";
 import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
 
@@ -36,19 +37,27 @@ import JsonLdScript from "@/components/json-ld";
 import { tournamentJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 import { fullDate } from "@/lib/dates";
+import { ficheName } from "@/lib/data/existence";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const seo = await tournamentSeo(id);
   return pageMetadata({
-    path: `/tournois/${id}`,
+    // Le canonique doit être la forme vers laquelle le proxy redirige, au
+    // caractère près : les deux passent donc par `ficheName`. Reprendre
+    // `seo.title` aurait suffi pour trois sections sur quatre — mais
+    // `matchSeo` rend « TAG vs TAG », et chaque fiche de match aurait
+    // rebouclé indéfiniment.
+    path: fichePath("tournois", id, await ficheName("tournois", id)),
     title: seo?.title ?? "Tournoi",
     description: seo?.description,
   });
 }
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const tournament = await getTournament(id);
   if (!tournament) notFound();
 

@@ -4,12 +4,14 @@ import { Avatar, Meta, Stats, Title } from "@/lib/og/fields";
 import { renderOg } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
 import { mapDiffLabel, metaLine, recordLabel } from "@/lib/og/labels";
+import { idFromSegment } from "@/lib/slug";
 
 export const alt = "Équipe";
 export { contentType, size } from "@/lib/og/size";
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const team = await getTeam(id);
   if (!team) return renderOg("ÉQUIPE", () => null);
 

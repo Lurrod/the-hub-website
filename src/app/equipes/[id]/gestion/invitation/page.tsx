@@ -9,15 +9,18 @@ import InviteLink from "@/components/invite-link";
 
 import { teamTitle } from "@/lib/data/titles";
 import { fullDate } from "@/lib/dates";
+import { idFromSegment } from "@/lib/slug";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const name = await teamTitle(id);
   return { title: name ? `Invitation · ${name}` : "Invitation" };
 }
 
 export default async function InvitationPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const team = await getTeam(id);
   if (!team) notFound();
 

@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { allow, consume, resetRateLimits, type RateLimitRule } from "@/lib/rate-limit";
+import {
+  allow,
+  consume,
+  imageRenderRule,
+  resetRateLimits,
+  type RateLimitRule,
+} from "@/lib/rate-limit";
 
 const RULE: RateLimitRule = { limit: 3, windowMs: 1000 };
 
@@ -100,5 +106,27 @@ describe("balayage du magasin", () => {
     expect(allow("riot:joueur", LONGUE)).toBe(true);
     expect(allow("riot:joueur", LONGUE)).toBe(true);
     expect(allow("riot:joueur", LONGUE)).toBe(false);
+  });
+});
+
+describe("imageRenderRule", () => {
+  it("plafonne à 30 par minute sans configuration", () => {
+    expect(imageRenderRule(undefined)).toEqual({ limit: 30, windowMs: 60_000 });
+  });
+
+  it("accepte un plafond explicite", () => {
+    expect(imageRenderRule("500").limit).toBe(500);
+  });
+
+  /**
+   * Un plafond mal saisi ne doit pas empêcher le site de démarrer : le rendu
+   * d'images n'est pas une fonction critique, et un `NaN` passé tel quel à
+   * `consume` rendrait la comparaison toujours fausse — donc aucune limite du
+   * tout, exactement l'inverse de l'intention.
+   */
+  it("ignore une valeur illisible plutôt que de la propager", () => {
+    for (const brut of ["", "beaucoup", "0", "-5", "12.5"]) {
+      expect(imageRenderRule(brut).limit).toBe(30);
+    }
   });
 });

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { NOINDEX } from "@/lib/metadata";
+import { idFromSegment } from "@/lib/slug";
 
 /** Toute la gestion est hors index : hérité par les sous-pages, qui ne
  *  définissent pas leur propre clé `robots`. */
@@ -19,7 +20,8 @@ export default async function TournamentGestionLayout({
   children: React.ReactNode;
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const user = await getSessionUser();
   const managerIds = await getTournamentManagerIds(id);
   if (!canManageTournament(user, managerIds)) redirect("/");
