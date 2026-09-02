@@ -91,6 +91,25 @@ jobs:
         # la couverture ne peut plus baisser sans faire échouer la CI.
         run: npm run test:coverage
 
+      - name: Tests d'intégration (src/lib/data contre PostgreSQL)
+        # `src/lib/data/**` est hors du périmètre de couverture unitaire : il
+        # touche Prisma et ne peut pas se tester sans base. L'exclusion est
+        # légitime, mais elle laissait 4 700 lignes sans aucun filet — dont
+        # `deleteTeamIfUnused`, qui garde une cascade `onDelete: Cascade`
+        # capable d'effacer les matchs d'une équipe dans TOUS les tournois.
+        #
+        # Le service Postgres du job existe déjà pour la vérification de
+        # dérive : on lui ajoute une base dédiée, le coût d'infrastructure est
+        # nul. Le nom doit contenir « integration », le harnais refuse de vider
+        # une base autrement nommée.
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/thehub_integration
+        run: |
+          psql -h localhost -U postgres -c 'CREATE DATABASE thehub_integration'
+          npx prisma migrate deploy
+          npm run test:integration
+
       - name: Rapport de couverture
         if: always()
         uses: actions/upload-artifact@v4

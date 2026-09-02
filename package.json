@@ -20,6 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "db:seed:formats": "tsx prisma/seed-formats.ts",
     "db:sync:tournaments": "node scripts/sync-tournament-statuses.mjs",
     "images:prune": "node scripts/prune-orphan-images.mjs",
