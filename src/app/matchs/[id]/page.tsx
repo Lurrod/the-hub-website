@@ -171,8 +171,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           >
             <div className="order-2 min-w-0 sm:order-1">
               <div
-                style={{ fontSize: "18px" }}
-                className={`truncate font-semibold ${aWin ? "text-[var(--accent)]" : "text-white"}`}
+                className={`n-18 truncate font-semibold ${aWin ? "text-[var(--accent)]" : "text-white"}`}
               >
                 {match.teamA.name}
               </div>
@@ -194,19 +193,11 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
           {/* Score */}
           <div className="stat flex items-center gap-2 sm:gap-3">
-            <span
-              style={{ fontSize: "24px" }}
-              className={aWin ? "font-bold text-[var(--accent)]" : "text-white"}
-            >
+            <span className={`n-24 ${aWin ? "font-bold text-[var(--accent)]" : "text-white"}`}>
               {score.a}
             </span>
-            <span style={{ fontSize: "16px" }} className="text-[var(--text-subtle)]">
-              -
-            </span>
-            <span
-              style={{ fontSize: "24px" }}
-              className={bWin ? "font-bold text-[var(--accent)]" : "text-white"}
-            >
+            <span className="n-16 text-[var(--text-subtle)]">-</span>
+            <span className={`n-24 ${bWin ? "font-bold text-[var(--accent)]" : "text-white"}`}>
               {score.b}
             </span>
           </div>
@@ -230,8 +221,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
             )}
             <div className="min-w-0">
               <div
-                style={{ fontSize: "18px" }}
-                className={`truncate font-semibold ${bWin ? "text-[var(--accent)]" : "text-white"}`}
+                className={`n-18 truncate font-semibold ${bWin ? "text-[var(--accent)]" : "text-white"}`}
               >
                 {match.teamB.name}
               </div>

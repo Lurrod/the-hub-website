@@ -15,12 +15,26 @@ import { pageMetadata } from "@/lib/metadata";
 import JsonLdScript from "@/components/json-ld";
 import { itemListJsonLd } from "@/lib/structured-data";
 
-export const metadata = pageMetadata({
-  path: "/joueurs",
-  title: "Joueurs",
-  description:
-    "Tous les joueurs du Tier 3 Valorant francophone, classés par rating, ACS et cartes jouées.",
-});
+/**
+ * Canonique conscient de la pagination : `?p=5` se déclare lui-même et non
+ * la page 1. Statique, la métadonnée faisait dire à chaque page de rang
+ * supérieur qu'elle était un doublon de la première — un signal explicite de
+ * ne pas l'indexer.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; team?: string; q?: string; sort?: string; p?: string }>;
+}) {
+  const { p } = await searchParams;
+  return pageMetadata({
+    path: "/joueurs",
+    title: "Joueurs",
+    description:
+      "Tous les joueurs du Tier 3 Valorant francophone, classés par rating, ACS et cartes jouées.",
+    page: parsePage(p),
+  });
+}
 
 export default async function PlayersPage({
   searchParams,

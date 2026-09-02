@@ -24,10 +24,7 @@ export default function Meter({
           {label}
         </span>
         {/* La valeur ne se coupe jamais : c'est le libellé qui cède la place. */}
-        <span
-          style={{ fontSize: "18px" }}
-          className="stat shrink-0 whitespace-nowrap font-bold leading-none text-white"
-        >
+        <span className="n-18 stat shrink-0 whitespace-nowrap font-bold leading-none text-white">
           {valueLabel}
         </span>
       </div>

@@ -615,6 +615,46 @@ body :is(h1, h2, h3, h4, h5, h6) {
   font-size: 18px;
 }
 
+/* Tailles des chiffres mis en avant : score d'un match, valeur centrale d'un
+   anneau, tuile de statistique, repères d'un graphique.
+ *
+ * Même mécanique que `.lf-t*` ci-dessus, et même raison : le plafond de 12px
+ * est une règle non-layered, seul un style inline ou une autre règle
+ * non-layered la bat. Ces tailles vivaient donc en `style={{ fontSize }}` à
+ * seize endroits — un troisième mécanisme d'échappement, non documenté dans la
+ * charte, qui gagne contre tout et échappe aux media queries : `agent-donut`
+ * fixait 34px, identique à 390px et à 1280px de large.
+ *
+ * En classes, elles redeviennent surchargeables au point de rupture. */
+.n-10,
+.n-10 * {
+  font-size: 10px;
+}
+.n-11,
+.n-11 * {
+  font-size: 11px;
+}
+.n-14,
+.n-14 * {
+  font-size: 14px;
+}
+.n-16,
+.n-16 * {
+  font-size: 16px;
+}
+.n-18,
+.n-18 * {
+  font-size: 18px;
+}
+.n-24,
+.n-24 * {
+  font-size: 24px;
+}
+.n-34,
+.n-34 * {
+  font-size: 34px;
+}
+
 /* --- Cadre des maquettes --- */
 .lf-panel {
   position: relative;
