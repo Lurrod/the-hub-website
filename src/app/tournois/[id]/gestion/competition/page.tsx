@@ -52,6 +52,8 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         assign: "Affectation des équipes aux brackets",
         none: "- Sans bracket -",
         matchField: "Bracket",
+        /** Nom court, pour les étiquettes accessibles des contrôles répétés. */
+        unit: "Bracket",
       }
     : {
         title: "Poules",
@@ -60,6 +62,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
         assign: "Affectation des équipes aux poules",
         none: "- Sans poule -",
         matchField: "Poule (si phase = Poule)",
+        unit: "Poule",
       };
 
   const teams = tournament.participants.map((p) => ({ id: p.teamId, name: p.team.name }));
@@ -126,7 +129,12 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
                   <li key={p.id} className="flex items-center justify-between gap-3 p-3">
                     <span className="text-white">{p.team.name}</span>
                     <form action={assignWith} className="flex gap-2">
-                      <select name="groupId" defaultValue={p.groupId ?? ""} className={input}>
+                      <select
+                        name="groupId"
+                        defaultValue={p.groupId ?? ""}
+                        aria-label={`${groupWord.unit} de ${p.team.name}`}
+                        className={input}
+                      >
                         <option value="">{groupWord.none}</option>
                         {groupOptions.map((g) => (
                           <option key={g.id} value={g.id}>
@@ -134,7 +142,10 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
                           </option>
                         ))}
                       </select>
-                      <button className="rounded bg-[var(--card)] px-3 py-2 text-sm text-white">
+                      <button
+                        aria-label={`Enregistrer : ${groupWord.unit} de ${p.team.name}`}
+                        className="rounded bg-[var(--card)] px-3 py-2 text-sm text-white"
+                      >
                         OK
                       </button>
                     </form>

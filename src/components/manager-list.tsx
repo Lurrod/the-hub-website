@@ -91,6 +91,7 @@ export default function ManagerList({
             <input
               name="discordId"
               placeholder="ID Discord (ex. 123456789012345678)"
+              aria-label="Identifiant Discord de la personne à ajouter"
               required
               className={`${input} min-w-56 flex-1`}
             />

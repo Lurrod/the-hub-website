@@ -72,20 +72,40 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
               <span className="text-xs text-[var(--text-muted)]">{ROLE_LABELS[m.role]}</span>
               <div className="ml-auto flex items-center gap-2">
                 <form action={setRole} className="flex items-center gap-1">
-                  <select name="role" defaultValue={m.role} className={input}>
+                  <select
+                    name="role"
+                    defaultValue={m.role}
+                    aria-label={`Rôle de ${m.player.pseudo}`}
+                    className={input}
+                  >
                     {MEMBERSHIP_ROLES.map((r) => (
                       <option key={r} value={r}>
                         {ROLE_LABELS[r]}
                       </option>
                     ))}
                   </select>
-                  <button className="text-xs text-[var(--accent-2)]">Rôle</button>
+                  <button
+                    aria-label={`Enregistrer le rôle de ${m.player.pseudo}`}
+                    className="text-xs text-[var(--accent-2)]"
+                  >
+                    Rôle
+                  </button>
                 </form>
                 <form action={endM}>
-                  <button className="text-xs text-[var(--text-muted)]">Terminer</button>
+                  <button
+                    aria-label={`Terminer le passage de ${m.player.pseudo}`}
+                    className="text-xs text-[var(--text-muted)]"
+                  >
+                    Terminer
+                  </button>
                 </form>
                 <form action={removeM}>
-                  <button className="text-xs text-[var(--accent)]">Retirer</button>
+                  <button
+                    aria-label={`Retirer ${m.player.pseudo} de l'effectif`}
+                    className="text-xs text-[var(--accent)]"
+                  >
+                    Retirer
+                  </button>
                 </form>
               </div>
             </li>
@@ -96,10 +116,27 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
       <section className="mt-8">
         <h2 className="mb-3 text-lg font-semibold text-white">Ajouter un joueur</h2>
         <form action={addWithId} className="grid max-w-md gap-3">
-          <input name="pseudo" placeholder="Pseudo" required maxLength={40} className={input} />
-          <input name="riotId" placeholder="Riot ID (optionnel, Nom#Tag)" className={input} />
+          <input
+            name="pseudo"
+            placeholder="Pseudo"
+            aria-label="Pseudo du joueur à ajouter"
+            required
+            maxLength={40}
+            className={input}
+          />
+          <input
+            name="riotId"
+            placeholder="Riot ID (optionnel, Nom#Tag)"
+            aria-label="Riot ID du joueur, au format Nom#Tag (facultatif)"
+            className={input}
+          />
           <CountrySelect name="nationality" placeholder="Nationalité (optionnel)" />
-          <select name="role" defaultValue="JOUEUR" className={input}>
+          <select
+            name="role"
+            defaultValue="JOUEUR"
+            aria-label="Rôle du joueur à ajouter"
+            className={input}
+          >
             {MEMBERSHIP_ROLES.map((r) => (
               <option key={r} value={r}>
                 {ROLE_LABELS[r]}

@@ -42,6 +42,17 @@ export function pageMetadata(params: {
       description: description ?? SITE_DESCRIPTION,
       url: path,
     },
+    // `twitter` n'était pas redéfini ici : le layout racine le fixe une fois
+    // pour toutes, et Next ne fusionne pas ces deux blocs en profondeur. Chaque
+    // fiche joueur, équipe, match ou tournoi partagée sur X affichait donc le
+    // titre générique du site — alors que son image de partage, elle, est
+    // générée sur mesure. Le piège est documenté juste au-dessus pour
+    // `openGraph` ; il valait pour `twitter` aussi.
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: description ?? SITE_DESCRIPTION,
+    },
   };
 }
 

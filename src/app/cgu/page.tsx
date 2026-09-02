@@ -5,6 +5,8 @@ import { pageMetadata } from "@/lib/metadata";
 export const metadata = pageMetadata({
   path: "/cgu",
   title: "Conditions générales d'utilisation",
+  description:
+    "Conditions d'utilisation de The Hub : compte, contenus déposés, règles de conduite et responsabilités.",
 });
 
 export default function CguPage() {

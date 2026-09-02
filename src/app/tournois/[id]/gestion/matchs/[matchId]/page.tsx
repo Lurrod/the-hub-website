@@ -190,6 +190,7 @@ export default async function EditMatchPage({
           <input
             name="riotMatchId"
             placeholder="00000000-0000-0000-0000-000000000000"
+            aria-label="Identifiant Riot de la partie à importer"
             required
             className={`${input} min-w-72 flex-1 font-mono`}
           />

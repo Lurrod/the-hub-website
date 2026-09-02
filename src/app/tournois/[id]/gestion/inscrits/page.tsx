@@ -91,7 +91,7 @@ export default async function TournamentParticipantsPage({
       )}
 
       <form action={addWithId} className="flex gap-2">
-        <select name="teamId" required className={`${input} flex-1`}>
+        <select name="teamId" required aria-label="Équipe à inscrire" className={`${input} flex-1`}>
           <option value="">- Choisir une équipe -</option>
           {teams.map((t) => (
             <option key={t.id} value={t.id}>
@@ -99,7 +99,14 @@ export default async function TournamentParticipantsPage({
             </option>
           ))}
         </select>
-        <input name="seed" type="number" min="1" placeholder="Seed" className={`${input} w-24`} />
+        <input
+          name="seed"
+          type="number"
+          min="1"
+          placeholder="Seed"
+          aria-label="Tête de série (facultatif)"
+          className={`${input} w-24`}
+        />
         <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium">
           Inscrire
         </button>

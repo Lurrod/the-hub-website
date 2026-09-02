@@ -5,6 +5,8 @@ import { pageMetadata } from "@/lib/metadata";
 export const metadata = pageMetadata({
   path: "/confidentialite",
   title: "Politique de confidentialité",
+  description:
+    "Données personnelles traitées par The Hub, finalités, durées de conservation et exercice de vos droits.",
 });
 
 const TH = "border-b border-[var(--border)] px-3 py-2 text-left font-semibold text-white";

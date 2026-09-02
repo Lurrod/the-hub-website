@@ -3,9 +3,16 @@ import EmptyState, { ListDecor } from "@/components/empty-state";
 import TeamCard from "@/components/team-card";
 import PlayerCard from "@/components/player-card";
 import TournamentCard from "@/components/tournament-card";
-import { pageMetadata } from "@/lib/metadata";
+import { NOINDEX, pageMetadata } from "@/lib/metadata";
 
-export const metadata = pageMetadata({ path: "/recherche", title: "Recherche" });
+// `NOINDEX` : Google déconseille explicitement l'indexation des pages de
+// résultats de recherche interne. Sans paramètre la page est vide, et le
+// `SearchAction` du JSON-LD continue de fonctionner — il ne dépend pas de
+// l'indexation de sa cible.
+export const metadata = {
+  ...pageMetadata({ path: "/recherche", title: "Recherche" }),
+  ...NOINDEX,
+};
 
 export default async function SearchPage({
   searchParams,
