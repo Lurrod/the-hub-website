@@ -35,8 +35,15 @@ test.describe("onglet Stats du tournoi", () => {
       .first();
     await expect(section).toBeVisible();
     // Le meilleur rating des fixtures est AlphaJoueur0 : il ouvre le tableau.
-    const first = section.locator("ol > li").first();
+    // Ciblé sur `tbody > tr` et non plus `ol > li` : le classement était une
+    // liste de div dont les colonnes étaient des span alignés à la largeur,
+    // sans aucune association ligne/colonne pour un lecteur d'écran. C'est
+    // désormais un vrai tableau, comme partout ailleurs dans le projet.
+    const first = section.locator("tbody > tr").first();
     await expect(first).toContainText("AlphaJoueur0");
     await expect(first.locator("a")).toHaveAttribute("href", /\/joueurs\//);
+    // Le nom est l'en-tête de sa ligne : c'est lui qui donne son sens aux
+    // chiffres qui suivent.
+    await expect(first.locator('th[scope="row"]')).toContainText("AlphaJoueur0");
   });
 });
