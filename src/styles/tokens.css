@@ -57,7 +57,6 @@
   --success-soft: rgba(74, 201, 126, 0.12);
   --destructive: #f7665e;
   --destructive-soft: rgba(247, 102, 94, 0.12);
-  --legendary: #ffd47d;
 
   /* Variantes sourdes du couple sémantique, réservées aux APLATS portant une
      icône ou un glyphe clair — la frise de rounds du scoreboard. Les teintes
@@ -88,7 +87,6 @@
   /* Ombres (rft.gg : subtiles) */
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
   --shadow-elev: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 0 1px var(--accent), 0 6px 22px var(--accent-glow);
 
   /* Interactions (rft.gg : remplissage neutre subtil) */
   --table-row-hover: var(--card-hover);
@@ -257,7 +255,6 @@
   --color-accent: var(--accent);
   --color-success: var(--success);
   --color-destructive: var(--destructive);
-  --color-legendary: var(--legendary);
   --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-bricolage);

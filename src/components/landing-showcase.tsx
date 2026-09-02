@@ -44,12 +44,12 @@ const FEATURES: readonly Feature[] = [
     num: "02",
     eyebrow: "Fiche joueur",
     title: "Une carrière, pas juste un pseudo",
-    body: "Chaque joueur a sa page : équipe actuelle, parcours daté, agents joués, winrate par map et courbe de rating sur ses dernières cartes.",
+    body: "Chaque joueur a sa page : équipe actuelle, parcours daté, agents joués, winrate par carte et courbe de rating sur ses dernières parties.",
     points: [
       { t: "Trois chiffres clés en tête", d: "Agent le plus joué, K/D, meilleure partie." },
       {
-        t: "Le détail par map",
-        d: "Winrate et nombre de cartes, map par map, avec le repère à 50 %.",
+        t: "Le détail par carte",
+        d: "Winrate et nombre de parties, carte par carte, avec le repère à 50 %.",
       },
       {
         t: "Le parcours d'équipes",
@@ -104,14 +104,14 @@ const FEATURES: readonly Feature[] = [
     num: "05",
     eyebrow: "Partage",
     title: "Un lien qui se présente tout seul",
-    body: "Collez l'adresse d'un match dans Discord ou sur X : elle se déplie en une carte qui porte les deux équipes, le score et le détail des cartes. Rien à capturer, rien à recadrer.",
+    body: "Collez l'adresse d'un match dans Discord ou sur X : elle se déplie en un aperçu qui porte les deux équipes, le score et le détail des cartes. Rien à capturer, rien à recadrer.",
     points: [
       {
         t: "Fabriquée à la demande",
         d: "L'image est produite au moment où le lien est lu : elle porte les chiffres du jour.",
       },
       {
-        t: "Une carte par page",
+        t: "Un aperçu par page",
         d: "Match, joueur, équipe et tournoi ont chacun la leur.",
       },
       {

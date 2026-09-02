@@ -727,15 +727,6 @@ body :is(h1, h2, h3, h4, h5, h6) {
   .lf-panel:hover .lf-spark-dot {
     animation: lf-peak 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.65s both;
   }
-  .lf-hov-lift {
-    transition:
-      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.3s var(--ease);
-  }
-  .lf-panel:hover .lf-hov-lift {
-    transform: translateY(-3px);
-    box-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.85);
-  }
 }
 
 @keyframes lf-wipe {
@@ -798,7 +789,6 @@ body :is(h1, h2, h3, h4, h5, h6) {
 
 @media (prefers-reduced-motion: reduce) {
   .lf-panel,
-  .lf-hov-lift,
   .lf-glow {
     transition: none;
   }
@@ -812,9 +802,6 @@ body :is(h1, h2, h3, h4, h5, h6) {
   .lf-panel:hover .lf-hov-pop,
   .lf-panel:hover .lf-spark-dot {
     animation: none;
-  }
-  .lf-panel:hover .lf-hov-lift {
-    transform: none;
   }
 }
 

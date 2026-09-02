@@ -29,12 +29,12 @@ export default function LandingHero({
         {/* Signature : d'où vient le projet */}
         <p className="h-sign text-[var(--text-subtle)]">Fait par des gens du T3, pour le T3</p>
 
-        <h1 className="h-display mt-10 text-white">Le Tier 3 français a enfin ses chiffres.</h1>
+        <h1 className="h-display mt-10 text-white">Le Tier 3 francophone a enfin ses chiffres.</h1>
 
         <p className="h-lede mx-auto mt-7 max-w-xl text-[var(--text-muted)]">
           Chaque match de chaque tournoi est analysé : scoreboard complet, timeline des rounds, ACS,
-          ADR, KAST, first bloods et plus encore. Plus besoin de chercher sur Twitter le résultat
-          que vous cherchez.
+          ADR, KAST, first bloods et plus encore. Plus besoin de fouiller X pour retrouver un
+          résultat.
         </p>
 
         <div className="mt-11 flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
