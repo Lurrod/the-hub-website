@@ -36,6 +36,13 @@ const DISABLED_RULES: string[] = [];
 
 for (const { path, name } of PAGES) {
   test(`aucune violation d'accessibilité sérieuse sur ${name}`, async ({ page }) => {
+    // Mouvement réduit : les listes entrent par `.stagger-in`, une animation de
+    // fondu échelonnée jusqu'à ~0,2 s. axe mesurait le contraste pendant que
+    // l'opacité montait encore et remontait de fausses violations — d'où des
+    // échecs qui passaient au réessai. Ce réglage est une configuration
+    // utilisateur réelle, que le site honore déjà (components.css:337-361) :
+    // on scanne donc l'état posé, celui que tout le monde finit par voir.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(path);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
