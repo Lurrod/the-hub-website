@@ -162,6 +162,11 @@ export function tournamentJsonLd(t: {
     // et EventPostponed sont les seules alternatives, et aucune ne correspond.
     eventStatus: "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    // Un événement déclaré en ligne SANS `location` est rejeté par les
+    // validateurs de données structurées : ils attendent une VirtualLocation
+    // précisément là où il n'y a pas de lieu physique. Sans elle, la fiche
+    // perdait toute chance de résultat enrichi « Événement ».
+    location: { "@type": "VirtualLocation", url: absolute(`/tournois/${t.id}`) },
     organizer: compact({
       "@type": "Organization",
       name: t.organizer ?? SITE_NAME,
@@ -190,6 +195,10 @@ export function matchJsonLd(m: {
     url: absolute(`/matchs/${m.id}`),
     startDate: m.date?.toISOString() ?? null,
     eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    location: { "@type": "VirtualLocation", url: absolute(`/matchs/${m.id}`) },
+    // L'image OpenGraph de la rencontre est produite sur mesure : l'omettre ici
+    // privait le résultat enrichi de la seule illustration disponible.
+    image: absolute(`/matchs/${m.id}/opengraph-image`),
     competitor: [competitor(m.teamA), competitor(m.teamB)],
     superEvent: { "@type": "SportsEvent", name: m.tournamentName },
   });

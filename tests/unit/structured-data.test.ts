@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
-  teamJsonLd,
-  playerJsonLd,
-  tournamentJsonLd,
-  matchJsonLd,
-  serializeJsonLd,
   itemListJsonLd,
+  matchJsonLd,
+  playerJsonLd,
+  serializeJsonLd,
   siteJsonLd,
+  teamJsonLd,
+  tournamentJsonLd,
 } from "@/lib/structured-data";
 
 describe("teamJsonLd", () => {
@@ -262,5 +262,36 @@ describe("siteJsonLd", () => {
       unknown
     >;
     expect(String(target.urlTemplate)).not.toMatch(/[^:]\/\//);
+  });
+});
+
+// Un événement déclaré en ligne sans `location` est rejeté par les validateurs
+// de données structurées : ils attendent une VirtualLocation précisément là où
+// il n'y a pas de lieu physique.
+describe("SportsEvent : lieu virtuel", () => {
+  it("le tournoi déclare une VirtualLocation", () => {
+    const j = tournamentJsonLd({
+      id: "t1",
+      name: "Coupe",
+      logo: null,
+      description: null,
+      startDate: null,
+      endDate: null,
+      organizer: null,
+      status: "UPCOMING",
+    }) as Record<string, unknown>;
+    expect(j.location).toMatchObject({ "@type": "VirtualLocation" });
+  });
+
+  it("le match déclare une VirtualLocation et son image de partage", () => {
+    const j = matchJsonLd({
+      id: "m1",
+      date: null,
+      teamA: { id: "a", name: "A" },
+      teamB: { id: "b", name: "B" },
+      tournamentName: "Coupe",
+    }) as Record<string, unknown>;
+    expect(j.location).toMatchObject({ "@type": "VirtualLocation" });
+    expect(String(j.image)).toContain("/matchs/m1/opengraph-image");
   });
 });
