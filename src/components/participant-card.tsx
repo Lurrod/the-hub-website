@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { fichePath } from "@/lib/slug";
 
 type Player = { id: string; pseudo: string };
 type P = {
@@ -17,7 +18,7 @@ export default function ParticipantCard({ p }: { p: P }) {
     // une colonne vide. Largeur figée à partir de `sm`, comme avant.
     <div className="card group relative flex h-40 w-[calc(50%-0.375rem)] max-w-40 flex-col items-center bg-[var(--card-hover)] p-3 text-center sm:w-40">
       <div className="relative flex w-full flex-1 items-center justify-center">
-        <Link href={`/equipes/${p.teamId}`} aria-label={p.name}>
+        <Link href={fichePath("equipes", p.teamId, p.name)} aria-label={p.name}>
           {p.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -39,7 +40,7 @@ export default function ParticipantCard({ p }: { p: P }) {
             p.players.map((pl) => (
               <Link
                 key={pl.id}
-                href={`/joueurs/${pl.id}`}
+                href={fichePath("joueurs", pl.id, pl.pseudo)}
                 className="max-w-full truncate px-1 text-xs text-white transition-colors hover:text-[var(--accent)]"
               >
                 {pl.pseudo}
@@ -52,7 +53,7 @@ export default function ParticipantCard({ p }: { p: P }) {
       </div>
 
       <Link
-        href={`/equipes/${p.teamId}`}
+        href={fichePath("equipes", p.teamId, p.name)}
         className="mt-2 line-clamp-1 w-full text-sm font-medium text-white transition-colors hover:text-[var(--accent)]"
       >
         {p.name}

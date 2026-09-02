@@ -28,12 +28,20 @@ import { pageMetadata } from "@/lib/metadata";
 import { matchShareVariants } from "@/lib/og/share-variants";
 import { SITE_URL } from "@/lib/site";
 import { displayScores } from "@/lib/forfeit";
+import { fichePath, idFromSegment } from "@/lib/slug";
+import { ficheName } from "@/lib/data/existence";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const seo = await matchSeo(id);
   return pageMetadata({
-    path: `/matchs/${id}`,
+    // Le canonique doit être la forme vers laquelle le proxy redirige, au
+    // caractère près : les deux passent donc par `ficheName`. Reprendre
+    // `seo.title` aurait suffi pour trois sections sur quatre — mais
+    // `matchSeo` rend « TAG vs TAG », et chaque fiche de match aurait
+    // rebouclé indéfiniment.
+    path: fichePath("matchs", id, await ficheName("matchs", id)),
     title: seo?.title ?? "Match",
     description: seo?.description,
   });
@@ -83,7 +91,8 @@ function TallySide({
 }
 
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const match = await getMatch(id);
   if (!match) notFound();
 

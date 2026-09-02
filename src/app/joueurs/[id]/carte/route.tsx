@@ -5,6 +5,7 @@ import { renderOg, SQUARE } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
 import { agentsLabel, metaLine, statGridValues } from "@/lib/og/labels";
 import { ROLE_LABELS, type ValorantRoleKey } from "@/lib/roles";
+import { idFromSegment } from "@/lib/slug";
 
 /**
  * Carte carrée d'un joueur, téléchargeable depuis la fiche.
@@ -14,7 +15,8 @@ import { ROLE_LABELS, type ValorantRoleKey } from "@/lib/roles";
  * lien qui l'accompagnerait.
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const player = await getPlayer(id);
   if (!player) return new Response("Joueur introuvable", { status: 404 });
 

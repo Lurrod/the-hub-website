@@ -7,6 +7,7 @@ import { Avatar, Meta } from "@/lib/og/fields";
 import { renderOg, SQUARE } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
 import { DISPLAY, MONO, OG } from "@/lib/og/theme";
+import { idFromSegment } from "@/lib/slug";
 
 /**
  * Carte carrée d'un bracket, téléchargeable depuis la page du tournoi.
@@ -96,7 +97,8 @@ function seats(round: BracketRound) {
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const [tournament, matches] = await Promise.all([getTournament(id), listBracketMatches(id)]);
   if (!tournament) return new Response("Tournoi introuvable", { status: 404 });
 

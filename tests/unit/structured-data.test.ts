@@ -14,7 +14,10 @@ describe("teamJsonLd", () => {
     const d = teamJsonLd({ id: "t1", name: "Alpha", tag: "ALP", logo: null, description: null });
     expect(d["@type"]).toBe("SportsTeam");
     expect(d.name).toBe("Alpha");
-    expect(String(d.url)).toMatch(/^https?:\/\/.+\/equipes\/t1$/);
+    // Forme canonique `<slug>-<id>` : c'est celle que le sitemap émet et
+    // vers laquelle le proxy redirige. Déclarer l'identifiant nu ici
+    // annoncerait à Google une URL qui redirige.
+    expect(String(d.url)).toMatch(/^https?:\/\/.+\/equipes\/alpha--t1$/);
     expect(d.sport).toBe("Valorant");
   });
 

@@ -5,6 +5,7 @@ import { imageAsPngDataUri } from "@/lib/og/image";
 import { displayScores } from "@/lib/forfeit";
 import { bestOfLabel, mapsLabel, matchBadge, metaLine } from "@/lib/og/labels";
 import { DISPLAY, OG } from "@/lib/og/theme";
+import { idFromSegment } from "@/lib/slug";
 
 export const alt = "Match";
 export { contentType, size } from "@/lib/og/size";
@@ -37,7 +38,8 @@ function Side({ src, name }: { src: string | null; name: string }) {
 }
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const match = await getMatch(id);
   if (!match) return renderOg("MATCH", () => null);
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { longDate, tournamentCountdownLabel } from "@/lib/dates";
 import type { TournamentStatus } from "@/lib/constants";
 import Image from "next/image";
+import { fichePath } from "@/lib/slug";
 
 type Row = {
   id: string;
@@ -21,7 +22,7 @@ function fullDate(date: Date | null): string {
 export default function TournamentListRow({ t }: { t: Row }) {
   return (
     <Link
-      href={`/tournois/${t.id}`}
+      href={fichePath("tournois", t.id, t.name)}
       className="flex items-center gap-3 rounded px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)] sm:gap-4"
     >
       <div className="w-14 shrink-0 sm:w-24">

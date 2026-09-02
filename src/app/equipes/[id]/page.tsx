@@ -26,12 +26,20 @@ import JsonLdScript from "@/components/json-ld";
 import { teamJsonLd } from "@/lib/structured-data";
 import { pageMetadata } from "@/lib/metadata";
 import { fullDate } from "@/lib/dates";
+import { fichePath, idFromSegment } from "@/lib/slug";
+import { ficheName } from "@/lib/data/existence";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const seo = await teamSeo(id);
   return pageMetadata({
-    path: `/equipes/${id}`,
+    // Le canonique doit être la forme vers laquelle le proxy redirige, au
+    // caractère près : les deux passent donc par `ficheName`. Reprendre
+    // `seo.title` aurait suffi pour trois sections sur quatre — mais
+    // `matchSeo` rend « TAG vs TAG », et chaque fiche de match aurait
+    // rebouclé indéfiniment.
+    path: fichePath("equipes", id, await ficheName("equipes", id)),
     title: seo?.title ?? "Équipe",
     description: seo?.description,
   });
@@ -45,7 +53,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default async function TeamPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const team = await getTeam(id);
   if (!team) notFound();
 

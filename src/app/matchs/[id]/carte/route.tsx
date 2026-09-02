@@ -16,6 +16,7 @@ import { displayScores } from "@/lib/forfeit";
 import { bestOfLabel, matchBadge, mapsLabel, metaLine, mvpLabel } from "@/lib/og/labels";
 import { bySide, kdaLabel, mapRows, seriesRows, type CardStatRow } from "@/lib/og/scoreboard";
 import { DISPLAY, MONO, OG } from "@/lib/og/theme";
+import { idFromSegment } from "@/lib/slug";
 
 type Match = NonNullable<Awaited<ReturnType<typeof getMatch>>>;
 
@@ -172,7 +173,8 @@ function scoreboardCard(
  * maps réellement jouées.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const match = await getMatch(id);
   // Contrairement aux routes `opengraph-image`, celle-ci n'est pas lue par un
   // robot social : un cadre nu ne rendrait service à personne, un 404 dit ce

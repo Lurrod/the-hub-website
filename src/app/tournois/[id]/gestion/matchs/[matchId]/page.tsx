@@ -20,13 +20,15 @@ import { toDateInput, toDateTimeInput } from "@/lib/timezone";
 
 import { tournamentTitle } from "@/lib/data/titles";
 import { dateTimeLabel } from "@/lib/dates";
+import { idFromSegment } from "@/lib/slug";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string; matchId: string }>;
 }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const name = await tournamentTitle(id);
   return { title: name ? `Éditer un match · ${name}` : "Éditer un match" };
 }
@@ -42,7 +44,8 @@ export default async function EditMatchPage({
 }: {
   params: Promise<{ id: string; matchId: string }>;
 }) {
-  const { id, matchId } = await params;
+  const { id: segment, matchId } = await params;
+  const id = idFromSegment(segment);
 
   const tournament = await getTournament(id);
   if (!tournament) notFound();

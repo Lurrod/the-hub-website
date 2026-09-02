@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MIN_MAPS_FOR_AVG } from "@/lib/tournament-stats-core";
 import type { PlayerPoint } from "@/lib/data/tournament-stats";
+import { fichePath } from "@/lib/slug";
 
 /**
  * Classement complet des joueurs du tournoi, trié au rating.
@@ -78,7 +79,7 @@ export default function TournamentPlayerTable({ players }: { players: PlayerPoin
                 <th scope="row" className={`${TD} min-w-0 pr-2 text-left font-normal`}>
                   {p.playerId ? (
                     <Link
-                      href={`/joueurs/${p.playerId}`}
+                      href={fichePath("joueurs", p.playerId, p.name)}
                       className="block truncate text-white hover:underline"
                     >
                       {p.name}

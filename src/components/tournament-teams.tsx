@@ -5,6 +5,7 @@ import AgentDonut from "@/components/charts/agent-donut";
 import MapHeatmap from "@/components/charts/map-heatmap";
 import FormStreak from "@/components/form-streak";
 import type { TeamStats } from "@/lib/tournament-teams-core";
+import { fichePath } from "@/lib/slug";
 
 const SECTION = "mb-1 text-sm font-semibold uppercase tracking-wide text-[var(--accent)]";
 const NOTE = "mb-4 text-xs text-[var(--text-muted)]";
@@ -160,7 +161,7 @@ export default function TournamentTeams({ teams }: { teams: TeamStats[] }) {
                     le lien qu'il contient l'est, et il s'arrête au nom. */}
                 <span className="w-full min-w-0 sm:mr-auto sm:w-auto">
                   <Link
-                    href={`/equipes/${t.team.id}`}
+                    href={fichePath("equipes", t.team.id, t.team.name)}
                     className="inline-flex max-w-full min-w-0 items-center gap-2 align-middle hover:text-[var(--accent)]"
                   >
                     <Crest team={t.team} />

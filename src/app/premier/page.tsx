@@ -4,6 +4,7 @@ import MatchMiniList from "@/components/match-mini-list";
 import EmptyState, { ListDecor } from "@/components/empty-state";
 import { getPremierOverview } from "@/lib/data/premier-view";
 import { pageMetadata } from "@/lib/metadata";
+import { fichePath } from "@/lib/slug";
 
 /**
  * La page lit la base sans aucune entrée dynamique — ni `params`, ni
@@ -48,7 +49,7 @@ export default async function PremierPage() {
             <section key={p.tournamentId} className="flex flex-col gap-3">
               <h2 className="text-sm font-semibold">
                 <Link
-                  href={`/tournois/${p.tournamentId}`}
+                  href={fichePath("tournois", p.tournamentId, p.tournamentName)}
                   className="transition-colors hover:text-[var(--accent)]"
                 >
                   {p.tournamentName}
@@ -70,7 +71,7 @@ export default async function PremierPage() {
               </div>
 
               <Link
-                href={`/tournois/${p.tournamentId}`}
+                href={fichePath("tournois", p.tournamentId, p.tournamentName)}
                 className="self-start rounded-lg border border-[var(--border-strong)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >
                 Classement complet

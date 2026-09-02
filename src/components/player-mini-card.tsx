@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Flag from "@/components/flag";
+import { fichePath } from "@/lib/slug";
 
 export type MiniPlayer = {
   id: string;
@@ -14,7 +15,7 @@ export type MiniPlayer = {
 export default function PlayerMiniCard({ player }: { player: MiniPlayer }) {
   return (
     <Link
-      href={`/joueurs/${player.id}`}
+      href={fichePath("joueurs", player.id, player.pseudo)}
       className="card card-interactive flex items-center gap-3 p-3"
     >
       {player.photo ? (

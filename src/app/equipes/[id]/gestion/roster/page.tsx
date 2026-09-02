@@ -14,9 +14,11 @@ import {
 } from "@/app/admin/actions/players";
 
 import { teamTitle } from "@/lib/data/titles";
+import { idFromSegment } from "@/lib/slug";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const name = await teamTitle(id);
   return { title: name ? `Roster · ${name}` : "Roster" };
 }
@@ -29,7 +31,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default async function RosterPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const team = await getTeam(id);
   if (!team) notFound();
 

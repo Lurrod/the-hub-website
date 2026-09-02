@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { buildCsp, generateNonce, CSP_HEADER } from "@/lib/csp";
-import { ficheExists, type FicheSection } from "@/lib/data/existence";
+import { ficheName } from "@/lib/data/existence";
+import { idFromSegment, isCanonicalSegment, fichePath, type FicheSection } from "@/lib/slug";
 import { allow, type RateLimitRule } from "@/lib/rate-limit";
 import { describeError, logger } from "@/lib/logger";
 
@@ -58,9 +59,13 @@ export function isOnboardingExempt(path: string): boolean {
  */
 const FICHE_PATH = /^\/(tournois|equipes|joueurs|matchs)\/([^/]+)$/;
 
-export function parseFichePath(path: string): { section: FicheSection; id: string } | null {
+export function parseFichePath(
+  path: string
+): { section: FicheSection; segment: string; id: string } | null {
   const m = FICHE_PATH.exec(path);
-  return m ? { section: m[1] as FicheSection, id: decodeURIComponent(m[2]) } : null;
+  if (!m) return null;
+  const segment = decodeURIComponent(m[2]);
+  return { section: m[1] as FicheSection, segment, id: idFromSegment(segment) };
 }
 
 /**
@@ -133,8 +138,30 @@ export async function proxy(request: NextRequest) {
     const fiche = parseFichePath(path);
     if (fiche) {
       try {
-        if (!(await ficheExists(fiche.section, fiche.id))) {
+        const nom = await ficheName(fiche.section, fiche.id);
+        if (nom === null) {
           return withCsp(NextResponse.rewrite(new URL("/introuvable", request.url)), csp);
+        }
+        // Une fiche a UNE URL. L'ancienne forme — l'identifiant nu — et les
+        // slugs périmés après un renommage continuent de résoudre, mais une
+        // redirection permanente ramène vers la forme à jour : deux URLs
+        // indexables pour une même page dilueraient le référencement, ce que la
+        // redirection `www` vers l'apex évite déjà par ailleurs.
+        // Jamais sur une requête RSC. Le routeur de Next va chercher la
+        // charge utile de la page suivante avec l'en-tête `RSC: 1` ; une
+        // redirection sur cet appel casse la navigation douce et force un
+        // rechargement complet — « Failed to fetch RSC payload, falling back
+        // to browser navigation » dans la console. Un lien interne pointant
+        // l'ancienne forme continue donc de naviguer normalement, et c'est le
+        // premier chargement de document qui rétablit l'URL canonique.
+        //
+        // Ce qui compte pour le référencement est préservé : un robot, un lien
+        // partagé et une entrée directe font tous une requête de document.
+        const estRsc = request.headers.get("rsc") === "1";
+        if (!estRsc && !isCanonicalSegment(fiche.segment, fiche.id, nom)) {
+          const cible = new URL(request.url);
+          cible.pathname = fichePath(fiche.section, fiche.id, nom);
+          return withCsp(NextResponse.redirect(cible, 301), csp);
         }
       } catch (error) {
         // Base indisponible : on laisse la requête suivre son cours, la page

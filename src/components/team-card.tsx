@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { fichePath } from "@/lib/slug";
 
 type TeamCardData = {
   id: string;
@@ -12,7 +13,7 @@ type TeamCardData = {
 export default function TeamCard({ team }: { team: TeamCardData }) {
   return (
     <Link
-      href={`/equipes/${team.id}`}
+      href={fichePath("equipes", team.id, team.name)}
       className="card card-interactive flex items-center gap-3 p-3"
     >
       {team.logo ? (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ROLE_ICONS, ROLE_LABELS, type ValorantRoleKey } from "@/lib/roles";
 import { lfpRolesLabel } from "@/lib/lfp";
+import { fichePath } from "@/lib/slug";
 
 export type LfpTeamCardData = {
   id: string;
@@ -19,7 +20,7 @@ export default function LfpCard({ team }: { team: LfpTeamCardData }) {
 
   return (
     <Link
-      href={`/equipes/${team.id}`}
+      href={fichePath("equipes", team.id, team.name)}
       className="card card-interactive flex flex-col gap-3 bg-[var(--card-hover)] p-4"
     >
       <div className="flex items-center gap-3">

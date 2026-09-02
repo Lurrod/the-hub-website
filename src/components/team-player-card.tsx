@@ -5,6 +5,7 @@ import { roleIconUrl, roleLabel } from "@/lib/roles";
 import MembershipRoleIcon from "@/components/membership-role-icon";
 import { hasOwnIcon, MEMBERSHIP_ROLE_LABELS, type MembershipRoleKey } from "@/lib/membership-roles";
 import { computeAge, durationShort } from "@/lib/dates";
+import { fichePath } from "@/lib/slug";
 
 export type TeamPlayerCardData = {
   id: string;
@@ -31,7 +32,7 @@ export default function TeamPlayerCard({ player }: { player: TeamPlayerCardData 
 
   return (
     <Link
-      href={`/joueurs/${player.id}`}
+      href={fichePath("joueurs", player.id, player.pseudo)}
       className="card card-interactive relative flex h-full flex-col p-3"
     >
       {/* Le rôle flotte sur le coin haut gauche : la photo occupe tout le haut

@@ -5,6 +5,7 @@ import { renderOg } from "@/lib/og/frame";
 import { imageAsPngDataUri } from "@/lib/og/image";
 import { metaLine } from "@/lib/og/labels";
 import { ROLE_LABELS, type ValorantRoleKey } from "@/lib/roles";
+import { idFromSegment } from "@/lib/slug";
 
 export const alt = "Joueur";
 export { contentType, size } from "@/lib/og/size";
@@ -21,7 +22,8 @@ async function careerAverages(playerId: string) {
 }
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id: segment } = await params;
+  const id = idFromSegment(segment);
   const player = await getPlayer(id);
   if (!player) return renderOg("JOUEUR", () => null);
 

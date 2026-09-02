@@ -24,7 +24,9 @@ test("les deux panneaux de classement sont affichés et mènent à leur tournoi"
   await expect(contender.first()).toBeVisible();
 
   await invite.first().click();
-  await expect(page).toHaveURL(/\/tournois\/fx-premier-invite$/);
+  // Forme canonique `<slug>--<id>` : les liens internes l'émettent, et une
+  // entrée par l'ancienne forme y est redirigée en 301.
+  await expect(page).toHaveURL(/\/tournois\/[a-z0-9-]*--fx-premier-invite$/);
 });
 
 test("chaque palier porte ses propres résultats", async ({ page }) => {
@@ -43,5 +45,7 @@ test("chaque palier a son bouton vers le classement complet", async ({ page }) =
   const boutons = page.getByRole("link", { name: "Classement complet" });
   await expect(boutons).toHaveCount(2);
   await boutons.first().click();
-  await expect(page).toHaveURL(/\/tournois\/fx-premier-invite$/);
+  // Forme canonique `<slug>--<id>` : les liens internes l'émettent, et une
+  // entrée par l'ancienne forme y est redirigée en 301.
+  await expect(page).toHaveURL(/\/tournois\/[a-z0-9-]*--fx-premier-invite$/);
 });
