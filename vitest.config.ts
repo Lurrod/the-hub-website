@@ -24,13 +24,15 @@ export default defineConfig({
       // ils servent de cliquet — la couverture ne peut plus baisser sans
       // faire échouer la CI. À relever au fur et à mesure.
       //
-      // La cible de 80 % d'instructions est tenue depuis la campagne de
-      // couverture du finding QUAL-02 (tournament-teams-core, metadata, maps,
-      // le recalage de statut, deleteStoredImage et les données structurées de
-      // liste). Ce qui reste à zéro demande de la plomberie de test :
-      // match-stats.ts (API Riot + base), server-auth.ts et session.ts
-      // (session Auth.js), countries.ts (table de données pure).
-      thresholds: { statements: 86, branches: 80, functions: 89, lines: 87 },
+      // Relevés de 86/80/89/87 après que match-stats.ts et l'écriture de
+      // tournament-status.ts ont rejoint src/lib/data : ces modules étaient
+      // comptés dans le périmètre sans pouvoir y être testés — ils n'appellent
+      // que Prisma — et tiraient les seuils vers le bas sans rien garantir. Le
+      // périmètre mesuré ne contient plus que du code réellement testable.
+      //
+      // Ce qui reste à zéro : server-auth.ts et session.ts (session Auth.js),
+      // countries.ts (table de données pure).
+      thresholds: { statements: 92, branches: 87, functions: 93, lines: 93 },
     },
   },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },

@@ -37,7 +37,7 @@ import {
   fetchAndStoreMatchStats,
   importMatchMapFromRiotId,
   type ManualImportResult,
-} from "@/lib/match-stats";
+} from "@/lib/data/match-stats";
 
 async function assertMatchInTournament(matchId: string, tournamentId: string) {
   const match = await getMatch(matchId);

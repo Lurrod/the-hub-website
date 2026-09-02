@@ -27,7 +27,7 @@ import {
   estQuotaDepasse,
   type CustomMatch,
 } from "@/lib/henrikdev";
-import { importMatchMapFromRiotId } from "@/lib/match-stats";
+import { importMatchMapFromRiotId } from "@/lib/data/match-stats";
 import type { TournamentFormat } from "@/lib/constants";
 import { syncPremierTeams } from "@/lib/data/premier-teams";
 
