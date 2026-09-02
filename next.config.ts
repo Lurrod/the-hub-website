@@ -29,6 +29,27 @@ const nextConfig: NextConfig = {
   // dépendances utilisées. Le build se fait en CI et on n'envoie que ce dossier
   // sur le Kimsufi, qui n'a donc ni à installer node_modules ni à compiler.
   output: "standalone",
+  images: {
+    // AVIF d'abord, WebP en repli : sur des logos et des photos réduits à
+    // quelques dizaines de pixels, l'écart se compte en centaines d'octets par
+    // image, mais une liste de 25 joueurs en affiche 25.
+    formats: ["image/avif", "image/webp"],
+    // Les seules tailles réellement rendues par le site. Les restreindre borne
+    // le travail de sharp : chaque paire (image, largeur) est optimisée une
+    // fois, et le process est unique.
+    deviceSizes: [640, 828, 1080, 1200],
+    imageSizes: [16, 24, 32, 48, 64, 96, 128, 256],
+    // Les clés de `/api/images` sont stables — un logo remplacé garde son URL —
+    // et l'ETag change à la réécriture. Un an de cache est donc sans risque et
+    // évite de refaire le travail à chaque expiration.
+    minimumCacheTTL: 31_536_000,
+    // Deux hôtes tiers réellement chargés par le site, déjà déclarés dans la
+    // CSP : sans eux, `next/image` refuse l'URL au lieu de la servir.
+    remotePatterns: [
+      { protocol: "https", hostname: "flagcdn.com" },
+      { protocol: "https", hostname: "cdn.discordapp.com" },
+    ],
+  },
   experimental: {
     serverActions: {
       // Next plafonne le corps des server actions à 1 Mo par défaut et renvoie
