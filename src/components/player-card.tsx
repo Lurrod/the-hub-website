@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Flag from "@/components/flag";
+import Image from "next/image";
 
 type PlayerCardData = {
   id: string;
@@ -15,11 +16,10 @@ export default function PlayerCard({ player }: { player: PlayerCardData }) {
       className="card card-interactive flex items-center gap-3 p-3"
     >
       {player.photo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          loading="lazy"
-          decoding="async"
+        <Image
           src={player.photo}
+          width={40}
+          height={40}
           alt={player.pseudo}
           className="h-10 w-10 rounded-full object-cover"
         />

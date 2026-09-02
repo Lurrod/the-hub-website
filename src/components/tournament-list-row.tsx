@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { longDate, tournamentCountdownLabel } from "@/lib/dates";
 import type { TournamentStatus } from "@/lib/constants";
+import Image from "next/image";
 
 type Row = {
   id: string;
@@ -30,11 +31,10 @@ export default function TournamentListRow({ t }: { t: Row }) {
       </div>
 
       {t.logo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          loading="lazy"
-          decoding="async"
+        <Image
           src={t.logo}
+          width={48}
+          height={48}
           alt={`Logo ${t.name}`}
           className="h-12 w-12 shrink-0 rounded-lg object-cover"
         />

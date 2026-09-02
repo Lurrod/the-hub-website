@@ -3,6 +3,7 @@ import { EmptyLine } from "@/components/empty-state";
 import { shortDate, timeLabel } from "@/lib/dates";
 import { displayScores } from "@/lib/forfeit";
 import type { MatchForfeit } from "@/lib/constants";
+import Image from "next/image";
 
 type Side = { tag: string; logo: string | null } | null;
 
@@ -34,11 +35,10 @@ function TeamLine({
   return (
     <div className={`flex items-center gap-2 ${defeated ? "opacity-60" : ""}`}>
       {team?.logo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          loading="lazy"
-          decoding="async"
+        <Image
           src={team.logo}
+          width={24}
+          height={24}
           alt=""
           className="h-6 w-6 shrink-0 rounded object-cover"
         />
