@@ -188,7 +188,12 @@ function RoundTimeline({
       {/* Timeline en deux pistes, une par équipe, centrée. Elle est posée sur
           la surface de la carte, contrairement aux tableaux plus bas : elle
           garde donc le masque par défaut. */}
-      <div className="scroll-x">
+      <div
+        className="scroll-x"
+        tabIndex={0}
+        role="region"
+        aria-label="Feuille de match, défilement horizontal"
+      >
         <div className="mx-auto w-max space-y-1">
           <TrackRow rounds={rounds} side="A" label={teamATag} logo={teamALogo} />
           <TrackRow rounds={rounds} side="B" label={teamBTag} logo={teamBLogo} />
@@ -296,7 +301,12 @@ function TeamBlock({ rows, slots }: { rows: DisplayRow[]; slots: number }) {
   const agentWidth = slots * AGENT_PX + (slots - 1) * AGENT_GAP + 8;
 
   return (
-    <div className="scroll-x scroll-x-on-bg">
+    <div
+      className="scroll-x scroll-x-on-bg"
+      tabIndex={0}
+      role="region"
+      aria-label="Détail des rounds, défilement horizontal"
+    >
       <table
         className="w-full table-fixed border-collapse"
         style={{ minWidth: 720 + agentWidth - 32 }}

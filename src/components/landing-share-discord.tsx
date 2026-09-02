@@ -195,7 +195,12 @@ export function ShareDiscord() {
       {/* Barre de saisie, inactive : le décor s'arrête où commence le vrai
           client. */}
       <div className="px-4 pb-4">
-        <div className="lf-dc-input flex items-center gap-3 px-3.5 py-2.5">
+        {/* `aria-hidden` : barre de saisie inerte, pur décor. « Envoyer un
+            message dans #général » n'apprend rien à qui ne voit pas
+            l'illustration — c'est du bruit dans un lecteur d'écran.
+            Le contraste, lui, est traité dans components.css : `aria-hidden`
+            n'en exempte pas, le texte restant visible à l'écran. */}
+        <div aria-hidden className="lf-dc-input flex items-center gap-3 px-3.5 py-2.5">
           <span className="lf-dc-plus lf-t13 grid h-5 w-5 shrink-0 place-items-center rounded-full">
             +
           </span>

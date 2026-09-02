@@ -60,7 +60,12 @@ export default async function PremierPage() {
                   conteneur sans fond, ces couvre-bords laissaient deux bandes
                   colorées aux deux bords — le symptôme décrit dans
                   `src/styles/transitions.css`. */}
-              <div className="panel scroll-x">
+              <div
+                className="panel scroll-x"
+                tabIndex={0}
+                role="region"
+                aria-label="Classement Premier, défilement horizontal"
+              >
                 <StandingsTable rows={p.rows} />
               </div>
 

@@ -199,7 +199,11 @@ export default function ClearableSearch({
         defaultValue={defaultValue}
         maxLength={40}
         aria-label={ariaLabel}
-        className="w-full bg-transparent outline-none"
+        // `min-h-6` : le `.field` qui entoure fait 27px de haut grace a son
+        // padding, mais l'input lui-meme n'en fait que 15 — et c'est sa boite
+        // que WCAG 2.5.8 mesure. Sans hauteur propre, la cible etait sous les
+        // 24px requis sur /joueurs comme sur /lft.
+        className="min-h-6 w-full bg-transparent outline-none"
       />
       <span ref={mirrorRef} className="t-clear-mirror" aria-hidden="true" />
       <span ref={pholdRef} className="t-clear-placeholder" aria-hidden="true">

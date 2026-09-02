@@ -27,6 +27,9 @@ export default function PlayerCareerTable({ stints }: { stints: CareerStint[] })
   return (
     <div
       className="scroll-x rounded-lg border border-[var(--border)]"
+      tabIndex={0}
+      role="region"
+      aria-label="Parcours en équipe, défilement horizontal"
       style={{ backgroundColor: "var(--card)" }}
     >
       <table className="w-full min-w-[760px] border-collapse text-sm">
