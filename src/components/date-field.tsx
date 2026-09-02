@@ -194,7 +194,7 @@ export default function DateField({
                   aria-current={isToday ? "date" : undefined}
                   className={`h-8 rounded-md text-xs tabular-nums transition-colors ${
                     selected
-                      ? "bg-[var(--accent)] font-medium text-white"
+                      ? "bg-[var(--accent)] font-medium"
                       : c.currentMonth
                         ? "text-white hover:bg-[var(--card-hover)]"
                         : "text-[var(--text-subtle)] hover:bg-[var(--card-hover)]"

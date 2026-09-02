@@ -31,7 +31,7 @@ export default async function ProfilePage() {
             await signIn("discord", { redirectTo: "/profil" });
           }}
         >
-          <button className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+          <button className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90">
             Connexion Discord
           </button>
         </form>
@@ -118,7 +118,7 @@ export default async function ProfilePage() {
                 className={
                   player.lft
                     ? "rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
-                    : "rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                    : "rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-90"
                 }
               >
                 {player.lft ? "Ne plus être LFT" : "Me déclarer LFT"}
@@ -150,7 +150,7 @@ export default async function ProfilePage() {
                   className={
                     player.showDiscord
                       ? "rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
-                      : "rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                      : "rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-90"
                   }
                 >
                   {player.showDiscord ? "Masquer mon Discord" : "Afficher mon Discord"}
@@ -191,7 +191,7 @@ export default async function ProfilePage() {
               photo: player.photo,
             }}
           />
-          <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+          <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90">
             Enregistrer
           </button>
         </form>

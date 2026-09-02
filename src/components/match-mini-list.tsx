@@ -43,7 +43,13 @@ function TeamLine({
           className="h-6 w-6 shrink-0 rounded object-cover"
         />
       ) : (
-        <div className="grid h-6 w-6 shrink-0 place-items-center rounded bg-[var(--surface)] text-[9px] text-[var(--text-muted)]">
+        // `--text` et non `--text-muted` : ce badge vit dans un bloc atténué à
+        // 60 % quand l'équipe a perdu, et l'opacité s'applique au contraste
+        // autant qu'à la couleur. --text-muted y tombait à 3,17:1, sous le
+        // seuil AA — c'est la violation qu'axe a remontée sur /premier dès que
+        // la règle `color-contrast` a été rallumée. Le tag et le score voisins
+        // sont déjà en blanc pour la même raison.
+        <div className="grid h-6 w-6 shrink-0 place-items-center rounded bg-[var(--surface)] text-[9px] text-[var(--text)]">
           {team?.tag?.slice(0, 3).toUpperCase() ?? "?"}
         </div>
       )}

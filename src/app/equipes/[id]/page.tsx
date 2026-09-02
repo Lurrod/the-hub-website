@@ -273,7 +273,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
             {canManage && (
               <Link
                 href={`/equipes/${team.id}/gestion`}
-                className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white sm:ml-auto"
+                className="rounded bg-[var(--accent)] px-3 py-1.5 text-sm font-medium sm:ml-auto"
               >
                 Gérer l&apos;équipe
               </Link>

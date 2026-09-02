@@ -72,7 +72,7 @@ export default function InviteLink({ link }: { link: string }) {
       <button
         type="button"
         onClick={copy}
-        className="shrink-0 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors duration-[130ms] hover:bg-[var(--accent-hover)]"
+        className="shrink-0 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium transition-colors duration-[130ms] hover:bg-[var(--accent-hover)]"
       >
         <span ref={labelRef} className="t-text-swap" suppressHydrationWarning>
           Copier

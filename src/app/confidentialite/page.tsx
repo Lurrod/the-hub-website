@@ -14,6 +14,7 @@ export default function ConfidentialitePage() {
   return (
     <LegalPage
       title="Politique de confidentialité"
+      document="confidentialite"
       intro="Cette politique décrit les données personnelles traitées par The Hub, les raisons de ce traitement et les droits dont vous disposez, conformément au Règlement (UE) 2016/679 (RGPD) et à la loi Informatique et Libertés."
     >
       <Section title="Responsable du traitement">
@@ -31,7 +32,11 @@ export default function ConfidentialitePage() {
         <p>
           Tant que vous naviguez sans compte, seule la mesure de fréquentation décrite plus bas
           s&apos;applique : elle ne conserve rien qui vous concerne. La création d&apos;un compte et
-          l&apos;usage des fonctionnalités entraînent les traitements suivants.
+          l&apos;usage des fonctionnalités entraînent les traitements suivants.{" "}
+          <strong className="font-semibold text-white">
+            Une fiche joueur peut toutefois exister sans qu&apos;aucun compte y soit rattaché
+          </strong>{" "}
+          : ce cas est décrit dans la section « Personnes référencées sans compte » ci-dessous.
         </p>
 
         <h3 className="pt-2 font-semibold text-white">1. Connexion via Discord</h3>
@@ -66,6 +71,48 @@ export default function ConfidentialitePage() {
           Pour chaque carte jouée dans un tournoi référencé : agent, éliminations, morts, assists,
           ACS, ADR, pourcentage de tirs à la tête, KAST, premières éliminations et premières morts,
           rating. Ces données décrivent une performance sportive et sont publiques sur le site.
+        </p>
+      </Section>
+
+      <Section title="Personnes référencées sans compte">
+        <p>
+          Une fiche joueur peut exister sans que vous ayez créé de compte, et sans que vous en ayez
+          été informé au préalable. Deux chemins y mènent :
+        </p>
+        <Ul>
+          <li>
+            l&apos;organisateur d&apos;un tournoi ou le manager d&apos;une équipe inscrit son
+            effectif et crée les fiches correspondantes ;
+          </li>
+          <li>
+            l&apos;import automatique des feuilles de match, depuis l&apos;API Riot via HenrikDev,
+            enregistre une ligne de statistiques pour <strong>chaque</strong> joueur présent sur la
+            carte — y compris les adversaires qui n&apos;ont pas de compte ici.
+          </li>
+        </Ul>
+        <p>
+          Les données alors enregistrées sont le pseudo, éventuellement la nationalité et
+          l&apos;équipe, le Riot ID (nom et tag), l&apos;identifiant de joueur Riot (PUUID) et les
+          statistiques de la carte listées plus haut. Aucune adresse électronique, aucun identifiant
+          Discord et aucune date de naissance ne sont collectés par ce biais. La source des données
+          est celle indiquée ci-dessus, conformément à l&apos;article 14 du RGPD.
+        </p>
+        <p>
+          La base légale est l&apos;intérêt légitime (article 6.1.f) : référencer une compétition
+          suppose d&apos;en publier les résultats, qui sont par nature nominatifs.
+        </p>
+        <p>
+          <strong className="font-semibold text-white">Vous pouvez vous y opposer.</strong>{" "}
+          L&apos;article 21 du RGPD ouvre un droit d&apos;opposition à tout traitement fondé sur
+          l&apos;intérêt légitime. Écrivez-nous en rejoignant <ContactDiscord /> : la fiche est
+          anonymisée, le Riot ID et le PUUID sont effacés, et les statistiques qui subsistent
+          cessent d&apos;être rattachables à vous. Les autres droits décrits plus bas
+          s&apos;appliquent de la même manière. Une mention rappelant ce droit figure au bas de
+          chaque fiche sans compte rattaché.
+        </p>
+        <p>
+          Si la fiche est la vôtre et que vous souhaitez la conserver, connectez-vous et liez votre
+          Riot ID : elle vous sera rattachée avec son historique, et vous en reprenez la main.
         </p>
       </Section>
 

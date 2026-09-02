@@ -125,7 +125,7 @@ export default function LftFilters({
 
         {/* Action et non état : bordure accent pour ne pas se confondre avec
             une pilule de filtre inactive. */}
-        <button className="field border-[var(--accent)] text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white">
+        <button className="field border-[var(--accent)] text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]">
           Filtrer
         </button>
 

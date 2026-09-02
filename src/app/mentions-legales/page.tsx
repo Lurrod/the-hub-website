@@ -11,6 +11,7 @@ export default function MentionsLegalesPage() {
   return (
     <LegalPage
       title="Mentions légales"
+      document="mentions"
       intro="Informations légales relatives à l'éditeur et à l'hébergeur du site The Hub, conformément à l'article 6 III de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique (LCEN)."
     >
       <Section title="Éditeur du site">

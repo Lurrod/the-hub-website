@@ -18,8 +18,15 @@ export default function MapHeatmap({ teams }: { teams: TeamStats[] }) {
 
   const cellOf = (t: TeamStats, mapName: string) => t.maps.find((m) => m.mapName === mapName);
 
-  /** Opacité de l'accent : 0 % de winrate reste visible, 100 % est plein. */
-  const fill = (winrate: number) => 0.15 + (winrate / 100) * 0.75;
+  /**
+   * Part d'accent dans le fond de la case.
+   *
+   * Plafonnée à 0,75 et non 0,90 : au-delà, le fond devient assez clair pour
+   * que le texte blanc tombe à 3,98:1, sous le seuil AA. À 0,75 il tient
+   * 5,15:1 sur toute l'échelle, et l'écart visuel entre une case à 0 % et une
+   * case à 100 % reste parfaitement lisible.
+   */
+  const fill = (winrate: number) => 0.15 + (winrate / 100) * 0.6;
 
   return (
     <div className="scroll-x">
@@ -89,7 +96,11 @@ export default function MapHeatmap({ teams }: { teams: TeamStats[] }) {
                     title={`${t.team.name} sur ${m} — ${c.won} victoire(s) sur ${c.played} carte(s)`}
                   >
                     {c.winratePct}%
-                    <span className="ml-1 text-[10px] font-normal opacity-70">
+                    {/* Pas d'`opacity` ici : elle s'applique au contraste
+                        autant qu'à la couleur, et ramenait ce sous-compte à
+                        3,33:1 sur les cases à fort taux de victoire. La
+                        hiérarchie se joue à la taille et à la graisse. */}
+                    <span className="ml-1 text-[10px] font-normal">
                       {c.won}/{c.played}
                     </span>
                   </td>

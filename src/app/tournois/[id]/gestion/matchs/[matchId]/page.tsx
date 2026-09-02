@@ -174,7 +174,7 @@ export default async function EditMatchPage({
           <input name="scoreA" type="number" min="0" placeholder="A" className={`${input} w-20`} />
           <input name="scoreB" type="number" min="0" placeholder="B" className={`${input} w-20`} />
           <input name="order" type="number" min="0" placeholder="#" className={`${input} w-16`} />
-          <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white">
+          <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium">
             Ajouter la map
           </button>
         </form>
@@ -205,7 +205,7 @@ export default async function EditMatchPage({
             <option value="WON">{match.teamA.name} a gagné</option>
             <option value="LOST">{match.teamA.name} a perdu</option>
           </select>
-          <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white">
+          <button className="rounded bg-[var(--accent)] px-3 py-2 text-sm font-medium">
             Importer
           </button>
         </form>

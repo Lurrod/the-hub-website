@@ -60,7 +60,20 @@ describe("lengthLabel", () => {
     expect(lengthLabel(d("2023-01-01"), d("2026-04-01"))).toBe("3a 3m");
   });
 
+  // Le « maintenant » est injecté, comme dans tout le reste de src/lib
+  // (computeAge, durationShort, nextLftState, finishedCutoff, todayIso).
+  // Ce cas lisait l'horloge réelle et comparait à une date écrite en dur : il a
+  // donc cessé de passer tout seul le 2026-08-31, trente jours après le
+  // 1er août, quand lengthLabel est passé de « 30j » à « 1m ». Aucune ligne de
+  // code n'avait bougé, et la CI comme le déploiement étaient rouges.
   it("une fin absente signifie « jusqu'à maintenant »", () => {
-    expect(lengthLabel(d("2026-08-01"), null)).toMatch(/^\d+j$/);
+    expect(lengthLabel(d("2026-01-01"), null, d("2026-01-15"))).toBe("14j");
+    expect(lengthLabel(d("2026-01-01"), null, d("2026-04-01"))).toBe("3m");
+  });
+
+  it("une fin absente équivaut à passer explicitement l'instant courant", () => {
+    expect(lengthLabel(d("2026-01-01"), null, d("2026-01-15"))).toBe(
+      lengthLabel(d("2026-01-01"), d("2026-01-15"))
+    );
   });
 });

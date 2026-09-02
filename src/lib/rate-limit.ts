@@ -47,12 +47,27 @@ export function consume(
   return { allowed: true, hits: [...fresh, now], retryAfterMs: 0 };
 }
 
-const store = new Map<string, number[]>();
+/**
+ * La règle voyage avec les horodatages.
+ *
+ * Le magasin ne portait que les horodatages, et le balayage tranchait sur la
+ * fenêtre de la règle en cours d'appel — pas sur celle de la clé examinée. Or
+ * quatre règles se partagent cette table, de 60 s (images rendues à la volée,
+ * dépôts d'image) à 10 minutes (vérification des Riot ID). Un appel porté par
+ * une règle courte évinçait donc des compteurs longs encore valides : le quota
+ * de 5 vérifications Riot par 10 minutes, seule raison d'être du module,
+ * pouvait être remis à zéro toutes les 60 secondes en faisant grossir le
+ * magasin au-delà du seuil. Les clés `image:<ip>` naissant à raison d'une par
+ * adresse cliente, y parvenir ne demandait qu'un flot distribué.
+ */
+type Entree = { rule: RateLimitRule; hits: number[] };
 
-/** Retire les clés sans appel récent, pour que la table ne grossisse pas sans fin. */
-function sweep(rule: RateLimitRule, now: number): void {
-  for (const [key, hits] of store) {
-    if (hits.every((t) => now - t >= rule.windowMs)) store.delete(key);
+const store = new Map<string, Entree>();
+
+/** Retire les clés sans appel récent, chacune jugée sur SA fenêtre. */
+function sweep(now: number): void {
+  for (const [key, entree] of store) {
+    if (entree.hits.every((t) => now - t >= entree.rule.windowMs)) store.delete(key);
   }
 }
 
@@ -62,9 +77,9 @@ function sweep(rule: RateLimitRule, now: number): void {
  */
 export function allow(key: string, rule: RateLimitRule = RIOT_CHECK_RULE): boolean {
   const now = Date.now();
-  if (store.size > SWEEP_THRESHOLD) sweep(rule, now);
-  const verdict = consume(store.get(key) ?? [], rule, now);
-  store.set(key, verdict.hits);
+  if (store.size > SWEEP_THRESHOLD) sweep(now);
+  const verdict = consume(store.get(key)?.hits ?? [], rule, now);
+  store.set(key, { rule, hits: verdict.hits });
   return verdict.allowed;
 }
 

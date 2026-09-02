@@ -43,7 +43,7 @@ export default async function AdminTeamsPage({
         </h1>
         <Link
           href="/admin/equipes/nouvelle"
-          className="rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+          className="rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold transition-opacity hover:opacity-90"
         >
           Nouvelle équipe
         </Link>

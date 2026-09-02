@@ -1,8 +1,26 @@
 name: Déploiement (Kimsufi)
 
-# Déclenché à chaque push sur la branche de production, ou à la main.
+# Le jeton hérite sinon du réglage par défaut du dépôt, historiquement
+# `contents: write` : chaque étape exécutant du code tiers (npm ci et ses
+# centaines de paquets transitifs, prisma generate, playwright install)
+# disposerait d'un jeton capable d'écrire dans le dépôt. Aucun de ces
+# workflows n'en a besoin — `upload-artifact` non plus.
+permissions:
+  contents: read
+
+# Déclenché par la FIN de la CI sur main, jamais par le push lui-même.
+#
+# Les deux workflows étaient auparavant branchés sur `push: main` et partaient
+# donc en parallèle sur le même commit : le déploiement n'attendait pas le
+# verdict de la CI. Or il ne rejoue que trois de ses neuf contrôles — ni lint,
+# ni format:check, ni `prisma migrate diff`, ni `npm audit`, ni les seuils de
+# couverture, ni les 19 parcours Playwright. Une régression détectée par
+# Playwright ou une dérive de migration partaient en production, la CI ne
+# virant au rouge qu'après la mise en ligne.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -15,8 +33,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    # Le déclenchement manuel reste possible sans CI préalable ; c'est la porte
+    # de sortie quand il faut remettre en ligne vite. Tout le reste exige une CI
+    # verte sur main. Le test sur `head_branch` est une ceinture : le filtre
+    # `branches` ci-dessus écarte déjà les runs de CI issus des pull requests.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main')
     steps:
       - uses: actions/checkout@v4
+        with:
+          # `workflow_run` s'exécute dans le contexte de la branche par défaut :
+          # sans `ref` explicite, on déploierait le HEAD de main et non le commit
+          # que la CI vient précisément de valider. Les deux diffèrent dès qu'un
+          # second merge est passé pendant que la CI tournait.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
@@ -29,6 +61,11 @@ jobs:
       - name: Générer le client Prisma
         run: npx prisma generate
 
+      # Ces deux contrôles font doublon avec la CI, qui vient de passer au vert
+      # sur ce commit. Ils restent parce que `workflow_dispatch` court-circuite
+      # la CI : sans eux, un déploiement manuel n'aurait plus aucun garde-fou.
+      # Deux minutes de runner pour ne pas laisser un trou dans la seule porte
+      # qui ouvre la production sans contrôle.
       - name: Vérification des types
         run: npx tsc --noEmit
 

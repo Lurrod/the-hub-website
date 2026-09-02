@@ -346,7 +346,7 @@ export default function TournamentForm({
         </div>
       </Section>
 
-      <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+      <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90">
         {submitLabel}
       </button>
     </form>

@@ -41,13 +41,13 @@ export default function LandingHero({
           {isLoggedIn ? (
             <Link
               href={primaryHref}
-              className="h-act inline-flex items-center justify-center rounded-[var(--r-md)] bg-[var(--accent)] px-7 py-3.5 font-semibold text-white"
+              className="h-act inline-flex items-center justify-center rounded-[var(--r-md)] bg-[var(--accent)] px-7 py-3.5 font-semibold"
             >
               Mon profil
             </Link>
           ) : (
             <form action={signInAction}>
-              <button className="h-act inline-flex items-center justify-center rounded-[var(--r-md)] bg-[var(--accent)] px-7 py-3.5 font-semibold text-white">
+              <button className="h-act inline-flex items-center justify-center rounded-[var(--r-md)] bg-[var(--accent)] px-7 py-3.5 font-semibold">
                 Rejoindre avec Discord
               </button>
             </form>

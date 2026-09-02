@@ -9,6 +9,12 @@
 # choisir explicitement `true`.
 name: Recalibrer les ratings
 
+# Le jeton hérite sinon du réglage par défaut du dépôt, historiquement
+# `contents: write`. Ce workflow ne fait que se connecter en SSH : il n'a
+# aucun besoin d'écrire dans le dépôt.
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:

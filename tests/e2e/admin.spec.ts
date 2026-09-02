@@ -84,12 +84,17 @@ test("aucune violation d'accessibilité sérieuse sur le tableau de bord", async
   const compte = await compteAdmin();
   try {
     await signIn(context, compte);
+    // Mouvement réduit avant la navigation : les listes entrent par une
+    // animation échelonnée, et axe mesurait le contraste avant qu'elle ne se
+    // pose. Même raison que dans a11y.spec.ts.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/admin");
 
-    // `color-contrast` est écartée pour la même raison que dans a11y.spec.ts :
-    // les écarts A11Y-01 et A11Y-02 sont des arbitrages de charte, pas des
-    // défauts de cette page. Toute autre exclusion serait une dette nouvelle.
-    const resultats = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
+    // Plus aucune règle écartée : les deux jetons qui faisaient échouer
+    // `color-contrast` ont été remontés au-dessus de 4,5:1. La laisser
+    // désactivée ici pendant qu'elle est active ailleurs aurait fait de cette
+    // page un angle mort.
+    const resultats = await new AxeBuilder({ page }).analyze();
     const bloquantes = resultats.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical"
     );
@@ -142,9 +147,10 @@ test("aucune violation d'accessibilité sérieuse sur les pages de doublons", as
   const compte = await compteAdmin();
   try {
     await signIn(context, compte);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     for (const chemin of ["/admin/doublons", "/admin/doublons/fusion"]) {
       await page.goto(chemin);
-      const resultats = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
+      const resultats = await new AxeBuilder({ page }).analyze();
       const bloquantes = resultats.violations.filter(
         (v) => v.impact === "serious" || v.impact === "critical"
       );

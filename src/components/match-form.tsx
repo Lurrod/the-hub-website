@@ -212,7 +212,7 @@ export default function MatchForm({
           className={input}
         />
       </label>
-      <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white">
+      <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium">
         {submitLabel}
       </button>
     </form>

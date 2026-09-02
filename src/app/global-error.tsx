@@ -39,7 +39,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={reset}
-            className="mt-8 inline-flex items-center justify-center rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="mt-8 inline-flex items-center justify-center rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
           >
             Recharger
           </button>

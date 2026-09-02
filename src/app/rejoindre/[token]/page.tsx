@@ -46,7 +46,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
             await signIn("discord", { redirectTo: `/rejoindre/${token}` });
           }}
         >
-          <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white">
+          <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium">
             Se connecter avec Discord
           </button>
         </form>
@@ -82,10 +82,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
           Tu fais déjà partie de <span className="text-white">{active.team.name}</span>. Quitte-la
           depuis ton profil avant de rejoindre {team.name}.
         </p>
-        <Link
-          href="/profil"
-          className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white"
-        >
+        <Link href="/profil" className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium">
           Aller à mon profil
         </Link>
       </Shell>
@@ -113,7 +110,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm text-white focus:border-[var(--accent)]"
           />
         </label>
-        <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+        <button className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90">
           Confirmer et rejoindre
         </button>
       </form>

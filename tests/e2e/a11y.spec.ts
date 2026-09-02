@@ -25,15 +25,24 @@ const PAGES = [
  * Règles écartées, avec leur raison. Toute entrée ici est une dette assumée,
  * pas un faux positif : elle doit disparaître quand le finding est corrigé.
  *
- * - `color-contrast` : findings A11Y-01 (bouton « Connexion Discord », 3.36:1)
- *   et A11Y-02 (jeton --text-subtle, 3.5:1). Les deux se corrigent en changeant
- *   une couleur de la charte — un arbitrage visuel, pas une correction
- *   technique. Retirer cette exclusion dès que les deux jetons sont remontés.
+ * `color-contrast` a été retiré de cette liste : les deux jetons qui le
+ * faisaient échouer sont remontés au-dessus de 4,5:1 sur tous les fonds du
+ * site (--accent-foreground sur les boutons d'accent, --text-subtle à
+ * #909298). La règle est de nouveau active, et c'est elle qui empêchera la
+ * dérive de reprendre — la laisser éteinte après correction revenait à
+ * repartir pour un an.
  */
-const DISABLED_RULES = ["color-contrast"];
+const DISABLED_RULES: string[] = [];
 
 for (const { path, name } of PAGES) {
   test(`aucune violation d'accessibilité sérieuse sur ${name}`, async ({ page }) => {
+    // Mouvement réduit : les listes entrent par `.stagger-in`, une animation de
+    // fondu échelonnée jusqu'à ~0,2 s. axe mesurait le contraste pendant que
+    // l'opacité montait encore et remontait de fausses violations — d'où des
+    // échecs qui passaient au réessai. Ce réglage est une configuration
+    // utilisateur réelle, que le site honore déjà (components.css:337-361) :
+    // on scanne donc l'état posé, celui que tout le monde finit par voir.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(path);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])

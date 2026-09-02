@@ -106,7 +106,7 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
               </option>
             ))}
           </select>
-          <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white">
+          <button className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium">
             Ajouter au roster
           </button>
         </form>
