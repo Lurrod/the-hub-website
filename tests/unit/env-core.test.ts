@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkEnv } from "@/lib/env-core";
+import { checkEnv, estUnDeploiement } from "@/lib/env-core";
 
 const COMPLET = {
   DATABASE_URL: "postgresql://user:pass@localhost:5432/thehub",
@@ -69,5 +69,23 @@ describe("checkEnv", () => {
       expect(v.message).toContain("HENRIKDEV_API_KEY");
       expect(v.message).toContain(".env.example");
     }
+  });
+});
+
+describe("estUnDeploiement", () => {
+  it("reconnaît un vrai déploiement", () => {
+    expect(estUnDeploiement({ NODE_ENV: "production" })).toBe(true);
+  });
+
+  // Le job e2e sert le build de production sur un runner sans application
+  // Discord ni clé HenrikDev. Exiger le jeu complet l'a réellement cassé : le
+  // serveur refusait de démarrer et les 19 specs tombaient avec lui.
+  it("ne prend pas le banc d'essai de la CI pour un déploiement", () => {
+    expect(estUnDeploiement({ NODE_ENV: "production", CI: "true" })).toBe(false);
+  });
+
+  it("ne réclame rien hors production", () => {
+    expect(estUnDeploiement({ NODE_ENV: "development" })).toBe(false);
+    expect(estUnDeploiement({})).toBe(false);
   });
 });

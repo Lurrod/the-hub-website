@@ -1,4 +1,4 @@
-import { checkEnv } from "@/lib/env-core";
+import { checkEnv, estUnDeploiement } from "@/lib/env-core";
 import { logger } from "@/lib/logger";
 
 /**
@@ -16,10 +16,10 @@ import { logger } from "@/lib/logger";
  * mise en page sans clé HenrikDev.
  */
 export function assertEnv(): void {
-  const production = process.env.NODE_ENV === "production";
-  const verdict = checkEnv(process.env, production);
+  const deploiement = estUnDeploiement(process.env);
+  const verdict = checkEnv(process.env, deploiement);
   if (verdict.ok) return;
 
-  if (production) throw new Error(verdict.message);
+  if (deploiement) throw new Error(verdict.message);
   logger.warn("env.incomplet", { manquantes: verdict.manquantes.join(",") });
 }

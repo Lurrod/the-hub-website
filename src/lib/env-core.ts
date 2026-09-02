@@ -42,6 +42,21 @@ const requisesEnProduction = {
     .regex(/^https?:\/\/[^\s]+$/, "URL publique absolue du site (http:// ou https://)"),
 };
 
+/**
+ * Faut-il exiger le jeu complet, celui d'un vrai déploiement ?
+ *
+ * `NODE_ENV === "production"` ne suffit pas : le job e2e sert le build de
+ * production (`npm run start`) sur un runner qui n'a ni application Discord ni
+ * clé HenrikDev. Il déclare déjà `CI: "true"` pour signaler à
+ * playwright.config.ts qu'il sert le build plutôt que le serveur de
+ * développement — on réutilise ce marqueur plutôt que d'en inventer un second.
+ *
+ * Un vrai déploiement, lui, tourne sous pm2 sans cette variable.
+ */
+export function estUnDeploiement(env: Record<string, string | undefined>): boolean {
+  return env.NODE_ENV === "production" && env.CI !== "true";
+}
+
 export type EnvVerdict = { ok: true } | { ok: false; manquantes: string[]; message: string };
 
 /**
