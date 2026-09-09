@@ -263,6 +263,8 @@ enum TournamentFormat {
   LEAGUE
   PREMIER_CONTENDER
   PREMIER_INVITE
+  SPIKE_TOUR_QUALIFIER
+  SPIKE_TOUR_PLAYOFFS
 }
 
 enum TournamentStatus {
