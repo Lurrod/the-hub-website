@@ -10,6 +10,7 @@ import {
   type MatchSeed,
   type TournamentSeed,
 } from "./seed-formats-shared";
+import { SPIKE_TOUR_SEEDS } from "./seed-formats-spike-tour";
 
 const db = new PrismaClient();
 
@@ -628,6 +629,7 @@ const TOURNAMENTS: TournamentSeed[] = [
       },
     ],
   },
+  ...SPIKE_TOUR_SEEDS,
 ];
 
 async function seedTournament(t: TournamentSeed) {
