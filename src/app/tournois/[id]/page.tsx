@@ -23,11 +23,17 @@ import { getSessionUser, getTournamentManagerIds } from "@/lib/server-auth";
 import { canManageTournament } from "@/lib/permissions";
 import { listTeamsManagedBy, countActiveRosterPlayers } from "@/lib/data/teams";
 import TournamentRegister, { type RegistrableTeam } from "@/components/tournament-register";
-import StandingsTable from "@/components/standings-table";
+import StandingsTable, { SwissStandingsTable } from "@/components/standings-table";
 import Bracket from "@/components/bracket";
 import TournamentTeams from "@/components/tournament-teams";
 import { buildStandingRows } from "@/lib/standings";
-import { STAGES_BY_FORMAT, formatGroupsAreBrackets, isPremierFormat } from "@/lib/constants";
+import { buildSwissStandingRows } from "@/lib/swiss-standings";
+import {
+  STAGES_BY_FORMAT,
+  formatGroupsAreBrackets,
+  formatUsesSwissTiebreaks,
+  isPremierFormat,
+} from "@/lib/constants";
 import { fichePath, idFromSegment } from "@/lib/slug";
 import { isRegistrationOpen } from "@/lib/tournament-status";
 import type { ReactNode } from "react";
@@ -81,7 +87,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   // désignent.
   const playsGroupStage = STAGES_BY_FORMAT[tournament.format].includes("GROUP");
   const groupsAreBrackets = formatGroupsAreBrackets(tournament.format);
-  const groupsAreStandings = playsGroupStage && !groupsAreBrackets;
+  // Le classement d'une ronde suisse est global par nature : le découper par
+  // poule ne voudrait rien dire, même si l'orga a créé des `Group`. Le format
+  // saute donc la boucle « une poule, un classement » et passe toujours par le
+  // bloc global ci-dessous.
+  const swissStandings = formatUsesSwissTiebreaks(tournament.format);
+  const groupsAreStandings = playsGroupStage && !groupsAreBrackets && !swissStandings;
 
   // Étapes : chaque poule → son classement ; les playoffs → l'arbre du bracket.
   const stageDefs: { key: string; label: string; content: ReactNode }[] = [];
@@ -113,28 +124,54 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   const ligneReguliereJouee = allMatches.some((m) => m.stage === "GROUP");
   const classementUtile = !isPremierFormat(tournament.format) || ligneReguliereJouee;
 
-  if (playsGroupStage && classementUtile && (groups.length === 0 || groupsAreBrackets)) {
-    const rows = buildStandingRows(
-      tournament.participants.map((p) => ({
-        teamId: p.teamId,
-        name: p.team.name,
-        tag: p.team.tag,
-      })),
-      allMatches
-        .filter((m) => m.stage === "GROUP" && m.status === "FINISHED")
-        .map((m) => ({
+  if (
+    playsGroupStage &&
+    classementUtile &&
+    (groups.length === 0 || groupsAreBrackets || swissStandings)
+  ) {
+    const teams = tournament.participants.map((p) => ({
+      teamId: p.teamId,
+      name: p.team.name,
+      tag: p.team.tag,
+    }));
+    const finished = allMatches.filter((m) => m.stage === "GROUP" && m.status === "FINISHED");
+
+    if (swissStandings) {
+      // Le départage de l'article 7 se joue sur les rounds : ce sont les maps
+      // qu'on passe, pas le score de série, qui vaut 1-0 en Bo1 et ne dit rien.
+      const rows = buildSwissStandingRows(
+        teams,
+        finished.map((m) => ({
+          teamAId: m.teamAId,
+          teamBId: m.teamBId,
+          maps: m.maps,
+          forfeit: m.forfeit,
+        }))
+      );
+      if (rows.length > 0) {
+        stageDefs.push({
+          key: "classement",
+          label: "Ronde suisse",
+          content: <SwissStandingsTable rows={rows} />,
+        });
+      }
+    } else {
+      const rows = buildStandingRows(
+        teams,
+        finished.map((m) => ({
           teamAId: m.teamAId,
           teamBId: m.teamBId,
           scoreA: m.scoreA,
           scoreB: m.scoreB,
         }))
-    );
-    if (rows.length > 0) {
-      stageDefs.push({
-        key: "classement",
-        label: "Classement",
-        content: <StandingsTable rows={rows} />,
-      });
+      );
+      if (rows.length > 0) {
+        stageDefs.push({
+          key: "classement",
+          label: "Classement",
+          content: <StandingsTable rows={rows} />,
+        });
+      }
     }
   }
   if (bracket.length > 0) {
