@@ -8,6 +8,7 @@ import {
   formatUsesGroupSize,
   isPremierFormat,
   formatGroupsAreBrackets,
+  formatUsesSwissTiebreaks,
 } from "@/lib/constants";
 
 describe("formats Premier", () => {
@@ -91,5 +92,49 @@ describe("catalogue de formats", () => {
         expect(formatAllowsGroups(f), f).toBe(true);
       }
     }
+  });
+});
+
+describe("formats Spike Tour", () => {
+  it("expose les deux étapes du circuit", () => {
+    expect(TOURNAMENT_FORMATS).toContain("SPIKE_TOUR_QUALIFIER");
+    expect(TOURNAMENT_FORMATS).toContain("SPIKE_TOUR_PLAYOFFS");
+  });
+
+  it("fait jouer au qualifier la ronde suisse puis l'arbre Radiant", () => {
+    // Les deux journées d'un Open Qualifier tiennent dans un seul tournoi : la
+    // ronde suisse du samedi en stage GROUP, l'arbre Radiant du dimanche en
+    // BRACKET. Les séparer couperait le classement de l'arbre qu'il alimente.
+    expect(STAGES_BY_FORMAT.SPIKE_TOUR_QUALIFIER).toEqual(["GROUP", "BRACKET"]);
+    expect(STAGES_BY_FORMAT.SPIKE_TOUR_PLAYOFFS).toEqual(["BRACKET"]);
+  });
+
+  it("n'autorise les groupes que sur le qualifier", () => {
+    expect(formatAllowsGroups("SPIKE_TOUR_QUALIFIER")).toBe(true);
+    expect(formatAllowsGroups("SPIKE_TOUR_PLAYOFFS")).toBe(false);
+  });
+
+  it("ne prend pas ses groupes pour des brackets", () => {
+    // Le Premier Contender est le seul format dans ce cas : le qualifier ne
+    // doit pas hériter de son rendu.
+    expect(formatGroupsAreBrackets("SPIKE_TOUR_QUALIFIER")).toBe(false);
+    expect(formatGroupsAreBrackets("SPIKE_TOUR_PLAYOFFS")).toBe(false);
+  });
+
+  it("ne propose pas de taille de poule", () => {
+    expect(formatUsesGroupSize("SPIKE_TOUR_QUALIFIER")).toBe(false);
+    expect(formatUsesGroupSize("SPIKE_TOUR_PLAYOFFS")).toBe(false);
+  });
+
+  it("n'est pas un format Premier", () => {
+    expect(isPremierFormat("SPIKE_TOUR_QUALIFIER")).toBe(false);
+    expect(isPremierFormat("SPIKE_TOUR_PLAYOFFS")).toBe(false);
+  });
+
+  it("ne départage à l'article 7 que le qualifier", () => {
+    // Le format SWISS générique garde son classement historique : le faire
+    // basculer changerait le classement de tournois déjà saisis.
+    const suisses = TOURNAMENT_FORMATS.filter(formatUsesSwissTiebreaks);
+    expect(suisses).toEqual(["SPIKE_TOUR_QUALIFIER"]);
   });
 });

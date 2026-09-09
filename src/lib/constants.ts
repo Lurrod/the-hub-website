@@ -217,6 +217,8 @@ export const TOURNAMENT_FORMATS = [
   "LEAGUE",
   "PREMIER_CONTENDER",
   "PREMIER_INVITE",
+  "SPIKE_TOUR_QUALIFIER",
+  "SPIKE_TOUR_PLAYOFFS",
 ] as const;
 export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number];
 export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
@@ -229,6 +231,8 @@ export const TOURNAMENT_FORMAT_LABELS: Record<TournamentFormat, string> = {
   LEAGUE: "Ligue (championnat)",
   PREMIER_CONTENDER: "Premier — Contender",
   PREMIER_INVITE: "Premier — Invite",
+  SPIKE_TOUR_QUALIFIER: "Spike Tour — Open Qualifier",
+  SPIKE_TOUR_PLAYOFFS: "Spike Tour — Playoffs Radiant",
 };
 
 export const TOURNAMENT_STATUSES = ["UPCOMING", "ONGOING", "FINISHED"] as const;
@@ -299,6 +303,11 @@ export const STAGES_BY_FORMAT: Record<TournamentFormat, readonly MatchStage[]> =
   // l'un à l'autre alors qu'ils ne font qu'une seule saison.
   PREMIER_CONTENDER: ["GROUP", "BRACKET"],
   PREMIER_INVITE: ["GROUP", "BRACKET"],
+  // Un Open Qualifier tient en un week-end : la ronde suisse le samedi, l'arbre
+  // Radiant le dimanche. En faire deux tournois couperait le classement de
+  // l'arbre qu'il alimente, alors que c'est la même étape.
+  SPIKE_TOUR_QUALIFIER: ["GROUP", "BRACKET"],
+  SPIKE_TOUR_PLAYOFFS: ["BRACKET"],
 };
 
 /** Description courte de chaque format, affichée dans le sélecteur de création. */
@@ -314,6 +323,9 @@ export const TOURNAMENT_FORMAT_DESCRIPTIONS: Record<TournamentFormat, string> = 
     "Saison Premier Contender : ligne régulière classée, puis plusieurs arbres de playoffs en parallèle.",
   PREMIER_INVITE:
     "Saison Premier Invite : ligne régulière classée, puis un arbre de playoffs à élimination directe.",
+  SPIKE_TOUR_QUALIFIER:
+    "Six rondes suisses en Bo1, puis l'arbre Radiant à élimination directe en Bo3.",
+  SPIKE_TOUR_PLAYOFFS: "Huit équipes en double élimination, Bo3 sur tous les tours.",
 };
 
 /**
@@ -335,6 +347,10 @@ const FORMATS_WITH_GROUPS: readonly TournamentFormat[] = [
   // poules — au sens propre cette fois, contrairement au Contender dont les
   // groupes sont des brackets.
   "PREMIER_INVITE",
+  // Une ronde suisse ne crée pas de poule, mais l'invariant du catalogue veut
+  // que tout format jouant une phase GROUP puisse en porter — et rien n'empêche
+  // un orga d'y ranger ses tie-breaks.
+  "SPIKE_TOUR_QUALIFIER",
 ];
 
 export function formatAllowsGroups(format: TournamentFormat): boolean {
@@ -369,6 +385,20 @@ export function formatUsesGroupSize(format: TournamentFormat): boolean {
  */
 export function isPremierFormat(format: TournamentFormat): boolean {
   return format === "PREMIER_CONTENDER" || format === "PREMIER_INVITE";
+}
+
+/**
+ * Le classement de ce format se départage-t-il selon l'article 7 du règlement
+ * Spike Tour ?
+ *
+ * Le classement ordinaire trie sur les maps ; l'article 7 trie sur les rounds,
+ * Buchholz en tête. Les deux ne remontent pas les mêmes colonnes, d'où un
+ * module à part (`src/lib/swiss-standings.ts`) et ce prédicat pour choisir. Le
+ * format SWISS générique n'y entre pas : le faire basculer changerait le
+ * classement affiché de tournois déjà en base, ce qui n'a pas été demandé.
+ */
+export function formatUsesSwissTiebreaks(format: TournamentFormat): boolean {
+  return format === "SPIKE_TOUR_QUALIFIER";
 }
 
 /** Méthodes de seeding (placement des équipes) proposées à la création. */
