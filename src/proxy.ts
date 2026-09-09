@@ -4,6 +4,7 @@ import { buildCsp, generateNonce, CSP_HEADER } from "@/lib/csp";
 import { ficheName } from "@/lib/data/existence";
 import { idFromSegment, isCanonicalSegment, fichePath, type FicheSection } from "@/lib/slug";
 import { allow, imageRenderRule, type RateLimitRule } from "@/lib/rate-limit";
+import { internalRewriteUrl } from "@/lib/proxy-url";
 import { describeError, logger } from "@/lib/logger";
 
 const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
@@ -143,7 +144,12 @@ export async function proxy(request: NextRequest) {
       try {
         const nom = await ficheName(fiche.section, fiche.id);
         if (nom === null) {
-          return withCsp(NextResponse.rewrite(new URL("/introuvable", request.url)), csp);
+          // Réécriture interne : voir `internalRewriteUrl` pour la raison du
+          // protocole forcé — sans lui, la production répondait 500.
+          return withCsp(
+            NextResponse.rewrite(internalRewriteUrl("/introuvable", request.url)),
+            csp
+          );
         }
         // Une fiche a UNE URL. L'ancienne forme — l'identifiant nu — et les
         // slugs périmés après un renommage continuent de résoudre, mais une
