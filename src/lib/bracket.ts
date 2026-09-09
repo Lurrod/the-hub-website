@@ -162,9 +162,14 @@ export function parseRound(round: string | null): { section: BracketSectionKey; 
 
 /** Géométrie attendue pour un format donné, avant correction par les données. */
 export function bracketLayoutFor(format: TournamentFormat): BracketLayout {
-  if (format === "DOUBLE_ELIM") return "double";
+  if (format === "DOUBLE_ELIM" || format === "SPIKE_TOUR_PLAYOFFS") return "double";
   if (format === "PREMIER_CONTENDER") return "multi";
-  if (format === "SINGLE_ELIM" || format === "GROUPS_THEN_ELIM" || format === "PREMIER_INVITE") {
+  if (
+    format === "SINGLE_ELIM" ||
+    format === "GROUPS_THEN_ELIM" ||
+    format === "PREMIER_INVITE" ||
+    format === "SPIKE_TOUR_QUALIFIER"
+  ) {
     return "tree";
   }
   return "flat";
@@ -174,10 +179,19 @@ export function bracketLayoutFor(format: TournamentFormat): BracketLayout {
  * Bo proposé par défaut à la saisie d'un match.
  *
  * Riot impose Bo1 sur tous les tours des playoffs Contender et Invite, sauf la
- * finale en Bo3. Le round peut ne pas encore exister (création d'un match) : on
- * répond alors Bo1, qui est juste pour tous les tours sauf un.
+ * finale en Bo3. Le Spike Tour inverse le rapport : Bo3 sur tout l'arbre, Bo1
+ * seulement pendant les rondes suisses. Le round peut ne pas encore exister
+ * (création d'un match) : on répond alors le Bo majoritaire du format.
  */
 export function defaultBestOfFor(format: TournamentFormat, round: string | null): number {
+  // Le règlement Spike Tour ne connaît que le Bo3 sur les Playoffs Radiant.
+  if (format === "SPIKE_TOUR_PLAYOFFS") return 3;
+  // Sur un Open Qualifier, le Bo3 ne commence qu'à l'arbre Radiant : les six
+  // rondes suisses se jouent en Bo1, et elles pèsent bien plus de matchs. Un
+  // libellé que `roundSizeFromLabel` sait lire (« Quarts », « Finale ») désigne
+  // un tour d'arbre ; « Ronde 3 », le vide et le null de la création n'en sont
+  // pas.
+  if (format === "SPIKE_TOUR_QUALIFIER") return roundSizeFromLabel(round ?? "") != null ? 3 : 1;
   if (!isPremierFormat(format)) return 1;
   return roundSizeFromLabel(round ?? "") === 1 ? 3 : 1;
 }

@@ -351,6 +351,34 @@ describe("defaultBestOfFor", () => {
   });
 });
 
+describe("formats Spike Tour", () => {
+  it("donne un arbre simple au qualifier et un double aux playoffs", () => {
+    // L'arbre Radiant du dimanche est une simple élimination ; les Playoffs
+    // Radiant se jouent en double élimination.
+    expect(bracketLayoutFor("SPIKE_TOUR_QUALIFIER")).toBe("tree");
+    expect(bracketLayoutFor("SPIKE_TOUR_PLAYOFFS")).toBe("double");
+  });
+
+  it("met les playoffs en Bo3 sur tous les tours", () => {
+    expect(defaultBestOfFor("SPIKE_TOUR_PLAYOFFS", "Grande Finale")).toBe(3);
+    expect(defaultBestOfFor("SPIKE_TOUR_PLAYOFFS", "LB Round 1")).toBe(3);
+    expect(defaultBestOfFor("SPIKE_TOUR_PLAYOFFS", null)).toBe(3);
+  });
+
+  it("met le qualifier en Bo1 en ronde suisse et en Bo3 dans l'arbre", () => {
+    expect(defaultBestOfFor("SPIKE_TOUR_QUALIFIER", "Ronde 3")).toBe(1);
+    expect(defaultBestOfFor("SPIKE_TOUR_QUALIFIER", "Demi-finales")).toBe(3);
+    expect(defaultBestOfFor("SPIKE_TOUR_QUALIFIER", "Finale")).toBe(3);
+  });
+
+  it("répond Bo1 au qualifier quand le round n'est pas encore saisi", () => {
+    // Cas de la création d'un match : six rondes suisses pèsent bien plus de
+    // matchs que sept rencontres d'arbre, le défaut doit être le Bo1.
+    expect(defaultBestOfFor("SPIKE_TOUR_QUALIFIER", null)).toBe(1);
+    expect(defaultBestOfFor("SPIKE_TOUR_QUALIFIER", "")).toBe(1);
+  });
+});
+
 describe("matchGroupIdFor", () => {
   it("conserve le bracket d'un match de playoffs Premier Contender", () => {
     // Le bug d'origine : la persistance effaçait le groupe de tout match hors
