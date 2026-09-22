@@ -1,0 +1,228 @@
+/* Carte tactique du hero (`landing-map.tsx`). Feuille à consommateur unique :
+   elle n'a rien à faire dans la globale (DESIGN.md §6.3).
+
+   Hors @layer, comme `.h-*` : les libellés des pings doivent battre le
+   plafond global de 12px, qui est lui-même non-layered. */
+
+.hm-stage {
+  position: relative;
+  perspective: 1500px;
+  perspective-origin: 50% 20%;
+  /* Les pings dépassent au-dessus du plan : sans cette marge dans la boîte,
+     ils sortiraient de la zone du masque et seraient coupés net. */
+  padding-block: 9% 3%;
+  /* La carte se dissout vers les bords : elle doit se lire comme un sol qui
+     s'éloigne dans le noir, pas comme une image encadrée. */
+  mask-image: radial-gradient(58% 60% at 50% 50%, #000 50%, transparent 100%);
+  animation: hm-fade 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hm-plane {
+  position: relative;
+  aspect-ratio: 12 / 7;
+  transform-style: preserve-3d;
+  transform: rotateX(56deg) rotateZ(-20deg);
+  animation: hm-lay 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hm-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.hm-outline {
+  fill: rgba(255, 255, 255, 0.012);
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.hm-block {
+  fill: rgba(255, 255, 255, 0.045);
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.hm-box {
+  fill: rgba(255, 255, 255, 0.07);
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 1.2;
+}
+/* Les sites : une teinte d'accent à peine posée, en pointillé, comme le
+   marquage au sol des plans d'équipe. */
+.hm-site {
+  fill: rgba(237, 94, 41, 0.05);
+  stroke: rgba(237, 94, 41, 0.38);
+  stroke-width: 1.5;
+  stroke-dasharray: 8 7;
+}
+.hm-route {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0.004 0.012;
+  opacity: 0.85;
+  animation: hm-march 14s linear infinite;
+}
+
+.hm-spike {
+  fill: var(--accent);
+}
+.hm-wave {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: hm-wave 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+.hm-wave-late {
+  animation-delay: 1.6s;
+}
+
+/* --- Pings ---
+   Ils vivent dans le plan (pour tomber au bon endroit de la carte), puis se
+   redressent par la rotation inverse de celle du plan. L'ordre compte :
+   `rotateZ(20deg) rotateX(-56deg)` annule exactement `rotateX(56deg)
+   rotateZ(-20deg)`. Toute retouche de l'inclinaison se fait des deux côtés. */
+.hm-pings {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.hm-pin {
+  position: absolute;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+.hm-up {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: 0 100%;
+  transform: rotateZ(20deg) rotateX(-56deg) translateX(-50%);
+}
+.hm-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 10px 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: rgba(13, 15, 16, 0.86);
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  transition:
+    border-color var(--hover-fast) var(--ease),
+    transform var(--hover-fast) var(--ease);
+}
+.hm-tag:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.hm-zone,
+.hm-zone * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.hm-label,
+.hm-label * {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.hm-stem {
+  width: 1px;
+  height: 46px;
+  background: linear-gradient(to bottom, var(--border-strong), rgba(255, 255, 255, 0.5));
+}
+.hm-pin[data-hot] .hm-tag {
+  border-color: rgba(237, 94, 41, 0.6);
+}
+.hm-pin[data-hot] .hm-zone,
+.hm-pin[data-hot] .hm-zone * {
+  color: var(--accent);
+}
+.hm-pin[data-hot] .hm-stem {
+  height: 64px;
+  background: linear-gradient(to bottom, rgba(237, 94, 41, 0.3), var(--accent));
+}
+
+@keyframes hm-fade {
+  from {
+    opacity: 0;
+  }
+}
+/* La carte se couche en place : elle arrive plus redressée, puis s'étale. */
+@keyframes hm-lay {
+  from {
+    transform: rotateX(68deg) rotateZ(-32deg) translateZ(-120px);
+  }
+}
+@keyframes hm-march {
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+@keyframes hm-wave {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-stage,
+  .hm-plane,
+  .hm-route,
+  .hm-wave {
+    animation: none;
+  }
+  .hm-wave {
+    opacity: 0.35;
+  }
+  .hm-tag:hover {
+    transform: none;
+  }
+}
+
+/* En colonne unique, la carte fait la largeur de l'écran : des pings à
+   pleine taille se chevaucheraient et déborderaient des bords. */
+@media (max-width: 639px) {
+  .hm-stage {
+    mask-image: radial-gradient(80% 85% at 50% 50%, #000 62%, transparent 100%);
+  }
+  .hm-tag {
+    padding: 4px 7px 5px;
+  }
+  .hm-zone,
+  .hm-zone * {
+    font-size: 9px;
+  }
+  .hm-label,
+  .hm-label * {
+    font-size: 12px;
+  }
+  .hm-stem {
+    height: 28px;
+  }
+  .hm-pin[data-hot] .hm-stem {
+    height: 40px;
+  }
+}

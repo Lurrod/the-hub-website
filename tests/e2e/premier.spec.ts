@@ -10,7 +10,13 @@ import { test, expect } from "@playwright/test";
  */
 test("l'entrée de navigation mène à la page Premier", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("navigation").getByRole("link", { name: "Premier" }).click();
+  // Scopé à l'en-tête : la carte du hero est elle aussi une `navigation`, et
+  // porte son propre lien « Premier ».
+  await page
+    .locator("header")
+    .getByRole("navigation")
+    .getByRole("link", { name: "Premier" })
+    .click();
   await expect(page).toHaveURL(/\/premier$/);
   await expect(page.getByRole("heading", { level: 1, name: "Premier" })).toBeVisible();
 });
