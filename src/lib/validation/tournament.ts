@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { REGIONS, TOURNAMENT_FORMATS, TOURNAMENT_STATUSES, SEEDING_TYPES } from "@/lib/constants";
+import {
+  REGIONS,
+  TOURNAMENT_FORMATS,
+  TOURNAMENT_STATUSES,
+  SEEDING_TYPES,
+  formatAllowsThirdPlace,
+} from "@/lib/constants";
 import { optionalUrl, optionalTwitterUrl, optionalTwitchUrl } from "@/lib/validation/common";
 
 // Entier positif optionnel : "" ou absent -> undefined.
@@ -35,6 +41,12 @@ export const tournamentInputSchema = z
     groupSize: optionalPositiveInt,
     bestOf: optionalPositiveInt,
     seeding: z.enum(SEEDING_TYPES).optional(),
+    // Case à cocher : « on » quand elle est cochée, absente sinon. Désactivée
+    // par défaut — la petite finale est un choix de l'organisateur.
+    thirdPlaceMatch: z
+      .union([z.literal("on"), z.boolean()])
+      .optional()
+      .transform((v) => v === "on" || v === true),
     // Mêmes réseaux qu'une équipe : le Discord y sert de canal d'inscription.
     socials: z
       .object({
@@ -48,6 +60,13 @@ export const tournamentInputSchema = z
       .partial()
       .optional(),
   })
+  // Une case restée cochée après un changement de format n'a plus de sens :
+  // on l'éteint plutôt que de refuser tout le formulaire pour une option
+  // devenue invisible.
+  .transform((v) => ({
+    ...v,
+    thirdPlaceMatch: v.thirdPlaceMatch && formatAllowsThirdPlace(v.format),
+  }))
   .refine((v) => !(v.startDate && v.endDate) || v.startDate <= v.endDate, {
     message: "La date de fin doit suivre la date de début",
     path: ["endDate"],

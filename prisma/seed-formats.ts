@@ -32,9 +32,11 @@ const TOURNAMENTS: TournamentSeed[] = [
     name: "Hub Invitational - Élimination directe",
     format: "SINGLE_ELIM",
     status: "ONGOING",
-    description: "Tableau à 8 équipes, une défaite et c'est terminé. La finale reste à jouer.",
+    description:
+      "Tableau à 8 équipes, une défaite et c'est terminé. La finale et la petite finale restent à jouer.",
     prizePool: "10 000 €",
     bestOf: 3,
+    thirdPlaceMatch: true,
     teams: [0, 1, 2, 3, 4, 5, 6, 7],
     startDay: 0,
     endDay: 6,
@@ -111,6 +113,8 @@ const TOURNAMENTS: TournamentSeed[] = [
         day: 3,
       },
       { key: "f1", round: "Finale", pos: 1, a: 0, b: 2, status: "SCHEDULED", bestOf: 5, day: 6 },
+      // Les deux battus des demies (sf1 : FUT, sf2 : VIT), la veille de la finale.
+      { key: "tp", round: "Petite finale", pos: 1, a: 4, b: 1, status: "SCHEDULED", day: 5 },
     ],
   },
   {
@@ -649,6 +653,7 @@ async function seedTournament(t: TournamentSeed) {
       maxTeams: t.teams.length,
       groupSize: t.groupSize ?? null,
       bestOf: t.bestOf,
+      thirdPlaceMatch: t.thirdPlaceMatch ?? false,
       seeding: "MANUAL",
       startDate: at(t.startDay),
       endDate: at(t.endDay),

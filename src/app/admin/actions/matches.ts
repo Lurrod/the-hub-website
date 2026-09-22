@@ -8,7 +8,7 @@ import { assertCanManageTournament } from "@/lib/server-auth";
 import { logger, describeError } from "@/lib/logger";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
 import { flashCodeFromError } from "@/lib/form-errors";
-import { matchGroupIdFor } from "@/lib/bracket";
+import { matchGroupIdFor, thirdPlaceRoundRefused } from "@/lib/bracket";
 import { hasRiotStats } from "@/lib/match-stats-core";
 import {
   matchInputSchema,
@@ -142,6 +142,7 @@ export async function createMatchAction(tournamentId: string, formData: FormData
   const t = await getTournamentFormat(tournamentId);
   if (!t) redirect(base);
   if (!STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${base}?error=stage`);
+  if (thirdPlaceRoundRefused(data.round, t)) redirect(`${base}?error=thirdplace`);
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
     redirect(`${base}?error=notregistered`);
   }
@@ -168,6 +169,9 @@ export async function updateMatchAction(tournamentId: string, matchId: string, f
   const t = await getTournamentFormat(tournamentId);
   if (!t) redirect(editBase);
   if (!STAGES_BY_FORMAT[t.format].includes(data.stage)) redirect(`${editBase}?error=stage`);
+  if (thirdPlaceRoundRefused(data.round, t, before.round)) {
+    redirect(`${editBase}?error=thirdplace`);
+  }
   if (!(await areBothRegistered(tournamentId, data.teamAId, data.teamBId))) {
     redirect(`${editBase}?error=notregistered`);
   }

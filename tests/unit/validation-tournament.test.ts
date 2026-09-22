@@ -6,6 +6,32 @@ import {
   groupNameSchema,
 } from "@/lib/validation/tournament";
 
+describe("tournamentInputSchema — petite finale", () => {
+  const base = { name: "Cup", region: "France", status: "UPCOMING" } as const;
+
+  it("est désactivée par défaut", () => {
+    expect(tournamentInputSchema.parse({ ...base, format: "SINGLE_ELIM" }).thirdPlaceMatch).toBe(
+      false
+    );
+  });
+
+  it("s'active par la case à cocher sur un format à élimination directe", () => {
+    const r = tournamentInputSchema.parse({
+      ...base,
+      format: "SINGLE_ELIM",
+      thirdPlaceMatch: "on",
+    });
+    expect(r.thirdPlaceMatch).toBe(true);
+  });
+
+  it("est ignorée sur un format qui n'a pas d'arbre à élimination directe", () => {
+    // La case peut arriver cochée si l'organisateur change de format après
+    // l'avoir cochée : l'option n'a alors aucun sens et retombe à false.
+    const r = tournamentInputSchema.parse({ ...base, format: "SWISS", thirdPlaceMatch: "on" });
+    expect(r.thirdPlaceMatch).toBe(false);
+  });
+});
+
 describe("tournamentInputSchema", () => {
   it("accepte un tournoi minimal valide", () => {
     const r = tournamentInputSchema.parse({

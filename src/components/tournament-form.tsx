@@ -13,6 +13,7 @@ import {
   BEST_OF_OPTIONS,
   SEEDING_TYPES,
   SEEDING_TYPE_LABELS,
+  formatAllowsThirdPlace,
   formatUsesGroupSize,
   isPremierFormat,
   type TournamentFormat,
@@ -42,6 +43,7 @@ type TournamentFormValues = {
   groupSize?: number | string;
   bestOf?: number | string;
   seeding?: string;
+  thirdPlaceMatch?: boolean;
   logo?: string | null;
   banner?: string | null;
   socials?: Socials;
@@ -231,6 +233,26 @@ export default function TournamentForm({
             </label>
           </ErrorShake>
         </div>
+        {/* Démontée hors des formats éligibles : la case disparaît avec le
+            format qui la justifie, et une case absente du formulaire vaut
+            « non » côté serveur. */}
+        {formatAllowsThirdPlace(format) && (
+          <label className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-sm text-white">
+            <input
+              type="checkbox"
+              name="thirdPlaceMatch"
+              defaultChecked={values?.thirdPlaceMatch ?? false}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+            />
+            <span>
+              Petite finale
+              <span className="mt-1 block text-xs text-[var(--text-muted)]">
+                Un match pour la 3e place entre les deux équipes battues en demi-finale. Il
+                s&apos;affiche sous l&apos;arbre, à part de la finale.
+              </span>
+            </span>
+          </label>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={lbl}>
             Date de début

@@ -6,7 +6,7 @@ import { canManageTournament } from "@/lib/permissions";
 import { getTournament } from "@/lib/data/tournaments";
 import { getGroupsWithMatches, listTournamentMatches } from "@/lib/data/matches";
 import { STAGES_BY_FORMAT, formatAllowsGroups } from "@/lib/constants";
-import { defaultBestOfFor } from "@/lib/bracket";
+import { defaultBestOfFor, roundSuggestionsFor } from "@/lib/bracket";
 import MatchForm from "@/components/match-form";
 import {
   createGroupAction,
@@ -202,6 +202,7 @@ export default async function CompetitionPage({ params }: { params: Promise<{ id
           submitLabel="Créer le match"
           defaultBestOf={defaultBestOfFor(tournament.format, null)}
           groupLabel={groupWord.matchField}
+          roundSuggestions={roundSuggestionsFor(tournament)}
         />
       </section>
     </main>

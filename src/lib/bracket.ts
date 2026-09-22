@@ -1,4 +1,5 @@
 import {
+  formatAllowsThirdPlace,
   isPremierFormat,
   type MatchForfeit,
   type MatchStage,
@@ -34,7 +35,7 @@ export type BracketSlot =
 
 export type BracketRound = { name: string; slots: BracketSlot[] };
 
-export type BracketSectionKey = "single" | "upper" | "lower" | "final";
+export type BracketSectionKey = "single" | "upper" | "lower" | "final" | "third";
 export type BracketSection = {
   key: BracketSectionKey;
   /**
@@ -58,13 +59,17 @@ export type BracketLayout = "tree" | "double" | "multi" | "flat";
 
 export type BracketTree = { layout: BracketLayout; sections: BracketSection[] };
 
-const SECTION_ORDER: BracketSectionKey[] = ["single", "upper", "lower", "final"];
+const SECTION_ORDER: BracketSectionKey[] = ["single", "upper", "lower", "final", "third"];
 const SECTION_TITLE: Record<BracketSectionKey, string> = {
   single: "",
   upper: "Upper Bracket",
   lower: "Lower Bracket",
   final: "Grande Finale",
+  third: "Match pour la 3e place",
 };
+
+/** Libellé canonique d'un match pour la 3e place, proposé à la saisie. */
+export const THIRD_PLACE_LABEL = "Petite finale";
 
 /** Libellé canonique d'un round selon le nombre de matchs qu'il contient. */
 const ROUND_SIZE_LABELS: Record<number, string> = {
@@ -134,6 +139,57 @@ function isGenericLabel(label: string): boolean {
   return roundNumberFromLabel(label) != null;
 }
 
+const THIRD_PLACE_PATTERNS: readonly RegExp[] = [
+  /\bpetite finale\b/,
+  /\b(3e|3eme|3 eme|troisieme|third|3rd) place\b/,
+  /\bbronze match\b/,
+];
+
+/**
+ * Le round est-il une petite finale ? Reconnaît les tournures usuelles, en
+ * français comme en anglais : l'organisateur saisit le tour à la main.
+ */
+export function isThirdPlaceRound(round: string | null | undefined): boolean {
+  if (!round) return false;
+  const n = normalizeLabel(round);
+  return THIRD_PLACE_PATTERNS.some((p) => p.test(n));
+}
+
+/**
+ * Faut-il refuser d'enregistrer ce tour ? Une petite finale n'existe que si le
+ * tournoi l'a activée dans ses paramètres.
+ *
+ * `previousRound` : le tour du match avant modification. Un match qui était
+ * déjà une petite finale reste modifiable même si l'option a été éteinte
+ * depuis — sinon on ne pourrait plus saisir le score d'un match joué. Seul le
+ * passage d'un autre tour à la petite finale est contrôlé.
+ */
+export function thirdPlaceRoundRefused(
+  round: string | null | undefined,
+  tournament: { thirdPlaceMatch: boolean },
+  previousRound?: string | null
+): boolean {
+  if (!isThirdPlaceRound(round) || tournament.thirdPlaceMatch) return false;
+  return !isThirdPlaceRound(previousRound);
+}
+
+/**
+ * Tours proposés au champ « Tour » de la saisie d'un match, dans l'ordre du
+ * tableau. Des suggestions, pas une liste fermée : le champ reste libre, mais
+ * proposer l'orthographe canonique évite qu'une « 1/2 finale » tapée à la main
+ * ne se range mal dans l'arbre. La petite finale n'apparaît que si le tournoi
+ * l'a activée — c'est ce qui la rend découvrable sans l'imposer.
+ */
+export function roundSuggestionsFor(tournament: {
+  format: TournamentFormat;
+  thirdPlaceMatch: boolean;
+}): string[] {
+  if (bracketLayoutFor(tournament.format) !== "tree") return [];
+  const tours = [8, 4, 2, 1].map(roundLabelForSize);
+  const withThird = tournament.thirdPlaceMatch && formatAllowsThirdPlace(tournament.format);
+  return withThird ? [...tours, THIRD_PLACE_LABEL] : tours;
+}
+
 /**
  * Déduit la section (upper/lower/finale/simple) et le libellé de round depuis le
  * nom saisi. Reconnaît les préfixes UB/LB/Upper/Lower/Winners/Losers et les
@@ -142,6 +198,9 @@ function isGenericLabel(label: string): boolean {
 export function parseRound(round: string | null): { section: BracketSectionKey; label: string } {
   const r = (round ?? "Bracket").trim();
   const low = r.toLowerCase();
+  // Avant la finale : « petite finale » contient « finale », et une petite
+  // finale rangée dans l'arbre y ajouterait une colonne après la finale.
+  if (isThirdPlaceRound(r)) return { section: "third", label: THIRD_PLACE_LABEL };
   if (/grande?\s*finale|grand\s*final/.test(low)) return { section: "final", label: r };
   if (/^(lb|lower|losers?)\b/.test(low) || /\b(lower\s*bracket|losers?\s*bracket)\b/.test(low)) {
     const label = r
@@ -426,6 +485,13 @@ export function buildBracket(matches: BracketMatchData[], format: TournamentForm
   const declared = bracketLayoutFor(format);
   const hasLower = (bySection.get("lower")?.length ?? 0) > 0;
   const layout: BracketLayout = hasLower ? "double" : declared;
+  // La petite finale ne fait partie d'aucun arbre : elle ne mène nulle part.
+  // Elle ferme la liste des sections, quelle que soit la géométrie — une
+  // petite finale saisie ne doit jamais disparaître de la page.
+  const thirdRounds = bySection.get("third");
+  const third: BracketSection[] = thirdRounds
+    ? [{ key: "third", title: SECTION_TITLE.third, rounds: buildFlatRounds(thirdRounds) }]
+    : [];
 
   if (layout === "double") {
     const sections: BracketSection[] = [];
@@ -438,14 +504,15 @@ export function buildBracket(matches: BracketMatchData[], format: TournamentForm
       sections.push({ key: "lower", title: SECTION_TITLE.lower, rounds: buildFlatRounds(lower) });
     if (final.length > 0)
       sections.push({ key: "final", title: SECTION_TITLE.final, rounds: buildFlatRounds(final) });
-    return { layout, sections };
+    return { layout, sections: [...sections, ...third] };
   }
 
   if (layout === "tree") {
     // Élimination directe : tout tient dans un seul arbre, y compris un match
     // libellé « Grande finale ».
     const rounds = treeRoundsOf(matches);
-    return { layout, sections: rounds.length > 0 ? [{ key: "single", title: "", rounds }] : [] };
+    const tree: BracketSection[] = rounds.length > 0 ? [{ key: "single", title: "", rounds }] : [];
+    return { layout, sections: [...tree, ...third] };
   }
 
   if (layout === "multi") {
@@ -454,22 +521,19 @@ export function buildBracket(matches: BracketMatchData[], format: TournamentForm
     // vaut mieux qu'une unique section « Hors bracket ».
     if (boards.length === 1 && boards[0].id === null) {
       const rounds = treeRoundsOf(matches);
-      return {
-        layout: "tree",
-        sections: rounds.length > 0 ? [{ key: "single", title: "", rounds }] : [],
-      };
+      const tree: BracketSection[] =
+        rounds.length > 0 ? [{ key: "single", title: "", rounds }] : [];
+      return { layout: "tree", sections: [...tree, ...third] };
     }
-    return {
-      layout,
-      sections: boards
-        .map((b) => ({
-          key: "single" as const,
-          id: b.id ?? "hors-bracket",
-          title: b.title,
-          rounds: treeRoundsOf(b.matches),
-        }))
-        .filter((s) => s.rounds.length > 0),
-    };
+    const trees = boards
+      .map((b) => ({
+        key: "single" as const,
+        id: b.id ?? "hors-bracket",
+        title: b.title,
+        rounds: treeRoundsOf(b.matches),
+      }))
+      .filter((s) => s.rounds.length > 0);
+    return { layout, sections: [...trees, ...third] };
   }
 
   // Formats sans arbre : on liste les rounds en colonnes, dans l'ordre.

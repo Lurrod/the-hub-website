@@ -90,6 +90,7 @@ export default async function TournamentGestionPage({
           groupSize: tournament.groupSize ?? undefined,
           bestOf: tournament.bestOf ?? undefined,
           seeding: tournament.seeding ?? undefined,
+          thirdPlaceMatch: tournament.thirdPlaceMatch,
           socials: (tournament.socials ?? {}) as Record<string, string | undefined>,
         }}
       />
