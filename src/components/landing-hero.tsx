@@ -30,14 +30,17 @@ export default function LandingHero({
       {/* En colonne unique, la carte passe au-dessus du texte ; en large, elle
           se glisse dessous et déborde à droite. Les marges négatives la
           laissent sortir du cadre : un plan qui s'arrête net ferait maquette. */}
-      <div className="relative -mb-[10%] px-2 pt-2 sm:-mx-[6%] sm:px-0 lg:absolute lg:inset-y-0 lg:-right-[5%] lg:left-[38%] lg:m-0 lg:flex lg:items-center">
+      <div className="relative -mb-[10%] px-2 pt-2 sm:-mx-[6%] sm:px-0 lg:absolute lg:inset-y-0 lg:right-[1%] lg:left-[max(38%,calc(50%-40px))] lg:m-0 lg:flex lg:items-center">
         <div className="w-full">
           <LandingMap />
         </div>
       </div>
 
-      <div className="relative mx-auto flex w-full max-w-6xl px-4 pb-20 pt-4 lg:min-h-[calc(100dvh-48px)] lg:items-end lg:pb-24">
-        <div className="h-in max-w-xl">
+      {/* La colonne de texte couvre toute la largeur du conteneur : sans
+          `pointer-events-none`, elle se posait sur la carte et avalait les
+          clics des pings — seul celui qui dépassait du conteneur réagissait. */}
+      <div className="pointer-events-none relative mx-auto flex w-full max-w-6xl px-4 pb-20 pt-4 lg:min-h-[calc(100dvh-48px)] lg:items-end lg:pb-24">
+        <div className="h-in pointer-events-auto max-w-xl">
           <p className="h-sign text-[var(--text-subtle)]">Fait par des gens du T3, pour le T3</p>
 
           <h1 className="h-display mt-7 text-balance text-white">

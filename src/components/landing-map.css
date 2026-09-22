@@ -19,10 +19,14 @@
 
 .hm-plane {
   position: relative;
-  aspect-ratio: 12 / 7;
+  aspect-ratio: 1 / 1;
   transform-style: preserve-3d;
   transform: rotateX(56deg) rotateZ(-20deg);
-  animation: hm-lay 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* `backwards` et non `both` : tant qu'une animation de transform reste
+     appliquée, Chrome garde le calque à la résolution de sa première image
+     et les noms de callouts restent flous. Une fois rendue au style, la
+     carte est re-rastérisée nette. */
+  animation: hm-lay 1.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .hm-svg {
@@ -33,37 +37,45 @@
   overflow: visible;
 }
 
-.hm-outline {
-  fill: rgba(255, 255, 255, 0.012);
-  stroke: rgba(255, 255, 255, 0.22);
-  stroke-width: 2;
-  stroke-linejoin: round;
+/* La minimap du jeu, telle quelle : sols gris, sites olive. Légèrement
+   éteinte pour rester un décor derrière le titre, jamais un aplat clair qui
+   lui volerait l'œil. */
+.hm-floor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.62;
+  filter: brightness(0.82) contrast(1.05);
 }
-.hm-block {
-  fill: rgba(255, 255, 255, 0.045);
-  stroke: rgba(255, 255, 255, 0.2);
-  stroke-width: 1.5;
-  stroke-linejoin: round;
+
+/* Lettres des sites et noms de callouts, à plat dans le plan. Le SVG est en
+   repère 100 × 100 : une taille en px y vaut une unité du repère. Classes
+   hors @layer, sinon le plafond global de 12px les écraserait. */
+.hm-letter,
+.hm-letter * {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 7px;
+  fill: rgba(255, 255, 255, 0.5);
+  text-anchor: middle;
 }
-.hm-box {
-  fill: rgba(255, 255, 255, 0.07);
-  stroke: rgba(255, 255, 255, 0.24);
-  stroke-width: 1.2;
-}
-/* Les sites : une teinte d'accent à peine posée, en pointillé, comme le
-   marquage au sol des plans d'équipe. */
-.hm-site {
-  fill: rgba(237, 94, 41, 0.05);
-  stroke: rgba(237, 94, 41, 0.38);
-  stroke-width: 1.5;
-  stroke-dasharray: 8 7;
+.hm-callout,
+.hm-callout * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 1.9px;
+  letter-spacing: 0.08px;
+  text-transform: uppercase;
+  fill: rgba(255, 255, 255, 0.78);
+  text-anchor: middle;
 }
 .hm-route {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 3;
+  stroke-width: 0.55;
   stroke-linecap: round;
-  stroke-dasharray: 0.004 0.012;
+  stroke-dasharray: 0.006 0.014;
   opacity: 0.85;
   animation: hm-march 14s linear infinite;
 }
@@ -74,7 +86,7 @@
 .hm-wave {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 2;
+  stroke-width: 0.35;
   transform-box: fill-box;
   transform-origin: center;
   opacity: 0;
