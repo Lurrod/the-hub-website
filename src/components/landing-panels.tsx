@@ -18,10 +18,13 @@ import type { TournamentStatus } from "@/lib/constants";
  *
  * Le scoreboard et le tournoi rejouent un vrai résultat — la finale des
  * Playoff Premier Invite V26A4 (Lyost 2-0 PuR Esport), chiffres relevés sur
- * la fiche du match : un exemple crédible vaut mieux qu'un inventé. Fiche
- * joueur et annonces restent inventées : ce sont des données personnelles
- * (carrière, recherche d'équipe), on ne prête pas de chiffres ni d'intentions
- * à de vraies personnes.
+ * la fiche du match : un exemple crédible vaut mieux qu'un inventé. La fiche
+ * joueur reste inventée : ce sont des données personnelles, on ne prête pas de
+ * chiffres à de vraies personnes.
+ *
+ * Exception, le recrutement (`landing-recruit.tsx`) : lui est lu en direct.
+ * Ce sont des annonces que leurs auteurs ont publiées pour être vues, et un
+ * marché des transferts figé ne montrerait rien.
  *
  * La maquette « Partage », elle, vit dans `landing-share-discord.tsx` : c'est
  * une conversation Discord scénarisée, hors du cadre commun, sur ce même
@@ -78,15 +81,6 @@ type ShowcaseTournament = {
   /** Libellés des deux tours, tels que l'organisateur les a nommés. */
   semisLabel: string;
   finalLabel: string;
-};
-
-type ShowcaseAd = {
-  key: string;
-  name: string;
-  tag: string;
-  logo: string | null;
-  kind: "LFT" | "LFP";
-  facts: string[];
 };
 
 /** Coquille commune : cadre, nappe d'accent, trame de points (cf. `.lf-panel`). */
@@ -458,99 +452,6 @@ export function TournamentPanel() {
 
         {t.final ? <Bout bout={t.final} /> : <span />}
       </div>
-    </Panel>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* 04 — Recrutement                                                    */
-/* ------------------------------------------------------------------ */
-
-const EXAMPLE_ADS: readonly ShowcaseAd[] = [
-  {
-    key: "a",
-    tag: "SY",
-    name: "sylk",
-    logo: null,
-    kind: "LFT",
-    facts: ["Duelliste", "Immortal 2", "soirs de semaine"],
-  },
-  {
-    key: "b",
-    tag: "NRD",
-    name: "Nordique",
-    logo: null,
-    kind: "LFP",
-    facts: ["Cherche IGL", "Ascendant 3+", "3 soirs / semaine"],
-  },
-  {
-    key: "c",
-    tag: "KO",
-    name: "koben",
-    logo: null,
-    kind: "LFT",
-    facts: ["Coach", "2 saisons en Premier Invite"],
-  },
-];
-
-export function RecruitPanel() {
-  const ads = EXAMPLE_ADS;
-
-  return (
-    <Panel>
-      <PanelHead
-        label="Annonces"
-        right={
-          <span className="lf-t10 shrink-0 text-[var(--text-subtle)]">
-            {ads.length} annonce{ads.length > 1 ? "s" : ""}
-          </span>
-        }
-      />
-      {/* La barre de filtres de la vraie page, en décor : elle montre le
-          geste (filtrer par rôle, rang, région) sans prétendre qu'un filtre
-          est actif — les annonces affichées sont les vraies, non filtrées. */}
-      <div className="flex flex-wrap items-center gap-1.5" aria-hidden="true">
-        {["Rôle", "Rang", "Région"].map((f) => (
-          <span
-            key={f}
-            className="lf-t10 inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 font-medium text-[var(--text-muted)]"
-          >
-            {f}
-            <svg viewBox="0 0 8 5" className="h-1 w-2 text-[var(--text-subtle)]" aria-hidden="true">
-              <path d="M0 0 L4 5 L8 0" fill="currentColor" />
-            </svg>
-          </span>
-        ))}
-        <span className="lf-t10 inline-flex items-center rounded-full border border-[var(--accent)]/50 bg-[var(--accent-soft)] px-2.5 py-1 font-semibold text-[var(--accent)]">
-          LFT + LFP
-        </span>
-      </div>
-      <ul className="flex flex-col gap-2">
-        {ads.map((a, i) => (
-          <li
-            key={a.key}
-            className="lf-hov-row flex items-center gap-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5"
-            style={{ animationDelay: `${i * 80}ms` }}
-          >
-            <Tag tag={a.tag} logo={a.logo} size="h-9 w-9" />
-            <div className="min-w-0 flex-1">
-              <div className="lf-t13 truncate font-semibold text-white">{a.name}</div>
-              <div className="lf-t10 mt-0.5 truncate text-[var(--text-muted)]">
-                <Facts items={a.facts} />
-              </div>
-            </div>
-            <span
-              className={`lf-t10 shrink-0 rounded-full border px-2 py-1 font-semibold tracking-[0.1em] ${
-                a.kind === "LFT"
-                  ? "lf-hov-pop border-[var(--accent)] text-[var(--accent)]"
-                  : "border-[var(--border-strong)] text-[var(--text-muted)]"
-              }`}
-            >
-              {a.kind}
-            </span>
-          </li>
-        ))}
-      </ul>
     </Panel>
   );
 }

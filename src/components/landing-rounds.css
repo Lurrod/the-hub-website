@@ -1,0 +1,201 @@
+/* La vitrine en rounds (`landing-showcase.tsx`). Feuille à consommateur
+   unique, importée par son composant (DESIGN.md §6.3).
+
+   Hors @layer, pour la même raison que `.lf-*` : le plafond global de 12px
+   est non-layered, un utilitaire Tailwind ne le bat pas. */
+
+/* --- HUD ---
+   Collé sous la barre de navigation : 47 px + sa bordure d'un pixel. */
+.lr-hud {
+  position: sticky;
+  top: 48px;
+  z-index: 20;
+  margin-top: 4rem;
+  border-block: 1px solid var(--border);
+  background: rgba(13, 15, 16, 0.94);
+  backdrop-filter: blur(10px);
+}
+.lr-hud-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+.lr-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 42px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--text-subtle);
+  transition: color var(--hover-fast) var(--ease);
+}
+.lr-cell:hover {
+  color: var(--text);
+}
+.lr-cell-n,
+.lr-cell-n * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.lr-cell-t,
+.lr-cell-t * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+@media (max-width: 639px) {
+  .lr-cell-t {
+    display: none;
+  }
+}
+
+/* Le round lu s'allume dans le HUD. Chaque round publie sa propre
+   `view-timeline`, que `timeline-scope` remonte jusqu'à la section pour que
+   le HUD, qui n'en est pas le descendant, puisse la lire. La plage retenue
+   couvre le moment où le round traverse le milieu de l'écran ; hors de cette
+   plage l'animation ne s'applique pas (pas de `fill`), la case s'éteint. */
+@supports (animation-timeline: view()) {
+  .lr-match {
+    timeline-scope: --lr-1, --lr-2, --lr-3, --lr-4, --lr-5;
+  }
+  .lr-round-1 {
+    view-timeline-name: --lr-1;
+  }
+  .lr-round-2 {
+    view-timeline-name: --lr-2;
+  }
+  .lr-round-3 {
+    view-timeline-name: --lr-3;
+  }
+  .lr-round-4 {
+    view-timeline-name: --lr-4;
+  }
+  .lr-round-5 {
+    view-timeline-name: --lr-5;
+  }
+  .lr-cell {
+    animation: lr-on linear;
+    animation-range: cover 50vh cover calc(100% - 50vh);
+  }
+  .lr-cell-1 {
+    animation-timeline: --lr-1;
+  }
+  .lr-cell-2 {
+    animation-timeline: --lr-2;
+  }
+  .lr-cell-3 {
+    animation-timeline: --lr-3;
+  }
+  .lr-cell-4 {
+    animation-timeline: --lr-4;
+  }
+  .lr-cell-5 {
+    animation-timeline: --lr-5;
+  }
+}
+@keyframes lr-on {
+  from,
+  to {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+    background: linear-gradient(to top, rgba(237, 94, 41, 0.1), transparent 70%);
+  }
+}
+
+/* --- Rounds ---
+   L'ancre d'un round vise l'article, mais ce qu'on veut voir en arrivant,
+   c'est son séparateur, qui commence après tout le `padding-top`. Avec un
+   `scroll-margin-top` fixe, le séparateur retombait 150 px sous le HUD — et
+   pas au même endroit selon le round, puisque le premier a moins de marge.
+   On retranche donc la marge : le séparateur atterrit toujours à
+   `--lr-land` du haut de l'écran, soit sous la navigation (48 px) et le HUD
+   (44 px), avec un peu d'air. */
+.lr-round {
+  --lr-land: 120px;
+  --lr-pad: 7rem;
+  padding-top: var(--lr-pad);
+  scroll-margin-top: calc(var(--lr-land) - var(--lr-pad));
+}
+@media (min-width: 640px) {
+  .lr-round {
+    --lr-pad: 9rem;
+  }
+}
+/* Après les réglages de largeur : même spécificité côté variable, c'est
+   l'ordre qui tranche, et le premier round doit garder sa marge réduite. */
+.lr-round:first-child {
+  --lr-pad: 5rem;
+}
+
+.lr-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 2.5rem;
+}
+.lr-divider-n,
+.lr-divider-n *,
+.lr-divider-t,
+.lr-divider-t * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.lr-divider-n {
+  color: var(--accent);
+  font-weight: 600;
+}
+.lr-divider-t {
+  color: var(--text-subtle);
+}
+/* Le filet part de l'accent et s'éteint : il prolonge le numéro de round
+   au lieu de couper la page en deux. */
+.lr-divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(237, 94, 41, 0.55), var(--border) 30%, transparent);
+}
+
+.lr-point {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.lr-point-n,
+.lr-point-n * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+/* Touche de capacité : un cabochon de clavier, l'arête basse plus épaisse. */
+.lr-key {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--shell);
+  box-shadow: inset 0 -2px 0 var(--border-strong);
+  color: var(--text);
+}
+.lr-key,
+.lr-key * {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lr-cell {
+    transition: none;
+  }
+}

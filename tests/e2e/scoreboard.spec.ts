@@ -159,6 +159,17 @@ test.describe("page LFT", () => {
     const carte = page.locator("a").filter({ hasText: "CoachDisponible" }).first();
     await expect(carte).toContainText("Coach");
   });
+
+  // Le round « Recrutement » de l'accueil est le seul panneau de la vitrine
+  // lu en base : il doit montrer une annonce réelle et mener à sa fiche.
+  test("l'accueil montre une vraie annonce qui mène à sa fiche", async ({ page }) => {
+    await page.goto("/");
+
+    const annonce = page.locator("#round-4 a").filter({ hasText: "CoachDisponible" });
+    await expect(annonce).toBeVisible();
+    await annonce.click();
+    await expect(page).toHaveURL(/\/joueurs\/.*fx-coach-lft$/);
+  });
 });
 
 test.describe("alignement des liens réseaux", () => {

@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "@/components/icons";
-import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
+import "./landing-rounds.css";
+import RoundLink from "@/components/landing-round-link";
+import { Suspense } from "react";
+import { ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
+import LandingRecruit, { RecruitPanel } from "@/components/landing-recruit";
 import { PlayerPanel } from "@/components/landing-panels-player";
 import { ShareDiscord } from "@/components/landing-share-discord";
 import { Tag } from "@/components/landing-panel-chrome";
-import LandingFlow from "@/components/landing-flow";
 
 type Feature = {
-  /** Numéro affiché en filigrane derrière le titre. */
+  /** Numéro du round, dans le HUD et sur le séparateur. */
   num: string;
   eyebrow: string;
   title: string;
@@ -85,7 +88,7 @@ const FEATURES: readonly Feature[] = [
     num: "04",
     eyebrow: "Recrutement",
     title: "Trouver une équipe, ou un cinquième",
-    body: "Les annonces de joueurs en recherche d'équipe et d'équipes en recherche de joueurs vivent au même endroit, filtrables par rôle, rang et région.",
+    body: "Les annonces de joueurs en recherche d'équipe et d'équipes en recherche de joueurs vivent au même endroit, filtrables par rôle, pays et âge.",
     points: [
       { t: "LFT et LFP côte à côte", d: "Une seule page à surveiller pendant un mercato." },
       {
@@ -98,7 +101,13 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Voir les annonces", href: "/lft" },
-    panel: () => <RecruitPanel />,
+    // Le seul panneau lu en base : il s'affiche vide le temps de la requête
+    // au lieu de retenir toute la page derrière lui.
+    panel: () => (
+      <Suspense fallback={<RecruitPanel recruit={null} pending />}>
+        <LandingRecruit />
+      </Suspense>
+    ),
   },
   {
     num: "05",
@@ -229,16 +238,19 @@ function MiniProfile() {
 
 const ALSO = [
   {
+    key: "C",
     t: "Recherche unifiée",
     d: "Joueurs, équipes et tournois dans un seul champ.",
     demo: <MiniSearch />,
   },
   {
+    key: "Q",
     t: "Gestion de roster",
     d: "Invitations, départs et managers, sans passer par nous.",
     demo: <MiniRoster />,
   },
   {
+    key: "E",
     t: "Profils reliés",
     d: "Riot ID, Discord, X et Twitch sur la fiche.",
     demo: <MiniProfile />,
@@ -246,11 +258,16 @@ const ALSO = [
 ] as const;
 
 /**
- * Deuxième partie de la landing : la démonstration des fonctionnalités.
+ * Deuxième partie de la landing : la démonstration, jouée comme une partie.
  *
- * Un bloc par fonctionnalité, texte et maquette alternés d'un bloc à l'autre.
- * L'apparition au défilement est purement CSS (`.lf-reveal`) : rien ici ne
- * dépend du JavaScript pour être lisible.
+ * Chaque fonctionnalité est un round. Un HUD collé sous la navigation rappelle
+ * la barre de rounds du jeu : il sert de sommaire (chaque case est un lien
+ * vers son round) et s'allume au défilement sur le round lu. L'allumage est
+ * du CSS pur (`view-timeline`, voir `landing-rounds.css`) : sans prise en
+ * charge, le HUD reste un simple sommaire, rien ne manque à la lecture.
+ *
+ * Remplace la mise en page en zigzag (texte / maquette alternés, liste à
+ * coches) : c'était la grammaire de n'importe quelle page produit.
  *
  * Les maquettes sont entièrement scénarisées (voir `landing-panels.tsx` pour
  * le pourquoi) : la section ne lit pas la base, l'accueil s'affiche donc à
@@ -258,103 +275,110 @@ const ALSO = [
  */
 export default function LandingShowcase() {
   return (
-    <section
-      aria-labelledby="fonctionnalites"
-      className="mx-auto w-full max-w-6xl px-4 py-24 sm:py-32"
-    >
-      {/* En-tête de section */}
-      <div className="lf-reveal mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
-        <div className="lf-rule w-full max-w-[220px]" aria-hidden="true" />
-        <span className="lf-eyebrow text-[var(--accent)]">Dans le Hub</span>
-        <h2 id="fonctionnalites" className="lf-h2 text-balance text-white">
-          Tout ce qui manquait au Tier 3 français.
-        </h2>
-        <p className="lf-lede max-w-[520px] text-pretty text-[var(--text-muted)]">
-          Les scoreboards, les fiches et les tournois au même endroit — tenus à jour après chaque
-          match, par les gens qui les jouent.
-        </p>
-      </div>
-
-      {/* Blocs de fonctionnalités */}
-      {/* En large, chaque étape occupe un écran entier (`min-h-svh`, sans
-          écart supplémentaire) : l'ombre a toute la hauteur pour changer de
-          côté, ses courbes restent douces. En colonne unique, on garde des
-          écarts classiques. */}
-      <div className="relative mt-24 flex flex-col gap-28 sm:mt-32 sm:gap-40 lg:gap-0">
-        {/* L'ombre qui relie les maquettes, peinte sous les blocs. */}
-        <LandingFlow />
-        {FEATURES.map((f, i) => {
-          // Une ligne sur deux inverse texte et maquette. `order` ne s'applique
-          // qu'à partir de `lg` : en une seule colonne, la maquette suit
-          // toujours son texte, sinon la lecture au clavier part en zigzag.
-          const flipped = i % 2 === 1;
-          return (
-            <div
-              key={f.num}
-              className="lf-reveal grid items-center gap-10 lg:min-h-svh lg:grid-cols-2 lg:content-center lg:gap-20"
-            >
-              <div className={`relative min-w-0 ${flipped ? "lg:order-2" : ""}`}>
-                <span
-                  aria-hidden="true"
-                  className="lf-num pointer-events-none absolute -left-[0.05em] -top-[0.72em] hidden select-none lg:block"
-                >
-                  {f.num}
-                </span>
-
-                <div className="relative lg:max-w-[480px]">
-                  <span className="lf-eyebrow text-[var(--accent)]">{f.eyebrow}</span>
-                  <h3 className="lf-h3 mt-4 text-balance text-white">{f.title}</h3>
-                  <p className="lf-body mt-5 text-pretty text-[var(--text-muted)]">{f.body}</p>
-
-                  <ul className="mt-8 flex flex-col gap-5">
-                    {f.points.map((p) => (
-                      <li key={p.t} className="flex items-start gap-3">
-                        <span className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] ring-1 ring-[var(--accent)]/25">
-                          <CheckIcon />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="lf-point-t block font-semibold text-white">{p.t}</span>
-                          <span className="lf-point-d mt-1 block text-[var(--text-muted)]">
-                            {p.d}
-                          </span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link
-                    href={f.cta.href}
-                    className="lf-act group mt-9 inline-flex items-center gap-2 font-semibold text-white underline-offset-4 transition-colors hover:text-[var(--accent)]"
-                  >
-                    {f.cta.label}
-                    <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                </div>
-              </div>
-
-              <div className={`min-w-0 ${flipped ? "lg:order-1" : ""}`}>{f.panel()}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Le reste, sans y consacrer un bloc entier */}
-      <div className="lf-reveal mt-28 sm:mt-40">
-        <div className="flex items-center gap-4">
-          <span className="lf-eyebrow shrink-0 text-[var(--text-subtle)]">Aussi dans le Hub</span>
-          <div className="lf-rule min-w-0 flex-1" aria-hidden="true" />
+    <section aria-labelledby="fonctionnalites" className="lr-match">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:pt-32">
+        <div className="lf-reveal max-w-2xl">
+          <span className="lf-eyebrow text-[var(--accent)]">Dans le Hub</span>
+          <h2 id="fonctionnalites" className="lf-h2 mt-5 text-balance text-white">
+            Tout ce qui manquait au Tier 3 français.
+          </h2>
+          <p className="lf-lede mt-5 max-w-[520px] text-pretty text-[var(--text-muted)]">
+            Les scoreboards, les fiches et les tournois au même endroit — tenus à jour après chaque
+            match, par les gens qui les jouent.
+          </p>
         </div>
-        <ul className="mt-8 grid gap-3 sm:grid-cols-3">
-          {ALSO.map((a) => (
-            <li key={a.t} className="card flex flex-col p-4">
-              <div className="lf-point-t font-semibold text-white">{a.t}</div>
-              <p className="lf-point-d mt-1.5 text-[var(--text-muted)]">{a.d}</p>
-              {/* Le mini-exemple est calé en bas de carte : les trois demos
-                  s'alignent d'une colonne à l'autre quel que soit le texte. */}
-              <div className="mt-auto">{a.demo}</div>
+      </div>
+
+      {/* Le HUD : collé sous la barre de navigation (47 px + sa bordure). */}
+      <nav aria-label="Rounds de la démonstration" className="lr-hud">
+        <ol className="lr-hud-row">
+          {FEATURES.map((f, i) => (
+            <li key={f.num}>
+              <RoundLink target={`round-${i + 1}`} className={`lr-cell lr-cell-${i + 1}`}>
+                <span className="lr-cell-n stat">{f.num}</span>
+                <span className="lr-cell-t">{f.eyebrow}</span>
+              </RoundLink>
             </li>
           ))}
-        </ul>
+        </ol>
+      </nav>
+
+      <div className="mx-auto w-full max-w-6xl px-4 pb-24 sm:pb-32">
+        {FEATURES.map((f, i) => (
+          <article
+            key={f.num}
+            id={`round-${i + 1}`}
+            aria-labelledby={`round-${i + 1}-titre`}
+            className={`lr-round lr-round-${i + 1}`}
+          >
+            {/* Le séparateur de round : numéro, filet, nom de la phase. */}
+            <div className="lf-reveal lr-divider" aria-hidden="true">
+              <span className="lr-divider-n stat">Round {f.num}</span>
+              <span className="lr-divider-line" />
+              <span className="lr-divider-t">{f.eyebrow}</span>
+            </div>
+
+            <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
+              {/* Le texte reste en place pendant qu'on lit la maquette. */}
+              <div className="lf-reveal min-w-0 lg:sticky lg:top-[132px] lg:col-span-4 lg:self-start">
+                <h3 id={`round-${i + 1}-titre`} className="lf-h3 text-balance text-white">
+                  {f.title}
+                </h3>
+                <p className="lf-body mt-5 text-pretty text-[var(--text-muted)]">{f.body}</p>
+                <Link
+                  href={f.cta.href}
+                  className="lf-act group mt-8 inline-flex items-center gap-2 font-semibold text-white underline-offset-4 transition-colors hover:text-[var(--accent)]"
+                >
+                  {f.cta.label}
+                  <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              <div className="lf-reveal min-w-0 lg:col-span-8">
+                {f.panel()}
+                {/* Les points en bande sous la maquette, numérotés comme des
+                    sous-rounds : plus de liste à coches, qui faisait fiche
+                    produit. */}
+                <ul className="mt-8 grid gap-6 sm:grid-cols-3 sm:gap-5">
+                  {f.points.map((p, k) => (
+                    <li key={p.t} className="lr-point">
+                      <span className="lr-point-n stat" aria-hidden="true">
+                        {i + 1}.{k + 1}
+                      </span>
+                      <span className="lf-point-t mt-2 block font-semibold text-white">{p.t}</span>
+                      <span className="lf-point-d mt-1 block text-[var(--text-muted)]">{p.d}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </article>
+        ))}
+
+        {/* Le reste, en utilitaires : les trois touches de capacité du jeu. */}
+        <div className="lf-reveal mt-28 sm:mt-40">
+          <div className="lr-divider" aria-hidden="true">
+            <span className="lr-divider-n stat">Utilitaires</span>
+            <span className="lr-divider-line" />
+          </div>
+          <h3 className="sr-only">Aussi dans le Hub</h3>
+          <ul className="grid gap-3 sm:grid-cols-3">
+            {ALSO.map((a) => (
+              <li key={a.t} className="card flex flex-col p-4">
+                <div className="flex items-center gap-3">
+                  <span className="lr-key stat" aria-hidden="true">
+                    {a.key}
+                  </span>
+                  <div className="lf-point-t font-semibold text-white">{a.t}</div>
+                </div>
+                <p className="lf-point-d mt-3 text-[var(--text-muted)]">{a.d}</p>
+                {/* Le mini-exemple est calé en bas de carte : les trois demos
+                    s'alignent d'une colonne à l'autre quel que soit le texte. */}
+                <div className="mt-auto">{a.demo}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

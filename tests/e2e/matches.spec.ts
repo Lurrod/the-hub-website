@@ -32,6 +32,26 @@ test("l'accueil présente le site et renvoie vers les matchs", async ({ page }) 
   await expect(page.getByRole("link", { name: "Voir les matchs analysés" })).toBeVisible();
 });
 
+// La colonne de texte du hero recouvrait la carte et avalait les clics : seul
+// le ping qui dépassait du conteneur réagissait. Un clic Playwright échoue sur
+// un élément recouvert, c'est exactement ce qu'on vérifie ici.
+for (const [ping, url] of [
+  ["Tournois", /\/tournois$/],
+  ["Matchs", /\/matchs$/],
+  ["Premier", /\/premier$/],
+  ["Joueurs", /\/joueurs$/],
+  ["Équipes", /\/equipes$/],
+] as const) {
+  test(`le ping « ${ping} » de la carte du hero est cliquable`, async ({ page }) => {
+    await page.goto("/");
+    await page
+      .getByRole("navigation", { name: "Sections du Hub" })
+      .getByRole("link", { name: new RegExp(`${ping}$`) })
+      .click();
+    await expect(page).toHaveURL(url);
+  });
+}
+
 test("l'index des matchs groupe les matchs par tournoi (accordéon)", async ({ page }) => {
   await page.goto("/matchs");
   await expect(page.getByRole("heading", { name: "Matchs", exact: true })).toBeVisible();
