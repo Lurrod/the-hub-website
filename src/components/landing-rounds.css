@@ -108,20 +108,29 @@
   }
 }
 
-/* --- Rounds --- */
+/* --- Rounds ---
+   L'ancre d'un round vise l'article, mais ce qu'on veut voir en arrivant,
+   c'est son séparateur, qui commence après tout le `padding-top`. Avec un
+   `scroll-margin-top` fixe, le séparateur retombait 150 px sous le HUD — et
+   pas au même endroit selon le round, puisque le premier a moins de marge.
+   On retranche donc la marge : le séparateur atterrit toujours à
+   `--lr-land` du haut de l'écran, soit sous la navigation (48 px) et le HUD
+   (44 px), avec un peu d'air. */
 .lr-round {
-  padding-top: 7rem;
-  /* HUD (48 + 44) et un peu d'air : l'ancre ne doit pas glisser le
-     séparateur sous le bandeau. */
-  scroll-margin-top: 100px;
-}
-.lr-round:first-child {
-  padding-top: 5rem;
+  --lr-land: 120px;
+  --lr-pad: 7rem;
+  padding-top: var(--lr-pad);
+  scroll-margin-top: calc(var(--lr-land) - var(--lr-pad));
 }
 @media (min-width: 640px) {
   .lr-round {
-    padding-top: 9rem;
+    --lr-pad: 9rem;
   }
+}
+/* Après les réglages de largeur : même spécificité côté variable, c'est
+   l'ordre qui tranche, et le premier round doit garder sa marge réduite. */
+.lr-round:first-child {
+  --lr-pad: 5rem;
 }
 
 .lr-divider {
