@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "@/components/icons";
 import "./landing-rounds.css";
-import { RecruitPanel, ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
+import RoundLink from "@/components/landing-round-link";
+import { Suspense } from "react";
+import { ScoreboardPanel, TournamentPanel } from "@/components/landing-panels";
+import LandingRecruit, { RecruitPanel } from "@/components/landing-recruit";
 import { PlayerPanel } from "@/components/landing-panels-player";
 import { ShareDiscord } from "@/components/landing-share-discord";
 import { Tag } from "@/components/landing-panel-chrome";
@@ -85,7 +88,7 @@ const FEATURES: readonly Feature[] = [
     num: "04",
     eyebrow: "Recrutement",
     title: "Trouver une équipe, ou un cinquième",
-    body: "Les annonces de joueurs en recherche d'équipe et d'équipes en recherche de joueurs vivent au même endroit, filtrables par rôle, rang et région.",
+    body: "Les annonces de joueurs en recherche d'équipe et d'équipes en recherche de joueurs vivent au même endroit, filtrables par rôle, pays et âge.",
     points: [
       { t: "LFT et LFP côte à côte", d: "Une seule page à surveiller pendant un mercato." },
       {
@@ -98,7 +101,13 @@ const FEATURES: readonly Feature[] = [
       },
     ],
     cta: { label: "Voir les annonces", href: "/lft" },
-    panel: () => <RecruitPanel />,
+    // Le seul panneau lu en base : il s'affiche vide le temps de la requête
+    // au lieu de retenir toute la page derrière lui.
+    panel: () => (
+      <Suspense fallback={<RecruitPanel recruit={null} pending />}>
+        <LandingRecruit />
+      </Suspense>
+    ),
   },
   {
     num: "05",
@@ -285,10 +294,10 @@ export default function LandingShowcase() {
         <ol className="lr-hud-row">
           {FEATURES.map((f, i) => (
             <li key={f.num}>
-              <a href={`#round-${i + 1}`} className={`lr-cell lr-cell-${i + 1}`}>
+              <RoundLink target={`round-${i + 1}`} className={`lr-cell lr-cell-${i + 1}`}>
                 <span className="lr-cell-n stat">{f.num}</span>
                 <span className="lr-cell-t">{f.eyebrow}</span>
-              </a>
+              </RoundLink>
             </li>
           ))}
         </ol>
