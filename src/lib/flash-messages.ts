@@ -119,6 +119,11 @@ export const ERROR_MESSAGES: Record<string, FlashEntry> = {
   },
   nogroups: { title: "Format sans poules", message: "Ce tournoi n'a pas de phase de poules." },
   stage: { title: "Phase invalide", message: "Cette phase n'est pas autorisée pour ce format." },
+  thirdplace: {
+    title: "Petite finale désactivée",
+    message:
+      "Ce tournoi n'a pas de petite finale. Active-la dans les paramètres du tournoi avant d'ajouter ce match.",
+  },
   score: {
     title: "Score invalide",
     message:

@@ -49,6 +49,8 @@ export type TournamentSeed = {
   prizePool: string;
   bestOf: number;
   groupSize?: number;
+  /** Petite finale activée dans les paramètres (off par défaut, comme en vrai). */
+  thirdPlaceMatch?: boolean;
   teams: number[];
   groups?: GroupSeed[];
   matches: MatchSeed[];

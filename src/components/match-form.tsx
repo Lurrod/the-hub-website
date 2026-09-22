@@ -39,6 +39,7 @@ export default function MatchForm({
   stages = MATCH_STAGES,
   defaultBestOf = 1,
   groupLabel = "Poule (si phase = Poule)",
+  roundSuggestions = [],
 }: {
   action: (formData: FormData) => void;
   teams: Team[];
@@ -52,6 +53,8 @@ export default function MatchForm({
   /** Le Premier Contender range ses brackets parallèles dans ce même champ :
    * l'intitulé « Poule (si phase = Poule) » y ferait ignorer un champ requis. */
   groupLabel?: string;
+  /** Tours proposés dans le champ « Tour » (voir `roundSuggestionsFor`). */
+  roundSuggestions?: readonly string[];
 }) {
   const input =
     "w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-white";
@@ -182,7 +185,19 @@ export default function MatchForm({
       <div className="grid grid-cols-2 gap-4">
         <label className={lbl}>
           Tour (si Playoffs, ex. « Finale »)
-          <input name="round" defaultValue={values?.round ?? ""} className={input} />
+          <input
+            name="round"
+            defaultValue={values?.round ?? ""}
+            list={roundSuggestions.length > 0 ? "match-round-suggestions" : undefined}
+            className={input}
+          />
+          {roundSuggestions.length > 0 && (
+            <datalist id="match-round-suggestions">
+              {roundSuggestions.map((r) => (
+                <option key={r} value={r} />
+              ))}
+            </datalist>
+          )}
         </label>
         <label className={lbl}>
           Position bracket

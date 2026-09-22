@@ -86,6 +86,7 @@ export function createTournament(data: TournamentInput, createdById: string) {
       groupSize: data.groupSize,
       bestOf: data.bestOf,
       seeding: data.seeding,
+      thirdPlaceMatch: data.thirdPlaceMatch,
       socials: data.socials ?? undefined,
       createdById,
       // Le créateur est propriétaire d'emblée : sans ça un tournoi naissait
@@ -113,6 +114,7 @@ export function updateTournament(id: string, data: TournamentInput) {
       groupSize: data.groupSize ?? null,
       bestOf: data.bestOf ?? null,
       seeding: data.seeding ?? null,
+      thirdPlaceMatch: data.thirdPlaceMatch,
       socials: data.socials ?? undefined,
     },
   });
@@ -254,8 +256,11 @@ export function setTournamentManagerRole(
  */
 export function getTournamentFormat(
   tournamentId: string
-): Promise<{ format: TournamentFormat } | null> {
-  return db.tournament.findUnique({ where: { id: tournamentId }, select: { format: true } });
+): Promise<{ format: TournamentFormat; thirdPlaceMatch: boolean } | null> {
+  return db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { format: true, thirdPlaceMatch: true },
+  });
 }
 
 /** Cette poule appartient-elle bien à ce tournoi ? */

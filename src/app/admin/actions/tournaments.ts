@@ -43,6 +43,7 @@ function parseTournamentForm(formData: FormData) {
     groupSize: formData.get("groupSize") || undefined,
     bestOf: formData.get("bestOf") || undefined,
     seeding: formData.get("seeding") || undefined,
+    thirdPlaceMatch: formData.get("thirdPlaceMatch") || undefined,
     socials: {
       twitter: formData.get("twitter") || undefined,
       twitch: formData.get("twitch") || undefined,

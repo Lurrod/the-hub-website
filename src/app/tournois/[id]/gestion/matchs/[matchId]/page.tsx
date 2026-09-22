@@ -6,7 +6,7 @@ import { getTournament } from "@/lib/data/tournaments";
 import { getMatch, getGroupsWithMatches } from "@/lib/data/matches";
 import MatchForm from "@/components/match-form";
 import { VALORANT_MAPS, STAGES_BY_FORMAT } from "@/lib/constants";
-import { defaultBestOfFor } from "@/lib/bracket";
+import { defaultBestOfFor, roundSuggestionsFor } from "@/lib/bracket";
 import {
   updateMatchAction,
   addMatchMapAction,
@@ -113,6 +113,7 @@ export default async function EditMatchPage({
         stages={allowedStages}
         defaultBestOf={defaultBestOfFor(tournament.format, match.round)}
         groupLabel={tournament.format === "PREMIER_CONTENDER" ? "Bracket" : undefined}
+        roundSuggestions={roundSuggestionsFor(tournament)}
         submitLabel="Enregistrer"
         values={{
           teamAId: match.teamAId,

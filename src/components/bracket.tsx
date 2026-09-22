@@ -44,6 +44,7 @@ export default function Bracket({
     const upper = sections.find((s) => s.key === "upper");
     const lower = sections.find((s) => s.key === "lower");
     const final = sections.find((s) => s.key === "final");
+    const third = sections.find((s) => s.key === "third");
 
     // Un seul conteneur de défilement pour tout le bloc : upper et lower ont
     // rarement le même nombre de colonnes, deux zones de scroll distinctes
@@ -73,6 +74,7 @@ export default function Bracket({
                   lastSlotAnchor={final ? "lower-final" : undefined}
                 />
               )}
+              {third && <ThirdPlaceBlock section={third} />}
             </div>
 
             {final && (
@@ -103,13 +105,17 @@ export default function Bracket({
   // la même `key` métier (« single »), qui ne les distinguerait pas.
   return (
     <div className="space-y-8">
-      {sections.map((sec) => (
-        <SectionBlock
-          key={sec.id ?? sec.key}
-          section={sec}
-          connectors={layout === "tree" || layout === "multi"}
-        />
-      ))}
+      {sections.map((sec) =>
+        sec.key === "third" ? (
+          <ThirdPlaceBlock key="third" section={sec} />
+        ) : (
+          <SectionBlock
+            key={sec.id ?? sec.key}
+            section={sec}
+            connectors={layout === "tree" || layout === "multi"}
+          />
+        )
+      )}
     </div>
   );
 }
@@ -192,6 +198,28 @@ function SectionBlock({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * La petite finale, sous l'arbre. Pas de colonne ni de connecteur : elle ne
+ * mène nulle part, et greffée à droite de la finale elle se lirait comme un
+ * tour de plus. Un filet pointillé la sépare de l'arbre pour dire « à côté »,
+ * pas « après ».
+ */
+function ThirdPlaceBlock({ section }: { section: BracketSection }) {
+  const slots = section.rounds.flatMap((r) => r.slots);
+  return (
+    <div className="border-t border-dashed border-[var(--border)] pt-5">
+      <div className={SECTION_TITLE_CLASS}>{section.title}</div>
+      <div className="flex flex-wrap gap-3">
+        {slots.map((slot) => (
+          <div key={slot.key} className="w-[186px]">
+            <SlotCell slot={slot} />
+          </div>
+        ))}
       </div>
     </div>
   );

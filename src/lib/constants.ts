@@ -358,6 +358,21 @@ export function formatAllowsGroups(format: TournamentFormat): boolean {
 }
 
 /**
+ * Formats où l'organisateur peut ajouter une petite finale (match pour la 3e
+ * place entre les deux perdants des demi-finales).
+ *
+ * Seulement les arbres à élimination directe que l'organisateur monte sur le
+ * site. La double élimination départage déjà la 3e place par le lower
+ * bracket ; les formats Premier et Spike Tour suivent un règlement Riot qui
+ * n'en prévoit pas — la leur ajouter inventerait un match qui n'existe pas.
+ */
+const FORMATS_WITH_THIRD_PLACE: readonly TournamentFormat[] = ["SINGLE_ELIM", "GROUPS_THEN_ELIM"];
+
+export function formatAllowsThirdPlace(format: TournamentFormat): boolean {
+  return FORMATS_WITH_THIRD_PLACE.includes(format);
+}
+
+/**
  * Les `Group` de ce format désignent-ils des brackets et non des poules ?
  *
  * Le Premier Contender est le seul cas : ses arbres parallèles sont stockés

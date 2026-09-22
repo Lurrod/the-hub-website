@@ -3,13 +3,17 @@ import {
   buildBracket,
   bracketLayoutFor,
   defaultBestOfFor,
+  isThirdPlaceRound,
   matchGroupIdFor,
+  thirdPlaceRoundRefused,
   parseRound,
   roundLabelForSize,
+  roundSuggestionsFor,
   roundSizeFromLabel,
   type BracketMatchData,
   type BracketRound,
 } from "@/lib/bracket";
+import { formatAllowsThirdPlace } from "@/lib/constants";
 
 const mk = (id: string, round: string | null, position?: number | null): BracketMatchData => ({
   id,
@@ -404,5 +408,121 @@ describe("matchGroupIdFor", () => {
   it("répond null quand aucun groupe n'est fourni", () => {
     expect(matchGroupIdFor("PREMIER_CONTENDER", "BRACKET", undefined)).toBeNull();
     expect(matchGroupIdFor("GROUPS", "GROUP", null)).toBeNull();
+  });
+});
+
+describe("petite finale", () => {
+  it("reconnaît les libellés usuels d'un match pour la 3e place", () => {
+    for (const label of [
+      "Petite finale",
+      "petite  Finale",
+      "Match pour la 3e place",
+      "3ème place",
+      "Troisième place",
+      "Third place match",
+      "3rd place",
+    ]) {
+      expect(isThirdPlaceRound(label), label).toBe(true);
+    }
+  });
+
+  it("ne confond pas la petite finale avec la finale ou la grande finale", () => {
+    for (const label of ["Finale", "Grande finale", "Demi-finales", null, ""]) {
+      expect(isThirdPlaceRound(label), String(label)).toBe(false);
+    }
+    expect(parseRound("Petite finale").section).toBe("third");
+    expect(parseRound("Grande finale").section).toBe("final");
+  });
+
+  it("sort la petite finale de l'arbre, dans sa propre section", () => {
+    const { layout, sections } = buildBracket(
+      [
+        mk("d1", "Demi-finales"),
+        mk("d2", "Demi-finales"),
+        mk("f", "Finale"),
+        mk("p", "Petite finale"),
+      ],
+      "SINGLE_ELIM"
+    );
+    expect(layout).toBe("tree");
+    expect(sections.map((s) => s.key)).toEqual(["single", "third"]);
+    // L'arbre garde sa forme : la petite finale n'y ajoute pas de colonne.
+    expect(names(sections[0].rounds)).toEqual(["Demi-finales", "Finale"]);
+    expect(sizes(sections[0].rounds)).toEqual([2, 1]);
+    expect(sections[1].rounds).toHaveLength(1);
+    expect(sections[1].rounds[0].slots.map((s) => s.key)).toEqual(["p"]);
+  });
+
+  it("montre une petite finale saisie même quand elle est seule", () => {
+    const { sections } = buildBracket([mk("p", "Petite finale")], "GROUPS_THEN_ELIM");
+    expect(sections.map((s) => s.key)).toEqual(["third"]);
+  });
+
+  it("ne perd pas une petite finale dans les autres géométries", () => {
+    const double = buildBracket(
+      [mk("u", "UB Finale"), mk("l", "LB Finale"), mk("p", "Petite finale")],
+      "DOUBLE_ELIM"
+    );
+    expect(double.sections.map((s) => s.key)).toContain("third");
+
+    const multi = buildBracket(
+      [mkg("a", "Finale", "g1", "Bracket A"), mkg("p", "Petite finale", "g1", "Bracket A")],
+      "PREMIER_CONTENDER"
+    );
+    expect(multi.sections.map((s) => s.key)).toContain("third");
+  });
+
+  it("n'est proposée qu'aux arbres à élimination directe organisés sur le site", () => {
+    expect(formatAllowsThirdPlace("SINGLE_ELIM")).toBe(true);
+    expect(formatAllowsThirdPlace("GROUPS_THEN_ELIM")).toBe(true);
+    for (const f of [
+      "DOUBLE_ELIM",
+      "SWISS",
+      "GROUPS",
+      "PREMIER_INVITE",
+      "SPIKE_TOUR_QUALIFIER",
+    ] as const) {
+      expect(formatAllowsThirdPlace(f), f).toBe(false);
+    }
+  });
+
+  it("refuse de créer une petite finale quand l'option est éteinte", () => {
+    const off = { thirdPlaceMatch: false };
+    const on = { thirdPlaceMatch: true };
+    expect(thirdPlaceRoundRefused("Petite finale", off)).toBe(true);
+    expect(thirdPlaceRoundRefused("Petite finale", on)).toBe(false);
+    expect(thirdPlaceRoundRefused("Finale", off)).toBe(false);
+    expect(thirdPlaceRoundRefused(undefined, off)).toBe(false);
+  });
+
+  it("laisse modifier une petite finale existante même si l'option a été éteinte depuis", () => {
+    // Éteindre l'option ne doit pas verrouiller la saisie du score d'un match
+    // déjà joué : seul le passage d'un autre tour à « petite finale » compte.
+    expect(
+      thirdPlaceRoundRefused("Petite finale", { thirdPlaceMatch: false }, "Petite finale")
+    ).toBe(false);
+    expect(thirdPlaceRoundRefused("Petite finale", { thirdPlaceMatch: false }, "Finale")).toBe(
+      true
+    );
+  });
+});
+
+describe("roundSuggestionsFor", () => {
+  it("propose les tours d'un arbre, sans petite finale par défaut", () => {
+    expect(roundSuggestionsFor({ format: "SINGLE_ELIM", thirdPlaceMatch: false })).toEqual([
+      "Huitièmes de finale",
+      "Quarts de finale",
+      "Demi-finales",
+      "Finale",
+    ]);
+  });
+
+  it("ajoute la petite finale quand le tournoi l'a activée", () => {
+    const tours = roundSuggestionsFor({ format: "GROUPS_THEN_ELIM", thirdPlaceMatch: true });
+    expect(tours.at(-1)).toBe("Petite finale");
+  });
+
+  it("ne propose rien aux formats sans arbre à élimination directe", () => {
+    expect(roundSuggestionsFor({ format: "SWISS", thirdPlaceMatch: true })).toEqual([]);
   });
 });

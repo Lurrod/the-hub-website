@@ -293,6 +293,10 @@ model Tournament {
   groupSize       Int?
   bestOf          Int?
   seeding         String?
+  /// Petite finale (match pour la 3e place entre les perdants des demies).
+  /// Option de l'organisateur, éteinte par défaut, et proposée seulement aux
+  /// formats de `formatAllowsThirdPlace`.
+  thirdPlaceMatch Boolean                 @default(false)
   /// Identité Premier du tournoi. Les deux champs vont ensemble : ils
   /// n'existent que sur les tournois créés par la synchronisation.
   /// `premierTier` vaut CONTENDER ou INVITE. Des `String?` et non des enums :
