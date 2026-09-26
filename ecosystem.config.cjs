@@ -20,10 +20,23 @@ module.exports = {
         // appel à `Date` non passé par ces aides parlent la même langue que
         // l'audience du site.
         TZ: "Europe/Paris",
-        // Écoute en local uniquement : nginx est le seul exposé sur Internet.
+        // Écoute en local uniquement : Apache est le seul exposé sur Internet.
         HOSTNAME: "127.0.0.1",
+        // glibc ouvre une arena par thread qui alloue (8 threads tokio du moteur
+        // Prisma, libvips) et ne rend presque rien au système : sans ce plafond,
+        // la RSS après GC montait à 365 Mo pour 120 pages, contre 248 Mo avec.
+        MALLOC_ARENA_MAX: "2",
       },
-      max_memory_restart: "400M",
+      // Budget explicite pour V8. Par défaut, Node dimensionne le heap sur la RAM
+      // de la machine (~4 Go sur le serveur de 32 Go) : chaque page laissant ~2 Mo
+      // de déchets, le ramassage arrivait après le seuil pm2, qui tuait le
+      // process toutes les 1 à 10 h (SIGKILL). Le heap vivant tourne autour de
+      // 50 Mo. Mesuré en prod le 2026-09-26 : pic à 288 Mo sur 360 pages, contre
+      // un kill à 400 Mo avant.
+      node_args: ["--max-old-space-size=256"],
+      // Filet de sécurité seulement : au-dessus du heap V8 + mémoire hors heap
+      // (moteur Prisma, libvips, code), il ne doit plus se déclencher en régime normal.
+      max_memory_restart: "600M",
       autorestart: true,
       // Journaux hors du dossier de release, sinon ils disparaissent au ménage.
       out_file: "../../shared/logs/out.log",
