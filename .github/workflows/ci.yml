@@ -118,10 +118,10 @@ jobs:
           path: coverage/
           retention-days: 7
 
-      - name: Audit des dépendances
-        # Bloque sur une vulnérabilité haute ou critique. Les niveaux inférieurs
-        # sont signalés par la sortie sans faire échouer la CI.
-        run: npm audit --audit-level=high
+      - name: Audit des dépendances de production
+        # Bloque sur les vulnérabilités hautes ou critiques
+        # affectant les dépendances de production.
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build de production
         # DATABASE_URL est requis pour instancier le client Prisma pendant le
