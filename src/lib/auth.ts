@@ -12,7 +12,11 @@ const adminIds = (process.env.ADMIN_DISCORD_IDS ?? "")
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   session: { strategy: "database" },
-  providers: [Discord],
+  providers: [
+  Discord({
+    issuer: "https://discord.com",
+  }),
+  ],
   callbacks: {
     async session({ session, user }) {
       // Lecture du rôle depuis la DB à chaque hydratation de session :
